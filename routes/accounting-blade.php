@@ -11,6 +11,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CostCenterBladeCont
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CurrencyBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\JournalEntryBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ReconciliationBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\AccountBalancesBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\AgedPayablesBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\AgedReceivablesBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\BalanceSheetBladeController;
@@ -144,6 +145,9 @@ Route::middleware(['web', 'auth', 'verified'])
         Route::get('reports/cash-book', CashBookBladeController::class)
             ->name('reports.cash-book')
             ->middleware('can:reports.cash-book.view');
+        Route::get('reports/account-balances', AccountBalancesBladeController::class)
+            ->name('reports.account-balances')
+            ->middleware('can:reports.account-balances.view');
 
         Route::get('audit-logs', [AuditLogBladeController::class, 'index'])
             ->name('audit-logs.index')

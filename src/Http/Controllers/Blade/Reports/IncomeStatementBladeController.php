@@ -62,9 +62,9 @@ class IncomeStatementBladeController extends Controller
             ])
             ->join('accounting_account_types as at', 'at.id', '=', 'a.account_type_id')
             ->leftJoin(DB::raw("(
-                SELECT jed.chart_of_account_id, jed.debit, jed.credit
-                FROM accounting_journal_entry_details jed
-                JOIN accounting_journal_entries je ON je.id = jed.journal_entry_id
+                SELECT jel.chart_of_account_id, jel.debit, jel.credit
+                FROM accounting_journal_entry_lines jel
+                JOIN accounting_journal_entries je ON je.id = jel.journal_entry_id
                 WHERE je.status = 'posted'
                 AND je.entry_date >= '{$startDate}'
                 AND je.entry_date <= '{$endDate}'
@@ -74,9 +74,9 @@ class IncomeStatementBladeController extends Controller
                 $query->where('a.is_active', '=', true)
                     ->orWhereExists(function ($sub) {
                         $sub->select(DB::raw(1))
-                            ->from('accounting_journal_entry_details as jed2')
-                            ->join('accounting_journal_entries as je2', 'je2.id', '=', 'jed2.journal_entry_id')
-                            ->whereColumn('jed2.chart_of_account_id', 'a.id')
+                            ->from('accounting_journal_entry_lines as jel2')
+                            ->join('accounting_journal_entries as je2', 'je2.id', '=', 'jel2.journal_entry_id')
+                            ->whereColumn('jel2.chart_of_account_id', 'a.id')
                             ->where('je2.status', '=', 'posted');
                     });
             })
