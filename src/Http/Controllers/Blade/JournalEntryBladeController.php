@@ -50,7 +50,7 @@ class JournalEntryBladeController extends Controller
     public function show(JournalEntry $journalEntry): View
     {
         return view('accounting::journal-entries.show', [
-            'entry' => $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']),
+            'journalEntry' => $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']),
         ]);
     }
 
