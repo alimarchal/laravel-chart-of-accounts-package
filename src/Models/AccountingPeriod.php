@@ -2,7 +2,6 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
-use App\Models\User;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\AccountingPeriodFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -49,7 +48,7 @@ class AccountingPeriod extends AccountingModel
 
     public function closer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'closed_by');
+        return $this->belongsTo(config('auth.providers.users.model', 'App\Models\User'), 'closed_by');
     }
 
     public function closingJournalEntry(): BelongsTo

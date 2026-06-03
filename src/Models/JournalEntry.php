@@ -2,7 +2,6 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
-use App\Models\User;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\JournalEntryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,7 +63,7 @@ class JournalEntry extends AccountingModel
 
     public function poster(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'posted_by');
+        return $this->belongsTo(config('auth.providers.users.model', 'App\Models\User'), 'posted_by');
     }
 
     public function reversesEntry(): BelongsTo

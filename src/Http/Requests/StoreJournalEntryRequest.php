@@ -2,7 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Requests;
 
-use App\Concerns\Accounting\HasAccountingValidationRules;
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasAccountingValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreJournalEntryRequest extends FormRequest

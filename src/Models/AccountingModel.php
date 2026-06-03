@@ -2,8 +2,8 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
-use App\Concerns\Accounting\HasUserTracking;
-use App\Concerns\Accounting\LogsAccountingActivity;
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasUserTracking;
+use Alimarchal\LaravelChartOfAccounts\Concerns\LogsAccountingActivity;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
