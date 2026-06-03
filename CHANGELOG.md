@@ -2,6 +2,15 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [1.2.0] - 2026-06-03
+
+### Fixed
+- `JournalEntryBladeController::show()` was passing `entry` to the view but the Blade template expected `$journalEntry`, causing `Undefined variable $journalEntry` on `/accounting/journal-entries/{id}`
+
+### Added
+- `accounting:install` now automatically publishes views (`--tag=accounting-views`) during installation — no manual `vendor:publish` needed
+- New `accounting:update` command: re-publishes views, config, and JS assets with `--force`, then runs any new migrations and syncs database objects — run this after every `composer update` of the package
+
 ## [1.1.0] - 2026-06-03
 
 ### Fixed
