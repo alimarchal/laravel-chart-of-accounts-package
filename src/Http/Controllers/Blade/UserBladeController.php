@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class UserBladeController extends Controller
@@ -116,5 +117,41 @@ class UserBladeController extends Controller
         $userModel::findOrFail($user)->delete();
 
         return redirect()->route('settings.users.index')->with('success', 'User deleted.');
+    }
+
+    public function editPermissions($user): View
+    {
+        $userModel = $this->getUserModel();
+        $user = $userModel::with(['roles', 'permissions'])->findOrFail($user);
+
+        /** @var \Spatie\Permission\Models\Permission[]|\Illuminate\Database\Eloquent\Collection $allPermissions */
+        $allPermissions = Permission::orderBy('name')->get();
+
+        // Group permissions by prefix (e.g., "currencies" from "currencies.view")
+        $grouped = $allPermissions->groupBy(fn ($p) => explode('.', $p->name)[0]);
+
+        return view('accounting::users.permissions', [
+            'user' => $user,
+            'grouped' => $grouped,
+            'directPermissions' => $user->getDirectPermissions()->pluck('name')->toArray(),
+            'rolePermissions' => $user->getPermissionsViaRoles()->pluck('name')->toArray(),
+        ]);
+    }
+
+    public function syncPermissions(Request $request, $user): RedirectResponse
+    {
+        $userModel = $this->getUserModel();
+        $user = $userModel::findOrFail($user);
+
+        $validated = $request->validate([
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['exists:permissions,name'],
+        ]);
+
+        $user->syncPermissions($validated['permissions'] ?? []);
+
+        return redirect()
+            ->route('settings.users.permissions.edit', $user)
+            ->with('success', 'Permissions updated for '.$user->name.'.');
     }
 }

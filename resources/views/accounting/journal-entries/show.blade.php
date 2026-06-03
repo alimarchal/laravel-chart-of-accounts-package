@@ -5,7 +5,7 @@
             <div class="flex gap-2">
                 @if ($journalEntry->status === 'draft')
                     @can('journal-entries.post')
-                    <form method="POST" action="{{ route('settings.journal-entries.post', $journalEntry) }}">
+                    <form method="POST" action="{{ route('accounting.journal-entries.post', $journalEntry) }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition" onclick="return confirm('Post this entry?')">Post</button>
                     </form>
@@ -13,7 +13,7 @@
                 @endif
                 @if ($journalEntry->status === 'posted')
                     @can('journal-entries.reverse')
-                    <form method="POST" action="{{ route('settings.journal-entries.reverse', $journalEntry) }}">
+                    <form method="POST" action="{{ route('accounting.journal-entries.reverse', $journalEntry) }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-500 transition" onclick="return confirm('Reverse this entry?')">Reverse</button>
                     </form>
@@ -21,13 +21,13 @@
                 @endif
                 @if (in_array($journalEntry->status, ['draft', 'posted']))
                     @can('journal-entries.void')
-                    <form method="POST" action="{{ route('settings.journal-entries.void', $journalEntry) }}">
+                    <form method="POST" action="{{ route('accounting.journal-entries.void', $journalEntry) }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 transition" onclick="return confirm('Void this entry?')">Void</button>
                     </form>
                     @endcan
                 @endif
-                <a href="{{ route('settings.journal-entries.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
+                <a href="{{ route('accounting.journal-entries.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
             </div>
         </div>
     </x-slot>

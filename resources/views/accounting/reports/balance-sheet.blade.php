@@ -14,7 +14,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <x-accounting::status-message />
 
-            <x-accounting::filter-section :action="route('settings.reports.balance-sheet')">
+            <x-accounting::filter-section :action="route('accounting.reports.balance-sheet')">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <x-accounting::label for="accounting_period_id" value="Accounting Period" />

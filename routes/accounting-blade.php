@@ -52,9 +52,10 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
         ->middleware("can:{$permissionPrefix}.delete");
 };
 
+// ── Accounting routes ─────────────────────────────────────────────────────────
 Route::middleware(['web', 'auth', 'verified'])
-    ->prefix(config('accounting.route_prefix', 'settings'))
-    ->name(config('accounting.route_name_prefix', 'settings').'.')
+    ->prefix(config('accounting.route_prefix', 'accounting'))
+    ->name(config('accounting.route_name_prefix', 'accounting').'.')
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardBladeController::class)
             ->name('dashboard')
@@ -158,9 +159,20 @@ Route::middleware(['web', 'auth', 'verified'])
         Route::get('audit-logs/{record}', [AuditLogBladeController::class, 'show'])
             ->name('audit-logs.show')
             ->middleware('can:audit-logs.view');
+    });
 
-        // User Management
+// ── Settings routes (User Management) ────────────────────────────────────────
+Route::middleware(['web', 'auth', 'verified'])
+    ->prefix(config('accounting.settings_route_prefix', 'settings'))
+    ->name(config('accounting.settings_route_name_prefix', 'settings').'.')
+    ->group(function () use ($resourceRoutes): void {
         $resourceRoutes('users', UserBladeController::class, 'users', 'user', 'user');
+        Route::get('users/{user}/permissions', [UserBladeController::class, 'editPermissions'])
+            ->name('users.permissions.edit')
+            ->middleware('can:user.assign-role');
+        Route::post('users/{user}/permissions', [UserBladeController::class, 'syncPermissions'])
+            ->name('users.permissions.sync')
+            ->middleware('can:user.assign-role');
         $resourceRoutes('roles', RoleBladeController::class, 'roles', 'accounting.manage-settings', 'role');
         Route::get('permissions', [PermissionBladeController::class, 'index'])
             ->name('permissions.index')

@@ -16,7 +16,7 @@
 
                         @can('account-types.view')
                         <x-accounting::settings-row
-                            href="{{ route('settings.account-types.index') }}"
+                            href="{{ route('accounting.account-types.index') }}"
                             label="Account Types"
                             description="Define categories for your ledger"
                             :count="$counts['accountTypes']"
@@ -32,7 +32,7 @@
                         @can('chart-of-accounts.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.chart-of-accounts.index') }}"
+                            href="{{ route('accounting.chart-of-accounts.index') }}"
                             label="Chart of Accounts"
                             description="Master list of all ledger accounts"
                             :count="$counts['accounts']"
@@ -48,7 +48,7 @@
                         @can('currencies.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.currencies.index') }}"
+                            href="{{ route('accounting.currencies.index') }}"
                             label="Currencies"
                             description="Multi-currency setup & exchange rates"
                             :count="$counts['currencies']"
@@ -64,7 +64,7 @@
                         @can('periods.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.periods.index') }}"
+                            href="{{ route('accounting.periods.index') }}"
                             label="Fiscal Periods"
                             description="Manage financial months & years"
                             :count="$counts['periods']"
@@ -80,7 +80,7 @@
                         @can('cost-centers.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.cost-centers.index') }}"
+                            href="{{ route('accounting.cost-centers.index') }}"
                             label="Cost Centers"
                             description="Department & project cost tracking"
                             :count="$counts['costCenters']"
@@ -96,7 +96,7 @@
                         @can('bank-accounts.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.bank-accounts.index') }}"
+                            href="{{ route('accounting.bank-accounts.index') }}"
                             label="Bank Accounts"
                             description="Company bank accounts & balances"
                             :count="$counts['bankAccounts']"
@@ -119,7 +119,7 @@
 
                         @can('journal-entries.view')
                         <x-accounting::settings-row
-                            href="{{ route('settings.journal-entries.index') }}"
+                            href="{{ route('accounting.journal-entries.index') }}"
                             label="Journal Entries"
                             description="Manual GL postings & adjustments"
                             :count="$counts['journalEntries']"
@@ -135,7 +135,7 @@
                         @can('tax-codes.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.tax-codes.index') }}"
+                            href="{{ route('accounting.tax-codes.index') }}"
                             label="Tax Codes"
                             description="Define VAT, Sales Tax & other taxes"
                             :count="$counts['taxCodes']"
@@ -151,7 +151,7 @@
                         @can('tax-rates.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.tax-rates.index') }}"
+                            href="{{ route('accounting.tax-rates.index') }}"
                             label="Tax Rates"
                             description="Percentage rates for tax codes"
                             :count="$counts['taxRates']"
@@ -167,7 +167,7 @@
                         @can('reconciliations.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reconciliations.index') }}"
+                            href="{{ route('accounting.reconciliations.index') }}"
                             label="Reconciliations"
                             description="Bank & account reconciliation"
                             :count="$counts['reconciliations']"
@@ -183,7 +183,7 @@
                         @can('account-balance-snapshots.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.account-balance-snapshots.index') }}"
+                            href="{{ route('accounting.account-balance-snapshots.index') }}"
                             label="Balance Snapshots"
                             description="Point-in-time account balance records"
                             :count="$counts['balanceSnapshots']"
@@ -199,7 +199,7 @@
                         @can('audit-logs.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.audit-logs.index') }}"
+                            href="{{ route('accounting.audit-logs.index') }}"
                             label="Audit Logs"
                             description="Full audit trail of accounting changes"
                             icon-bg="bg-slate-500">
@@ -221,7 +221,7 @@
 
                         @can('reports.general-ledger.view')
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.general-ledger') }}"
+                            href="{{ route('accounting.reports.general-ledger') }}"
                             label="General Ledger"
                             description="Full transaction history by account"
                             icon-bg="bg-blue-700">
@@ -236,7 +236,7 @@
                         @can('reports.trial-balance.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.trial-balance') }}"
+                            href="{{ route('accounting.reports.trial-balance') }}"
                             label="Trial Balance"
                             description="Debit & credit totals for all accounts"
                             icon-bg="bg-indigo-500">
@@ -251,7 +251,7 @@
                         @can('reports.account-balances.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.account-balances') }}"
+                            href="{{ route('accounting.reports.account-balances') }}"
                             label="Account Balances"
                             description="Running balances for all accounts"
                             icon-bg="bg-green-500">
@@ -266,7 +266,7 @@
                         @can('reports.balance-sheet.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.balance-sheet') }}"
+                            href="{{ route('accounting.reports.balance-sheet') }}"
                             label="Balance Sheet"
                             description="Assets, liabilities & equity snapshot"
                             icon-bg="bg-violet-600">
@@ -281,7 +281,7 @@
                         @can('reports.income-statement.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.income-statement') }}"
+                            href="{{ route('accounting.reports.income-statement') }}"
                             label="Income Statement"
                             description="Revenue, expenses & net profit"
                             icon-bg="bg-emerald-600">
@@ -296,7 +296,7 @@
                         @can('reports.cash-flow.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.cash-flow') }}"
+                            href="{{ route('accounting.reports.cash-flow') }}"
                             label="Cash Flow"
                             description="Cash inflows & outflows summary"
                             icon-bg="bg-teal-500">
@@ -311,7 +311,7 @@
                         @can('reports.bank-book.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.bank-book') }}"
+                            href="{{ route('accounting.reports.bank-book') }}"
                             label="Bank Book"
                             description="All bank account transactions"
                             icon-bg="bg-sky-500">
@@ -326,7 +326,7 @@
                         @can('reports.cash-book.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.cash-book') }}"
+                            href="{{ route('accounting.reports.cash-book') }}"
                             label="Cash Book"
                             description="All cash account transactions"
                             icon-bg="bg-lime-600">
@@ -341,7 +341,7 @@
                         @can('reports.aged-receivables.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.aged-receivables') }}"
+                            href="{{ route('accounting.reports.aged-receivables') }}"
                             label="Aged Receivables"
                             description="Outstanding customer invoices by age"
                             icon-bg="bg-amber-500">
@@ -356,7 +356,7 @@
                         @can('reports.aged-payables.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row
-                            href="{{ route('settings.reports.aged-payables') }}"
+                            href="{{ route('accounting.reports.aged-payables') }}"
                             label="Aged Payables"
                             description="Outstanding supplier invoices by age"
                             icon-bg="bg-red-600">

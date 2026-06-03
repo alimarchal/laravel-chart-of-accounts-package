@@ -1,8 +1,10 @@
 <?php
 
 return [
-    'route_prefix' => env('ACCOUNTING_ROUTE_PREFIX', 'settings'),
-    'route_name_prefix' => env('ACCOUNTING_ROUTE_NAME_PREFIX', 'settings'),
+    'route_prefix' => env('ACCOUNTING_ROUTE_PREFIX', 'accounting'),
+    'route_name_prefix' => env('ACCOUNTING_ROUTE_NAME_PREFIX', 'accounting'),
+    'settings_route_prefix' => env('SETTINGS_ROUTE_PREFIX', 'settings'),
+    'settings_route_name_prefix' => env('SETTINGS_ROUTE_NAME_PREFIX', 'settings'),
     'ui_driver' => env('ACCOUNTING_UI_DRIVER', 'inertia'), // 'inertia' or 'blade'
     'api_prefix' => env('ACCOUNTING_API_PREFIX', 'api/v1/accounting'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
@@ -78,6 +80,7 @@ return [
         'reports.aged-receivables.view',
         'reports.aged-payables.view',
         'reports.account-statement.view',
+        'reports.account-balances.view',
         'reports.bank-book.view',
         'reports.cash-book.view',
         'audit-logs.view',
@@ -116,6 +119,7 @@ return [
             'reports.aged-receivables.view',
             'reports.aged-payables.view',
             'reports.account-statement.view',
+            'reports.account-balances.view',
             'reports.bank-book.view',
             'reports.cash-book.view',
             'audit-logs.view',
@@ -133,6 +137,7 @@ return [
             'reports.trial-balance.view',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
+            'reports.account-balances.view',
         ],
         'viewer' => [
             'accounting.view',
@@ -149,6 +154,7 @@ return [
             'reports.aged-receivables.view',
             'reports.aged-payables.view',
             'reports.account-statement.view',
+            'reports.account-balances.view',
             'reports.bank-book.view',
             'reports.cash-book.view',
         ],
