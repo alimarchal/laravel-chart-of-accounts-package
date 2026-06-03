@@ -42,7 +42,7 @@ class CurrencyBladeController extends Controller
 
         Currency::query()->create($validated);
 
-        return to_route('accounting.currencies.index')->with('success', 'Currency created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.currencies.index')->with('success', 'Currency created.');
     }
 
     public function show(Currency $record): View
@@ -62,14 +62,14 @@ class CurrencyBladeController extends Controller
 
         $record->update($validated);
 
-        return to_route('accounting.currencies.index')->with('success', 'Currency updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.currencies.index')->with('success', 'Currency updated.');
     }
 
     public function destroy(Currency $record): RedirectResponse
     {
         $record->delete();
 
-        return to_route('accounting.currencies.index')->with('success', 'Currency deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.currencies.index')->with('success', 'Currency deleted.');
     }
 
     /** @return array<string, mixed> */

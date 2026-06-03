@@ -61,7 +61,7 @@ abstract class SimpleAccountingResourceController extends Controller
             'fields' => $this->fields(),
             'record' => null,
             'method' => 'post',
-            'action' => route('accounting.'.$this->routeName().'.store'),
+            'action' => route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.store'),
         ]);
     }
 
@@ -74,7 +74,7 @@ abstract class SimpleAccountingResourceController extends Controller
 
         $record = $model::query()->create($request->validate($this->rules()));
 
-        return to_route('accounting.'.$this->routeName().'.index')
+        return to_route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.index')
             ->with('success', $this->title().' created: '.$record->getKey());
     }
 
@@ -88,7 +88,7 @@ abstract class SimpleAccountingResourceController extends Controller
             'fields' => $this->fields(),
             'record' => $record,
             'method' => 'put',
-            'action' => route('accounting.'.$this->routeName().'.update', $record),
+            'action' => route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.update', $record),
         ]);
     }
 
@@ -112,7 +112,7 @@ abstract class SimpleAccountingResourceController extends Controller
 
         $record->update($request->validate($this->rules($record)));
 
-        return to_route('accounting.'.$this->routeName().'.index')
+        return to_route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.index')
             ->with('success', $this->title().' updated: '.$record->getKey());
     }
 
@@ -121,7 +121,7 @@ abstract class SimpleAccountingResourceController extends Controller
         $record = $this->findRecord($record);
         $record->delete();
 
-        return to_route('accounting.'.$this->routeName().'.index')
+        return to_route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.index')
             ->with('success', $this->title().' deleted: '.$record->getKey());
     }
 

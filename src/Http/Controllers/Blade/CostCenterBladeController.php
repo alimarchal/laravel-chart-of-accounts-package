@@ -43,7 +43,7 @@ class CostCenterBladeController extends Controller
 
         CostCenter::query()->create($validated);
 
-        return to_route('accounting.cost-centers.index')->with('success', 'Cost center created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.cost-centers.index')->with('success', 'Cost center created.');
     }
 
     public function show(CostCenter $record): View
@@ -63,14 +63,14 @@ class CostCenterBladeController extends Controller
 
         $record->update($validated);
 
-        return to_route('accounting.cost-centers.index')->with('success', 'Cost center updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.cost-centers.index')->with('success', 'Cost center updated.');
     }
 
     public function destroy(CostCenter $record): RedirectResponse
     {
         $record->delete();
 
-        return to_route('accounting.cost-centers.index')->with('success', 'Cost center deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.cost-centers.index')->with('success', 'Cost center deleted.');
     }
 
     /** @return array<string, mixed> */

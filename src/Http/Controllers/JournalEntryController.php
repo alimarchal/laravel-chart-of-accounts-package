@@ -49,7 +49,7 @@ class JournalEntryController extends Controller
     public function create(): Response
     {
         return Inertia::render('accounting/journal-entries/form', [
-            'action' => route('accounting.journal-entries.store'),
+            'action' => route(config('accounting.route_name_prefix', 'settings').'.journal-entries.store'),
             'method' => 'post',
             'title' => 'Create Journal Entry',
             'entry' => null,
@@ -73,12 +73,12 @@ class JournalEntryController extends Controller
     public function edit(JournalEntry $journalEntry): Response|RedirectResponse
     {
         if ($journalEntry->status !== 'draft') {
-            return to_route('accounting.journal-entries.show', $journalEntry)
+            return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $journalEntry)
                 ->with('error', 'Only draft journal entries can be edited.');
         }
 
         return Inertia::render('accounting/journal-entries/form', [
-            'action' => route('accounting.journal-entries.update', $journalEntry),
+            'action' => route(config('accounting.route_name_prefix', 'settings').'.journal-entries.update', $journalEntry),
             'method' => 'put',
             'title' => 'Edit Journal Entry',
             'entry' => $journalEntry->load('lines'),
@@ -110,7 +110,7 @@ class JournalEntryController extends Controller
     {
         $entry = $service->create($request->validated());
 
-        return to_route('accounting.journal-entries.show', $entry)->with('success', 'Journal entry created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $entry)->with('success', 'Journal entry created.');
     }
 
     public function update(UpdateJournalEntryRequest $request, JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse
@@ -118,10 +118,10 @@ class JournalEntryController extends Controller
         try {
             $entry = $service->updateDraft($journalEntry, $request->validated());
         } catch (\DomainException $exception) {
-            return to_route('accounting.journal-entries.show', $journalEntry)->with('error', $exception->getMessage());
+            return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $journalEntry)->with('error', $exception->getMessage());
         }
 
-        return to_route('accounting.journal-entries.show', $entry)->with('success', 'Journal entry updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $entry)->with('success', 'Journal entry updated.');
     }
 
     public function post(JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse

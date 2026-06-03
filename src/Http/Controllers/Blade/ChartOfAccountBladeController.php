@@ -48,7 +48,7 @@ class ChartOfAccountBladeController extends Controller
         $this->normalizeBooleans($request);
         ChartOfAccount::query()->create($request->validate($this->rules()));
 
-        return to_route('accounting.chart-of-accounts.index')->with('success', 'Account created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account created.');
     }
 
     public function show(ChartOfAccount $chartOfAccount): View
@@ -69,7 +69,7 @@ class ChartOfAccountBladeController extends Controller
         $this->normalizeBooleans($request);
         $chartOfAccount->update($request->validate($this->rules($chartOfAccount)));
 
-        return to_route('accounting.chart-of-accounts.index')->with('success', 'Account updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account updated.');
     }
 
     public function destroy(ChartOfAccount $chartOfAccount): RedirectResponse
@@ -79,7 +79,7 @@ class ChartOfAccountBladeController extends Controller
         }
         $chartOfAccount->delete();
 
-        return to_route('accounting.chart-of-accounts.index')->with('success', 'Account deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account deleted.');
     }
 
     public function tree(): View

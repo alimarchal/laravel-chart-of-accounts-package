@@ -67,6 +67,6 @@ class ReconciliationController extends SimpleAccountingResourceController
 
         $matcher->reconcile($reconciliation, $validated['line_ids']);
 
-        return to_route('accounting.reconciliations.show', $reconciliation)->with('success', 'Reconciliation lines matched.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.reconciliations.show', $reconciliation)->with('success', 'Reconciliation lines matched.');
     }
 }

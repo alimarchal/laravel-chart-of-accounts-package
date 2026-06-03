@@ -48,7 +48,7 @@ class AccountingPeriodBladeController extends Controller
 
         AccountingPeriod::query()->create($validated);
 
-        return to_route('accounting.periods.index')->with('success', 'Accounting period created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.periods.index')->with('success', 'Accounting period created.');
     }
 
     public function show(AccountingPeriod $period): View
@@ -78,13 +78,13 @@ class AccountingPeriodBladeController extends Controller
 
         $period->update($validated);
 
-        return to_route('accounting.periods.index')->with('success', 'Accounting period updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.periods.index')->with('success', 'Accounting period updated.');
     }
 
     public function destroy(AccountingPeriod $period): RedirectResponse
     {
         $period->delete();
 
-        return to_route('accounting.periods.index')->with('success', 'Accounting period deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.periods.index')->with('success', 'Accounting period deleted.');
     }
 }

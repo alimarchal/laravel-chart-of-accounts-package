@@ -44,7 +44,7 @@ class ReconciliationBladeController extends Controller
 
         Reconciliation::query()->create($validated);
 
-        return to_route('accounting.reconciliations.index')->with('success', 'Reconciliation created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.reconciliations.index')->with('success', 'Reconciliation created.');
     }
 
     public function show(Reconciliation $record): View
@@ -68,14 +68,14 @@ class ReconciliationBladeController extends Controller
 
         $record->update($validated);
 
-        return to_route('accounting.reconciliations.index')->with('success', 'Reconciliation updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.reconciliations.index')->with('success', 'Reconciliation updated.');
     }
 
     public function destroy(Reconciliation $record): RedirectResponse
     {
         $record->delete();
 
-        return to_route('accounting.reconciliations.index')->with('success', 'Reconciliation deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.reconciliations.index')->with('success', 'Reconciliation deleted.');
     }
 
     /** @return array<string, mixed> */

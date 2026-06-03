@@ -41,7 +41,7 @@ class BankAccountBladeController extends Controller
 
         BankAccount::query()->create($validated);
 
-        return to_route('accounting.bank-accounts.index')->with('success', 'Bank account created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.bank-accounts.index')->with('success', 'Bank account created.');
     }
 
     public function show(BankAccount $record): View
@@ -61,14 +61,14 @@ class BankAccountBladeController extends Controller
 
         $record->update($validated);
 
-        return to_route('accounting.bank-accounts.index')->with('success', 'Bank account updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.bank-accounts.index')->with('success', 'Bank account updated.');
     }
 
     public function destroy(BankAccount $record): RedirectResponse
     {
         $record->delete();
 
-        return to_route('accounting.bank-accounts.index')->with('success', 'Bank account deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.bank-accounts.index')->with('success', 'Bank account deleted.');
     }
 
     /** @return array<string, mixed> */

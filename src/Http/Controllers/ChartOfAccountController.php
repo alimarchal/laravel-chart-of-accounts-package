@@ -43,7 +43,7 @@ class ChartOfAccountController extends Controller
     {
         return Inertia::render('accounting/chart-of-accounts/form', $this->formPayload(
             title: 'Create Account',
-            action: route('accounting.chart-of-accounts.store'),
+            action: route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.store'),
             method: 'post'
         ));
     }
@@ -54,14 +54,14 @@ class ChartOfAccountController extends Controller
 
         ChartOfAccount::query()->create($request->validate($this->rules()));
 
-        return to_route('accounting.chart-of-accounts.index')->with('success', 'Account created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account created.');
     }
 
     public function edit(ChartOfAccount $chartOfAccount): Response
     {
         return Inertia::render('accounting/chart-of-accounts/form', $this->formPayload(
             title: 'Edit Account',
-            action: route('accounting.chart-of-accounts.update', $chartOfAccount),
+            action: route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.update', $chartOfAccount),
             method: 'put',
             record: $chartOfAccount
         ));
@@ -73,7 +73,7 @@ class ChartOfAccountController extends Controller
 
         $chartOfAccount->update($request->validate($this->rules($chartOfAccount)));
 
-        return to_route('accounting.chart-of-accounts.index')->with('success', 'Account updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account updated.');
     }
 
     public function destroy(ChartOfAccount $chartOfAccount): RedirectResponse
@@ -84,7 +84,7 @@ class ChartOfAccountController extends Controller
 
         $chartOfAccount->delete();
 
-        return to_route('accounting.chart-of-accounts.index')->with('success', 'Account deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account deleted.');
     }
 
     public function tree(): Response

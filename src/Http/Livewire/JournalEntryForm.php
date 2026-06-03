@@ -114,7 +114,7 @@ class JournalEntryForm extends Component
             session()->flash('success', 'Journal entry created.');
         }
 
-        $this->redirect(route('accounting.journal-entries.show', $entry));
+        $this->redirect(route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $entry));
     }
 
     public function render(): View

@@ -44,7 +44,7 @@ class TaxRateBladeController extends Controller
 
         TaxRate::query()->create($validated);
 
-        return to_route('accounting.tax-rates.index')->with('success', 'Tax rate created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.tax-rates.index')->with('success', 'Tax rate created.');
     }
 
     public function show(TaxRate $record): View
@@ -69,14 +69,14 @@ class TaxRateBladeController extends Controller
 
         $record->update($validated);
 
-        return to_route('accounting.tax-rates.index')->with('success', 'Tax rate updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.tax-rates.index')->with('success', 'Tax rate updated.');
     }
 
     public function destroy(TaxRate $record): RedirectResponse
     {
         $record->delete();
 
-        return to_route('accounting.tax-rates.index')->with('success', 'Tax rate deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.tax-rates.index')->with('success', 'Tax rate deleted.');
     }
 
     /** @return array<string, mixed> */

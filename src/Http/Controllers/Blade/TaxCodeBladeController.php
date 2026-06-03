@@ -42,7 +42,7 @@ class TaxCodeBladeController extends Controller
 
         TaxCode::query()->create($validated);
 
-        return to_route('accounting.tax-codes.index')->with('success', 'Tax code created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.tax-codes.index')->with('success', 'Tax code created.');
     }
 
     public function show(TaxCode $record): View
@@ -62,14 +62,14 @@ class TaxCodeBladeController extends Controller
 
         $record->update($validated);
 
-        return to_route('accounting.tax-codes.index')->with('success', 'Tax code updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.tax-codes.index')->with('success', 'Tax code updated.');
     }
 
     public function destroy(TaxCode $record): RedirectResponse
     {
         $record->delete();
 
-        return to_route('accounting.tax-codes.index')->with('success', 'Tax code deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.tax-codes.index')->with('success', 'Tax code deleted.');
     }
 
     /** @return array<string, mixed> */

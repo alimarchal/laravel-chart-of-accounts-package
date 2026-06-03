@@ -41,7 +41,7 @@ class AccountTypeBladeController extends Controller
 
         AccountType::query()->create($validated);
 
-        return to_route('accounting.account-types.index')->with('success', 'Account type created.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.account-types.index')->with('success', 'Account type created.');
     }
 
     public function show(AccountType $record): View
@@ -60,14 +60,14 @@ class AccountTypeBladeController extends Controller
 
         $record->update($validated);
 
-        return to_route('accounting.account-types.index')->with('success', 'Account type updated.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.account-types.index')->with('success', 'Account type updated.');
     }
 
     public function destroy(AccountType $record): RedirectResponse
     {
         $record->delete();
 
-        return to_route('accounting.account-types.index')->with('success', 'Account type deleted.');
+        return to_route(config('accounting.route_name_prefix', 'settings').'.account-types.index')->with('success', 'Account type deleted.');
     }
 
     /** @return array<string, mixed> */
