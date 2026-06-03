@@ -2,7 +2,6 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Database\Factories;
 
-use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,7 +18,16 @@ class ChartOfAccountFactory extends Factory
         return [
             'parent_id' => null,
             'account_type_id' => AccountTypeFactory::new(),
-            'currency_id' => CurrencyFactory::new()->base(),
+            'currency_id' => fn () => Currency::firstOrCreate(
+                ['code' => 'PKR'],
+                [
+                    'name' => 'Pakistani Rupee',
+                    'symbol' => '₨',
+                    'exchange_rate_to_base' => 1.0,
+                    'is_base' => true,
+                    'is_active' => true,
+                ]
+            ),
             'account_code' => fake()->unique()->numerify('####'),
             'account_name' => fake()->words(3, true),
             'normal_balance' => fake()->randomElement(['debit', 'credit']),

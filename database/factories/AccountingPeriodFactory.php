@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Database\Factories;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,7 +17,7 @@ class AccountingPeriodFactory extends Factory
     {
         $year = fake()->numberBetween(2023, 2026);
         $month = fake()->numberBetween(1, 12);
-        $start = \Carbon\Carbon::create($year, $month, 1);
+        $start = Carbon::create($year, $month, 1);
         $end = $start->copy()->endOfMonth();
 
         return [

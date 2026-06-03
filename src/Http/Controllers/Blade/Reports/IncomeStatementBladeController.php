@@ -3,8 +3,8 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Reports\IncomeStatementReport;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 
 class IncomeStatementBladeController extends Controller

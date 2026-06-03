@@ -5,9 +5,9 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -31,7 +31,7 @@ class ChartOfAccountBladeController extends Controller
             ->withQueryString();
 
         return view('accounting::chart-of-accounts.index', [
-            'accounts' => $accounts,
+            'chartOfAccounts' => $accounts,
             'filters' => request()->input('filter', []),
             'accountTypes' => AccountType::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'currencies' => Currency::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),

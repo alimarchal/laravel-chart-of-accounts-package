@@ -2,8 +2,6 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Database\Factories;
 
-use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
-use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

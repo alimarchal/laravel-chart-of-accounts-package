@@ -3,7 +3,6 @@
 namespace Alimarchal\LaravelChartOfAccounts\Database\Factories;
 
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
-use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

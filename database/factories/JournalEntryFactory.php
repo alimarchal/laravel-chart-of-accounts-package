@@ -18,7 +18,7 @@ class JournalEntryFactory extends Factory
         return [
             'entry_date' => fake()->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
             'accounting_period_id' => null,
-            'currency_id' => CurrencyFactory::new()->base(),
+            'currency_id' => fn () => Currency::firstOrCreate(['code' => 'PKR'], ['name' => 'Pakistani Rupee', 'symbol' => '₨', 'exchange_rate_to_base' => 1.0, 'is_base' => true, 'is_active' => true]),
             'fx_rate_to_base' => 1.0,
             'reference' => strtoupper(fake()->lexify('JNL-??????')),
             'description' => fake()->sentence(),
