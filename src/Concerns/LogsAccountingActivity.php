@@ -2,7 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Concerns;
 
-use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Activitylog\LogOptions;
 
 trait LogsAccountingActivity
 {
