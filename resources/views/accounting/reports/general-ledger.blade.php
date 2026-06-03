@@ -39,7 +39,7 @@
             <div class="xl:col-span-2">
                 <x-accounting::label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2"
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Dates)</option>
                     @foreach($accountingPeriods as $period)
@@ -66,7 +66,7 @@
             <div>
                 <x-accounting::label for="filter_account_code" value="Account Code" />
                 <select id="filter_account_code" name="filter[account_code]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                         <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->account_code ? 'selected' : '' }}>
@@ -79,7 +79,7 @@
             <div>
                 <x-accounting::label for="filter_account_name" value="Account Name" />
                 <select id="filter_account_name" name="filter[account_name]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                         <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->account_name ? 'selected' : '' }}>
@@ -98,7 +98,7 @@
             <div>
                 <x-accounting::label for="filter_cost_center_code" value="Cost Center" />
                 <select id="filter_cost_center_code" name="filter[cost_center_code]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                         <option value="{{ $cc->code }}" {{ request('filter.cost_center_code') === $cc->code ? 'selected' : '' }}>
@@ -111,7 +111,7 @@
             <div>
                 <x-accounting::label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All</option>
                     @foreach ($statusOptions as $value => $label)
                         <option value="{{ $value }}" {{ request('filter.status') === $value ? 'selected' : '' }}>
@@ -148,7 +148,7 @@
             <div>
                 <x-accounting::label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="entry_date" {{ request('sort', 'entry_date') == 'entry_date' ? 'selected' : '' }}>Date (Oldest)</option>
                     <option value="-entry_date" {{ request('sort') == '-entry_date' ? 'selected' : '' }}>Date (Newest)</option>
                     <option value="account_code" {{ request('sort') == 'account_code' ? 'selected' : '' }}>Account Code (A-Z)</option>
@@ -162,18 +162,13 @@
             <div>
                 <x-accounting::label for="per_page" value="Per Page" />
                 <select id="per_page" name="per_page"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                     <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
                     <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
                     <option value="100" {{ request('per_page', 100) == 100 ? 'selected' : '' }}>100</option>
                     <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
                 </select>
-            </div>
-
-            <div class="flex items-end gap-2">
-                <x-accounting::submit-button label="Filter" />
-                <x-accounting::reset-button :href="route('accounting.reports.general-ledger')" />
             </div>
         </div>
     </x-accounting::filter-section>
@@ -183,17 +178,17 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-600">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Total Entries</p>
-                <p class="text-2xl font-bold text-gray-900">{{ number_format($entries->total()) }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ number_format($totals->total_entries ?? 0) }}</p>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-600">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Total Debits</p>
-                <p class="text-2xl font-bold font-mono text-green-700">{{ number_format($entries->sum('debit'), 2) }}</p>
+                <p class="text-2xl font-bold font-mono text-green-700">{{ number_format($totals->total_debits ?? 0, 2) }}</p>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-600">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Total Credits</p>
-                <p class="text-2xl font-bold font-mono text-red-700">{{ number_format($entries->sum('credit'), 2) }}</p>
+                <p class="text-2xl font-bold font-mono text-red-700">{{ number_format($totals->total_credits ?? 0, 2) }}</p>
             </div>
-            @php $netDifference = $entries->sum('debit') - $entries->sum('credit'); @endphp
+            @php $netDifference = ($totals->total_debits ?? 0) - ($totals->total_credits ?? 0); @endphp
             <div class="bg-white rounded-lg shadow p-4 border-l-4 {{ abs($netDifference) < 0.01 ? 'border-emerald-600' : 'border-yellow-500' }}">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Net Difference</p>
                 <p class="text-2xl font-bold font-mono {{ abs($netDifference) < 0.01 ? 'text-emerald-700' : 'text-yellow-600' }}">

@@ -113,6 +113,11 @@ class GeneralLedgerBladeController extends Controller
 
         $entries = $query->paginate($perPage)->withQueryString();
 
+        $totals = DB::query()
+            ->fromSub(clone $query, 'gl')
+            ->selectRaw('COUNT(*) as total_entries, SUM(debit) as total_debits, SUM(credit) as total_credits')
+            ->first();
+
         $accounts = DB::table('accounting_chart_of_accounts')
             ->whereNotNull('account_code')
             ->orderBy('account_code')
@@ -129,6 +134,7 @@ class GeneralLedgerBladeController extends Controller
 
         return view('accounting::reports.general-ledger', compact(
             'entries',
+            'totals',
             'accounts',
             'costCenters',
             'accountingPeriods',

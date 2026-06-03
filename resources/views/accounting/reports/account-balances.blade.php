@@ -39,7 +39,7 @@
             <div class="xl:col-span-2">
                 <x-accounting::label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2"
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Date)</option>
                     @foreach($accountingPeriods as $period)
@@ -59,7 +59,7 @@
             <div>
                 <x-accounting::label for="filter_account_code" value="Account Code" />
                 <select id="filter_account_code" name="filter[account_code]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                         <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->account_code ? 'selected' : '' }}>
@@ -72,7 +72,7 @@
             <div>
                 <x-accounting::label for="filter_account_name" value="Account Name" />
                 <select id="filter_account_name" name="filter[account_name]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                         <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->account_name ? 'selected' : '' }}>
@@ -85,7 +85,7 @@
             <div>
                 <x-accounting::label for="filter_account_type" value="Account Type" />
                 <select id="filter_account_type" name="filter[account_type]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Types</option>
                     @foreach($accountTypes as $type)
                         <option value="{{ $type }}" {{ request('filter.account_type') === $type ? 'selected' : '' }}>
@@ -98,7 +98,7 @@
             <div>
                 <x-accounting::label for="filter_normal_balance" value="Normal Balance" />
                 <select id="filter_normal_balance" name="filter[normal_balance]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All</option>
                     <option value="debit" {{ request('filter.normal_balance') === 'debit' ? 'selected' : '' }}>Debit</option>
                     <option value="credit" {{ request('filter.normal_balance') === 'credit' ? 'selected' : '' }}>Credit</option>
@@ -108,7 +108,7 @@
             <div>
                 <x-accounting::label for="filter_is_active" value="Active Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All</option>
                     <option value="true" {{ request('filter.is_active') === 'true' ? 'selected' : '' }}>Active</option>
                     <option value="false" {{ request('filter.is_active') === 'false' ? 'selected' : '' }}>Inactive</option>
@@ -118,7 +118,7 @@
             <div>
                 <x-accounting::label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="account_code" {{ request('sort', 'account_code') == 'account_code' ? 'selected' : '' }}>Account Code (A-Z)</option>
                     <option value="-account_code" {{ request('sort') == '-account_code' ? 'selected' : '' }}>Account Code (Z-A)</option>
                     <option value="account_name" {{ request('sort') == 'account_name' ? 'selected' : '' }}>Account Name (A-Z)</option>
@@ -132,18 +132,13 @@
             <div>
                 <x-accounting::label for="per_page" value="Per Page" />
                 <select id="per_page" name="per_page"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                     <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
                     <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
                     <option value="100" {{ request('per_page', 100) == 100 ? 'selected' : '' }}>100</option>
                     <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
                 </select>
-            </div>
-
-            <div class="flex items-end gap-2">
-                <x-accounting::submit-button label="Filter" />
-                <x-accounting::reset-button :href="route('accounting.reports.account-balances')" />
             </div>
         </div>
     </x-accounting::filter-section>
@@ -153,24 +148,24 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-600">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Total Accounts</p>
-                <p class="text-2xl font-bold text-gray-900">{{ number_format($balances->total()) }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ number_format($totals->total_accounts ?? 0) }}</p>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-600">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Total Debits</p>
                 <p class="text-2xl font-bold tabular-nums text-green-700">
-                    {{ number_format($balances->sum('total_debits'), 2) }}
+                    {{ number_format($totals->total_debits ?? 0, 2) }}
                 </p>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-600">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Total Credits</p>
                 <p class="text-2xl font-bold tabular-nums text-red-700">
-                    {{ number_format($balances->sum('total_credits'), 2) }}
+                    {{ number_format($totals->total_credits ?? 0, 2) }}
                 </p>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-600">
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Net Balance</p>
                 <p class="text-2xl font-bold tabular-nums text-gray-900">
-                    {{ number_format($balances->sum('balance'), 2) }}
+                    {{ number_format($totals->net_balance ?? 0, 2) }}
                 </p>
             </div>
         </div>

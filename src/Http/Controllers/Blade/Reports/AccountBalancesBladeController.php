@@ -99,6 +99,11 @@ class AccountBalancesBladeController extends Controller
 
         $balances = $balancesQuery->paginate($perPage)->withQueryString();
 
+        $totals = DB::query()
+            ->fromSub(clone $balancesQuery, 'ab')
+            ->selectRaw('COUNT(*) as total_accounts, SUM(total_debits) as total_debits, SUM(total_credits) as total_credits, SUM(balance) as net_balance')
+            ->first();
+
         $accountTypes = DB::table('accounting_account_types')
             ->orderBy('name')
             ->pluck('name');
@@ -112,6 +117,7 @@ class AccountBalancesBladeController extends Controller
 
         return view('accounting::reports.account-balances', compact(
             'balances',
+            'totals',
             'accountTypes',
             'accounts',
             'accountingPeriods',
