@@ -5,7 +5,7 @@
 
     <div class="py-6 bg-[#F2F1F5] min-h-full">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <x-accounting::status-message class="mb-4" />
+            <x-accounting::status-message class="mb-4 mt-4 shadow-md" />
 
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
 

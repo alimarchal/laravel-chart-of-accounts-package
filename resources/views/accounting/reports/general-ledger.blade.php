@@ -199,7 +199,7 @@
     </div>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
-        <x-accounting::status-message class="mb-4" />
+        <x-accounting::status-message class="mb-4 mt-4 shadow-md" />
         <div class="bg-white overflow-hidden pt-4 pb-4 pl-0 pr-0 shadow-xl sm:rounded-lg mb-4 print:shadow-none">
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-2">

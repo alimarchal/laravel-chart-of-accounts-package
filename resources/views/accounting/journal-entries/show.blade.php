@@ -32,7 +32,7 @@
         </div>
     </x-slot>
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <x-accounting::status-message class="mb-4" />
+        <x-accounting::status-message class="mb-4 mt-4 shadow-md" />
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mb-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div><x-accounting::label value="Date" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="$journalEntry->entry_date->format('Y-m-d')" disabled readonly /></div>
