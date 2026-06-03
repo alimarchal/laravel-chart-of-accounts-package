@@ -11,6 +11,9 @@ class BankAccount extends AccountingModel
 {
     /** @use HasFactory<BankAccountFactory> */
     use HasFactory;
+
+    protected $table = 'accounting_bank_accounts';
+
     use SoftDeletes;
 
     protected static string $factory = BankAccountFactory::class;

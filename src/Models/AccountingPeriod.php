@@ -12,6 +12,8 @@ class AccountingPeriod extends AccountingModel
     /** @use HasFactory<AccountingPeriodFactory> */
     use HasFactory;
 
+    protected $table = 'accounting_periods';
+
     protected static string $factory = AccountingPeriodFactory::class;
 
     protected $fillable = [

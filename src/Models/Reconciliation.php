@@ -12,6 +12,8 @@ class Reconciliation extends AccountingModel
     /** @use HasFactory<ReconciliationFactory> */
     use HasFactory;
 
+    protected $table = 'accounting_reconciliations';
+
     protected static string $factory = ReconciliationFactory::class;
 
     protected $fillable = [

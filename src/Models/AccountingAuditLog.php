@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -38,6 +39,6 @@ class AccountingAuditLog extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', \App\Models\User::class));
+        return $this->belongsTo(config('auth.providers.users.model', User::class));
     }
 }

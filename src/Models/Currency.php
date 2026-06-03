@@ -11,6 +11,8 @@ class Currency extends AccountingModel
     /** @use HasFactory<CurrencyFactory> */
     use HasFactory;
 
+    protected $table = 'accounting_currencies';
+
     protected static string $factory = CurrencyFactory::class;
 
     protected $fillable = [

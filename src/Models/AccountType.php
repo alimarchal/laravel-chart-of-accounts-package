@@ -11,6 +11,8 @@ class AccountType extends AccountingModel
     /** @use HasFactory<AccountTypeFactory> */
     use HasFactory;
 
+    protected $table = 'accounting_account_types';
+
     protected static string $factory = AccountTypeFactory::class;
 
     protected $fillable = [

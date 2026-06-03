@@ -12,6 +12,8 @@ class ChartOfAccount extends AccountingModel
     /** @use HasFactory<ChartOfAccountFactory> */
     use HasFactory;
 
+    protected $table = 'accounting_chart_of_accounts';
+
     protected static string $factory = ChartOfAccountFactory::class;
 
     protected $fillable = [

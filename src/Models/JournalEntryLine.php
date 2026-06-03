@@ -12,6 +12,8 @@ class JournalEntryLine extends Model
     /** @use HasFactory<JournalEntryLineFactory> */
     use HasFactory;
 
+    protected $table = 'accounting_journal_entry_lines';
+
     protected static string $factory = JournalEntryLineFactory::class;
 
     protected $fillable = [

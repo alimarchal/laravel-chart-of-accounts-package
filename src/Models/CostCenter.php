@@ -12,6 +12,8 @@ class CostCenter extends AccountingModel
     /** @use HasFactory<CostCenterFactory> */
     use HasFactory;
 
+    protected $table = 'accounting_cost_centers';
+
     protected static string $factory = CostCenterFactory::class;
 
     protected $fillable = [
