@@ -17,7 +17,7 @@ A comprehensive **Chart of Accounts** and full double-entry **Accounting module*
 - ✅ **Bank Reconciliation** with automated matching
 - ✅ **Dual Frontend**: Inertia/React (default) or Blade/Livewire
 - ✅ **Full REST API** with JSON resources
-- ✅ **9 Artisan Commands** for install, seed, sync, verify, health check
+- ✅ **10 Artisan Commands** for install, update, seed, sync, verify, health check, and period management
 - ✅ **Spatie Permission** integration for role-based access control
 - ✅ **Accounting Periods** with open/close/fiscal year workflow
 - ✅ **Cost Centers** and Tax Codes/Rates
@@ -40,7 +40,7 @@ Install via Composer:
 composer require alimarchal/laravel-chart-of-accounts
 ```
 
-Run the one-command installer (publishes migrations for this package **and** Spatie dependencies, runs them, seeds master data, and verifies):
+Run the one-command installer (publishes migrations, config, and views for this package **and** Spatie dependencies, runs them, seeds master data, and verifies):
 
 ```bash
 php artisan accounting:install
@@ -52,12 +52,14 @@ php artisan accounting:install
 **What `accounting:install` does automatically:**
 
 1. Publishes accounting migrations (`--tag=accounting-migrations`)
-2. Publishes `spatie/laravel-permission` migrations (if not already present)
-3. Publishes `spatie/laravel-activitylog` migrations (if not already present)
-4. Runs `php artisan migrate`
-5. Seeds all master data (account types, currencies, COA, permissions, tax codes, etc.)
-6. Syncs database objects (functions, procedures)
-7. Verifies the installation
+2. Publishes accounting config (`--tag=accounting-config`)
+3. Publishes accounting views (`--tag=accounting-views`)
+4. Publishes `spatie/laravel-permission` migrations (if not already present)
+5. Publishes `spatie/laravel-activitylog` migrations (if not already present)
+6. Runs `php artisan migrate`
+7. Seeds all master data (account types, currencies, COA, permissions, tax codes, etc.)
+8. Syncs database objects (functions, procedures)
+9. Verifies the installation
 
 **After installation — grant access to your admin user:**
 
@@ -82,15 +84,22 @@ Available roles: `super-admin` (all access), `admin`, `accountant`, `viewer`.
 
 > Without assigning a role, users will receive a **403 Unauthorized** when accessing accounting routes — this is intentional for security.
 
-**Manual step-by-step** (if you prefer):
+---
+
+## Upgrading
+
+After running `composer update` on this package, run:
 
 ```bash
-php artisan vendor:publish --tag=accounting-migrations
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
-php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-migrations"
-php artisan migrate
-php artisan accounting:seed
+php artisan accounting:update
 ```
+
+This command will:
+1. Re-publish views with `--force` to pick up any template changes
+2. Re-publish config with `--force` to add any new config keys
+3. Re-publish JS assets with `--force`
+4. Run any new migrations
+5. Sync database objects (views, triggers, procedures)
 
 ---
 
@@ -156,10 +165,10 @@ Install Livewire:
 composer require livewire/livewire
 ```
 
-Publish views:
+Views are published automatically by `accounting:install`. To re-publish manually:
 
 ```bash
-php artisan vendor:publish --tag=accounting-views
+php artisan vendor:publish --tag=accounting-views --force
 ```
 
 ---
@@ -168,7 +177,8 @@ php artisan vendor:publish --tag=accounting-views
 
 | Command | Description |
 |---------|-------------|
-| `accounting:install` | Run migrations, seed, sync DB objects, and verify |
+| `accounting:install` | Full setup: publish assets, run migrations, seed, sync DB objects, and verify |
+| `accounting:update` | Re-publish views/config/JS and sync DB objects after a package upgrade |
 | `accounting:seed` | Seed account types, currencies, chart of accounts, periods |
 | `accounting:sync-db-objects` | Sync database views, triggers, and stored procedures |
 | `accounting:verify` | Verify accounting data integrity |
