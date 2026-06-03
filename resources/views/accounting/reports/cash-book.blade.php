@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Cash Book" backRoute="settings.dashboard" :showSearch="true" :showRefresh="true" :createRoute="null" createLabel="" />
+        <x-accounting::page-header title="Cash Book" backRoute="accounting.dashboard" :showSearch="true" :showRefresh="true" :createRoute="null" createLabel="" />
     </x-slot>
 
     <div class="py-6">

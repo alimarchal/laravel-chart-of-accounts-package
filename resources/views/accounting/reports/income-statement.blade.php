@@ -2,7 +2,7 @@
     <x-slot name="header">
         <x-accounting::page-header
             title="Income Statement"
-            backRoute="settings.dashboard"
+            backRoute="accounting.dashboard"
             :showSearch="true"
             :showRefresh="true"
             :createRoute="null"

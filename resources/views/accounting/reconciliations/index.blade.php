@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Reconciliations" :createRoute="route('accounting.reconciliations.create')" createLabel="New Reconciliation" createPermission="reconciliations.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Reconciliations" :createRoute="route('accounting.reconciliations.create')" createLabel="New Reconciliation" createPermission="reconciliations.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.reconciliations.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

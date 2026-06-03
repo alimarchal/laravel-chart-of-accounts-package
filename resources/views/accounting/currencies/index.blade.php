@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Currencies" :createRoute="route('accounting.currencies.create')" createLabel="Add Currency" createPermission="currencies.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Currencies" :createRoute="route('accounting.currencies.create')" createLabel="Add Currency" createPermission="currencies.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.currencies.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

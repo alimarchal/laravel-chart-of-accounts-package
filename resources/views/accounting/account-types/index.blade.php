@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Account Types" :createRoute="route('accounting.account-types.create')" createLabel="Add Type" createPermission="account-types.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Account Types" :createRoute="route('accounting.account-types.create')" createLabel="Add Type" createPermission="account-types.create" backRoute="accounting.dashboard" />
     </x-slot>
 
     <x-accounting::filter-section :action="route('accounting.account-types.index')">

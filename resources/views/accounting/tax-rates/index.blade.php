@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Tax Rates" :createRoute="route('accounting.tax-rates.create')" createLabel="Add Tax Rate" createPermission="tax-rates.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Tax Rates" :createRoute="route('accounting.tax-rates.create')" createLabel="Add Tax Rate" createPermission="tax-rates.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.tax-rates.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

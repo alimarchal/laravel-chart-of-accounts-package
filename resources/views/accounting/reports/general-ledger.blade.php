@@ -2,7 +2,7 @@
     <x-slot name="header">
         <x-accounting::page-header
             title="General Ledger"
-            backRoute="settings.dashboard"
+            backRoute="accounting.dashboard"
             :showSearch="true"
             :showRefresh="true"
             :createRoute="null"

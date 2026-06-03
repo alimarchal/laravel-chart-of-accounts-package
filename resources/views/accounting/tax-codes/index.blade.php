@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Tax Codes" :createRoute="route('accounting.tax-codes.create')" createLabel="Add Tax Code" createPermission="tax-codes.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Tax Codes" :createRoute="route('accounting.tax-codes.create')" createLabel="Add Tax Code" createPermission="tax-codes.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.tax-codes.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

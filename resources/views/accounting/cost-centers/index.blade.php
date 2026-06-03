@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Cost Centers" :createRoute="route('accounting.cost-centers.create')" createLabel="Add Cost Center" createPermission="cost-centers.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Cost Centers" :createRoute="route('accounting.cost-centers.create')" createLabel="Add Cost Center" createPermission="cost-centers.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.cost-centers.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

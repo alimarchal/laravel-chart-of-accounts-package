@@ -7,7 +7,7 @@
             createPermission="periods.create"
             :showSearch="true"
             :showRefresh="true"
-            backRoute="settings.dashboard" />
+            backRoute="accounting.dashboard" />
     </x-slot>
 
     <x-accounting::filter-section :action="route('accounting.periods.index')">

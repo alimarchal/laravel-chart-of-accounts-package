@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Aged Receivables" backRoute="settings.dashboard" :showSearch="false" :showRefresh="true" :createRoute="null" createLabel="" />
+        <x-accounting::page-header title="Aged Receivables" backRoute="accounting.dashboard" :showSearch="false" :showRefresh="true" :createRoute="null" createLabel="" />
     </x-slot>
 
     <div class="py-6">

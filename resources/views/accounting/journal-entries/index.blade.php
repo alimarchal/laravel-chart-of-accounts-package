@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Journal Entries" :createRoute="route('accounting.journal-entries.create')" createLabel="New Entry" createPermission="journal-entries.create" backRoute="settings.dashboard" :showSearch="true" :showRefresh="true" />
+        <x-accounting::page-header title="Journal Entries" :createRoute="route('accounting.journal-entries.create')" createLabel="New Entry" createPermission="journal-entries.create" backRoute="accounting.dashboard" :showSearch="true" :showRefresh="true" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.journal-entries.index')">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">

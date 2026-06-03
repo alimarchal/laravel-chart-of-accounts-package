@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Bank Accounts" :createRoute="route('accounting.bank-accounts.create')" createLabel="Add Bank Account" createPermission="bank-accounts.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Bank Accounts" :createRoute="route('accounting.bank-accounts.create')" createLabel="Add Bank Account" createPermission="bank-accounts.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.bank-accounts.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
