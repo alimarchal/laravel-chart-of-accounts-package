@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\Models\Role;
 
 class AccountingInstallCommand extends Command
 {
@@ -45,6 +46,8 @@ class AccountingInstallCommand extends Command
         $this->info('🔧 Syncing database objects...');
         Artisan::call('accounting:sync-db-objects', [], $this->output);
 
+        $this->assignSuperAdminToFirstUser();
+
         $this->info('✅ Verifying installation...');
         $verifyExitCode = Artisan::call('accounting:verify', [], $this->output);
 
@@ -62,6 +65,28 @@ class AccountingInstallCommand extends Command
         $this->line('   Set ACCOUNTING_UI_DRIVER=inertia in .env for Inertia/React.');
 
         return self::SUCCESS;
+    }
+
+    private function assignSuperAdminToFirstUser(): void
+    {
+        $userModel = config('auth.providers.users.model', \App\Models\User::class);
+
+        if (! class_exists($userModel)) {
+            return;
+        }
+
+        $user = $userModel::query()->first();
+
+        if (! $user) {
+            $this->warn('⚠️  No users found. Please create a user and assign the "super-admin" role manually.');
+
+            return;
+        }
+
+        $role = Role::findByName('super-admin', 'web');
+        $user->assignRole($role);
+
+        $this->info("✅ Assigned \"super-admin\" role to user: {$user->email}");
     }
 
     private function spatiePermissionMigrationExists(): bool
