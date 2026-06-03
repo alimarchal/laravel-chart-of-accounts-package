@@ -59,6 +59,29 @@ php artisan accounting:install
 6. Syncs database objects (functions, procedures)
 7. Verifies the installation
 
+**After installation — grant access to your admin user:**
+
+```php
+// Add HasRoles trait to your User model (app/Models/User.php):
+use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    use HasRoles;
+    // ...
+}
+```
+
+Then assign a role via tinker or a seeder:
+
+```bash
+php artisan tinker --execute 'App\Models\User::where("email", "admin@example.com")->first()->assignRole("super-admin");'
+```
+
+Available roles: `super-admin` (all access), `admin`, `accountant`, `viewer`.
+
+> Without assigning a role, users will receive a **403 Unauthorized** when accessing accounting routes — this is intentional for security.
+
 **Manual step-by-step** (if you prefer):
 
 ```bash
