@@ -40,17 +40,33 @@ Install via Composer:
 composer require alimarchal/laravel-chart-of-accounts
 ```
 
-Publish and run the migrations:
-
-```bash
-php artisan vendor:publish --tag=accounting-migrations
-php artisan migrate
-```
-
-Run the full install command (migrations + seed + DB objects + verify):
+Run the one-command installer (publishes migrations for this package **and** Spatie dependencies, runs them, seeds master data, and verifies):
 
 ```bash
 php artisan accounting:install
+```
+
+> **Blade/Livewire apps** (e.g. Jetstream Livewire): set `ACCOUNTING_UI_DRIVER=blade` in your `.env` before installing.
+> **Inertia/React apps**: the default driver (`inertia`) works out of the box.
+
+**What `accounting:install` does automatically:**
+
+1. Publishes accounting migrations (`--tag=accounting-migrations`)
+2. Publishes `spatie/laravel-permission` migrations (if not already present)
+3. Publishes `spatie/laravel-activitylog` migrations (if not already present)
+4. Runs `php artisan migrate`
+5. Seeds all master data (account types, currencies, COA, permissions, tax codes, etc.)
+6. Syncs database objects (functions, procedures)
+7. Verifies the installation
+
+**Manual step-by-step** (if you prefer):
+
+```bash
+php artisan vendor:publish --tag=accounting-migrations
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-migrations"
+php artisan migrate
+php artisan accounting:seed
 ```
 
 ---
