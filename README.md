@@ -28,7 +28,7 @@ A comprehensive **Chart of Accounts** and full double-entry **Accounting module*
 ## Requirements
 
 - PHP ^8.2
-- Laravel ^10.0 | ^11.0 | ^12.0
+- Laravel ^10.0 | ^11.0 | ^12.0 | ^13.0
 
 ---
 
