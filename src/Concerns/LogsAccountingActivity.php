@@ -12,6 +12,6 @@ trait LogsAccountingActivity
             ->useLogName('accounting')
             ->logAll()
             ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+            ->dontSubmitEmptyLogs();
     }
 }
