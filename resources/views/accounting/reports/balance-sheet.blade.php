@@ -14,46 +14,39 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <x-accounting::status-message />
 
-            {{-- Filter Section --}}
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 no-print">
-                <form method="GET" action="{{ route('accounting.reports.balance-sheet') }}">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div>
-                            <x-accounting::label for="accounting_period_id" value="Accounting Period" />
-                            <select id="accounting_period_id" name="accounting_period_id"
-                                class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
-                                onchange="this.form.submit()">
-                                <option value="">Custom Date</option>
-                                @foreach($accountingPeriods as $period)
-                                <option value="{{ $period->id }}" {{ $periodId == $period->id ? 'selected' : '' }}>
-                                    {{ $period->name }} (As of {{ \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <x-accounting::label for="as_of_date" value="As of Date" />
-                            <x-accounting::input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$asOfDate" />
-                        </div>
-                        <div>
-                            <x-accounting::label for="filter_account_code" value="Filter by Account Code" />
-                            <x-accounting::input id="filter_account_code" name="filter[account_code]" type="text" class="mt-1 block w-full uppercase" :value="request('filter.account_code')" placeholder="e.g., 1000" />
-                        </div>
-                        <div>
-                            <x-accounting::label for="filter_account_name" value="Filter by Account Name" />
-                            <x-accounting::input id="filter_account_name" name="filter[account_name]" type="text" class="mt-1 block w-full" :value="request('filter.account_name')" placeholder="Search by account name" />
-                        </div>
-                        <div>
-                            <x-accounting::label for="filter_account_type" value="Filter by Account Type" />
-                            <x-accounting::input id="filter_account_type" name="filter[account_type]" type="text" class="mt-1 block w-full" :value="request('filter.account_type')" placeholder="e.g., Asset" />
-                        </div>
+            <x-accounting::filter-section :action="route('accounting.reports.balance-sheet')">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <x-accounting::label for="accounting_period_id" value="Accounting Period" />
+                        <select id="accounting_period_id" name="accounting_period_id"
+                            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
+                            onchange="this.form.submit()">
+                            <option value="">Custom Date</option>
+                            @foreach($accountingPeriods as $period)
+                            <option value="{{ $period->id }}" {{ $periodId == $period->id ? 'selected' : '' }}>
+                                {{ $period->name }} (As of {{ \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
+                            </option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="mt-3 flex justify-end gap-2">
-                        <x-accounting::reset-button :href="route('accounting.reports.balance-sheet')" />
-                        <x-accounting::submit-button label="Filter" />
+                    <div>
+                        <x-accounting::label for="as_of_date" value="As of Date" />
+                        <x-accounting::input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$asOfDate" />
                     </div>
-                </form>
-            </div>
+                    <div>
+                        <x-accounting::label for="filter_account_code" value="Filter by Account Code" />
+                        <x-accounting::input id="filter_account_code" name="filter[account_code]" type="text" class="mt-1 block w-full uppercase" :value="request('filter.account_code')" placeholder="e.g., 1000" />
+                    </div>
+                    <div>
+                        <x-accounting::label for="filter_account_name" value="Filter by Account Name" />
+                        <x-accounting::input id="filter_account_name" name="filter[account_name]" type="text" class="mt-1 block w-full" :value="request('filter.account_name')" placeholder="Search by account name" />
+                    </div>
+                    <div>
+                        <x-accounting::label for="filter_account_type" value="Filter by Account Type" />
+                        <x-accounting::input id="filter_account_type" name="filter[account_type]" type="text" class="mt-1 block w-full" :value="request('filter.account_type')" placeholder="e.g., Asset" />
+                    </div>
+                </div>
+            </x-accounting::filter-section>
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <div class="mb-6 text-center">

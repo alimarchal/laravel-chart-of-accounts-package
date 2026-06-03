@@ -1,14 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Journal Entries</h2>
-            <div class="flex gap-2">
-                @can('journal-entries.create')
-                <a href="{{ route('accounting.journal-entries.create') }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">New Entry</a>
-                @endcan
-                <a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
-            </div>
-        </div>
+        <x-accounting::page-header title="Journal Entries" :createRoute="route('accounting.journal-entries.create')" createLabel="New Entry" createPermission="journal-entries.create" backRoute="accounting.dashboard" :showSearch="true" :showRefresh="true" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.journal-entries.index')">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
