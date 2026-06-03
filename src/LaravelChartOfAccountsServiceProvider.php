@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodComma
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRebuildSnapshotsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSyncDatabaseObjectsCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingUpdateCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingVerifyCommand;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\JournalEntryForm;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedPayablesLivewire;
@@ -55,6 +56,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
 
             $this->commands([
                 AccountingInstallCommand::class,
+                AccountingUpdateCommand::class,
                 AccountingSeedCommand::class,
                 AccountingSyncDatabaseObjectsCommand::class,
                 AccountingVerifyCommand::class,
