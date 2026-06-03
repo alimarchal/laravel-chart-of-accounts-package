@@ -14,14 +14,17 @@ class AccountingInstallCommand extends Command
 
     public function handle(): int
     {
-        $this->info('📦 Publishing accounting migrations...');
+        $this->info('Publishing accounting migrations...');
         Artisan::call('vendor:publish', ['--tag' => 'accounting-migrations', '--no-interaction' => true], $this->output);
 
-        $this->info('📦 Publishing accounting config...');
+        $this->info('Publishing accounting config...');
         Artisan::call('vendor:publish', ['--tag' => 'accounting-config', '--no-interaction' => true], $this->output);
 
+        $this->info('Publishing accounting views...');
+        Artisan::call('vendor:publish', ['--tag' => 'accounting-views', '--no-interaction' => true], $this->output);
+
         if (! $this->spatiePermissionMigrationExists()) {
-            $this->info('📦 Publishing spatie/laravel-permission migrations...');
+            $this->info('Publishing spatie/laravel-permission migrations...');
             Artisan::call('vendor:publish', [
                 '--provider' => 'Spatie\Permission\PermissionServiceProvider',
                 '--no-interaction' => true,
@@ -29,7 +32,7 @@ class AccountingInstallCommand extends Command
         }
 
         if (! $this->spatieActivitylogMigrationExists()) {
-            $this->info('📦 Publishing spatie/laravel-activitylog migrations...');
+            $this->info('Publishing spatie/laravel-activitylog migrations...');
             Artisan::call('vendor:publish', [
                 '--provider' => 'Spatie\Activitylog\ActivitylogServiceProvider',
                 '--tag'      => 'activitylog-migrations',
@@ -37,18 +40,18 @@ class AccountingInstallCommand extends Command
             ], $this->output);
         }
 
-        $this->info('🗃️  Running all migrations...');
+        $this->info('Running all migrations...');
         Artisan::call('migrate', ['--no-interaction' => true], $this->output);
 
-        $this->info('🌱 Seeding accounting master data...');
+        $this->info('Seeding accounting master data...');
         Artisan::call('accounting:seed', [], $this->output);
 
-        $this->info('🔧 Syncing database objects...');
+        $this->info('Syncing database objects...');
         Artisan::call('accounting:sync-db-objects', [], $this->output);
 
         $this->assignSuperAdminToFirstUser();
 
-        $this->info('✅ Verifying installation...');
+        $this->info('Verifying installation...');
         $verifyExitCode = Artisan::call('accounting:verify', [], $this->output);
 
         if ($verifyExitCode !== self::SUCCESS) {
@@ -58,11 +61,13 @@ class AccountingInstallCommand extends Command
         }
 
         $this->newLine();
-        $this->info('🎉 Accounting module installed successfully!');
+        $this->info('Accounting module installed successfully!');
         $this->info('   Visit /accounting after logging in.');
         $this->newLine();
         $this->line('   Set ACCOUNTING_UI_DRIVER=blade in .env for Blade/Livewire (Jetstream).');
         $this->line('   Set ACCOUNTING_UI_DRIVER=inertia in .env for Inertia/React.');
+        $this->newLine();
+        $this->line('   Run "php artisan accounting:update" after future package upgrades.');
 
         return self::SUCCESS;
     }
@@ -78,7 +83,7 @@ class AccountingInstallCommand extends Command
         $user = $userModel::query()->first();
 
         if (! $user) {
-            $this->warn('⚠️  No users found. Please create a user and assign the "super-admin" role manually.');
+            $this->warn('No users found. Please create a user and assign the "super-admin" role manually.');
 
             return;
         }
@@ -86,7 +91,7 @@ class AccountingInstallCommand extends Command
         $role = Role::findByName('super-admin', 'web');
         $user->assignRole($role);
 
-        $this->info("✅ Assigned \"super-admin\" role to user: {$user->email}");
+        $this->info("Assigned \"super-admin\" role to user: {$user->email}");
     }
 
     private function spatiePermissionMigrationExists(): bool
