@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Create Accounting Period</h2>
-            <a href="{{ route('accounting.periods.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition">
+            <a href="{{ route('settings.periods.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             </a>
         </div>
@@ -13,7 +13,7 @@
             <x-accounting::status-message class="mb-4" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <x-accounting::validation-errors class="mb-4" />
-                <form method="POST" action="{{ route('accounting.periods.store') }}">
+                <form method="POST" action="{{ route('settings.periods.store') }}">
                     @csrf
                     @include('accounting::accounting-periods.partials.form-fields')
                     <div class="flex items-center justify-end mt-6">

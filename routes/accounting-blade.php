@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ChartOfAccountBlade
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CostCenterBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CurrencyBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\JournalEntryBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\PermissionBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ReconciliationBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\AccountBalancesBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\AgedPayablesBladeController;
@@ -21,8 +22,10 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\CashFlowBla
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\GeneralLedgerBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\IncomeStatementBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\TrialBalanceBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\RoleBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxCodeBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxRateBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\UserBladeController;
 use Illuminate\Support\Facades\Route;
 
 $resourceRoutes = function (string $uri, string $controller, string $routeName, string $permissionPrefix, string $paramName = 'record'): void {
@@ -50,8 +53,8 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
 };
 
 Route::middleware(['web', 'auth', 'verified'])
-    ->prefix(config('accounting.route_prefix', 'accounting'))
-    ->name('accounting.')
+    ->prefix(config('accounting.route_prefix', 'settings'))
+    ->name(config('accounting.route_name_prefix', 'settings').'.')
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardBladeController::class)
             ->name('dashboard')
@@ -155,4 +158,14 @@ Route::middleware(['web', 'auth', 'verified'])
         Route::get('audit-logs/{record}', [AuditLogBladeController::class, 'show'])
             ->name('audit-logs.show')
             ->middleware('can:audit-logs.view');
+
+        // User Management
+        $resourceRoutes('users', UserBladeController::class, 'users', 'user', 'user');
+        $resourceRoutes('roles', RoleBladeController::class, 'roles', 'accounting.manage-settings', 'role');
+        Route::get('permissions', [PermissionBladeController::class, 'index'])
+            ->name('permissions.index')
+            ->middleware('can:accounting.manage-settings');
+        Route::get('permissions/{permission}', [PermissionBladeController::class, 'show'])
+            ->name('permissions.show')
+            ->middleware('can:accounting.manage-settings');
     });

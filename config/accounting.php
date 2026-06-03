@@ -1,7 +1,8 @@
 <?php
 
 return [
-    'route_prefix' => env('ACCOUNTING_ROUTE_PREFIX', 'accounting'),
+    'route_prefix' => env('ACCOUNTING_ROUTE_PREFIX', 'settings'),
+    'route_name_prefix' => env('ACCOUNTING_ROUTE_NAME_PREFIX', 'settings'),
     'ui_driver' => env('ACCOUNTING_UI_DRIVER', 'inertia'), // 'inertia' or 'blade'
     'api_prefix' => env('ACCOUNTING_API_PREFIX', 'api/v1/accounting'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),

@@ -13,8 +13,11 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
+use App\Models\User;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AccountingDashboardBladeController extends Controller
 {
@@ -34,6 +37,9 @@ class AccountingDashboardBladeController extends Controller
                 'taxRates' => TaxRate::query()->count(),
                 'reconciliations' => Reconciliation::query()->count(),
                 'balanceSnapshots' => AccountBalanceSnapshot::query()->count(),
+                'users' => app(config('auth.providers.users.model', User::class))->count(),
+                'roles' => Role::query()->count(),
+                'permissions' => Permission::query()->count(),
             ],
         ]);
     }

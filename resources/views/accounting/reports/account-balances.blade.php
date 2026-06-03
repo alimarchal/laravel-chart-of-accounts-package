@@ -2,7 +2,7 @@
     <x-slot name="header">
         <x-accounting::page-header
             title="Account Balances"
-            backRoute="accounting.dashboard"
+            backRoute="settings.dashboard"
             :showSearch="true"
             :showRefresh="true"
             :createRoute="null"
@@ -34,7 +34,7 @@
         </style>
     @endpush
 
-    <x-accounting::filter-section :action="route('accounting.reports.account-balances')" class="no-print">
+    <x-accounting::filter-section :action="route('settings.reports.account-balances')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4">
             <div class="xl:col-span-2">
                 <x-accounting::label for="accounting_period_id" value="Accounting Period" />

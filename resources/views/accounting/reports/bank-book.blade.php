@@ -1,13 +1,13 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Bank Book" backRoute="accounting.dashboard" :showSearch="true" :showRefresh="true" :createRoute="null" createLabel="" />
+        <x-accounting::page-header title="Bank Book" backRoute="settings.dashboard" :showSearch="true" :showRefresh="true" :createRoute="null" createLabel="" />
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <x-accounting::status-message />
 
-            <x-accounting::filter-section :action="route('accounting.reports.bank-book')">
+            <x-accounting::filter-section :action="route('settings.reports.bank-book')">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <x-accounting::label for="date_from" value="Date From" />
