@@ -10,7 +10,7 @@
     </div>
     <div>
         <x-accounting::label for="type" value="Type" />
-        <select id="type" name="type" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="type" name="type" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select</option>
             <option value="cost_center" {{ old('type', optional($costCenter)->type) === 'cost_center' ? 'selected' : '' }}>Cost Center</option>
             <option value="project" {{ old('type', optional($costCenter)->type) === 'project' ? 'selected' : '' }}>Project</option>

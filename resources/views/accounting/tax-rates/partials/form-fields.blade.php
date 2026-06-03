@@ -2,7 +2,7 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
         <x-accounting::label for="tax_code_id" value="Tax Code" />
-        <select id="tax_code_id" name="tax_code_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="tax_code_id" name="tax_code_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select Tax Code</option>
             @foreach ($taxCodes as $code)
             <option value="{{ $code->id }}" {{ old('tax_code_id', optional($taxRate)->tax_code_id) == $code->id ? 'selected' : '' }}>{{ $code->code }} - {{ $code->name }}</option>

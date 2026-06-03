@@ -10,7 +10,7 @@
     </div>
     <div>
         <x-accounting::label for="normal_balance" value="Normal Balance" />
-        <select id="normal_balance" name="normal_balance" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="normal_balance" name="normal_balance" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select</option>
             <option value="debit" {{ old('normal_balance', optional($accountType)->normal_balance) === 'debit' ? 'selected' : '' }}>Debit</option>
             <option value="credit" {{ old('normal_balance', optional($accountType)->normal_balance) === 'credit' ? 'selected' : '' }}>Credit</option>
@@ -18,7 +18,7 @@
     </div>
     <div>
         <x-accounting::label for="report_group" value="Report Group" />
-        <select id="report_group" name="report_group" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="report_group" name="report_group" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select</option>
             <option value="BalanceSheet" {{ old('report_group', optional($accountType)->report_group) === 'BalanceSheet' ? 'selected' : '' }}>Balance Sheet</option>
             <option value="IncomeStatement" {{ old('report_group', optional($accountType)->report_group) === 'IncomeStatement' ? 'selected' : '' }}>Income Statement</option>

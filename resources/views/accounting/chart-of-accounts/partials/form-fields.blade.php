@@ -10,7 +10,7 @@
     </div>
     <div>
         <x-accounting::label for="account_type_id" value="Account Type" />
-        <select id="account_type_id" name="account_type_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="account_type_id" name="account_type_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select Type</option>
             @foreach ($accountTypes as $at)
             <option value="{{ $at->id }}" {{ old('account_type_id', optional($chartOfAccount)->account_type_id) == $at->id ? 'selected' : '' }}>{{ $at->name }}</option>
@@ -19,7 +19,7 @@
     </div>
     <div>
         <x-accounting::label for="currency_id" value="Currency" />
-        <select id="currency_id" name="currency_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="currency_id" name="currency_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select Currency</option>
             @foreach ($currencies as $cur)
             <option value="{{ $cur->id }}" {{ old('currency_id', optional($chartOfAccount)->currency_id) == $cur->id ? 'selected' : '' }}>{{ $cur->code }} - {{ $cur->name }}</option>
@@ -28,16 +28,16 @@
     </div>
     <div>
         <x-accounting::label for="parent_id" value="Parent Account" />
-        <select id="parent_id" name="parent_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+        <select id="parent_id" name="parent_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">None (Top Level)</option>
-            @foreach ($parentAccounts as $pa)
+            @foreach ($parents as $pa)
             <option value="{{ $pa->id }}" {{ old('parent_id', optional($chartOfAccount)->parent_id) == $pa->id ? 'selected' : '' }}>{{ $pa->account_code }} - {{ $pa->account_name }}</option>
             @endforeach
         </select>
     </div>
     <div>
         <x-accounting::label for="normal_balance" value="Normal Balance" />
-        <select id="normal_balance" name="normal_balance" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="normal_balance" name="normal_balance" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select</option>
             <option value="debit" {{ old('normal_balance', optional($chartOfAccount)->normal_balance) === 'debit' ? 'selected' : '' }}>Debit</option>
             <option value="credit" {{ old('normal_balance', optional($chartOfAccount)->normal_balance) === 'credit' ? 'selected' : '' }}>Credit</option>

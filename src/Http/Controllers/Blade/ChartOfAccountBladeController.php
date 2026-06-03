@@ -84,12 +84,19 @@ class ChartOfAccountBladeController extends Controller
 
     public function tree(): View
     {
+        $totalAccounts = ChartOfAccount::query()->count();
+        $groupAccounts = ChartOfAccount::query()->where('is_group', true)->count();
+        $postingAccounts = $totalAccounts - $groupAccounts;
+
         return view('accounting::chart-of-accounts.tree', [
             'roots' => ChartOfAccount::query()
                 ->with(['accountType', 'childrenRecursive'])
                 ->whereNull('parent_id')
                 ->orderBy('account_code')
                 ->get(),
+            'totalAccounts' => $totalAccounts,
+            'groupAccounts' => $groupAccounts,
+            'postingAccounts' => $postingAccounts,
         ]);
     }
 

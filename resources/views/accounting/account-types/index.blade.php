@@ -52,4 +52,5 @@
         </tr>
         @endforeach
     </x-accounting::data-table>
+<x-accounting::delete-modal />
 </x-accounting::app-layout>

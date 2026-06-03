@@ -11,7 +11,7 @@
     </div>
     <div>
         <x-accounting::label for="status" value="Status" />
-        <select id="status" name="status" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="status" name="status" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Select Status</option>
             @foreach ($statusOptions as $value => $label)
                 <option value="{{ $value }}" {{ old('status', optional($accountingPeriod)->status) === $value ? 'selected' : '' }}>{{ $label }}</option>
