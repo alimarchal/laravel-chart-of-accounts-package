@@ -2,6 +2,11 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [1.2.1] - 2026-06-03
+
+### Fixed
+- `account-balances.blade.php` had duplicate content after `</x-accounting::app-layout>` causing `ParseError: syntax error, unexpected token "endif", expecting end of file` on `/accounting/reports/account-balances`
+
 ## [1.2.0] - 2026-06-03
 
 ### Fixed
