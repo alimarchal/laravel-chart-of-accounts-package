@@ -30,7 +30,7 @@
         <x-accounting::label for="parent_id" value="Parent Account" />
         <select id="parent_id" name="parent_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">None (Top Level)</option>
-            @foreach ($parentAccounts as $pa)
+            @foreach ($parents as $pa)
             <option value="{{ $pa->id }}" {{ old('parent_id', optional($chartOfAccount)->parent_id) == $pa->id ? 'selected' : '' }}>{{ $pa->account_code }} - {{ $pa->account_name }}</option>
             @endforeach
         </select>
