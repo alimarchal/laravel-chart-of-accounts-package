@@ -4,7 +4,7 @@
     </x-slot>
 
     <x-accounting::filter-section :action="route('accounting.account-types.index')">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-accounting::label for="filter_name" value="Name" />
                 <x-accounting::input id="filter_name" name="filter[name]" type="text" class="mt-1 block w-full" :value="request('filter.name')" />
