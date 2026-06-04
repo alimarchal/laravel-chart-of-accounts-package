@@ -54,6 +54,10 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 __DIR__.'/../resources/js/' => resource_path('js'),
             ], 'accounting-js');
 
+            $this->publishes([
+                __DIR__.'/../public/vendor/accounting/' => public_path('vendor/accounting'),
+            ], 'accounting-assets');
+
             $this->commands([
                 AccountingInstallCommand::class,
                 AccountingUpdateCommand::class,
