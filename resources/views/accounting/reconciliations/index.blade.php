@@ -5,7 +5,7 @@
     <x-accounting::filter-section :action="route('accounting.reconciliations.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><x-accounting::label for="filter_status" value="Status" />
-                <select id="filter_status" name="filter[status]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_status" name="filter[status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="pending" {{ request('filter.status') === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="in_progress" {{ request('filter.status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
