@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Roles" :createRoute="route('settings.roles.create')" createLabel="Add Role" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Roles" :createRoute="route('settings.roles.create')" createLabel="Add Role" backRoute="accounting.dashboard" />
     </x-slot>
 
     <x-accounting::filter-section :action="route('settings.roles.index')">
