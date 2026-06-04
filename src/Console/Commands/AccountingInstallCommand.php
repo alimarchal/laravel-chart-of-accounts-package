@@ -10,7 +10,7 @@ class AccountingInstallCommand extends Command
 {
     protected $signature = 'accounting:install';
 
-    protected $description = 'Full setup: publish and run all migrations (including Spatie), seed master data, and verify.';
+    protected $description = 'Full setup: publish assets, run migrations (including Spatie), seed master data, and verify.';
 
     public function handle(): int
     {
@@ -22,6 +22,9 @@ class AccountingInstallCommand extends Command
 
         $this->info('Publishing accounting views...');
         Artisan::call('vendor:publish', ['--tag' => 'accounting-views', '--no-interaction' => true], $this->output);
+
+        $this->info('Publishing accounting public assets (select2, jQuery)...');
+        Artisan::call('vendor:publish', ['--tag' => 'accounting-assets', '--no-interaction' => true], $this->output);
 
         if (! $this->spatiePermissionMigrationExists()) {
             $this->info('Publishing spatie/laravel-permission migrations...');
