@@ -90,12 +90,12 @@
                         <td class="py-1 px-2">
                             <input type="number" step="0.01" min="0"
                                 wire:model.live="lines.{{ $index }}.debit"
-                                class="je-debit w-full border-gray-300 rounded-md text-sm text-right" />
+                                class="w-full border-gray-300 rounded-md text-sm text-right" />
                         </td>
                         <td class="py-1 px-2">
                             <input type="number" step="0.01" min="0"
                                 wire:model.live="lines.{{ $index }}.credit"
-                                class="je-credit w-full border-gray-300 rounded-md text-sm text-right" />
+                                class="w-full border-gray-300 rounded-md text-sm text-right" />
                         </td>
                         <td class="py-1 px-2">
                             <input type="text" wire:model="lines.{{ $index }}.description" class="w-full border-gray-300 rounded-md text-sm" />
@@ -107,31 +107,31 @@
                     @endforeach
                 </tbody>
                 <tfoot class="bg-gray-50 border-t-2 border-gray-300">
+                    @php $isBalanced = abs($this->totalDebits() - $this->totalCredits()) < 0.01 && $this->totalDebits() > 0; @endphp
                     <tr>
                         <td colspan="2" class="py-2 px-3 text-right font-semibold text-sm text-gray-700">Totals:</td>
-                        <td class="py-2 px-3 text-right font-semibold text-sm {{ abs($this->totalDebits() - $this->totalCredits()) < 0.01 ? 'text-green-700' : 'text-red-600' }}">
+                        <td class="py-2 px-3 text-right font-semibold text-sm {{ $isBalanced ? 'text-green-700' : 'text-red-600' }}">
                             {{ number_format($this->totalDebits(), 2) }}
                         </td>
-                        <td class="py-2 px-3 text-right font-semibold text-sm {{ abs($this->totalDebits() - $this->totalCredits()) < 0.01 ? 'text-green-700' : 'text-red-600' }}">
+                        <td class="py-2 px-3 text-right font-semibold text-sm {{ $isBalanced ? 'text-green-700' : 'text-red-600' }}">
                             {{ number_format($this->totalCredits(), 2) }}
                         </td>
                         <td colspan="2"></td>
                     </tr>
-                    @if (abs($this->totalDebits() - $this->totalCredits()) >= 0.01)
+                    @unless($isBalanced)
                     <tr>
                         <td colspan="6" class="py-1 px-3 text-center text-xs text-red-600">
                             ⚠ Debits ({{ number_format($this->totalDebits(), 2) }}) and credits ({{ number_format($this->totalCredits(), 2) }}) must balance.
                             Difference: {{ number_format(abs($this->totalDebits() - $this->totalCredits()), 2) }}
                         </td>
                     </tr>
-                    @endif
+                    @endunless
                 </tfoot>
             </table>
         </div>
     </div>
 
-    {{-- Balance status bar --}}
-    @php $isBalanced = abs($this->totalDebits() - $this->totalCredits()) < 0.01 && $this->totalDebits() > 0; @endphp
+    {{-- Balance status --}}
     <div class="mt-3 flex items-center gap-2 text-sm">
         @if($isBalanced)
             <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">
@@ -140,86 +140,49 @@
             </span>
         @else
             <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 text-red-700 font-medium">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
                 Not balanced — cannot save
             </span>
         @endif
     </div>
 
     <div class="flex justify-end mt-4">
-        <x-accounting::button
+        <button
+            type="button"
             wire:click="save"
             wire:loading.attr="disabled"
-            @if(!$isBalanced) disabled @endif
-            class="{{ !$isBalanced ? 'opacity-50 cursor-not-allowed' : '' }}">
+            {{ $isBalanced ? '' : 'disabled' }}
+            class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150 {{ $isBalanced ? 'hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2' : 'opacity-50 cursor-not-allowed' }}">
             Save Draft
-        </x-accounting::button>
+        </button>
     </div>
 </div>
 
-@push('scripts')
+@script
 <script>
-(function() {
     function initJESelect2() {
         if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') return;
 
-        // Account selects
-        $('.je-account-select').each(function() {
+        $('.je-account-select').each(function () {
             var $el = $(this);
-            if ($el.hasClass('select2-hidden-accessible')) {
-                $el.select2('destroy');
-            }
-            $el.select2({
-                width: '100%',
-                placeholder: '— Select Account —',
-                allowClear: true,
-            });
-            $el.off('change.jeselect2').on('change.jeselect2', function() {
-                // Sync value back to Livewire
-                var nativeEl = this;
-                nativeEl.dispatchEvent(new Event('change'));
+            if ($el.hasClass('select2-hidden-accessible')) $el.select2('destroy');
+            $el.select2({ width: '100%', placeholder: '— Select Account —', allowClear: true });
+            $el.off('change.je').on('change.je', function () {
+                this.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
 
-        // Cost Center selects
-        $('.je-cc-select').each(function() {
+        $('.je-cc-select').each(function () {
             var $el = $(this);
-            if ($el.hasClass('select2-hidden-accessible')) {
-                $el.select2('destroy');
-            }
-            $el.select2({
-                width: '100%',
-                placeholder: 'None',
-                allowClear: true,
-            });
-            $el.off('change.jeselect2').on('change.jeselect2', function() {
-                var nativeEl = this;
-                nativeEl.dispatchEvent(new Event('change'));
+            if ($el.hasClass('select2-hidden-accessible')) $el.select2('destroy');
+            $el.select2({ width: '100%', placeholder: 'None', allowClear: true });
+            $el.off('change.je').on('change.je', function () {
+                this.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
     }
 
-    // Init on page load
-    document.addEventListener('DOMContentLoaded', initJESelect2);
-
-    // Re-init after every Livewire DOM update
     document.addEventListener('livewire:updated', initJESelect2);
-    document.addEventListener('livewire:navigated', initJESelect2);
-})();
-
-function journalEntryForm() {
-    return {
-        init() {
-            // Re-init select2 after Livewire morphs the DOM
-            this.$nextTick(() => {
-                if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
-                    setTimeout(function() {
-                        document.dispatchEvent(new Event('livewire:updated'));
-                    }, 50);
-                }
-            });
-        }
-    };
-}
+    initJESelect2();
 </script>
-@endpush
+@endscript
