@@ -95,6 +95,18 @@ class JournalEntryForm extends Component
             'lines.*.credit' => ['required', 'numeric', 'min:0'],
         ]);
 
+        if (abs($this->totalDebits() - $this->totalCredits()) >= 0.01) {
+            $this->addError('lines', 'Debits and credits must balance before saving. Current difference: '.number_format(abs($this->totalDebits() - $this->totalCredits()), 2));
+
+            return;
+        }
+
+        if ($this->totalDebits() <= 0) {
+            $this->addError('lines', 'Journal entry must have at least one non-zero debit and credit line.');
+
+            return;
+        }
+
         $data = [
             'entry_date' => $this->entry_date,
             'accounting_period_id' => $this->accounting_period_id,
@@ -114,7 +126,7 @@ class JournalEntryForm extends Component
             session()->flash('success', 'Journal entry created.');
         }
 
-        $this->redirect(route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $entry));
+        $this->redirect(route('accounting.journal-entries.show', $entry));
     }
 
     public function render(): View
