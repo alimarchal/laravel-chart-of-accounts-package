@@ -11,7 +11,7 @@
         </div>
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.journal-entries.index')">
-        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_reference" value="Reference" /><x-accounting::input id="filter_reference" name="filter[reference]" type="text" class="mt-1 block w-full" :value="request('filter.reference')" /></div>
             <div><x-accounting::label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
