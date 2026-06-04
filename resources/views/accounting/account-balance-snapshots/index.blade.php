@@ -6,7 +6,7 @@
         </div>
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.account-balance-snapshots.index')">
-        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_period_id" value="Period" />
                 <select id="filter_period_id" name="filter[period_id]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Periods</option>
