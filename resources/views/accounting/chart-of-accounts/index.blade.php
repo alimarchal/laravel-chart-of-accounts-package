@@ -12,7 +12,7 @@
         </div>
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.chart-of-accounts.index')">
-        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_account_code" value="Account Code" /><x-accounting::input id="filter_account_code" name="filter[account_code]" type="text" class="mt-1 block w-full" :value="request('filter.account_code')" /></div>
             <div><x-accounting::label for="filter_account_name" value="Account Name" /><x-accounting::input id="filter_account_name" name="filter[account_name]" type="text" class="mt-1 block w-full" :value="request('filter.account_name')" /></div>
             <div><x-accounting::label for="filter_account_type" value="Account Type" />
