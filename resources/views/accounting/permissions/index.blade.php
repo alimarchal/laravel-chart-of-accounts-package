@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Permissions" :createRoute="null" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Permissions" :createRoute="null" backRoute="accounting.dashboard" />
     </x-slot>
 
     <x-accounting::filter-section :action="route('settings.permissions.index')">
