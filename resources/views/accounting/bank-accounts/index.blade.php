@@ -3,7 +3,7 @@
         <x-accounting::page-header title="Bank Accounts" :createRoute="route('accounting.bank-accounts.create')" createLabel="Add Bank Account" createPermission="bank-accounts.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.bank-accounts.index')">
-        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_account_name" value="Account Name" /><x-accounting::input id="filter_account_name" name="filter[account_name]" type="text" class="mt-1 block w-full" :value="request('filter.account_name')" /></div>
             <div><x-accounting::label for="filter_bank_name" value="Bank Name" /><x-accounting::input id="filter_bank_name" name="filter[bank_name]" type="text" class="mt-1 block w-full" :value="request('filter.bank_name')" /></div>
         </div>
