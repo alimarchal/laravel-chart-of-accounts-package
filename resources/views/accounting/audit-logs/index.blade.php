@@ -6,7 +6,7 @@
         </div>
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.audit-logs.index')">
-        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_model_type" value="Model Type" /><x-accounting::input id="filter_model_type" name="filter[model_type]" type="text" class="mt-1 block w-full" :value="request('filter.model_type')" /></div>
             <div><x-accounting::label for="filter_action" value="Action" /><x-accounting::input id="filter_action" name="filter[action]" type="text" class="mt-1 block w-full" :value="request('filter.action')" /></div>
             <div><x-accounting::label for="filter_date_from" value="Date From" /><x-accounting::input id="filter_date_from" name="filter[date_from]" type="date" class="mt-1 block w-full" :value="request('filter.date_from')" /></div>
