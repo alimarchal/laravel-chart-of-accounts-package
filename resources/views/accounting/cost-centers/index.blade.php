@@ -3,7 +3,7 @@
         <x-accounting::page-header title="Cost Centers" :createRoute="route('accounting.cost-centers.create')" createLabel="Add Cost Center" createPermission="cost-centers.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.cost-centers.index')">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_code" value="Code" /><x-accounting::input id="filter_code" name="filter[code]" type="text" class="mt-1 block w-full" :value="request('filter.code')" /></div>
             <div><x-accounting::label for="filter_name" value="Name" /><x-accounting::input id="filter_name" name="filter[name]" type="text" class="mt-1 block w-full" :value="request('filter.name')" /></div>
             <div><x-accounting::label for="filter_type" value="Type" />
