@@ -9,12 +9,15 @@ class AccountingUpdateCommand extends Command
 {
     protected $signature = 'accounting:update';
 
-    protected $description = 'Update accounting views, config, and sync database objects to the latest package version.';
+    protected $description = 'Update accounting views, public assets, config, and sync database objects to the latest package version.';
 
     public function handle(): int
     {
         $this->info('Publishing accounting views...');
         Artisan::call('vendor:publish', ['--tag' => 'accounting-views', '--force' => true], $this->output);
+
+        $this->info('Publishing accounting public assets (select2, jQuery)...');
+        Artisan::call('vendor:publish', ['--tag' => 'accounting-assets', '--force' => true], $this->output);
 
         $this->info('Publishing accounting config...');
         Artisan::call('vendor:publish', ['--tag' => 'accounting-config', '--force' => true], $this->output);
