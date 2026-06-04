@@ -18,7 +18,7 @@
             </div>
             <div>
                 <x-accounting::label for="filter_status" value="Status" />
-                <select id="filter_status" name="filter[status]" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_status" name="filter[status]" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($statusOptions as $val => $label)
                         <option value="{{ $val }}" {{ request('filter.status') === $val ? 'selected' : '' }}>{{ $label }}</option>
@@ -81,5 +81,4 @@
             </tr>
         @endforeach
     </x-accounting::data-table>
-<x-accounting::delete-modal />
 </x-accounting::app-layout>
