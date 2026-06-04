@@ -35,7 +35,7 @@
     @endpush
 
     <x-accounting::filter-section :action="route('accounting.reports.general-ledger')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="xl:col-span-2">
                 <x-accounting::label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
