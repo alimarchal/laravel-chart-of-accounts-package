@@ -7,16 +7,37 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @endif
 <style>
-    .select2-container .select2-selection--single {
-        height: auto; padding: 0.63rem 1rem; margin-top: 0.25rem; line-height: 1.25;
-        border: 1px solid #d1d5db; border-radius: 0.375rem;
-        box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+    .select2 {
+        width: auto !important;
+        display: block;
     }
-    .select2-container .select2-selection--single .select2-selection__rendered { line-height: 1.25; padding-left: 0; padding-right: 0; }
+    .select2-container .select2-selection--single {
+        height: auto;
+        padding: 0.63rem 1rem;
+        margin-top: 0.25rem;
+        line-height: 1.25;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .select2-container .select2-selection--single .select2-selection__rendered {
+        line-height: 1.25;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .select2-container .select2-selection--single {
+        height: auto;
+        right: 0.5rem;
+    }
     .select2-selection__arrow { top: 8px !important; right: 10px !important; }
     .select2-container .select2-selection--single .select2-selection__clear {
-        color: #dc2626 !important; font-size: 1.25rem !important; font-weight: 700 !important;
-        line-height: 1 !important; height: auto !important; margin-top: 0 !important; padding: 0 !important;
+        color: #dc2626 !important;
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+        height: auto !important;
+        margin-top: 0 !important;
+        padding: 0 !important;
     }
     .select2-container .select2-selection--single .select2-selection__clear:hover { color: #991b1b !important; }
 </style>
@@ -71,16 +92,37 @@ $(document).ready(function() {
             <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         @endif
         <style>
-            .select2-container .select2-selection--single {
-                height: auto; padding: 0.63rem 1rem; margin-top: 0.25rem; line-height: 1.25;
-                border: 1px solid #d1d5db; border-radius: 0.375rem;
-                box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+            .select2 {
+                width: auto !important;
+                display: block;
             }
-            .select2-container .select2-selection--single .select2-selection__rendered { line-height: 1.25; padding-left: 0; padding-right: 0; }
+            .select2-container .select2-selection--single {
+                height: auto;
+                padding: 0.63rem 1rem;
+                margin-top: 0.25rem;
+                line-height: 1.25;
+                border: 1px solid #d1d5db;
+                border-radius: 0.375rem;
+                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            }
+            .select2-container .select2-selection--single .select2-selection__rendered {
+                line-height: 1.25;
+                padding-left: 0;
+                padding-right: 0;
+            }
+            .select2-container .select2-selection--single {
+                height: auto;
+                right: 0.5rem;
+            }
             .select2-selection__arrow { top: 8px !important; right: 10px !important; }
             .select2-container .select2-selection--single .select2-selection__clear {
-                color: #dc2626 !important; font-size: 1.25rem !important; font-weight: 700 !important;
-                line-height: 1 !important; height: auto !important; margin-top: 0 !important; padding: 0 !important;
+                color: #dc2626 !important;
+                font-size: 1.25rem !important;
+                font-weight: 700 !important;
+                line-height: 1 !important;
+                height: auto !important;
+                margin-top: 0 !important;
+                padding: 0 !important;
             }
             .select2-container .select2-selection--single .select2-selection__clear:hover { color: #991b1b !important; }
         </style>
