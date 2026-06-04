@@ -3,6 +3,8 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountBalanceSnapshot;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
@@ -24,6 +26,8 @@ class AccountBalanceSnapshotBladeController extends Controller
 
         return view('accounting::account-balance-snapshots.index', [
             'snapshots' => $snapshots,
+            'periods'   => AccountingPeriod::orderBy('start_date', 'desc')->get(['id', 'name']),
+            'accounts'  => ChartOfAccount::where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name']),
         ]);
     }
 
