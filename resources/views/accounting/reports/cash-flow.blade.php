@@ -8,7 +8,7 @@
             <x-accounting::status-message />
 
             <x-accounting::filter-section :action="route('accounting.reports.cash-flow')">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <x-accounting::label for="date_from" value="Date From" />
                         <x-accounting::input id="date_from" name="date_from" type="date" class="mt-1 block w-full" :value="$filters['date_from'] ?? ''" />
