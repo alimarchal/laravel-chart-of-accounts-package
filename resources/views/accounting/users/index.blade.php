@@ -1,6 +1,6 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Users" :createRoute="route('settings.users.create')" createLabel="Add User" createPermission="user.create" backRoute="settings.dashboard" />
+        <x-accounting::page-header title="Users" :createRoute="route('settings.users.create')" createLabel="Add User" createPermission="user.create" backRoute="accounting.dashboard" />
     </x-slot>
 
     <x-accounting::filter-section :action="route('settings.users.index')">
