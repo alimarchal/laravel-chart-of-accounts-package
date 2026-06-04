@@ -3,7 +3,7 @@
         <x-accounting::page-header title="Tax Rates" :createRoute="route('accounting.tax-rates.create')" createLabel="Add Tax Rate" createPermission="tax-rates.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.tax-rates.index')">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_tax_code" value="Tax Code" /><x-accounting::input id="filter_tax_code" name="filter[tax_code]" type="text" class="mt-1 block w-full" :value="request('filter.tax_code')" /></div>
         </div>
     </x-accounting::filter-section>
