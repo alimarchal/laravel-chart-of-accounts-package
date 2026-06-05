@@ -2,6 +2,20 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [1.4.0] - 2026-06-05
+
+### Changed
+- **Create buttons now show only the `+` icon** — text label removed from all list page headers for a cleaner, compact toolbar. Label preserved as a `title` tooltip on the button.
+- **Audit logs page** migrated to `page-header` component with improved filters: Table dropdown (dynamically populated from DB), Action dropdown (INSERT/UPDATE/DELETE), Date From/To.
+- **Journal entries list** header migrated to `page-header` component.
+- **Aged Receivables & Aged Payables** now support an **As of Date** filter (Livewire `wire:model.live`) — changing the date instantly recalculates all aging buckets.
+- Aged reports now calculate 5 proper buckets: Current (0–30 days), 1–30, 31–60, 61–90, >90 days.
+- Aged report pages use `page-header` component for consistent nav/print/back buttons.
+
+### Fixed
+- `AuditLogBladeController` passes `$tableNames` to view for the table filter dropdown.
+- Aged report views use correct column names (`current_balance`, `balance`, `days_over_90`) from updated queries.
+
 ## [1.3.9] - 2026-06-04
 
 ### Added

@@ -8,10 +8,17 @@ use Livewire\Component;
 
 class AgedReceivablesLivewire extends Component
 {
+    public string $asOfDate = '';
+
+    public function mount(): void
+    {
+        $this->asOfDate = now()->toDateString();
+    }
+
     public function render(AgedReceivablesReport $report): View
     {
         return view('accounting::livewire.reports.aged-receivables', [
-            'rows' => $report->rows(),
+            'rows' => $report->rows($this->asOfDate ?: now()->toDateString()),
         ]);
     }
 }

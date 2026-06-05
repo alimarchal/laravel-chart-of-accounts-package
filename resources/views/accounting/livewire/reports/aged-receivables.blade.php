@@ -1,4 +1,10 @@
 <div>
+    <div class="mb-4 flex items-center gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">As of Date</label>
+            <input type="date" wire:model.live="asOfDate" class="mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />
+        </div>
+    </div>
     <div class="overflow-x-auto">
         <table class="min-w-full text-sm border border-gray-200 rounded-md">
             <thead class="bg-gray-50"><tr>
@@ -14,12 +20,12 @@
                 @forelse ($rows as $row)
                 <tr class="border-t border-gray-100 hover:bg-gray-50">
                     <td class="py-1 px-3">{{ $row->customer ?? $row->account_name ?? optional($row->account)->account_name }}</td>
-                    <td class="py-1 px-3 text-right font-mono">{{ number_format($row->current ?? 0, 2) }}</td>
+                    <td class="py-1 px-3 text-right font-mono">{{ number_format($row->current_balance ?? $row->current ?? 0, 2) }}</td>
                     <td class="py-1 px-3 text-right font-mono">{{ number_format($row->days_1_30 ?? $row->period_1 ?? 0, 2) }}</td>
                     <td class="py-1 px-3 text-right font-mono">{{ number_format($row->days_31_60 ?? $row->period_2 ?? 0, 2) }}</td>
                     <td class="py-1 px-3 text-right font-mono">{{ number_format($row->days_61_90 ?? $row->period_3 ?? 0, 2) }}</td>
                     <td class="py-1 px-3 text-right font-mono">{{ number_format($row->days_over_90 ?? $row->period_4 ?? 0, 2) }}</td>
-                    <td class="py-1 px-3 text-right font-semibold font-mono">{{ number_format($row->total ?? 0, 2) }}</td>
+                    <td class="py-1 px-3 text-right font-semibold font-mono">{{ number_format($row->balance ?? $row->total ?? 0, 2) }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="7" class="py-4 text-center text-gray-500">No data available.</td></tr>
