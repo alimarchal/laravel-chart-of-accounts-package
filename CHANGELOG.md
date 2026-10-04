@@ -2,6 +2,23 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.4.0] - 2026-10-06
+
+Chart of accounts guards at the database layer.
+
+### Added
+- **Database triggers for the chart of accounts** on MySQL/MariaDB, PostgreSQL and SQLite, so the rules hold
+  even for raw SQL, imports and other apps writing to the same database: a parent must be a group account of
+  the same type and company; no cycles; type, normal balance and group flag are locked once an account has
+  journal lines; a group with children stays a group and keeps its children's type; accounts never move to
+  another company; journal lines use accounts of their entry's company; an entry using a group account cannot
+  be posted. Existing installs get them with `php artisan migrate`.
+
+### Changed
+- Saving a journal entry (API, React, Blade, simple-entry endpoint) rejects group accounts with a `422`
+  instead of failing later at posting.
+- `JournalEntryService` rejects accounts of another company with an `AccountingException` before writing.
+
 ## [2.3.0] - 2026-10-05
 
 Month-end and year-end close release.

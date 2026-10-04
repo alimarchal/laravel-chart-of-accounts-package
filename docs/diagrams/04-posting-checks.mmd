@@ -19,7 +19,9 @@ flowchart TD
     P6 -->|yes| P7{"Open period covering<br/>the entry date?<br/>(shared lock: blocks a<br/>concurrent close only)"}
     P7 -->|no| X7["422 No open<br/>accounting period"]
     P7 -->|yes| BA["Freeze base-currency amounts<br/>(cents-exact, still balanced)"]
-    BA --> OK["status = posted<br/>posted_at, posted_by, period set"]
+    BA --> DB{"Database trigger:<br/>no line on a<br/>group account?"}
+    DB -->|no| XD["Rejected by the database<br/>(guards raw SQL and other apps)"]
+    DB -->|yes| OK["status = posted<br/>posted_at, posted_by, period set"]
     OK --> AUD["Audit log: JOURNAL_POSTED<br/>+ DB trigger row snapshot"]
     AUD --> EV["JournalEntryPosted event<br/>(after commit → webhooks)"]
     EV --> DONE(["200 Posted entry<br/>now immutable"])
@@ -27,6 +29,6 @@ flowchart TD
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
     classDef good fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef check fill:#fef3c7,stroke:#b45309,color:#78350f
-    class X0,X1,XA,X2,X3,X4,X5,X6,X7 bad
+    class X0,X1,XA,X2,X3,X4,X5,X6,X7,XD bad
     class BA,OK,AUD,EV,DONE good
-    class P0,P1,PA,P2,P3,P4,P5,P6,P7 check
+    class P0,P1,PA,P2,P3,P4,P5,P6,P7,DB check
