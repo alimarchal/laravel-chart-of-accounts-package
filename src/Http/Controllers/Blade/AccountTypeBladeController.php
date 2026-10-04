@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -65,7 +66,8 @@ class AccountTypeBladeController extends Controller
 
     public function destroy(AccountType $record): RedirectResponse
     {
-        $record->delete();
+        // Own transaction/savepoint: a foreign-key violation must not abort an outer transaction.
+        DB::transaction(fn () => $record->delete());
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.account-types.index')->with('success', 'Account type deleted.');
     }

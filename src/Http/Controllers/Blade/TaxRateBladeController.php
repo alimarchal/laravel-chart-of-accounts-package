@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -74,7 +75,8 @@ class TaxRateBladeController extends Controller
 
     public function destroy(TaxRate $record): RedirectResponse
     {
-        $record->delete();
+        // Own transaction/savepoint: a foreign-key violation must not abort an outer transaction.
+        DB::transaction(fn () => $record->delete());
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.tax-rates.index')->with('success', 'Tax rate deleted.');
     }

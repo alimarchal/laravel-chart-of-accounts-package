@@ -25,9 +25,11 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\IncomeStatementLivew
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\TrialBalanceLivewire;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 class LaravelChartOfAccountsServiceProvider extends ServiceProvider
@@ -120,15 +122,42 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         }
 
         $handler->renderable(function (\Throwable $exception, Request $request) {
-            if (! $exception instanceof AccountingRuleViolation) {
+            $message = match (true) {
+                $exception instanceof AccountingRuleViolation => $exception->getMessage(),
+                $this->isForeignKeyViolationOnPackageRoute($exception, $request) => 'This record is in use by other accounting records and cannot be deleted or changed.',
+                default => null,
+            };
+
+            if ($message === null) {
                 return null;
             }
 
             if ($request->expectsJson()) {
-                return response()->json(['message' => $exception->getMessage()], 422);
+                return response()->json(['message' => $message], 422);
             }
 
-            return back()->withInput()->with('error', $exception->getMessage());
+            return back()->withInput()->with('error', $message);
         });
+    }
+
+    /**
+     * Foreign-key violations raised by this package's own routes (e.g. deleting a currency still in use)
+     * are user errors, not server errors. Other routes of the host application are left untouched.
+     */
+    private function isForeignKeyViolationOnPackageRoute(\Throwable $exception, Request $request): bool
+    {
+        if (! $exception instanceof QueryException
+            || ! in_array((string) $exception->getCode(), ['23000', '23503'], true)) {
+            return false;
+        }
+
+        $name = (string) $request->route()?->getName();
+        $prefixes = [
+            config('accounting.route_name_prefix', 'accounting').'.',
+            config('accounting.settings_route_name_prefix', 'settings').'.',
+            'api.accounting.',
+        ];
+
+        return Str::startsWith($name, $prefixes);
     }
 }

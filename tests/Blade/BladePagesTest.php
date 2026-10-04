@@ -4,6 +4,8 @@ use Alimarchal\LaravelChartOfAccounts\Actions\CloseAccountingPeriodAction;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountBalanceSnapshot;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 
 beforeEach(function (): void {
@@ -52,4 +54,26 @@ it('keeps an account active when the Blade form unchecks nothing', function (): 
     ])->assertRedirect();
 
     expect($account->fresh()->is_active)->toBeTrue()->and($account->fresh()->account_name)->toBe('Renamed');
+});
+
+it('shows a flash error instead of a 500 when deleting a currency that is in use', function (): void {
+    $base = Currency::query()->where('is_base', true)->firstOrFail();
+
+    $this->from('/accounting/currencies')
+        ->delete("/accounting/currencies/{$base->id}")
+        ->assertRedirect('/accounting/currencies')
+        ->assertSessionHas('error');
+
+    expect($base->fresh())->not->toBeNull();
+});
+
+it('shows a flash error instead of a 500 when deleting an account type that is in use', function (): void {
+    $type = AccountType::query()->where('code', 'ASSET')->firstOrFail();
+
+    $this->from('/accounting/account-types')
+        ->delete("/accounting/account-types/{$type->id}")
+        ->assertRedirect('/accounting/account-types')
+        ->assertSessionHas('error', 'This record is in use by other accounting records and cannot be deleted or changed.');
+
+    expect($type->fresh())->not->toBeNull();
 });

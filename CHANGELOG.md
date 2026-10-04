@@ -42,6 +42,8 @@ behaviour changes are breaking — read **Upgrading** below.
 - Balance Snapshot pages crashed (non-existent `period` relation) and their filters used non-existent columns.
 - React Bank/Cash Book pages read non-existent `debit_amount` / `credit_amount` columns.
 - Role management routes checked non-existent `accounting.manage-settings.*` permissions (always 403).
+- Deleting a record still referenced elsewhere (currency, account type, tax code, …) returned a 500; package
+  routes now answer 422 / flash error. The base currency can no longer be deleted.
 
 ### Fixed — chart of accounts
 - Updating an account through the API without `is_active` / `is_group` silently **deactivated** it or turned a
@@ -65,7 +67,7 @@ behaviour changes are breaking — read **Upgrading** below.
 - `ChartOfAccountService` and `AccountingPeriodService` hold all integrity rules for API, Inertia and Blade.
 - Config: `chart_preset` (`general` default, `school`), `aging.*_account_codes`, `users_table`.
 - `accounting:install --admin-email=` chooses who receives the super-admin role.
-- Test suite runs inside the package (Orchestra Testbench): **139 tests** covering security, ledger integrity,
+- Test suite runs inside the package (Orchestra Testbench): **141 tests** covering security, ledger integrity,
   reports and seeders; CI matrix for PHP 8.2–8.4 × Laravel 11–13, plus MySQL, MariaDB and PostgreSQL jobs.
 - Larastan (level 5) and Pint in CI.
 

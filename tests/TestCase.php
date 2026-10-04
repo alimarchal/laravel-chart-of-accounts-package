@@ -40,6 +40,7 @@ abstract class TestCase extends Orchestra
         // DB_CONNECTION=mysql|mariadb|pgsql (with DB_HOST, DB_DATABASE, ...) runs the suite against a real server;
         // the default is in-memory SQLite.
         $app['config']->set('database.default', getenv('DB_CONNECTION') ?: 'testing');
+        $app['config']->set('database.connections.testing.foreign_key_constraints', true);
         $app['config']->set('auth.providers.users.model', User::class);
         $app['config']->set('view.paths', array_merge([__DIR__.'/Fixtures/views'], $app['config']->get('view.paths', [])));
         $app['config']->set('inertia.testing.ensure_pages_exist', false);

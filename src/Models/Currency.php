@@ -3,11 +3,21 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\CurrencyFactory;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Currency extends AccountingModel
 {
+    protected static function booted(): void
+    {
+        static::deleting(function (Currency $currency): void {
+            if ($currency->is_base) {
+                throw new AccountingException('The base currency cannot be deleted.');
+            }
+        });
+    }
+
     /** @use HasFactory<CurrencyFactory> */
     use HasFactory;
 
