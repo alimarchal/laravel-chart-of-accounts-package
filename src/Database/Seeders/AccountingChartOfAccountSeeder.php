@@ -15,6 +15,11 @@ class AccountingChartOfAccountSeeder extends Seeder
         $types = AccountType::query()->pluck('id', 'code');
 
         foreach ($this->accounts() as $account) {
+            // Never overwrite an existing account: users may have renamed, moved or deactivated it.
+            if (ChartOfAccount::query()->where('account_code', $account['account_code'])->exists()) {
+                continue;
+            }
+
             $parentId = null;
 
             if ($account['parent_code'] !== null) {
@@ -23,27 +28,78 @@ class AccountingChartOfAccountSeeder extends Seeder
                     ->value('id');
             }
 
-            ChartOfAccount::query()->updateOrCreate(
-                ['account_code' => $account['account_code']],
-                [
-                    'parent_id' => $parentId,
-                    'account_type_id' => $types[$account['type_code']],
-                    'currency_id' => $baseCurrency->id,
-                    'account_name' => $account['account_name'],
-                    'normal_balance' => $account['normal_balance'],
-                    'description' => $account['description'] ?? null,
-                    'is_group' => $account['is_group'],
-                    'is_active' => true,
-                    'is_system' => true,
-                ]
-            );
+            ChartOfAccount::query()->create([
+                'account_code' => $account['account_code'],
+                'parent_id' => $parentId,
+                'account_type_id' => $types[$account['type_code']],
+                'currency_id' => $baseCurrency->id,
+                'account_name' => $account['account_name'],
+                'normal_balance' => $account['normal_balance'],
+                'description' => $account['description'] ?? null,
+                'is_group' => $account['is_group'],
+                'is_active' => true,
+                'is_system' => true,
+            ]);
         }
+    }
+
+    /**
+     * The seeded chart for the configured preset ('general' or 'school').
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function accounts(): array
+    {
+        $accounts = $this->schoolChart();
+
+        if (config('accounting.chart_preset', 'general') === 'school') {
+            return $accounts;
+        }
+
+        $names = $this->generalNames();
+
+        return array_map(function (array $account) use ($names): array {
+            $account['account_name'] = $names[$account['account_code']] ?? $account['account_name'];
+
+            return $account;
+        }, $accounts);
+    }
+
+    /**
+     * Industry-neutral names for the codes whose school-preset names are education-specific.
+     *
+     * @return array<string, string>
+     */
+    private function generalNames(): array
+    {
+        return [
+            '1104' => 'Other Receivables',
+            '1151' => 'Finished Goods Inventory',
+            '1152' => 'Raw Materials Inventory',
+            '1153' => 'Supplies Inventory',
+            '1203' => 'Machinery and Equipment',
+            '1204' => 'Office Equipment',
+            '2105' => 'Customer Deposits Payable',
+            '2106' => 'Unearned Revenue',
+            '4101' => 'Sales Revenue',
+            '4102' => 'Service Revenue',
+            '4103' => 'Commission Income',
+            '4104' => 'Delivery and Freight Income',
+            '4105' => 'Rental Income',
+            '4106' => 'Other Operating Income',
+            '4202' => 'Late Fee Income',
+            '5200' => 'Cost of Sales and Other Expenses',
+            '5202' => 'Cost of Goods Sold',
+            '5203' => 'Freight In',
+            '5204' => 'Direct Labour',
+            '5207' => 'Sales Discounts and Allowances',
+        ];
     }
 
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function accounts(): array
+    private function schoolChart(): array
     {
         return [
             ['account_code' => '1000', 'parent_code' => null, 'type_code' => 'ASSET', 'account_name' => 'Assets', 'normal_balance' => 'debit', 'is_group' => true],

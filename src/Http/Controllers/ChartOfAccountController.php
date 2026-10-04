@@ -5,10 +5,10 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -16,6 +16,8 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class ChartOfAccountController extends Controller
 {
+    public function __construct(private readonly ChartOfAccountService $service) {}
+
     public function index(): Response
     {
         $accounts = QueryBuilder::for(ChartOfAccount::query()->with(['accountType', 'currency', 'parent']))
@@ -50,9 +52,7 @@ class ChartOfAccountController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->normalizeBooleans($request);
-
-        ChartOfAccount::query()->create($request->validate($this->rules()));
+        $this->service->create($this->service->validated($request));
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account created.');
     }
@@ -69,20 +69,14 @@ class ChartOfAccountController extends Controller
 
     public function update(Request $request, ChartOfAccount $chartOfAccount): RedirectResponse
     {
-        $this->normalizeBooleans($request);
-
-        $chartOfAccount->update($request->validate($this->rules($chartOfAccount)));
+        $this->service->update($chartOfAccount, $this->service->validated($request, $chartOfAccount));
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account updated.');
     }
 
     public function destroy(ChartOfAccount $chartOfAccount): RedirectResponse
     {
-        if ($chartOfAccount->is_system) {
-            return back()->with('error', 'System accounts cannot be deleted.');
-        }
-
-        $chartOfAccount->delete();
+        $this->service->delete($chartOfAccount);
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.chart-of-accounts.index')->with('success', 'Account deleted.');
     }
@@ -90,11 +84,7 @@ class ChartOfAccountController extends Controller
     public function tree(): Response
     {
         return Inertia::render('accounting/chart-of-accounts/tree', [
-            'roots' => ChartOfAccount::query()
-                ->with(['accountType', 'childrenRecursive'])
-                ->whereNull('parent_id')
-                ->orderBy('account_code')
-                ->get(),
+            'roots' => $this->service->tree(),
         ]);
     }
 
@@ -111,35 +101,10 @@ class ChartOfAccountController extends Controller
             'accountTypes' => AccountType::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'normal_balance']),
             'currencies' => Currency::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'is_base']),
             'parents' => ChartOfAccount::query()
+                ->where('is_group', true)
                 ->when($record, fn ($query) => $query->whereKeyNot($record->id))
                 ->orderBy('account_code')
                 ->get(['id', 'account_code', 'account_name']),
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function rules(?ChartOfAccount $record = null): array
-    {
-        return [
-            'parent_id' => ['nullable', 'exists:accounting_chart_of_accounts,id'],
-            'account_type_id' => ['required', 'exists:accounting_account_types,id'],
-            'currency_id' => ['required', 'exists:accounting_currencies,id'],
-            'account_code' => ['required', 'string', 'max:30', Rule::unique('accounting_chart_of_accounts', 'account_code')->ignore($record?->id)],
-            'account_name' => ['required', 'string', 'max:255'],
-            'normal_balance' => ['required', Rule::in(['debit', 'credit'])],
-            'description' => ['nullable', 'string'],
-            'is_group' => ['sometimes', 'boolean'],
-            'is_active' => ['sometimes', 'boolean'],
-        ];
-    }
-
-    private function normalizeBooleans(Request $request): void
-    {
-        $request->merge([
-            'is_group' => $request->boolean('is_group'),
-            'is_active' => $request->boolean('is_active'),
-        ]);
     }
 }

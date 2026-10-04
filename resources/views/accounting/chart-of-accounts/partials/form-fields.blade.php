@@ -49,11 +49,13 @@
     </div>
     <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
+            <input type="hidden" name="is_group" value="0" />
             <input type="checkbox" id="is_group" name="is_group" value="1" class="rounded border-gray-300"
                 {{ old('is_group', optional($chartOfAccount)->is_group) ? 'checked' : '' }} />
             <x-accounting::label for="is_group" value="Group Account" />
         </div>
         <div class="flex items-center gap-2">
+            <input type="hidden" name="is_active" value="0" />
             <input type="checkbox" id="is_active" name="is_active" value="1" class="rounded border-gray-300"
                 {{ old('is_active', optional($chartOfAccount)->is_active ?? true) ? 'checked' : '' }} />
             <x-accounting::label for="is_active" value="Active" />

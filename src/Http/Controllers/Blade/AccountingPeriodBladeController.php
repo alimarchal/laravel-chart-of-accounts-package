@@ -3,10 +3,10 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Services\AccountingPeriodService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -37,16 +37,9 @@ class AccountingPeriodBladeController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AccountingPeriodService $service): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'status' => ['required', Rule::in(['open', 'closed', 'archived'])],
-        ]);
-
-        AccountingPeriod::query()->create($validated);
+        $service->create($request->validate($service->rules()));
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.periods.index')->with('success', 'Accounting period created.');
     }
@@ -67,23 +60,16 @@ class AccountingPeriodBladeController extends Controller
         ]);
     }
 
-    public function update(Request $request, AccountingPeriod $period): RedirectResponse
+    public function update(Request $request, AccountingPeriod $period, AccountingPeriodService $service): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'status' => ['required', Rule::in(['open', 'closed', 'archived'])],
-        ]);
-
-        $period->update($validated);
+        $service->update($period, $request->validate($service->rules()));
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.periods.index')->with('success', 'Accounting period updated.');
     }
 
-    public function destroy(AccountingPeriod $period): RedirectResponse
+    public function destroy(AccountingPeriod $period, AccountingPeriodService $service): RedirectResponse
     {
-        $period->delete();
+        $service->delete($period);
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.periods.index')->with('success', 'Accounting period deleted.');
     }

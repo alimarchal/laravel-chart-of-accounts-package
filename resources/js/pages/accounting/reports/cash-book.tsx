@@ -11,8 +11,8 @@ type LedgerEntry = {
     entry_date: string;
     reference: string;
     journal_description: string;
-    debit_amount: number | string;
-    credit_amount: number | string;
+    debit: number | string;
+    credit: number | string;
     running_balance: number | string;
 };
 
@@ -101,8 +101,8 @@ export default function CashBook({ entries, totals, filters }: { entries: Pagina
                                     <td className="p-3 tabular-nums">{row.entry_date}</td>
                                     <td className="p-3 font-medium">{row.reference}</td>
                                     <td className="p-3 text-muted-foreground">{row.journal_description}</td>
-                                    <td className="p-3 text-right tabular-nums text-green-700">{Number(row.debit_amount) > 0 ? money(row.debit_amount) : '–'}</td>
-                                    <td className="p-3 text-right tabular-nums text-red-700">{Number(row.credit_amount) > 0 ? money(row.credit_amount) : '–'}</td>
+                                    <td className="p-3 text-right tabular-nums text-green-700">{Number(row.debit) > 0 ? money(row.debit) : '–'}</td>
+                                    <td className="p-3 text-right tabular-nums text-red-700">{Number(row.credit) > 0 ? money(row.credit) : '–'}</td>
                                     <td className={`p-3 text-right tabular-nums font-medium ${Number(row.running_balance) >= 0 ? '' : 'text-red-600'}`}>{money(row.running_balance)}</td>
                                 </tr>
                             )) : (

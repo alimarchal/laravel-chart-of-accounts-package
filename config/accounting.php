@@ -17,6 +17,16 @@ return [
         'rounding_account_code' => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
     ],
 
+    // Accounts (and their child accounts) included in the aged receivables / payables reports.
+    'aging' => [
+        'receivable_account_codes' => ['1103', '1104'],
+        'payable_account_codes' => ['2101', '2102', '2103', '2104'],
+    ],
+
+    // Chart of accounts seeded by accounting:seed for NEW accounts: 'general' or 'school'.
+    // Existing accounts are never overwritten by the seeder.
+    'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'general'),
+
     'permissions' => [
         'accounting.view',
         'accounting.manage-settings',

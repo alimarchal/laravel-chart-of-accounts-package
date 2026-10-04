@@ -13,14 +13,14 @@ class AccountingPeriodSeeder extends Seeder
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
 
-        $period = AccountingPeriod::query()
-            ->whereDate('start_date', $startDate)
-            ->whereDate('end_date', $endDate)
-            ->first();
+        // Never touch existing periods (re-seeding must not reopen a closed year), and never
+        // create a period that overlaps one the user already defined.
+        $overlaps = AccountingPeriod::query()
+            ->whereDate('start_date', '<=', $endDate)
+            ->whereDate('end_date', '>=', $startDate)
+            ->exists();
 
-        if ($period) {
-            $period->update(['name' => "Fiscal Year {$year}", 'status' => 'open']);
-
+        if ($overlaps) {
             return;
         }
 
