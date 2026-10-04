@@ -11,6 +11,6 @@ class AgedPayablesReport extends AgingReport
 
     protected function amountExpression(): string
     {
-        return 'credit - debit';
+        return 'base_credit - base_debit';
     }
 }

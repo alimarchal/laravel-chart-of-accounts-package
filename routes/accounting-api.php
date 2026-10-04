@@ -115,6 +115,15 @@ Route::middleware($apiMiddleware)
         Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryApiController::class, 'reverse'])
             ->name('journal-entries.reverse')
             ->middleware('can:journal-entries.reverse');
+        Route::post('journal-entries/{journalEntry}/submit', [JournalEntryApiController::class, 'submit'])
+            ->name('journal-entries.submit')
+            ->middleware('can:journal-entries.create');
+        Route::post('journal-entries/{journalEntry}/approve', [JournalEntryApiController::class, 'approve'])
+            ->name('journal-entries.approve')
+            ->middleware('can:journal-entries.approve');
+        Route::post('journal-entries/{journalEntry}/reject', [JournalEntryApiController::class, 'reject'])
+            ->name('journal-entries.reject')
+            ->middleware('can:journal-entries.approve');
         Route::post('journal-entries/{journalEntry}/void', [JournalEntryApiController::class, 'void'])
             ->name('journal-entries.void')
             ->middleware('can:journal-entries.void');

@@ -3,7 +3,30 @@
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Journal Entry #{{ $journalEntry->id }} — {{ $journalEntry->reference }}</h2>
             <div class="flex gap-2">
-                @if ($journalEntry->status === 'draft')
+                @if ($journalEntry->status === 'draft' && $requiresApproval)
+                    @if (in_array($journalEntry->approval_status, [null, 'rejected'], true))
+                        @can('journal-entries.create')
+                        <form method="POST" action="{{ route('accounting.journal-entries.submit', $journalEntry) }}">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600 transition">Submit for approval</button>
+                        </form>
+                        @endcan
+                    @endif
+                    @if ($journalEntry->approval_status === 'pending')
+                        @can('journal-entries.approve')
+                        <form method="POST" action="{{ route('accounting.journal-entries.approve', $journalEntry) }}">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition" onclick="return confirm('Approve and post this entry?')">Approve &amp; post</button>
+                        </form>
+                        <form method="POST" action="{{ route('accounting.journal-entries.reject', $journalEntry) }}" class="flex gap-1" onsubmit="var r = prompt('Reason for rejection'); if (!r) return false; this.reason.value = r;">
+                            @csrf
+                            <input type="hidden" name="reason" value="">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-600 transition">Reject</button>
+                        </form>
+                        @endcan
+                    @endif
+                @endif
+                @if ($journalEntry->status === 'draft' && ! $requiresApproval)
                     @can('journal-entries.post')
                     <form method="POST" action="{{ route('accounting.journal-entries.post', $journalEntry) }}">
                         @csrf
@@ -19,7 +42,7 @@
                     </form>
                     @endcan
                 @endif
-                @if (in_array($journalEntry->status, ['draft', 'posted']))
+                @if ($journalEntry->status === 'draft')
                     @can('journal-entries.void')
                     <form method="POST" action="{{ route('accounting.journal-entries.void', $journalEntry) }}">
                         @csrf
@@ -40,6 +63,12 @@
                 <div><x-accounting::label value="Currency" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="optional($journalEntry->currency)->code" disabled readonly /></div>
                 <div><x-accounting::label value="Status" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100 capitalize" :value="$journalEntry->status" disabled readonly /></div>
                 <div><x-accounting::label value="Reference" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="$journalEntry->reference" disabled readonly /></div>
+                @if ($journalEntry->approval_status || $requiresApproval)
+                <div><x-accounting::label value="Approval" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100 capitalize" :value="$journalEntry->approval_status ?? 'required — not submitted'" disabled readonly /></div>
+                @endif
+                @if ($journalEntry->approval_status === 'rejected')
+                <div class="md:col-span-3"><x-accounting::label value="Rejection reason" /><x-accounting::input type="text" class="mt-1 block w-full bg-red-50 text-red-800" :value="$journalEntry->rejection_reason" disabled readonly /></div>
+                @endif
                 <div class="md:col-span-3"><x-accounting::label value="Description" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="$journalEntry->description" disabled readonly /></div>
             </div>
         </div>
@@ -47,7 +76,7 @@
         @if ($journalEntry->status === 'draft')
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mb-4">
             <h3 class="font-semibold text-gray-700 mb-4">Edit Draft</h3>
-            @livewire('accounting::journal-entry-form', ['entry' => $journalEntry])
+            @livewire('accounting.journal-entry-form', ['entry' => $journalEntry])
         </div>
         @endif
 
@@ -86,5 +115,16 @@
                 </tfoot>
             </table>
         </div>
+
+        @if (isset($trail) && $trail->isNotEmpty())
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mt-4">
+            <h3 class="font-semibold text-gray-700 mb-2">Audit trail</h3>
+            <ol class="space-y-1 text-sm">
+                @foreach ($trail as $step)
+                <li><span class="font-medium">{{ $step['step'] }}</span> <span class="text-gray-500">@if ($step['by']) by {{ $step['by'] }} · @endif{{ $step['at']->format('Y-m-d H:i') }}</span></li>
+                @endforeach
+            </ol>
+        </div>
+        @endif
     </div></div>
 </x-accounting::app-layout>

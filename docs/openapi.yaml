@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.0.0
+  version: 2.1.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -17,7 +17,9 @@ info:
 
     * **Money:** amounts are returned as decimal strings with two decimals.
 
-    * **Retries:** send `Idempotency-Key` when creating journal entries.'
+    * **Retries:** send `Idempotency-Key` when creating journal entries.
+
+    * **Maker-checker:** with approvals enabled, entries at/above the threshold go submit → approve (a different user) → posted.'
   license:
     name: MIT
     identifier: MIT
@@ -2129,6 +2131,118 @@ paths:
                   - 'null'
                   format: date
                   description: Default today; not before the original date.
+  /journal-entries/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Journal entries
+      summary: Submit a draft for approval (maker)
+      operationId: submit_journal_entry
+      description: 'Maker-checker (ACCOUNTING_APPROVALS_ENABLED). Validates the entry now; 422 if approvals are off or the
+        entry is below the threshold.
+
+
+        Permission: `journal-entries.create`.'
+      responses:
+        '200':
+          description: Entry awaiting approval
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /journal-entries/{id}/approve:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Journal entries
+      summary: Approve and post (checker)
+      operationId: approve_journal_entry
+      description: 'The checker must be a different user from the maker and the submitter.
+
+
+        Permission: `journal-entries.approve`.'
+      responses:
+        '200':
+          description: Approved and posted entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /journal-entries/{id}/reject:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Journal entries
+      summary: Reject back to the maker (checker)
+      operationId: reject_journal_entry
+      description: 'Permission: `journal-entries.approve`.'
+      responses:
+        '200':
+          description: Rejected draft
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+                  maxLength: 2000
   /journal-entries/{id}/void:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2377,7 +2491,8 @@ paths:
       - Reports
       summary: Cash flow
       operationId: report_cash_flow
-      description: 'Movements on cash and bank accounts (and their child accounts).
+      description: 'Direct method: movements on cash and bank accounts (and their child accounts), paginated; totals cover
+        the whole period.
 
 
         Permission: `reports.cash-flow.view`.'
@@ -2387,7 +2502,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReportRows'
+                $ref: '#/components/schemas/CashFlowPage'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -2407,6 +2522,8 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
   /reports/bank-book:
     get:
       tags:
@@ -2577,7 +2694,8 @@ paths:
       - Reports
       summary: Account statement
       operationId: report_account_statement
-      description: 'account_id or account_code is required.
+      description: 'account_id or account_code is required (404 if it does not exist). Opening balance, paginated lines with
+        running balance, closing balance.
 
 
         Permission: `reports.account-statement.view`.'
@@ -2587,13 +2705,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReportRows'
+                $ref: '#/components/schemas/StatementPage'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
@@ -2615,6 +2735,8 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
 components:
   securitySchemes:
     bearerAuth:
@@ -2923,6 +3045,62 @@ components:
           - string
           - 'null'
           format: date-time
+        approval:
+          type: object
+          properties:
+            required:
+              type:
+              - boolean
+              - 'null'
+              description: Whether posting needs approval (drafts with lines loaded)
+            status:
+              type:
+              - string
+              - 'null'
+              enum:
+              - pending
+              - approved
+              - rejected
+              - null
+            submitted_at:
+              type:
+              - string
+              - 'null'
+              format: date-time
+            submitted_by:
+              type:
+              - integer
+              - 'null'
+            approved_at:
+              type:
+              - string
+              - 'null'
+              format: date-time
+            approved_by:
+              type:
+              - integer
+              - 'null'
+            rejected_at:
+              type:
+              - string
+              - 'null'
+              format: date-time
+            rejected_by:
+              type:
+              - integer
+              - 'null'
+            rejection_reason:
+              type:
+              - string
+              - 'null'
+        created_by:
+          type:
+          - integer
+          - 'null'
+        posted_by:
+          type:
+          - integer
+          - 'null'
         is_reversed:
           type: boolean
         reversed_by_entry_id:
@@ -3023,7 +3201,7 @@ components:
         auto_post:
           type: boolean
           default: false
-          description: Post immediately; requires `journal-entries.post`.
+          description: Post immediately; requires `journal-entries.post`. Rejected (422) when maker-checker requires approval.
         lines:
           type: array
           minItems: 2
@@ -3149,6 +3327,83 @@ components:
               type: number
             closing_balance:
               type: number
+    CashFlowPage:
+      type: object
+      description: Laravel paginator of cash/bank lines (cash_in, cash_out, net_cash_flow) plus totals for the whole period.
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        totals:
+          type: object
+          properties:
+            cash_in:
+              type: string
+            cash_out:
+              type: string
+            net_cash_flow:
+              type: string
+    StatementPage:
+      type: object
+      description: Laravel paginator of posted lines, each with running_balance (base currency, on the account's normal side),
+        plus opening balance and totals.
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              entry_date:
+                type: string
+              journal_entry_id:
+                type: integer
+              reference:
+                type:
+                - string
+                - 'null'
+              base_debit:
+                type: string
+              base_credit:
+                type: string
+              running_balance:
+                type: string
+                example: '1250.00'
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+            account_code:
+              type: string
+            account_name:
+              type: string
+            normal_balance:
+              type: string
+        opening_balance:
+          type: string
+          example: '1000.00'
+        totals:
+          type: object
+          properties:
+            debit:
+              type: string
+            credit:
+              type: string
+            closing_balance:
+              type: string
     Health:
       type: object
       properties:

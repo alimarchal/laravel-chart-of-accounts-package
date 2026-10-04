@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,10 +30,11 @@ class JournalEntryController extends Controller
                 AllowedFilter::partial('description'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('currency_id'),
+                AllowedFilter::exact('approval_status'),
+                AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
+                AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
                 AllowedFilter::exact('accounting_period_id'),
             ])
-            ->when(request('filter.entry_date_from'), fn ($query, $date) => $query->whereDate('entry_date', '>=', $date))
-            ->when(request('filter.entry_date_to'), fn ($query, $date) => $query->whereDate('entry_date', '<=', $date))
             ->latest('entry_date')
             ->paginate(25)
             ->withQueryString();
@@ -102,8 +104,12 @@ class JournalEntryController extends Controller
 
     public function show(JournalEntry $journalEntry): Response
     {
+        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']);
+
         return Inertia::render('accounting/journal-entries/show', [
-            'entry' => $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']),
+            'entry' => $journalEntry,
+            'trail' => $journalEntry->trail(),
+            'requiresApproval' => $journalEntry->status === 'draft' && app(JournalApprovalService::class)->requiresApproval($journalEntry),
         ]);
     }
 
@@ -142,6 +148,27 @@ class JournalEntryController extends Controller
         $service->reverse($journalEntry, $validated['description'] ?? null, $validated['reversal_date'] ?? null);
 
         return back()->with('success', 'Journal entry reversed.');
+    }
+
+    public function submit(JournalEntry $journalEntry, JournalApprovalService $approvals): RedirectResponse
+    {
+        $approvals->submit($journalEntry);
+
+        return back()->with('success', 'Journal entry submitted for approval.');
+    }
+
+    public function approve(JournalEntry $journalEntry, JournalApprovalService $approvals): RedirectResponse
+    {
+        $approvals->approve($journalEntry);
+
+        return back()->with('success', 'Journal entry approved and posted.');
+    }
+
+    public function reject(Request $request, JournalEntry $journalEntry, JournalApprovalService $approvals): RedirectResponse
+    {
+        $approvals->reject($journalEntry, $request->validate(['reason' => ['required', 'string', 'max:2000']])['reason']);
+
+        return back()->with('success', 'Journal entry rejected and returned to its maker.');
     }
 
     public function void(JournalEntry $journalEntry, VoidJournalEntryAction $action): RedirectResponse

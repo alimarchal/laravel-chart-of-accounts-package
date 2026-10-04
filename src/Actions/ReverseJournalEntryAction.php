@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryReversed;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
@@ -62,7 +63,8 @@ class ReverseJournalEntryAction
                 ]);
             }
 
-            $postedReversal = app(PostJournalEntryAction::class)->execute($reversal);
+            // A reversal is system-generated: authorised by journal-entries.reverse, not by maker-checker.
+            $postedReversal = app(PostJournalEntryAction::class)->execute($reversal, systemGenerated: true);
 
             $entry->forceFill([
                 'reversed_by_entry_id' => $postedReversal->id,
@@ -70,6 +72,7 @@ class ReverseJournalEntryAction
             ])->save();
 
             AccountingAuditLog::record($entry, 'JOURNAL_REVERSED', null, ['reversed_by_entry_id' => $postedReversal->id]);
+            event(new JournalEntryReversed($entry->refresh(), $postedReversal));
 
             return $postedReversal;
         });

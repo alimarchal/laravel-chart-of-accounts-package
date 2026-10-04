@@ -17,9 +17,9 @@
                 <x-accounting::label for="filter_action" value="Action" />
                 <select id="filter_action" name="filter[action]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Actions</option>
-                    <option value="INSERT" {{ request('filter.action') === 'INSERT' ? 'selected' : '' }}>Insert (Create)</option>
-                    <option value="UPDATE" {{ request('filter.action') === 'UPDATE' ? 'selected' : '' }}>Update</option>
-                    <option value="DELETE" {{ request('filter.action') === 'DELETE' ? 'selected' : '' }}>Delete</option>
+                    @foreach ($actions as $a)
+                        <option value="{{ $a }}" {{ request('filter.action') === $a ? 'selected' : '' }}>{{ ucwords(strtolower(str_replace('_', ' ', $a))) }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>

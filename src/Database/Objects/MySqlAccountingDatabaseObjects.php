@@ -82,6 +82,7 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
         END");
         DB::unprepared("CREATE TRIGGER acct_lines_posted_guard_update BEFORE UPDATE ON accounting_journal_entry_lines FOR EACH ROW BEGIN
             IF {$parentPosted('OLD')} AND (NEW.debit <> OLD.debit OR NEW.credit <> OLD.credit
+                OR NEW.base_debit <> OLD.base_debit OR NEW.base_credit <> OLD.base_credit
                 OR NEW.chart_of_account_id <> OLD.chart_of_account_id OR NEW.journal_entry_id <> OLD.journal_entry_id) THEN {$message}; END IF;
         END");
         DB::unprepared("CREATE TRIGGER acct_lines_posted_guard_delete BEFORE DELETE ON accounting_journal_entry_lines FOR EACH ROW BEGIN
@@ -135,6 +136,8 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
                 jed.line_no,
                 jed.debit,
                 jed.credit,
+                jed.base_debit,
+                jed.base_credit,
                 jed.description AS line_description,
                 cc.code AS cost_center_code,
                 cc.name AS cost_center_name,
@@ -156,11 +159,11 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
                 at.name AS account_type,
                 at.report_group,
                 coa.normal_balance,
-                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.debit ELSE 0 END), 0) AS total_debits,
-                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.credit ELSE 0 END), 0) AS total_credits,
+                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_debit ELSE 0 END), 0) AS total_debits,
+                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_credit ELSE 0 END), 0) AS total_credits,
                 CASE
-                    WHEN coa.normal_balance = 'debit' THEN COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.debit - jed.credit ELSE 0 END), 0)
-                    ELSE COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.credit - jed.debit ELSE 0 END), 0)
+                    WHEN coa.normal_balance = 'debit' THEN COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_debit - jed.base_credit ELSE 0 END), 0)
+                    ELSE COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_credit - jed.base_debit ELSE 0 END), 0)
                 END AS balance
             FROM accounting_chart_of_accounts coa
             JOIN accounting_account_types at ON at.id = coa.account_type_id

@@ -43,7 +43,7 @@ class CloseFiscalYearAction
                 ->where('type.report_group', 'IncomeStatement')
                 ->where('coa.is_group', false)
                 ->groupBy('coa.id')
-                ->selectRaw('coa.id, COALESCE(SUM(line.debit), 0) as debits, COALESCE(SUM(line.credit), 0) as credits')
+                ->selectRaw('coa.id, COALESCE(SUM(line.base_debit), 0) as debits, COALESCE(SUM(line.base_credit), 0) as credits')
                 ->get();
 
             $lines = [];
@@ -85,6 +85,7 @@ class CloseFiscalYearAction
                     'reference' => "YEAR-END-{$period->id}",
                     'description' => "Year-end close for {$period->name}",
                     'auto_post' => true,
+                    'system_generated' => true,
                     'lines' => $lines,
                 ]);
 

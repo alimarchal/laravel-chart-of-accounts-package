@@ -12,8 +12,8 @@ class TrialBalanceController extends Controller
     public function __invoke(TrialBalanceReport $report): Response
     {
         return Inertia::render('accounting/reports/trial-balance', [
-            'rows' => $report->rows(),
-            'totals' => $report->totals(),
+            'rows' => $rows = $report->rows(),
+            'totals' => $report->totals($rows),
         ]);
     }
 }

@@ -30,8 +30,8 @@ class TrialBalanceBladeController extends Controller
             ->join('accounting_journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('je.status', 'posted')
             ->whereDate('je.entry_date', '<=', $asOfDate)
-            ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debits')
-            ->selectRaw('COALESCE(SUM(jel.credit), 0) as total_credits')
+            ->selectRaw('COALESCE(SUM(jel.base_debit), 0) as total_debits')
+            ->selectRaw('COALESCE(SUM(jel.base_credit), 0) as total_credits')
             ->first();
 
         $trialBalance = (object) [

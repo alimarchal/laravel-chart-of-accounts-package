@@ -3,8 +3,15 @@ stateDiagram-v2
     [*] --> Draft: create<br/>(journal-entries.create)
 
     Draft --> Draft: edit lines<br/>(journal-entries.update)
-    Draft --> Posted: post<br/>(journal-entries.post)<br/>all checks pass
+    Draft --> Posted: post<br/>(journal-entries.post)<br/>below approval threshold
+    Draft --> Pending: submit<br/>(maker)
+    Pending --> Posted: approve<br/>(checker ≠ maker)
+    Pending --> Rejected: reject + reason<br/>(checker)
+    Rejected --> Draft: edit
     Draft --> Void: void<br/>(journal-entries.void)
+
+    state "Pending approval" as Pending
+    state "Rejected" as Rejected
 
     Posted --> Reversed: reverse<br/>(journal-entries.reverse)
 

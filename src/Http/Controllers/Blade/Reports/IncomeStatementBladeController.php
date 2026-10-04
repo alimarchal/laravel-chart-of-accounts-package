@@ -73,7 +73,7 @@ class IncomeStatementBladeController extends Controller
             ])
             ->join('accounting_account_types as at', 'at.id', '=', 'a.account_type_id')
             ->leftJoin(DB::raw("(
-                SELECT jel.chart_of_account_id, jel.debit, jel.credit
+                SELECT jel.chart_of_account_id, jel.base_debit AS debit, jel.base_credit AS credit
                 FROM accounting_journal_entry_lines jel
                 JOIN accounting_journal_entries je ON je.id = jel.journal_entry_id
                 WHERE je.status = 'posted'

@@ -37,11 +37,11 @@ class IncomeStatementReport
                 type.name as account_type,
                 type.report_group,
                 coa.normal_balance,
-                COALESCE(SUM(line.debit), 0) as total_debits,
-                COALESCE(SUM(line.credit), 0) as total_credits,
+                COALESCE(SUM(line.base_debit), 0) as total_debits,
+                COALESCE(SUM(line.base_credit), 0) as total_credits,
                 CASE WHEN coa.normal_balance = 'debit'
-                    THEN COALESCE(SUM(line.debit - line.credit), 0)
-                    ELSE COALESCE(SUM(line.credit - line.debit), 0)
+                    THEN COALESCE(SUM(line.base_debit - line.base_credit), 0)
+                    ELSE COALESCE(SUM(line.base_credit - line.base_debit), 0)
                 END as balance
             ")
             ->orderBy('coa.account_code')

@@ -14,7 +14,8 @@ class CashFlowBladeController extends Controller
         $filters = $request->only(['date_from', 'date_to']);
 
         return view('accounting::reports.cash-flow', [
-            'rows' => $report->rows($filters),
+            'rows' => $report->query($filters)->paginate(100)->withQueryString(),
+            'totals' => $report->totals($filters),
             'filters' => $filters,
         ]);
     }

@@ -2,38 +2,41 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryPosted;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
+use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
+use Alimarchal\LaravelChartOfAccounts\Support\BaseAmounts;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PostJournalEntryAction
 {
-    public function execute(JournalEntry $journalEntry): JournalEntry
+    /**
+     * @param  bool  $systemGenerated  true for entries the package creates itself (reversals, year-end
+     *                                 closing entries); they are not subject to maker-checker approval.
+     */
+    public function execute(JournalEntry $journalEntry, bool $systemGenerated = false): JournalEntry
     {
-        return DB::transaction(function () use ($journalEntry): JournalEntry {
+        return DB::transaction(function () use ($journalEntry, $systemGenerated): JournalEntry {
             $entry = JournalEntry::query()->with(['lines.account'])->lockForUpdate()->findOrFail($journalEntry->id);
 
             if ($entry->status !== 'draft') {
                 throw new AccountingException('Only draft journal entries can be posted.');
             }
 
-            $this->validateLines($entry);
-
-            // Lock the period row so a concurrent period close cannot interleave with this posting.
-            $period = AccountingPeriod::query()
-                ->whereDate('start_date', '<=', $entry->entry_date)
-                ->whereDate('end_date', '>=', $entry->entry_date)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $period || $period->status !== 'open') {
-                throw new AccountingException('No open accounting period exists for this entry date.');
+            if (! $systemGenerated && $entry->approval_status !== 'approved' && app(JournalApprovalService::class)->requiresApproval($entry)) {
+                throw new AccountingException('This journal entry requires approval: submit it for approval instead of posting it directly.');
             }
+
+            $period = $this->assertPostable($entry, lockPeriod: true);
+
+            $this->writeBaseAmounts($entry);
 
             $entry->forceFill([
                 'accounting_period_id' => $period->id,
@@ -44,8 +47,52 @@ class PostJournalEntryAction
 
             AccountingAuditLog::record($entry, 'JOURNAL_POSTED', ['status' => 'draft'], ['status' => 'posted']);
 
-            return $entry->refresh()->load(['lines.account', 'currency', 'accountingPeriod']);
+            $entry = $entry->refresh()->load(['lines.account', 'currency', 'accountingPeriod']);
+
+            event(new JournalEntryPosted($entry));
+
+            return $entry;
         });
+    }
+
+    /**
+     * Every rule a draft must satisfy to be posted; returns the open period it will post into.
+     * Used before posting and when an entry is submitted for approval (so makers learn about
+     * problems at submission time, not when the checker approves).
+     */
+    public function assertPostable(JournalEntry $entry, bool $lockPeriod = false): AccountingPeriod
+    {
+        $entry->loadMissing('lines.account');
+        $this->validateLines($entry);
+
+        // A shared lock on the period row: closing/reopening takes an exclusive lock, so a close cannot
+        // interleave with this posting, while concurrent postings into the same period do not block each other.
+        $period = AccountingPeriod::query()
+            ->whereDate('start_date', '<=', $entry->entry_date)
+            ->whereDate('end_date', '>=', $entry->entry_date)
+            ->when($lockPeriod, fn ($query) => $query->sharedLock())
+            ->first();
+
+        if (! $period || $period->status !== 'open') {
+            throw new AccountingException('No open accounting period exists for this entry date.');
+        }
+
+        return $period;
+    }
+
+    /**
+     * Freeze the base-currency amounts while the entry is still a draft (posted lines are immutable).
+     */
+    private function writeBaseAmounts(JournalEntry $entry): void
+    {
+        $lines = $entry->lines
+            ->sortBy('line_no')
+            ->mapWithKeys(fn ($line) => [$line->id => ['debit' => $line->getRawOriginal('debit'), 'credit' => $line->getRawOriginal('credit')]])
+            ->all();
+
+        foreach (BaseAmounts::compute($lines, (string) $entry->getRawOriginal('fx_rate_to_base')) as $lineId => $amounts) {
+            JournalEntryLine::query()->whereKey($lineId)->update($amounts);
+        }
     }
 
     private function validateLines(JournalEntry $entry): void

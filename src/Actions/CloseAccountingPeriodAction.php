@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Events\AccountingPeriodClosed;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
@@ -40,7 +41,7 @@ class CloseAccountingPeriodAction
                 ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
                 ->where('entry.status', 'posted')
                 ->where('entry.accounting_period_id', $period->id)
-                ->selectRaw('COALESCE(SUM(line.debit), 0) as debits, COALESCE(SUM(line.credit), 0) as credits')
+                ->selectRaw('COALESCE(SUM(line.base_debit), 0) as debits, COALESCE(SUM(line.base_credit), 0) as credits')
                 ->first();
 
             $period->forceFill([
@@ -54,7 +55,10 @@ class CloseAccountingPeriodAction
 
             AccountingAuditLog::record($period, 'PERIOD_CLOSED', ['status' => 'open'], ['status' => 'closed']);
 
-            return $period->refresh();
+            $period = $period->refresh();
+            event(new AccountingPeriodClosed($period));
+
+            return $period;
         });
     }
 
@@ -73,7 +77,7 @@ class CloseAccountingPeriodAction
             ->where('type.report_group', 'IncomeStatement')
             ->whereDate('entry.entry_date', '>=', $period->start_date)
             ->whereDate('entry.entry_date', '<=', $period->end_date)
-            ->selectRaw('COALESCE(SUM(line.credit), 0) as credits, COALESCE(SUM(line.debit), 0) as debits')
+            ->selectRaw('COALESCE(SUM(line.base_credit), 0) as credits, COALESCE(SUM(line.base_debit), 0) as debits')
             ->first();
 
         return Money::toCents((string) $row->credits) - Money::toCents((string) $row->debits);

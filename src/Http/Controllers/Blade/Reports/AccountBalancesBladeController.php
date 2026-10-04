@@ -52,14 +52,14 @@ class AccountBalancesBladeController extends Controller
                 'a.normal_balance',
                 'a.is_active',
                 'a.is_group',
-                DB::raw("COALESCE(SUM(CASE WHEN je.entry_date <= '{$asOfDate}' THEN jel.debit ELSE 0 END), 0) as total_debits"),
-                DB::raw("COALESCE(SUM(CASE WHEN je.entry_date <= '{$asOfDate}' THEN jel.credit ELSE 0 END), 0) as total_credits"),
+                DB::raw("COALESCE(SUM(CASE WHEN je.entry_date <= '{$asOfDate}' THEN jel.base_debit ELSE 0 END), 0) as total_debits"),
+                DB::raw("COALESCE(SUM(CASE WHEN je.entry_date <= '{$asOfDate}' THEN jel.base_credit ELSE 0 END), 0) as total_credits"),
                 DB::raw("COALESCE(SUM(CASE
                     WHEN je.entry_date <= '{$asOfDate}' THEN
                         CASE
-                            WHEN a.normal_balance = 'debit' THEN jel.debit - jel.credit
-                            WHEN a.normal_balance = 'credit' THEN jel.credit - jel.debit
-                            ELSE jel.debit - jel.credit
+                            WHEN a.normal_balance = 'debit' THEN jel.base_debit - jel.base_credit
+                            WHEN a.normal_balance = 'credit' THEN jel.base_credit - jel.base_debit
+                            ELSE jel.base_debit - jel.base_credit
                         END
                     ELSE 0
                 END), 0) as balance"),

@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
@@ -67,8 +68,8 @@ class AccountingInstallCommand extends Command
         $this->info('Syncing database objects...');
         Artisan::call('accounting:sync-db-objects', [], $this->output);
 
+        $this->checkUserModel();
         $this->assignSuperAdminToFirstUser();
-
         $this->warnIfApiGuardMissing();
 
         $this->info('Verifying installation...');
@@ -112,6 +113,41 @@ class AccountingInstallCommand extends Command
         }
     }
 
+    /**
+     * Roles need Spatie's HasRoles on the user model; API tokens need Sanctum's HasApiTokens.
+     * Print the exact lines to add instead of failing later with an obscure error.
+     */
+    private function checkUserModel(): void
+    {
+        $model = config('auth.providers.users.model');
+
+        if (! is_string($model) || ! class_exists($model)) {
+            return;
+        }
+
+        $traits = class_uses_recursive($model);
+        $missing = array_filter([
+            'Spatie\\Permission\\Traits\\HasRoles' => ! in_array('Spatie\\Permission\\Traits\\HasRoles', $traits, true),
+            'Laravel\\Sanctum\\HasApiTokens' => config('accounting.api_enabled', true)
+                && trait_exists('Laravel\\Sanctum\\HasApiTokens')
+                && ! in_array('Laravel\\Sanctum\\HasApiTokens', $traits, true),
+        ]);
+
+        if ($missing === []) {
+            $this->info('User model OK ('.$model.').');
+
+            return;
+        }
+
+        $this->warn('Add these traits to '.$model.':');
+
+        foreach (array_keys($missing) as $trait) {
+            $this->line('   use '.$trait.';');
+        }
+
+        $this->line('   …and list them in the class body, e.g. "use HasApiTokens, HasFactory, HasRoles, Notifiable;"');
+    }
+
     private function assignSuperAdminToFirstUser(): void
     {
         $userModel = config('auth.providers.users.model');
@@ -133,6 +169,12 @@ class AccountingInstallCommand extends Command
             return;
         }
 
+        if (! $user instanceof Model || ! method_exists($user, 'assignRole')) {
+            $this->warn('The super-admin role was not assigned: add HasRoles to your user model (see above), then run "php artisan accounting:install" again.');
+
+            return;
+        }
+
         if (! $email) {
             $this->warn('No --admin-email given: the super-admin role goes to the first user. Verify this is intended.');
         }
@@ -140,7 +182,7 @@ class AccountingInstallCommand extends Command
         $role = Role::findByName('super-admin', 'web');
         $user->assignRole($role);
 
-        $this->info("Assigned \"super-admin\" role to user: {$user->email}");
+        $this->info('Assigned "super-admin" role to user: '.$user->getAttribute('email'));
     }
 
     private function spatiePermissionMigrationExists(): bool

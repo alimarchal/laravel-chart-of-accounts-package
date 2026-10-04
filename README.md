@@ -16,14 +16,17 @@
 
 ## Highlights
 
-- Double-entry journal with draft → posted → reversed / void workflow
-- Balance enforced in **exact cents**; posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite)
-- Hierarchical chart of accounts with integrity rules (no cycles, same-type parents, structural fields locked once used)
-- Accounting periods with close / reopen / fiscal-year close, balance snapshots, retained-earnings roll-forward
-- 10+ reports (GL, trial balance, balance sheet, income statement, cash flow, aged AR/AP, bank & cash book, …)
-- REST API (versioned), Inertia/React and Blade/Livewire UIs
-- Spatie Permission RBAC with privilege-escalation protection, full audit trail
-- Test suite (Pest + Testbench) run in CI on PHP 8.2–8.4, Laravel 11–13, SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+- **Double-entry journal** — draft → posted → reversed / void, balanced in **exact cents**
+- **Tamper-proof ledger** — posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite) and every change is written to an audit log
+- **Maker-checker approvals** — entries above a threshold need a second person to approve; nobody approves their own work
+- **Roles with segregation of duties** — super-admin, admin, accountant (maker), approver (checker), auditor, viewer; `accounting:roles` audits the matrix
+- **Multi-currency** — every line keeps its frozen base-currency amount; all reports are in the base currency
+- **Periods** — close / reopen / fiscal-year close, balance snapshots, retained-earnings roll-forward
+- **12 reports** — trial balance, balance sheet, income statement, cash flow, general ledger, account statement (running balance), bank & cash book, aged AR/AP — export to CSV (streamed, any size), XLSX, PDF
+- **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
+- **Events & signed webhooks** for every ledger action (posted, reversed, approved, period closed, …)
+- **Proven at scale** — 400,000 journal lines: trial balance 0.77 s, account statement 0.1 s, 46 concurrent postings/s with zero imbalance ([performance report](docs/performance.md))
+- **Tested** — 220+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
 
 ---
 
@@ -55,37 +58,37 @@
 
 ![API request](docs/images/06-api-request.png)
 
+### 7. Maker-checker approval
+
+![Maker-checker](docs/images/07-maker-checker.png)
+
 ---
 
 ## Requirements
 
-- PHP ^8.2 (Laravel 13 requires PHP ^8.3)
-- Laravel ^11.0 | ^12.0 | ^13.0
-- MySQL 8 / MariaDB 10.6+ / PostgreSQL 13+ / SQLite 3.35+
-- `livewire/livewire` ^3|^4 for the Blade UI, or `inertiajs/inertia-laravel` for the React UI
-- `laravel/sanctum` (or another guard configured in `ACCOUNTING_API_MIDDLEWARE`) for the API
+| | Supported |
+|---|---|
+| PHP | 8.2, 8.3, 8.4 (Laravel 13 needs ≥ 8.3) |
+| Laravel | 11, 12, 13 — **Laravel 14** (expected Q1 2027, PHP ≥ 8.4) is tracked in CI against its dev branch and will be supported on release |
+| Database | MySQL 8 · MariaDB 10.6+ · PostgreSQL 13+ · SQLite 3.35+ |
+| React UI | Laravel React starter kit — Inertia 3 (current kit) or Inertia 2 (small `app.tsx` addition, see Installation) |
+| Blade UI | Livewire 3 or 4 |
+| API auth | Laravel Sanctum (or any guard via `ACCOUNTING_API_MIDDLEWARE`) |
 
 ---
 
-## Installation
+## Installation (5 minutes)
 
-Tested end-to-end on a fresh **Laravel 13** app: install takes about one second and the first API call works immediately.
+**1. Install the package**
 
 ```bash
-# 1. Package
 composer require alimarchal/laravel-chart-of-accounts
-
-# 2. Choose a UI in .env (default: inertia)
-#    ACCOUNTING_UI_DRIVER=inertia   React (Breeze / React starter kit)
-#    ACCOUNTING_UI_DRIVER=blade     Blade + Livewire (composer require livewire/livewire)
-#    ACCOUNTING_UI_DRIVER=api       REST API only — no web routes, views or Livewire (lightest)
-
-# 3. API authentication (Laravel 11+ ships without it)
-php artisan install:api
+php artisan install:api            # Sanctum, for the REST API (skip if already installed)
 ```
 
+**2. Add two traits to `app/Models/User.php`**
+
 ```php
-// 4. app/Models/User.php
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -95,25 +98,78 @@ class User extends Authenticatable
 }
 ```
 
+**3. Run the installer**
+
 ```bash
-# 5. Install (idempotent — safe to re-run)
 php artisan accounting:install --admin-email=you@example.com
 ```
 
-> Without `--admin-email` the `super-admin` role goes to the **first user** in the users table — verify that is intended.
+That's it — open `/accounting`. The installer is idempotent (safe to re-run) and takes about two seconds. It
+publishes config and migrations, migrates, seeds a ready-to-use chart of accounts, currencies, the current
+fiscal year, roles and tax codes, creates the database views and triggers, gives `super-admin` to your user,
+and verifies everything. If a trait is missing it prints the exact lines to add.
 
-**`accounting:install` does automatically:**
+**Choose your UI** (in `.env`, before step 3):
 
-1. Publishes the config (`config/accounting.php`) and migrations
-2. Publishes `spatie/laravel-permission` and `spatie/laravel-activitylog` migrations (if missing)
-3. Publishes the React pages (`inertia`) or the Select2/jQuery assets (`blade`); `--views` also publishes Blade views for customisation
-4. Runs `migrate --force` (works in production)
-5. Seeds account types, currencies, chart of accounts, current period, roles/permissions and tax codes (never overwrites existing data)
-6. Syncs database objects: reporting views, audit triggers and posted-entry immutability triggers
-7. Assigns `super-admin` (to `--admin-email`, or the first user)
-8. Verifies the installation and warns if the Sanctum guard is missing
+| `ACCOUNTING_UI_DRIVER` | You get | Notes |
+|---|---|---|
+| `inertia` (default) | React pages in `resources/js/pages/accounting` | Run `npm run build` afterwards |
+| `blade` | Blade + Livewire pages | `composer require livewire/livewire` |
+| `api` | REST API only | Lightest: no web routes, views or Livewire |
 
-Available roles: `super-admin` (all), `admin`, `accountant`, `viewer`.
+<details>
+<summary><b>React: add the menu link and (older starter kits) the layout</b></summary>
+
+Add Accounting to `resources/js/components/app-sidebar.tsx`:
+
+```tsx
+import { Calculator } from 'lucide-react';
+
+const mainNavItems: NavItem[] = [
+    { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+    { title: 'Accounting', href: '/accounting', icon: Calculator },
+];
+```
+
+The pages declare their breadcrumbs with `Page.layout = { breadcrumbs }`. The current starter kit
+(**Inertia 3**) wraps them in the app layout automatically. Starter kits on **Inertia 2** need this
+`resolve` in `resources/js/app.tsx` (tested with the February 2025 kit):
+
+```tsx
+import type { ReactNode } from 'react';
+import AppLayout from './layouts/app-layout';
+import type { BreadcrumbItem } from './types';
+
+createInertiaApp({
+    resolve: (name) =>
+        resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')).then((module) => {
+            const page = (module as { default: { layout?: unknown } }).default;
+            const options = page.layout as { breadcrumbs?: BreadcrumbItem[] } | undefined;
+
+            if (name.startsWith('accounting/') && typeof options !== 'function') {
+                page.layout = (child: ReactNode) => <AppLayout breadcrumbs={options?.breadcrumbs}>{child}</AppLayout>;
+            }
+
+            return module;
+        }),
+    // ...
+});
+```
+</details>
+
+<details>
+<summary><b>Optional settings</b></summary>
+
+```env
+ACCOUNTING_BASE_CURRENCY=USD            # default PKR; set before installing
+ACCOUNTING_CHART_PRESET=general         # or "school"
+ACCOUNTING_ROUTE_PREFIX=accounting      # URL prefix for the web UI
+ACCOUNTING_APPROVALS_ENABLED=true       # maker-checker (see below)
+ACCOUNTING_APPROVAL_THRESHOLD=100000    # in base currency; 0 = every entry
+ACCOUNTING_WEBHOOK_URLS=https://erp.example.com/hooks/accounting
+ACCOUNTING_WEBHOOK_SECRET=change-me
+```
+</details>
 
 ---
 
@@ -167,8 +223,9 @@ After `composer update alimarchal/laravel-chart-of-accounts`:
 php artisan accounting:update
 ```
 
-Refreshes package-owned files (React pages / Select2 assets), runs new migrations (`--force`) and re-syncs the
-database views and triggers. It never overwrites your `config/accounting.php` or customised views
+Refreshes package-owned files (React pages / Select2 assets), runs new migrations (`--force`), re-syncs the
+database views and triggers, and adds roles/permissions introduced by the new version (your changes to
+existing roles are kept). It never overwrites your `config/accounting.php` or customised views
 (`--views` re-publishes Blade views explicitly).
 
 ---
@@ -328,6 +385,114 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 
 ---
 
+## Maker-checker approvals
+
+Turn on four-eyes control for journal entries:
+
+```env
+ACCOUNTING_APPROVALS_ENABLED=true
+ACCOUNTING_APPROVAL_THRESHOLD=100000   # base currency; entries below post directly. 0 = every entry
+```
+
+![Maker-checker](docs/images/07-maker-checker.png)
+
+| Step | Who | Web UI | API |
+|---|---|---|---|
+| Record the draft | maker (`accountant`) | **Save** | `POST /journal-entries` |
+| Submit | maker | **Submit for approval** | `POST /journal-entries/{id}/submit` |
+| Approve → posts it | checker (`approver`) | **Approve & post** | `POST /journal-entries/{id}/approve` |
+| or Reject with a reason | checker | **Reject** | `POST /journal-entries/{id}/reject` `{"reason": "…"}` |
+| Fix and resubmit | maker | **Edit** → **Submit** | `PUT` then `submit` |
+
+- The checker can never be the person who created or submitted the entry (not even `super-admin`) unless
+  `ACCOUNTING_ALLOW_SELF_APPROVAL=true`.
+- Posting an entry that needs approval directly is refused (`422`), from the UI, the API and `JournalEntry::record()`.
+- All posting rules (balance, open period, active accounts) are checked at **submission**, so makers learn
+  about problems before the checker sees the entry.
+- Editing a rejected or pending entry sends it back to draft; it must be submitted again.
+- The threshold is compared in the base currency (`amount × fx_rate_to_base`).
+- Reversals and year-end closing entries are system-generated and are not held for approval.
+- Every step is recorded (who + when) and shown as an **audit trail** on the entry page; the pending queue is
+  `GET /journal-entries?filter[approval_status]=pending`.
+
+---
+
+## Events & webhooks
+
+Every ledger action dispatches a Laravel event **after the database transaction commits** (listeners never see
+rolled-back work):
+
+| Event class | Webhook name |
+|---|---|
+| `JournalEntryPosted` | `journal_entry.posted` |
+| `JournalEntryReversed` | `journal_entry.reversed` |
+| `JournalEntryVoided` | `journal_entry.voided` |
+| `JournalEntrySubmitted` / `Approved` / `Rejected` | `journal_entry.submitted` / `.approved` / `.rejected` |
+| `AccountingPeriodClosed` / `Reopened` | `accounting_period.closed` / `.reopened` |
+
+All live in `Alimarchal\LaravelChartOfAccounts\Events` and implement `AccountingEvent`, so one listener can catch them all:
+
+```php
+Event::listen(AccountingEvent::class, fn (AccountingEvent $e) => logger($e->name(), $e->payload()));
+```
+
+**Webhooks** — set `ACCOUNTING_WEBHOOK_URLS` (comma separated) and `ACCOUNTING_WEBHOOK_SECRET`. Each endpoint
+gets its own queued job (retried with backoff 10 s → 1 h, `ACCOUNTING_WEBHOOK_TRIES`, default 5). Run a queue
+worker in production; a receiver being down never fails the request that posted the entry.
+
+```http
+POST /hooks/accounting
+X-Accounting-Event: journal_entry.posted
+X-Accounting-Delivery: 0b6f…           # same on every retry of this delivery
+X-Accounting-Signature: t=1791100000,v1=5d41…
+
+{"id":"9c1e…","event":"journal_entry.posted","occurred_at":"2026-10-04T10:15:00Z","data":{"journal_entry":{"id":42,…}}}
+```
+
+Verify the signature on the receiving side (`id` is stable across retries — use it to de-duplicate):
+
+```php
+[$t, $v1] = array_map(fn ($p) => explode('=', $p, 2)[1], explode(',', $request->header('X-Accounting-Signature')));
+$valid = hash_equals(hash_hmac('sha256', $t.'.'.$request->getContent(), config('services.accounting.secret')), $v1)
+    && abs(time() - (int) $t) < 300;   // reject replays older than 5 minutes
+```
+
+---
+
+## Multi-currency
+
+Each journal entry has a currency and `fx_rate_to_base`. When it is posted, every line's **base-currency
+amount** is calculated once and frozen (`base_debit` / `base_credit`, cents-exact: any rounding difference goes
+to the largest line, so the entry still balances in the base currency). All reports, balances and the
+approval threshold use these base amounts, so a later change of the exchange rate never changes history.
+
+---
+
+## Reports & exports
+
+| Report | Web | API | Notes |
+|---|---|---|---|
+| Trial balance | ✓ | `reports/trial-balance` | totals must be equal |
+| Balance sheet | ✓ | `reports/balance-sheet` | `as_of_date` |
+| Income statement | ✓ | `reports/income-statement` | `date_from`, `date_to` |
+| Cash flow | ✓ | `reports/cash-flow` | direct method: cash & bank movements, period totals; paginated |
+| General ledger | ✓ | `reports/general-ledger` | filter by account, dates, status; paginated |
+| Account statement | ✓ | `reports/account-statement` | opening balance, **running balance**, closing balance; paginated |
+| Bank book / cash book | ✓ | `reports/bank-book`, `cash-book` | |
+| Aged receivables / payables | ✓ | `reports/aged-receivables`, `aged-payables` | 30/60/90 buckets |
+
+Every web report exports to **CSV, XLSX and PDF** (`/accounting/reports/{report}/export/{csv|xlsx|pdf}`, with
+the same filters). CSV is streamed row by row, so it works for millions of lines. XLSX and PDF are built in
+memory and refuse more than `ACCOUNTING_EXPORT_MAX_XLSX_ROWS` (50,000) / `ACCOUNTING_EXPORT_MAX_PDF_ROWS`
+(2,000) rows with a `422` asking you to narrow the filters or use CSV. The permission is checked before any
+data is read.
+
+**Performance** with 400,000 posted lines (PostgreSQL 16, 4 vCPU): trial balance 0.77 s, balance sheet 0.32 s,
+general ledger page 0.09–0.38 s, account statement 0.11 s, 46 postings/s from 24 concurrent clients with zero
+imbalance. Full numbers: [docs/performance.md](docs/performance.md).
+
+---
+
 ## Full REST API Reference
 
 Base URL: `/api/v1/accounting` — `ACCOUNTING_API_PREFIX`; middleware `ACCOUNTING_API_MIDDLEWARE` (default `api,auth:sanctum`)
@@ -343,6 +508,8 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | POST | `/journal-entries/{id}/post` | Post a draft | `journal-entries.post` |
 | POST | `/journal-entries/{id}/reverse` | Reverse (optional `reversal_date`) | `journal-entries.reverse` |
 | POST | `/journal-entries/{id}/void` | Void a draft | `journal-entries.void` |
+| POST | `/journal-entries/{id}/submit` | Submit a draft for approval (maker-checker) | `journal-entries.create` |
+| POST | `/journal-entries/{id}/approve` · `/reject` | Approve (posts it) / reject with `reason` | `journal-entries.approve` |
 | GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
 | GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
 | GET | `/chart-of-accounts/{id}/balance` | Balance as of a date (groups include children) | `chart-of-accounts.view` |
@@ -354,6 +521,8 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET | `/reports/trial-balance` · `balance-sheet` · `income-statement` · `general-ledger` · `cash-flow` · `bank-book` · `cash-book` · `aged-receivables` · `aged-payables` · `account-statement` | Financial reports (posted entries only) | `reports.<name>.view` |
 
 List endpoints support `?filter[field]=value`, `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
+Journal entries also filter by `filter[approval_status]=pending|approved|rejected` and `filter[entry_date_from]` / `filter[entry_date_to]`.
+Ledger-style reports (general ledger, account statement, cash flow, bank & cash book) are paginated and return `totals` for the whole filter, not just the page.
 
 ---
 
@@ -376,6 +545,18 @@ return [
     'api_rate_limit'         => env('ACCOUNTING_API_RATE_LIMIT', 120),     // per minute per user; 0 = off
     'api_max_per_page'       => env('ACCOUNTING_API_MAX_PER_PAGE', 100),
     'users_table'            => env('ACCOUNTING_USERS_TABLE', 'users'),
+    'export_max_rows'        => ['xlsx' => 50000, 'pdf' => 2000],        // ACCOUNTING_EXPORT_MAX_*_ROWS; CSV is unlimited
+    'approvals' => [
+        'enabled'             => env('ACCOUNTING_APPROVALS_ENABLED', false),
+        'threshold'           => env('ACCOUNTING_APPROVAL_THRESHOLD', '0'),     // base currency; 0 = all entries
+        'allow_self_approval' => env('ACCOUNTING_ALLOW_SELF_APPROVAL', false),
+    ],
+    'webhooks' => [
+        'urls'    => env('ACCOUNTING_WEBHOOK_URLS', ''),        // comma separated
+        'secret'  => env('ACCOUNTING_WEBHOOK_SECRET'),
+        'timeout' => env('ACCOUNTING_WEBHOOK_TIMEOUT', 10),
+        'tries'   => env('ACCOUNTING_WEBHOOK_TRIES', 5),
+    ],
     'defaults' => [
         'currency_code'                  => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
         'cash_account_code'              => env('ACCOUNTING_CASH_ACCOUNT_CODE', '1101'),   // + child accounts
@@ -389,7 +570,7 @@ return [
     ],
     'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'general'), // 'general' or 'school'
     'permissions'  => [/* … */],
-    'roles'        => [/* super-admin, accountant, admin, viewer */],
+    'roles'        => [/* super-admin, admin, accountant, approver, auditor, viewer */],
 ];
 ```
 
@@ -414,6 +595,7 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 | `accounting:close-fiscal-year` | Close the current fiscal year |
 | `accounting:close-period` | Close an accounting period (snapshots, totals, net income) |
 | `accounting:open-period` | Reopen a closed accounting period |
+| `accounting:roles` | Print the role × permission matrix; fails if a role can both create and approve entries |
 
 ---
 
@@ -437,32 +619,110 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 
 ---
 
-## Permissions
+## Roles & permissions
 
-| Permission | Description |
-|------------|-------------|
-| `accounting.view` | View all accounting screens |
-| `accounting.manage-settings` | Manage roles, users, periods |
-| `account-types.view/create/update/delete` | Account type CRUD |
-| `currencies.view/create/update/delete` | Currency CRUD |
-| `periods.view/create/update/delete/close/reopen` | Period management |
-| `chart-of-accounts.view/create/update/delete` | COA CRUD |
-| `cost-centers.view/create/update/delete` | Cost center CRUD |
-| `journal-entries.view/create/update/delete/post/reverse/void` | Journal entry workflow |
-| `bank-accounts.view/create/update/delete` | Bank account CRUD |
-| `reconciliations.view/create/update/delete` | Reconciliation CRUD |
-| `tax-codes.view/create/update/delete` | Tax code CRUD |
-| `tax-rates.view/create/update/delete` | Tax rate CRUD |
-| `account-balance-snapshots.view` | View balance snapshots |
-| `reports.*.view` | View individual reports (GL, TB, BS, IS, CF, AR, AP, BB, CB, AB) |
-| `audit-logs.view` | View audit trail |
-| `user.view/create/update/delete/assign-role/assign-permission` | User management |
+Six roles are seeded, designed around **segregation of duties** (the person who records an entry is not
+the person who approves it):
 
-Roles: `super-admin` (all), `admin`, `accountant`, `viewer`.
+| Role | Who | Can | Cannot |
+|------|-----|-----|--------|
+| `super-admin` | Owner | Everything | Approve **its own** entries under maker-checker |
+| `admin` | IT / user admin | Users, roles, permissions | Record, post, approve or close anything |
+| `accountant` | **Maker** | Record, edit, post (below the approval threshold), reverse, void drafts, close periods, bank & reconciliations, tax, FX rates | Approve, reopen periods, manage users/roles |
+| `approver` | **Checker** | Approve or reject entries; read ledger & reports | Create, edit or post entries |
+| `auditor` | Internal / external audit | Read everything incl. the audit trail | Change anything |
+| `viewer` | Management | Read ledger & reports | Change anything |
 
-**Privilege-escalation protection:** a user can only assign roles and permissions they hold themselves, only a
-super-admin can manage super-admin users or the `super-admin` role, and changing a user's roles requires
-`user.assign-role` (direct permissions: `user.assign-permission`). Role management requires `accounting.manage-settings`.
+```bash
+php artisan accounting:roles            # who-can-what matrix from the database + SoD check
+php artisan accounting:roles --config   # the shipped defaults
+```
+
+`accounting:roles` exits non-zero if any role other than `super-admin` can both create **and** approve
+journal entries — handy as a deployment check.
+
+**Safe to customise:** change roles in the Settings → Roles screen. Re-running `accounting:seed`
+(e.g. after an upgrade) **never removes** permissions you changed — it only adds newly introduced ones.
+
+**Privilege-escalation protection:** a user can only grant roles/permissions they hold themselves, only a
+super-admin can manage super-admin users or the `super-admin` role, changing a user's roles requires
+`user.assign-role` (direct permissions: `user.assign-permission`), role management requires
+`accounting.manage-settings`.
+
+<details>
+<summary>Full role × permission matrix (defaults)</summary>
+
+| Permission | super-admin | admin | accountant | approver | auditor | viewer |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `accounting.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `accounting.manage-settings` | ✔ | ✔ |  |  |  |  |
+| `user.view` | ✔ | ✔ |  |  |  |  |
+| `user.create` | ✔ | ✔ |  |  |  |  |
+| `user.update` | ✔ | ✔ |  |  |  |  |
+| `user.delete` | ✔ |  |  |  |  |  |
+| `user.assign-role` | ✔ | ✔ |  |  |  |  |
+| `user.assign-permission` | ✔ | ✔ |  |  |  |  |
+| `account-types.view` | ✔ |  | ✔ |  | ✔ |  |
+| `account-types.create` | ✔ |  |  |  |  |  |
+| `account-types.update` | ✔ |  |  |  |  |  |
+| `account-types.delete` | ✔ |  |  |  |  |  |
+| `currencies.view` | ✔ |  | ✔ |  | ✔ |  |
+| `currencies.create` | ✔ |  |  |  |  |  |
+| `currencies.update` | ✔ |  | ✔ |  |  |  |
+| `currencies.delete` | ✔ |  |  |  |  |  |
+| `periods.view` | ✔ |  | ✔ |  | ✔ |  |
+| `periods.create` | ✔ |  |  |  |  |  |
+| `periods.update` | ✔ |  |  |  |  |  |
+| `periods.delete` | ✔ |  |  |  |  |  |
+| `periods.close` | ✔ |  | ✔ |  |  |  |
+| `periods.reopen` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `chart-of-accounts.create` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.update` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.delete` | ✔ |  |  |  |  |  |
+| `cost-centers.view` | ✔ |  | ✔ |  | ✔ |  |
+| `cost-centers.create` | ✔ |  | ✔ |  |  |  |
+| `cost-centers.update` | ✔ |  | ✔ |  |  |  |
+| `cost-centers.delete` | ✔ |  |  |  |  |  |
+| `journal-entries.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `journal-entries.create` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.update` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.delete` | ✔ |  |  |  |  |  |
+| `journal-entries.post` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.reverse` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.void` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.approve` | ✔ |  |  | ✔ |  |  |
+| `bank-accounts.view` | ✔ |  | ✔ |  | ✔ |  |
+| `bank-accounts.create` | ✔ |  | ✔ |  |  |  |
+| `bank-accounts.update` | ✔ |  | ✔ |  |  |  |
+| `bank-accounts.delete` | ✔ |  |  |  |  |  |
+| `reconciliations.view` | ✔ |  | ✔ |  | ✔ |  |
+| `reconciliations.create` | ✔ |  | ✔ |  |  |  |
+| `reconciliations.update` | ✔ |  | ✔ |  |  |  |
+| `reconciliations.delete` | ✔ |  |  |  |  |  |
+| `tax-codes.view` | ✔ |  | ✔ |  | ✔ | ✔ |
+| `tax-codes.create` | ✔ |  | ✔ |  |  |  |
+| `tax-codes.update` | ✔ |  | ✔ |  |  |  |
+| `tax-codes.delete` | ✔ |  |  |  |  |  |
+| `tax-rates.view` | ✔ |  | ✔ |  | ✔ | ✔ |
+| `tax-rates.create` | ✔ |  | ✔ |  |  |  |
+| `tax-rates.update` | ✔ |  | ✔ |  |  |  |
+| `tax-rates.delete` | ✔ |  |  |  |  |  |
+| `account-balance-snapshots.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.general-ledger.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.trial-balance.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `reports.balance-sheet.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `reports.income-statement.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `reports.cash-flow.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.aged-receivables.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.aged-payables.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.account-statement.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.account-balances.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.bank-book.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.cash-book.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `audit-logs.view` | ✔ |  | ✔ |  | ✔ |  |
+
+</details>
 
 ---
 
@@ -504,7 +764,7 @@ zero (GAAP); the original is flagged via `reversed_by_entry_id` — use `$entry-
 Integrity is enforced in layers:
 1. **UI** — Save is disabled until debits equal credits.
 2. **Application** — `PostJournalEntryAction` checks, in exact cents: ≥ 2 lines, each line either debit or
-   credit, active posting (non-group) accounts, account currency, debits = credits, open period (row-locked).
+   credit, active posting (non-group) accounts, account currency, debits = credits, open period (locked so a concurrent period close cannot interleave; concurrent postings do not block each other).
 3. **Database** — triggers reject any change to posted entries/lines (amounts, accounts, dates, status, deletes);
    PostgreSQL also has CHECK constraints (one-sided lines, positive FX rates, single base currency).
 
@@ -545,13 +805,15 @@ composer format:check             # Pint
 
 ## Production checklist
 
-- Run `php artisan accounting:install --admin-email=…` and confirm who holds `super-admin`.
-- Add `HasRoles` to your user model; keep `verified` email enforcement on.
-- Protect the API with Sanctum (or set `ACCOUNTING_API_MIDDLEWARE`) and rate-limit it.
-- Run `php artisan accounting:update` after every upgrade (re-syncs triggers and views).
-- Back up before closing a fiscal year; restrict `periods.reopen` to a small group.
-- Known limitations: single company per database (no tenant scoping); multi-currency stores an FX rate per
-  entry but reports are in transaction amounts; the default exchange rates in the seeder are samples.
+- [ ] `php artisan accounting:install --admin-email=…` — confirm who holds `super-admin`.
+- [ ] User model has `HasRoles` (and `HasApiTokens` for the API); keep `verified` email enforcement on.
+- [ ] `php artisan accounting:roles` passes (no role can both create and approve).
+- [ ] Maker-checker on for material amounts: `ACCOUNTING_APPROVALS_ENABLED=true`, `ACCOUNTING_APPROVAL_THRESHOLD=…`.
+- [ ] A queue worker is running if you use webhooks (`php artisan queue:work`).
+- [ ] API behind Sanctum (or your guard) with the rate limit on (`ACCOUNTING_API_RATE_LIMIT`).
+- [ ] `php artisan config:cache route:cache` in deploys; `php artisan accounting:update` after every upgrade.
+- [ ] Back up before closing a fiscal year; give `periods.reopen` to as few people as possible.
+- [ ] Known limitations: one company per database (no tenant scoping); seeded exchange rates are samples — set your own.
 
 ---
 
@@ -579,7 +841,19 @@ A: Debits and credits must be equal before saving. Enter matching amounts in the
 A: Refreshes package assets, runs new migrations and re-syncs DB objects without touching your config. Run after every `composer update`.
 
 **Q: I only need the API — how do I keep it light?**
-A: Set `ACCOUNTING_UI_DRIVER=api`. No web routes, views or Livewire components are loaded; only the 71 API routes.
+A: Set `ACCOUNTING_UI_DRIVER=api`. No web routes, views or Livewire components are loaded; only the API routes.
+
+**Q: How do I require a second person to approve entries?**
+A: `ACCOUNTING_APPROVALS_ENABLED=true` and a threshold — see [Maker-checker approvals](#maker-checker-approvals). Give makers the `accountant` role and checkers `approver`.
+
+**Q: The accounting pages have no sidebar/menu in my React app.**
+A: Add the menu link, and on an Inertia 2 starter kit the small `app.tsx` addition — see *React: add the menu link* under Installation.
+
+**Q: My XLSX/PDF export returns 422.**
+A: The report has more rows than the XLSX/PDF limit. Narrow the dates/account, export CSV (unlimited), or raise `ACCOUNTING_EXPORT_MAX_XLSX_ROWS` / `ACCOUNTING_EXPORT_MAX_PDF_ROWS`.
+
+**Q: Is Laravel 14 supported?**
+A: Laravel 14 is expected in Q1 2027 and requires PHP 8.4. CI already runs the suite against Laravel's development branch; the version constraint will be widened as soon as 14.0 and the test tooling (Pest, Testbench) are released.
 
 ---
 

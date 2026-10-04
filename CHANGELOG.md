@@ -2,6 +2,76 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.1.0] - 2026-10-04
+
+Enterprise controls release: maker-checker, segregation-of-duties roles, events and webhooks, base-currency
+reporting, and a stress-tested report and export layer. No breaking change for the ledger itself; see
+**Upgrading** for the API response changes.
+
+### Added
+- **Maker-checker approvals** (`ACCOUNTING_APPROVALS_ENABLED`, `ACCOUNTING_APPROVAL_THRESHOLD` in base currency):
+  submit → approve (posts) / reject with reason; the checker can never be the maker or submitter
+  (`ACCOUNTING_ALLOW_SELF_APPROVAL` to opt out). API `POST /journal-entries/{id}/submit|approve|reject`,
+  `filter[approval_status]`; Approve/Reject buttons in the React and Blade UIs.
+- **Audit trail** on the journal entry page: who created, submitted, approved/rejected and posted it, and when.
+- **Roles for segregation of duties**: new `approver` (checker) and `auditor` (read-only incl. audit log);
+  `accountant` no longer manages settings; `admin` manages users only. `php artisan accounting:roles`
+  prints the matrix and fails if a role can both create and approve.
+- **Domain events** for every ledger action, dispatched after commit, all implementing `AccountingEvent`.
+- **Signed webhooks** (`ACCOUNTING_WEBHOOK_URLS`, `ACCOUNTING_WEBHOOK_SECRET`): HMAC-SHA256 signature with
+  timestamp, one queued job per endpoint with backoff, stable event id for de-duplication.
+- **Base-currency amounts** frozen per line at posting (`base_debit` / `base_credit`, cents-exact with the
+  rounding residual on the largest line); every report and balance now uses them. Existing posted lines are
+  backfilled by the migration.
+- **Account statement** with opening balance, running balance (any page) and closing balance — web page with an
+  account picker, paginated API.
+- **Exports**: XLSX and PDF row limits (`ACCOUNTING_EXPORT_MAX_XLSX_ROWS` / `_PDF_ROWS`), bank-book and
+  cash-book exports, readable multi-page PDF.
+- React: real General Ledger page (filters, table, pagination), shared `useAccounting()` data (permissions,
+  flash messages, approval settings), searchable selects, pagination component.
+- Installer checks the user model and prints the exact traits to add; `accounting:update` also adds roles and
+  permissions introduced by new versions.
+- `docs/performance.md`: stress test with 400,000 journal lines; maker-checker diagram; Postman collection updated.
+- CI job against Laravel 14 (`dev-master`, PHP 8.4), allowed to fail until 14.0 and its test tooling ship.
+
+### Changed
+- `GET /reports/account-statement` and `GET /reports/cash-flow` are **paginated** (Laravel paginator + `totals`
+  for the whole filter; `?per_page=`); the statement adds `account`, `opening_balance` and `running_balance`, and
+  returns 404 for an unknown account.
+- Posting takes a **shared** lock on the accounting period (closing/reopening takes an exclusive one):
+  concurrent postings no longer serialise — about 3.5× more throughput under load.
+- Trial balance totals reuse the loaded rows (one ledger scan instead of two).
+- CSV exports stream from a database cursor (constant memory at any size).
+- React pages are formatted and lint-clean for the current Laravel React starter kit (Inertia 3).
+
+### Fixed
+- Exports checked the permission *after* loading the data, and loaded entire ledgers into memory.
+- XLSX column letters broke after column Z; PDF exports were a single unreadable line cut at 12,000 characters.
+- The React export buttons used Inertia links, so downloads never started; bank/cash book exports returned 404.
+- The web account statement without an account loaded every posted line; the React page had no account picker.
+- Bank/cash book pages showed a running balance that was always 0.00; "Currencys" page title.
+- Webhooks: a retry re-sent to endpoints that had already succeeded, and the event id changed on each retry.
+- Livewire 4: `accounting::` component names failed to resolve (`ComponentNotFoundException`).
+- Blade journal list: the void filter never matched; date filters were rejected; audit log filters fixed.
+- Re-running the permission seeder no longer overwrites role customisations (it only adds new permissions).
+- The installer crashed when the user model lacked `HasRoles`; the Sanctum trait check never fired.
+- Flaky factory codes on MySQL/PostgreSQL.
+
+### Removed
+- Seven unused Livewire report components (`accounting.reports.general-ledger`, `trial-balance`,
+  `balance-sheet`, `income-statement`, `cash-flow`, `bank-book`, `cash-book`). No package view used them and
+  they rendered fields the reports do not return. The Blade report pages are unchanged; the aged
+  receivables/payables components remain.
+
+### Upgrading
+```bash
+composer update alimarchal/laravel-chart-of-accounts
+php artisan accounting:update        # migrations (approval columns, base amounts + backfill), triggers,
+                                     # React pages, and the new approver/auditor roles (keeps your role changes)
+```
+API clients of `reports/account-statement` and `reports/cash-flow` should read `data` as one page and use
+`totals`, or pass `per_page` (max `ACCOUNTING_API_MAX_PER_PAGE`).
+
 ## [2.0.0] - 2026-10-04
 
 Production-hardening release. It fixes security vulnerabilities and accounting-correctness bugs; a few

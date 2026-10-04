@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class JournalEntryService
 {
     /**
-     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
+     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
      */
     public function create(array $data): JournalEntry
     {
@@ -45,7 +45,7 @@ class JournalEntryService
             }
 
             if (($data['auto_post'] ?? false) === true) {
-                app(PostJournalEntryAction::class)->execute($journalEntry);
+                app(PostJournalEntryAction::class)->execute($journalEntry, (bool) ($data['system_generated'] ?? false));
             }
 
             return $journalEntry->refresh()->load(['lines.account', 'currency', 'accountingPeriod']);
@@ -70,6 +70,9 @@ class JournalEntryService
 
             $currencyId = $data['currency_id']
                 ?? Currency::query()->where('is_base', true)->value('id');
+
+            // Changing a submitted or approved draft invalidates that approval.
+            app(JournalApprovalService::class)->resetForEdit($journalEntry);
 
             $journalEntry->update([
                 'entry_date' => $data['entry_date'],
@@ -112,7 +115,7 @@ class JournalEntryService
             }
 
             if (($data['auto_post'] ?? false) === true) {
-                app(PostJournalEntryAction::class)->execute($journalEntry);
+                app(PostJournalEntryAction::class)->execute($journalEntry->refresh());
             }
 
             return $journalEntry->refresh()->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']);

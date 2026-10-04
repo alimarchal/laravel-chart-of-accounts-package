@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $cost_center_id
  * @property string $debit
  * @property string $credit
+ * @property string $base_debit amount in the base currency, set when the entry is posted
+ * @property string $base_credit
  * @property string|null $description
  * @property string|null $reconciliation_status
  * @property-read JournalEntry $journalEntry
@@ -37,6 +39,8 @@ class JournalEntryLine extends Model
         'cost_center_id',
         'debit',
         'credit',
+        'base_debit',
+        'base_credit',
         'description',
         'reconciliation_status',
         'reconciliation_id',
@@ -49,6 +53,8 @@ class JournalEntryLine extends Model
         return [
             'debit' => 'decimal:2',
             'credit' => 'decimal:2',
+            'base_debit' => 'decimal:2',
+            'base_credit' => 'decimal:2',
             'reconciled_at' => 'datetime',
         ];
     }

@@ -55,7 +55,7 @@ class CreateAccountBalanceSnapshotsAction
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
             ->where('entry.status', 'posted')
             ->groupBy('line.chart_of_account_id')
-            ->selectRaw('line.chart_of_account_id, COALESCE(SUM(line.debit), 0) as debits, COALESCE(SUM(line.credit), 0) as credits');
+            ->selectRaw('line.chart_of_account_id, COALESCE(SUM(line.base_debit), 0) as debits, COALESCE(SUM(line.base_credit), 0) as credits');
 
         $scope($query);
 

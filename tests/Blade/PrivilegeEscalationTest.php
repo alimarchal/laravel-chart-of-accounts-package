@@ -92,30 +92,35 @@ it('blocks an admin from taking over a super-admin account', function (): void {
 });
 
 it('blocks a settings manager from widening a role beyond their own permissions', function (): void {
-    $accountant = User::factory()->create();
-    $accountant->assignRole('accountant');
+    // admin manages roles but holds no accounting write permissions.
+    $role = Role::findByName('viewer');
 
-    $role = Role::findByName('accountant');
-
-    $this->actingAs($accountant)
+    $this->actingAs($this->admin)
         ->put("/settings/roles/{$role->id}", [
-            'name' => 'accountant',
-            'permissions' => array_merge($role->permissions->pluck('name')->all(), ['user.assign-role']),
+            'name' => 'viewer',
+            'permissions' => array_merge($role->permissions->pluck('name')->all(), ['journal-entries.post']),
         ])
         ->assertForbidden();
 
-    $this->actingAs($accountant)
+    $this->actingAs($this->admin)
         ->put('/settings/roles/'.Role::findByName('super-admin')->id, ['name' => 'super-admin', 'permissions' => []])
         ->assertForbidden();
 
-    expect(Role::findByName('accountant')->hasPermissionTo('user.assign-role'))->toBeFalse();
+    // Managing a role whose permissions the admin does not hold (e.g. accountant) is refused too.
+    $this->actingAs($this->admin)
+        ->put('/settings/roles/'.Role::findByName('accountant')->id, ['name' => 'accountant', 'permissions' => []])
+        ->assertForbidden();
+
+    expect(Role::findByName('viewer')->hasPermissionTo('journal-entries.post'))->toBeFalse()
+        ->and(Role::findByName('accountant')->permissions)->not->toBeEmpty();
 });
 
 it('lets users with accounting.manage-settings open role management', function (): void {
+    $this->actingAs($this->admin)->get('/settings/roles')->assertSuccessful();
+
     $accountant = User::factory()->create();
     $accountant->assignRole('accountant');
-
-    $this->actingAs($accountant)->get('/settings/roles')->assertSuccessful();
+    $this->actingAs($accountant)->get('/settings/roles')->assertForbidden();
 });
 
 it('lets a super-admin assign any role', function (): void {

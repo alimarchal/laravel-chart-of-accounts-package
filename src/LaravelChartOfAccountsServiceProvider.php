@@ -8,21 +8,17 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingHealthCheckComm
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingInstallCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRebuildSnapshotsCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRolesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSyncDatabaseObjectsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingUpdateCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingVerifyCommand;
+use Alimarchal\LaravelChartOfAccounts\Events\AccountingEvent;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingRuleViolation;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\JournalEntryForm;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedPayablesLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedReceivablesLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\BalanceSheetLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\BankBookLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\CashBookLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\CashFlowLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\GeneralLedgerLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\IncomeStatementLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\TrialBalanceLivewire;
+use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -30,6 +26,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -78,6 +75,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingCloseFiscalYearCommand::class,
                 AccountingClosePeriodCommand::class,
                 AccountingOpenPeriodCommand::class,
+                AccountingRolesCommand::class,
             ]);
         }
 
@@ -99,6 +97,10 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
 
         $this->registerExceptionRendering();
 
+        if ((array) config('accounting.webhooks.urls', []) !== []) {
+            Event::listen(AccountingEvent::class, SendAccountingWebhook::class);
+        }
+
         if ($driver === 'api') {
             return;
         }
@@ -108,16 +110,26 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/accounting/components', 'accounting');
 
         if ($driver === 'blade' && class_exists(Livewire::class)) {
-            Livewire::component('accounting::journal-entry-form', JournalEntryForm::class);
-            Livewire::component('accounting::reports.general-ledger', GeneralLedgerLivewire::class);
-            Livewire::component('accounting::reports.trial-balance', TrialBalanceLivewire::class);
-            Livewire::component('accounting::reports.balance-sheet', BalanceSheetLivewire::class);
-            Livewire::component('accounting::reports.income-statement', IncomeStatementLivewire::class);
-            Livewire::component('accounting::reports.cash-flow', CashFlowLivewire::class);
-            Livewire::component('accounting::reports.aged-payables', AgedPayablesLivewire::class);
-            Livewire::component('accounting::reports.aged-receivables', AgedReceivablesLivewire::class);
-            Livewire::component('accounting::reports.bank-book', BankBookLivewire::class);
-            Livewire::component('accounting::reports.cash-book', CashBookLivewire::class);
+            $this->registerLivewireComponents();
+        }
+    }
+
+    /**
+     * Livewire 4 treats "name::component" as a namespace lookup, so components are registered as
+     * "accounting.<name>" (works on Livewire 3 and 4). The old "accounting::<name>" aliases stay
+     * registered for views published from earlier versions (Livewire 3 only).
+     */
+    private function registerLivewireComponents(): void
+    {
+        $components = [
+            'journal-entry-form' => JournalEntryForm::class,
+            'reports.aged-payables' => AgedPayablesLivewire::class,
+            'reports.aged-receivables' => AgedReceivablesLivewire::class,
+        ];
+
+        foreach ($components as $name => $class) {
+            Livewire::component("accounting.{$name}", $class);
+            Livewire::component("accounting::{$name}", $class);
         }
     }
 

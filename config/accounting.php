@@ -16,6 +16,12 @@ return [
     'api_enabled' => (bool) env('ACCOUNTING_API_ENABLED', true),
     'api_rate_limit' => (int) env('ACCOUNTING_API_RATE_LIMIT', 120), // requests per minute per user/IP; 0 disables
     'api_max_per_page' => (int) env('ACCOUNTING_API_MAX_PER_PAGE', 100),
+    // Report exports: CSV is streamed with constant memory at any size; XLSX and PDF are built in
+    // memory, so they are refused (HTTP 422, "use CSV or narrow the filters") above these row counts.
+    'export_max_rows' => [
+        'xlsx' => (int) env('ACCOUNTING_EXPORT_MAX_XLSX_ROWS', 50000),
+        'pdf' => (int) env('ACCOUNTING_EXPORT_MAX_PDF_ROWS', 2000),
+    ],
 
     'defaults' => [
         'currency_code' => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
@@ -23,6 +29,22 @@ return [
         'bank_account_code' => env('ACCOUNTING_BANK_ACCOUNT_CODE', '1102'),
         'retained_earnings_account_code' => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE', '3101'),
         'rounding_account_code' => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
+    ],
+
+    // Maker-checker. When enabled, entries whose total (in base currency) is at or above the threshold
+    // must be submitted by the maker and approved by a different user (the checker) before they post.
+    'approvals' => [
+        'enabled' => (bool) env('ACCOUNTING_APPROVALS_ENABLED', false),
+        'threshold' => env('ACCOUNTING_APPROVAL_THRESHOLD', '0'), // 0 = every entry needs approval
+        'allow_self_approval' => (bool) env('ACCOUNTING_ALLOW_SELF_APPROVAL', false),
+    ],
+
+    // Signed webhooks for accounting events (queued when a queue is configured). Empty = disabled.
+    'webhooks' => [
+        'urls' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_WEBHOOK_URLS', '')))),
+        'secret' => env('ACCOUNTING_WEBHOOK_SECRET'),
+        'timeout' => (int) env('ACCOUNTING_WEBHOOK_TIMEOUT', 10),
+        'tries' => (int) env('ACCOUNTING_WEBHOOK_TRIES', 5),
     ],
 
     // Accounts (and their child accounts) included in the aged receivables / payables reports.
@@ -73,6 +95,7 @@ return [
         'journal-entries.post',
         'journal-entries.reverse',
         'journal-entries.void',
+        'journal-entries.approve',
         'bank-accounts.view',
         'bank-accounts.create',
         'bank-accounts.update',
@@ -104,31 +127,62 @@ return [
         'audit-logs.view',
     ],
 
+    /*
+     * Roles follow segregation of duties (see README "Roles & permissions" and `php artisan accounting:roles`):
+     *  - super-admin: everything (still cannot approve its own entries under maker-checker);
+     *  - admin: users, roles and permissions — no accounting writes;
+     *  - accountant: the maker — records, posts (below the approval threshold), reverses, closes periods;
+     *  - approver: the checker — approves or rejects entries, cannot create or edit them;
+     *  - auditor: read-only access to everything, including the audit trail;
+     *  - viewer: read-only access to the ledger and reports.
+     * Re-running accounting:seed never removes permissions you changed; it only adds newly introduced ones.
+     */
     'roles' => [
         'super-admin' => ['*'],
-        'accountant' => [
+        'admin' => [
             'accounting.view',
             'accounting.manage-settings',
+            'user.view',
+            'user.create',
+            'user.update',
+            'user.assign-role',
+            'user.assign-permission',
+            'chart-of-accounts.view',
+            'journal-entries.view',
+            'reports.trial-balance.view',
+            'reports.balance-sheet.view',
+            'reports.income-statement.view',
+        ],
+        'accountant' => [
+            'accounting.view',
             'account-types.view',
             'currencies.view',
             'periods.view',
-            'periods.close',
             'chart-of-accounts.view',
             'cost-centers.view',
             'journal-entries.view',
+            'bank-accounts.view',
+            'reconciliations.view',
+            'tax-codes.view',
+            'tax-rates.view',
+            'account-balance-snapshots.view',
+            'currencies.update',
+            'periods.close',
+            'cost-centers.create',
+            'cost-centers.update',
             'journal-entries.create',
             'journal-entries.update',
             'journal-entries.post',
             'journal-entries.reverse',
-            'bank-accounts.view',
-            'reconciliations.view',
-            'tax-codes.view',
+            'journal-entries.void',
+            'bank-accounts.create',
+            'bank-accounts.update',
+            'reconciliations.create',
+            'reconciliations.update',
             'tax-codes.create',
             'tax-codes.update',
-            'tax-rates.view',
             'tax-rates.create',
             'tax-rates.update',
-            'account-balance-snapshots.view',
             'reports.general-ledger.view',
             'reports.trial-balance.view',
             'reports.balance-sheet.view',
@@ -142,20 +196,49 @@ return [
             'reports.cash-book.view',
             'audit-logs.view',
         ],
-        'admin' => [
+        'approver' => [
             'accounting.view',
-            'user.view',
-            'user.create',
-            'user.update',
-            'user.assign-role',
-            'user.assign-permission',
             'chart-of-accounts.view',
             'journal-entries.view',
+            'journal-entries.approve',
+            'account-balance-snapshots.view',
             'reports.general-ledger.view',
             'reports.trial-balance.view',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
+            'reports.cash-flow.view',
+            'reports.aged-receivables.view',
+            'reports.aged-payables.view',
+            'reports.account-statement.view',
             'reports.account-balances.view',
+            'reports.bank-book.view',
+            'reports.cash-book.view',
+        ],
+        'auditor' => [
+            'accounting.view',
+            'account-types.view',
+            'currencies.view',
+            'periods.view',
+            'chart-of-accounts.view',
+            'cost-centers.view',
+            'journal-entries.view',
+            'bank-accounts.view',
+            'reconciliations.view',
+            'tax-codes.view',
+            'tax-rates.view',
+            'account-balance-snapshots.view',
+            'reports.general-ledger.view',
+            'reports.trial-balance.view',
+            'reports.balance-sheet.view',
+            'reports.income-statement.view',
+            'reports.cash-flow.view',
+            'reports.aged-receivables.view',
+            'reports.aged-payables.view',
+            'reports.account-statement.view',
+            'reports.account-balances.view',
+            'reports.bank-book.view',
+            'reports.cash-book.view',
+            'audit-logs.view',
         ],
         'viewer' => [
             'accounting.view',

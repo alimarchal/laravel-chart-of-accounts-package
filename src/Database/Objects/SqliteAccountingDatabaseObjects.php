@@ -27,6 +27,8 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
                 jed.line_no,
                 jed.debit,
                 jed.credit,
+                jed.base_debit,
+                jed.base_credit,
                 jed.description AS line_description,
                 cc.code AS cost_center_code,
                 cc.name AS cost_center_name,
@@ -48,11 +50,11 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
                 at.name AS account_type,
                 at.report_group,
                 coa.normal_balance,
-                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.debit ELSE 0 END), 0) AS total_debits,
-                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.credit ELSE 0 END), 0) AS total_credits,
+                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_debit ELSE 0 END), 0) AS total_debits,
+                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_credit ELSE 0 END), 0) AS total_credits,
                 CASE
-                    WHEN coa.normal_balance = 'debit' THEN COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.debit - jed.credit ELSE 0 END), 0)
-                    ELSE COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.credit - jed.debit ELSE 0 END), 0)
+                    WHEN coa.normal_balance = 'debit' THEN COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_debit - jed.base_credit ELSE 0 END), 0)
+                    ELSE COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_credit - jed.base_debit ELSE 0 END), 0)
                 END AS balance
             FROM accounting_chart_of_accounts coa
             JOIN accounting_account_types at ON at.id = coa.account_type_id
@@ -136,6 +138,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
             WHEN {$parentPosted('NEW')} BEGIN {$abort}; END");
         DB::statement("CREATE TRIGGER acct_lines_posted_guard_update BEFORE UPDATE ON accounting_journal_entry_lines
             WHEN {$parentPosted('OLD')} AND (NEW.debit IS NOT OLD.debit OR NEW.credit IS NOT OLD.credit
+                OR NEW.base_debit IS NOT OLD.base_debit OR NEW.base_credit IS NOT OLD.base_credit
                 OR NEW.chart_of_account_id IS NOT OLD.chart_of_account_id OR NEW.journal_entry_id IS NOT OLD.journal_entry_id)
             BEGIN {$abort}; END");
         DB::statement("CREATE TRIGGER acct_lines_posted_guard_delete BEFORE DELETE ON accounting_journal_entry_lines

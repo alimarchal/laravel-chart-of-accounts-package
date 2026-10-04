@@ -1,7 +1,7 @@
 flowchart TD
     A(["Start: Laravel 11 / 12 / 13 app"]) --> B["composer require<br/>alimarchal/laravel-chart-of-accounts"]
     B --> C{"Which UI?<br/>ACCOUNTING_UI_DRIVER"}
-    C -->|"inertia (React)"| C1["Breeze / React starter kit"]
+    C -->|"inertia (React)"| C1["React starter kit<br/>(npm run build after install)"]
     C -->|"blade (Livewire)"| C2["composer require livewire/livewire"]
     C -->|"api (no UI, lightest)"| C3["REST API only"]
     C1 --> D
@@ -17,8 +17,9 @@ flowchart TD
         F3 --> F4["4. migrate --force"]
         F4 --> F5["5. Seed: account types, currencies,<br/>chart of accounts, period, roles, tax"]
         F5 --> F6["6. Sync DB objects:<br/>views + audit + immutability triggers"]
-        F6 --> F7["7. Give super-admin to --admin-email"]
-        F7 --> F8["8. Verify (health check)"]
+        F6 --> F6b["7. Check the User model traits<br/>(prints the lines to add)"]
+        F6b --> F7["8. Give super-admin to --admin-email"]
+        F7 --> F8["9. Verify (health check)"]
     end
 
     F --> F1

@@ -28,6 +28,15 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $reverses_entry_id
  * @property int|null $reversed_by_entry_id
  * @property Carbon|null $reversed_at
+ * @property string|null $approval_status pending|approved|rejected
+ * @property Carbon|null $submitted_at
+ * @property int|null $submitted_by
+ * @property Carbon|null $approved_at
+ * @property int|null $approved_by
+ * @property Carbon|null $rejected_at
+ * @property int|null $rejected_by
+ * @property string|null $rejection_reason
+ * @property int|null $created_by
  * @property bool $is_closing_entry
  * @property int|null $closes_period_id
  * @property-read Collection<int, JournalEntryLine> $lines
@@ -71,6 +80,9 @@ class JournalEntry extends AccountingModel
             'fx_rate_to_base' => 'decimal:8',
             'posted_at' => 'datetime',
             'reversed_at' => 'datetime',
+            'submitted_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'is_closing_entry' => 'boolean',
         ];
     }
@@ -119,6 +131,66 @@ class JournalEntry extends AccountingModel
     public function scopePosted(Builder $query): Builder
     {
         return $query->where('status', 'posted');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'approved_by');
+    }
+
+    /**
+     * Who did what and when (created, submitted, rejected, approved, posted), oldest first.
+     * Only a display name is exposed for each user.
+     *
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>> each item: step, by (display name or null), at
+     */
+    public function trail(): \Illuminate\Support\Collection
+    {
+        $this->loadMissing(['creator', 'submitter', 'rejecter', 'approver', 'poster']);
+
+        $person = fn ($user): ?string => $user ? (string) ($user->name ?? $user->email ?? '#'.$user->getKey()) : null;
+
+        /** @var \Illuminate\Support\Collection<int, array<string, mixed>> $trail */
+        $trail = collect([
+            ['step' => 'Created', 'by' => $person($this->creator), 'at' => $this->created_at],
+            ['step' => 'Submitted for approval', 'by' => $person($this->submitter), 'at' => $this->submitted_at],
+            ['step' => 'Rejected', 'by' => $person($this->rejecter), 'at' => $this->rejected_at],
+            ['step' => 'Approved', 'by' => $person($this->approver), 'at' => $this->approved_at],
+            ['step' => 'Posted', 'by' => $person($this->poster), 'at' => $this->posted_at],
+        ])->filter(fn (array $step): bool => $step['at'] !== null)->sortBy('at')->values();
+
+        // Keep the user records themselves out of serialized responses.
+        foreach (['creator', 'submitter', 'rejecter', 'approver', 'poster'] as $relation) {
+            $this->unsetRelation($relation);
+        }
+
+        return $trail;
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'created_by');
+    }
+
+    public function rejecter(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'rejected_by');
+    }
+
+    public function submitter(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'submitted_by');
+    }
+
+    /**
+     * Drafts waiting for a checker.
+     *
+     * @param  Builder<JournalEntry>  $query
+     * @return Builder<JournalEntry>
+     */
+    public function scopePendingApproval(Builder $query): Builder
+    {
+        return $query->where('status', 'draft')->where('approval_status', 'pending');
     }
 
     public function reversesEntry(): BelongsTo

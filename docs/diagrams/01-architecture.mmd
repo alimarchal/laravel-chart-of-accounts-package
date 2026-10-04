@@ -21,7 +21,15 @@ flowchart TB
         REQ["Form requests<br/>validation, account codes → ids"]
         SVC["Services<br/>JournalEntry · ChartOfAccount<br/>AccountingPeriod · SimpleJournal"]
         ACT["Actions<br/>Post · Reverse · Void<br/>ClosePeriod · CloseFiscalYear"]
-        REP["Reports<br/>TB · BS · IS · GL · Cash flow<br/>Bank/Cash book · Aging"]
+        REP["Reports + exports<br/>TB · BS · IS · GL · Statement<br/>Cash flow · Bank/Cash book · Aging"]
+        APR["Maker-checker<br/>submit · approve · reject"]
+        EVT["Domain events<br/>after commit"]
+    end
+
+    subgraph Out["Integrations"]
+        direction LR
+        LSN["Your listeners"]
+        WH["Signed webhooks<br/>queued, retried per endpoint"]
     end
 
     subgraph Data["Database layer"]
@@ -38,7 +46,11 @@ flowchart TB
     PERM -.-> PG
     CLI --> ACT
     CTRL --> REQ --> SVC --> ACT
+    CTRL --> APR --> ACT
     CTRL --> REP
+    ACT --> EVT
+    EVT --> LSN
+    EVT --> WH
     ACT --> TBL
     SVC --> TBL
     REP --> VW --> TBL
@@ -50,5 +62,7 @@ flowchart TB
     classDef data fill:#dcfce7,stroke:#15803d,color:#14532d
     class UIR,UIB,EXT,CLI client
     class AUTH,PERM,THR,PG gate
-    class CTRL,REQ,SVC,ACT,REP app
+    class CTRL,REQ,SVC,ACT,REP,APR,EVT app
+    classDef out fill:#fce7f3,stroke:#be185d,color:#831843
+    class LSN,WH out
     class TBL,TRG,VW data

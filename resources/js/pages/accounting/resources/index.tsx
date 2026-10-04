@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Edit, Eye, Filter, Plus, Trash2, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -10,8 +10,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { playErrorSound, playSuccessSound } from '@/lib/sounds';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    playErrorSound,
+    playSuccessSound,
+    useAccounting,
+} from '@/lib/accounting';
 
 type RecordValue = string | number | boolean | null;
 
@@ -51,17 +61,36 @@ function displayValue(value: RecordValue): string {
     return value === null ? '' : String(value);
 }
 
-export default function AccountingResourceIndex({ title, routeName, columns, fields, filters, readOnly = false, records }: Props) {
-    const { auth, flash } = usePage().props;
+/** "Currency" -> "Currencies", "Tax Rate" -> "Tax Rates". */
+function plural(title: string): string {
+    return /[^aeiou]y$/i.test(title) ? `${title.slice(0, -1)}ies` : `${title}s`;
+}
+
+export default function AccountingResourceIndex({
+    title,
+    routeName,
+    columns,
+    fields,
+    filters,
+    readOnly = false,
+    records,
+}: Props) {
+    const { permissions, flash } = useAccounting();
     const basePath = `/accounting/${routeName}`;
-    const permissions = auth.accountingPermissions ?? {};
     const filterFields = fields.filter((field) => field.filter ?? field.table);
     const filterForm = useForm<Record<string, string>>(
-        Object.fromEntries(filterFields.map((field) => [field.name, filters?.[field.name] ?? ''])) as Record<string, string>,
+        Object.fromEntries(
+            filterFields.map((field) => [
+                field.name,
+                filters?.[field.name] ?? '',
+            ]),
+        ) as Record<string, string>,
     );
     const hasFilters = Object.values(filters ?? {}).some((value) => value);
     const [filtersOpen, setFiltersOpen] = useState(hasFilters);
-    const activeFilterCount = Object.values(filterForm.data).filter((value) => value !== '').length;
+    const activeFilterCount = Object.values(filterForm.data).filter(
+        (value) => value !== '',
+    ).length;
     const canCreate = !readOnly && permissions[`${routeName}.create`] === true;
     const canUpdate = !readOnly && permissions[`${routeName}.update`] === true;
     const canDelete = !readOnly && permissions[`${routeName}.delete`] === true;
@@ -70,7 +99,9 @@ export default function AccountingResourceIndex({ title, routeName, columns, fie
             Object.fromEntries(
                 filterFields.map((field) => [
                     field.name,
-                    Object.entries(field.options ?? {}).map(([value, label]) => ({ value: String(value), label })),
+                    Object.entries(field.options ?? {}).map(
+                        ([value, label]) => ({ value: String(value), label }),
+                    ),
                 ]),
             ) as Record<string, Array<{ value: string; label: string }>>,
         [filterFields],
@@ -109,31 +140,49 @@ export default function AccountingResourceIndex({ title, routeName, columns, fie
     };
 
     const resetFilters = () => {
-        filterForm.setData(Object.fromEntries(filterFields.map((field) => [field.name, ''])) as Record<string, string>);
-        router.get(basePath, {}, { preserveState: true, preserveScroll: true, replace: true });
+        filterForm.setData(
+            Object.fromEntries(
+                filterFields.map((field) => [field.name, '']),
+            ) as Record<string, string>,
+        );
+        router.get(
+            basePath,
+            {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
     };
 
     return (
         <>
-            <Head title={`${title}s`} />
+            <Head title={plural(title)} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-                    <Heading title={`${title}s`} description={`Manage accounting ${title.toLowerCase()} records.`} />
+                    <Heading
+                        title={plural(title)}
+                        description={`Manage accounting ${title.toLowerCase()} records.`}
+                    />
                     <div className="flex flex-wrap gap-2">
                         {filterFields.length > 0 ? (
-                            <Button type="button" variant={filtersOpen ? 'secondary' : 'outline'} className="relative gap-2" onClick={() => setFiltersOpen((open) => !open)}>
+                            <Button
+                                type="button"
+                                variant={filtersOpen ? 'secondary' : 'outline'}
+                                className="relative gap-2"
+                                onClick={() => setFiltersOpen((open) => !open)}
+                            >
                                 <Filter className="size-4" />
                                 <span>Filters</span>
-                                {hasFilters ? <span className="absolute -right-1 -top-1 size-2 rounded-full bg-primary" /> : null}
+                                {hasFilters ? (
+                                    <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
+                                ) : null}
                             </Button>
                         ) : null}
                         {canCreate ? (
                             <Button asChild className="gap-2">
-                            <Link href={`${basePath}/create`}>
-                                <Plus className="size-4" />
-                                <span>New {title.toLowerCase()}</span>
-                            </Link>
-                        </Button>
+                                <Link href={`${basePath}/create`}>
+                                    <Plus className="size-4" />
+                                    <span>New {title.toLowerCase()}</span>
+                                </Link>
+                            </Button>
                         ) : null}
                     </div>
                 </div>
@@ -156,52 +205,126 @@ export default function AccountingResourceIndex({ title, routeName, columns, fie
                         <CardHeader className="px-4 pb-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <CardTitle className="text-sm">Filters</CardTitle>
-                                    {activeFilterCount > 0 ? <Badge variant="secondary">{activeFilterCount} active</Badge> : null}
+                                    <CardTitle className="text-sm">
+                                        Filters
+                                    </CardTitle>
+                                    {activeFilterCount > 0 ? (
+                                        <Badge variant="secondary">
+                                            {activeFilterCount} active
+                                        </Badge>
+                                    ) : null}
                                 </div>
-                                <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setFiltersOpen(false)}>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8"
+                                    onClick={() => setFiltersOpen(false)}
+                                >
                                     <X className="size-4" />
                                 </Button>
                             </div>
                         </CardHeader>
                         <CardContent className="px-4">
-                            <form onSubmit={submitFilters} className="space-y-4">
+                            <form
+                                onSubmit={submitFilters}
+                                className="space-y-4"
+                            >
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                                     {filterFields.map((field) => (
-                                        <div key={field.name} className="grid gap-2">
+                                        <div
+                                            key={field.name}
+                                            className="grid gap-2"
+                                        >
                                             <Label>{field.label}</Label>
                                             {field.type === 'select' ? (
                                                 <SearchableSelect
                                                     key={`${field.name}-${filterForm.data[field.name] || 'all'}`}
-                                                    value={filterForm.data[field.name] ?? ''}
-                                                    options={filterSelectOptions[field.name] ?? []}
+                                                    value={
+                                                        filterForm.data[
+                                                            field.name
+                                                        ] ?? ''
+                                                    }
+                                                    options={
+                                                        filterSelectOptions[
+                                                            field.name
+                                                        ] ?? []
+                                                    }
                                                     placeholder={`All ${field.label.toLowerCase()}`}
-                                                    onChange={(value) => filterForm.setData(field.name, value)}
+                                                    onChange={(value) =>
+                                                        filterForm.setData(
+                                                            field.name,
+                                                            value,
+                                                        )
+                                                    }
                                                 />
                                             ) : field.type === 'checkbox' ? (
-                                                <Select value={filterForm.data[field.name] || 'all'} onValueChange={(value) => filterForm.setData(field.name, value === 'all' ? '' : value)}>
+                                                <Select
+                                                    value={
+                                                        filterForm.data[
+                                                            field.name
+                                                        ] || 'all'
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        filterForm.setData(
+                                                            field.name,
+                                                            value === 'all'
+                                                                ? ''
+                                                                : value,
+                                                        )
+                                                    }
+                                                >
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue placeholder="All" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="all">All</SelectItem>
-                                                        <SelectItem value="1">Yes</SelectItem>
-                                                        <SelectItem value="0">No</SelectItem>
+                                                        <SelectItem value="all">
+                                                            All
+                                                        </SelectItem>
+                                                        <SelectItem value="1">
+                                                            Yes
+                                                        </SelectItem>
+                                                        <SelectItem value="0">
+                                                            No
+                                                        </SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             ) : (
                                                 <Input
-                                                    type={field.type === 'number' || field.type === 'date' ? field.type : 'text'}
-                                                    value={filterForm.data[field.name] ?? ''}
-                                                    onChange={(event) => filterForm.setData(field.name, event.target.value)}
+                                                    type={
+                                                        field.type ===
+                                                            'number' ||
+                                                        field.type === 'date'
+                                                            ? field.type
+                                                            : 'text'
+                                                    }
+                                                    value={
+                                                        filterForm.data[
+                                                            field.name
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        filterForm.setData(
+                                                            field.name,
+                                                            event.target.value,
+                                                        )
+                                                    }
                                                 />
                                             )}
                                         </div>
                                     ))}
                                 </div>
                                 <div className="flex justify-end gap-2">
-                                    <Button type="submit" className="min-w-20">Apply</Button>
-                                    <Button type="button" variant="outline" onClick={resetFilters}>Clear</Button>
+                                    <Button type="submit" className="min-w-20">
+                                        Apply
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={resetFilters}
+                                    >
+                                        Clear
+                                    </Button>
                                 </div>
                             </form>
                         </CardContent>
@@ -213,11 +336,16 @@ export default function AccountingResourceIndex({ title, routeName, columns, fie
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 {columns.map((column) => (
-                                    <th key={column} className="p-3 font-medium capitalize">
+                                    <th
+                                        key={column}
+                                        className="p-3 font-medium capitalize"
+                                    >
                                         {column.replaceAll('_', ' ')}
                                     </th>
                                 ))}
-                                <th className="w-40 p-3 text-right font-medium">Actions</th>
+                                <th className="w-40 p-3 text-right font-medium">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -230,24 +358,45 @@ export default function AccountingResourceIndex({ title, routeName, columns, fie
                                     ))}
                                     <td className="p-3">
                                         <div className="flex justify-end gap-2">
-                                            <Button asChild size="icon" variant="ghost" title="View">
-                                                <Link href={`${basePath}/${record.id}`}>
+                                            <Button
+                                                asChild
+                                                size="icon"
+                                                variant="ghost"
+                                                title="View"
+                                            >
+                                                <Link
+                                                    href={`${basePath}/${record.id}`}
+                                                >
                                                     <Eye className="size-4" />
                                                 </Link>
                                             </Button>
                                             {canUpdate || canDelete ? (
                                                 <>
                                                     {canUpdate ? (
-                                                        <Button asChild size="icon" variant="ghost" title="Edit">
-                                                        <Link href={`${basePath}/${record.id}/edit`}>
-                                                            <Edit className="size-4" />
-                                                        </Link>
-                                                    </Button>
+                                                        <Button
+                                                            asChild
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            title="Edit"
+                                                        >
+                                                            <Link
+                                                                href={`${basePath}/${record.id}/edit`}
+                                                            >
+                                                                <Edit className="size-4" />
+                                                            </Link>
+                                                        </Button>
                                                     ) : null}
                                                     {canDelete ? (
-                                                        <Button size="icon" variant="ghost" title="Delete" onClick={() => destroy(record)}>
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            title="Delete"
+                                                            onClick={() =>
+                                                                destroy(record)
+                                                            }
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                        </Button>
                                                     ) : null}
                                                 </>
                                             ) : null}
@@ -260,11 +409,36 @@ export default function AccountingResourceIndex({ title, routeName, columns, fie
                 </div>
                 {records.links ? (
                     <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-                        <div>{records.from && records.to ? `Showing ${records.from}-${records.to} of ${records.total}` : `${records.total ?? records.data.length} records`}</div>
+                        <div>
+                            {records.from && records.to
+                                ? `Showing ${records.from}-${records.to} of ${records.total}`
+                                : `${records.total ?? records.data.length} records`}
+                        </div>
                         <div className="flex flex-wrap gap-1">
                             {records.links.map((link, index) => (
-                                <Button key={index} asChild={Boolean(link.url)} disabled={!link.url} variant={link.active ? 'secondary' : 'outline'} size="sm">
-                                    {link.url ? <Link href={link.url} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span dangerouslySetInnerHTML={{ __html: link.label }} />}
+                                <Button
+                                    key={index}
+                                    asChild={Boolean(link.url)}
+                                    disabled={!link.url}
+                                    variant={
+                                        link.active ? 'secondary' : 'outline'
+                                    }
+                                    size="sm"
+                                >
+                                    {link.url ? (
+                                        <Link
+                                            href={link.url}
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    ) : (
+                                        <span
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    )}
                                 </Button>
                             ))}
                         </div>
