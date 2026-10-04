@@ -88,8 +88,8 @@ class StoreJournalEntryRequest extends FormRequest
             'auto_post' => ['sometimes', 'boolean'],
             'lines' => ['required', 'array', 'min:2', 'max:500'],
             'lines.*.id' => ['nullable', 'integer'],
-            'lines.*.chart_of_account_id' => ['required_without:lines.*.account_code', 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')],
-            'lines.*.account_code' => ['nullable', 'string', CompanyRule::exists('accounting_chart_of_accounts', 'account_code')],
+            'lines.*.chart_of_account_id' => ['required_without:lines.*.account_code', 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
+            'lines.*.account_code' => ['nullable', 'string', CompanyRule::exists('accounting_chart_of_accounts', 'account_code')->where(fn ($query) => $query->where('is_group', false))],
             'lines.*.cost_center_id' => ['nullable', 'integer', CompanyRule::exists('accounting_cost_centers', 'id')],
             'lines.*.cost_center_code' => ['nullable', 'string', CompanyRule::exists('accounting_cost_centers', 'code')],
             'lines.*.debit' => $this->moneyRules(),
@@ -106,6 +106,8 @@ class StoreJournalEntryRequest extends FormRequest
         return [
             'lines.*.chart_of_account_id.required_without' => 'Each line needs a chart_of_account_id or an account_code.',
             'currency_id.exists' => 'The selected currency is invalid.',
+            'lines.*.chart_of_account_id.exists' => 'Line :position: choose a posting account of this company (group accounts only total their children).',
+            'lines.*.account_code.exists' => 'Line :position: choose a posting account of this company (group accounts only total their children).',
         ];
     }
 

@@ -55,20 +55,18 @@ it('loads the additional professional report pages', function (string $url): voi
 
 it('matches bank reconciliation candidates and marks lines reconciled', function (): void {
     $cash = ChartOfAccount::query()->where('account_code', '1101')->firstOrFail();
-    $bankGroup = ChartOfAccount::query()->where('account_code', '1102')->firstOrFail();
+    $bankLedger = ChartOfAccount::query()->where('account_code', '1108')->firstOrFail();
     $income = ChartOfAccount::query()->where('account_code', '4101')->firstOrFail();
 
     $bankAccount = BankAccount::query()->create([
-        'chart_of_account_id' => $bankGroup->id,
+        'chart_of_account_id' => $bankLedger->id,
         'account_name' => 'Operating Bank',
         'account_number' => '001',
         'bank_name' => 'Test Bank',
         'is_active' => true,
     ]);
 
-    $bankGroup->update(['is_group' => false]);
-
-    app(SimpleJournalService::class)->createBalancedEntry($bankGroup->account_code, $income->account_code, 100, 'Bank receipt', 'BNK-1', true);
+    app(SimpleJournalService::class)->createBalancedEntry($bankLedger->account_code, $income->account_code, 100, 'Bank receipt', 'BNK-1', true);
     app(SimpleJournalService::class)->createBalancedEntry($cash->account_code, $income->account_code, 50, 'Cash receipt', 'CSH-1', true);
 
     $reconciliation = Reconciliation::query()->create([

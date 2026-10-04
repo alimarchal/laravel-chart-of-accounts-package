@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Database\Objects;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
 {
@@ -24,6 +25,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
 
         $this->createAuditTriggers();
         $this->createImmutabilityTriggers();
+        $this->createChartGuards();
         $this->createViews();
     }
 
@@ -41,6 +43,12 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement('DROP TRIGGER IF EXISTS acct_lines_posted_guard ON accounting_journal_entry_lines');
         DB::statement('DROP FUNCTION IF EXISTS accounting_journal_posted_guard()');
         DB::statement('DROP FUNCTION IF EXISTS accounting_line_posted_guard()');
+        DB::statement('DROP TRIGGER IF EXISTS acct_coa_guard ON accounting_chart_of_accounts');
+        DB::statement('DROP FUNCTION IF EXISTS accounting_coa_guard()');
+        DB::statement('DROP TRIGGER IF EXISTS acct_lines_company_guard ON accounting_journal_entry_lines');
+        DB::statement('DROP FUNCTION IF EXISTS accounting_line_company_guard()');
+        DB::statement('DROP TRIGGER IF EXISTS acct_journals_group_guard ON accounting_journal_entries');
+        DB::statement('DROP FUNCTION IF EXISTS accounting_journal_group_guard()');
         DB::statement('DROP INDEX IF EXISTS acct_currencies_single_base_idx');
     }
 
@@ -101,6 +109,110 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement('CREATE TRIGGER acct_journals_posted_guard BEFORE UPDATE OR DELETE ON accounting_journal_entries FOR EACH ROW EXECUTE FUNCTION accounting_journal_posted_guard()');
         DB::statement('DROP TRIGGER IF EXISTS acct_lines_posted_guard ON accounting_journal_entry_lines');
         DB::statement('CREATE TRIGGER acct_lines_posted_guard BEFORE INSERT OR UPDATE OR DELETE ON accounting_journal_entry_lines FOR EACH ROW EXECUTE FUNCTION accounting_line_posted_guard()');
+    }
+
+    /**
+     * Chart-of-accounts integrity at the database layer (the application enforces the same rules with
+     * friendlier messages): parents are group accounts of the same type and company, no cycles, the
+     * meaning of an account with journal lines cannot change, groups with children stay groups,
+     * journal lines stay in their entry's company, and only posting accounts can be posted to.
+     */
+    private function createChartGuards(): void
+    {
+        // Created once the multi-company migration has added company_id.
+        if (! Schema::hasColumn('accounting_chart_of_accounts', 'company_id')) {
+            return;
+        }
+
+        DB::statement(<<<'SQL'
+            CREATE OR REPLACE FUNCTION accounting_coa_guard()
+            RETURNS trigger AS $$
+            BEGIN
+                IF TG_OP = 'UPDATE' THEN
+                    IF NEW.company_id IS DISTINCT FROM OLD.company_id THEN
+                        RAISE EXCEPTION 'An account cannot move to another company.';
+                    END IF;
+
+                    IF (NEW.account_type_id IS DISTINCT FROM OLD.account_type_id
+                        OR NEW.normal_balance IS DISTINCT FROM OLD.normal_balance
+                        OR NEW.is_group IS DISTINCT FROM OLD.is_group)
+                        AND EXISTS (SELECT 1 FROM accounting_journal_entry_lines WHERE chart_of_account_id = OLD.id) THEN
+                        RAISE EXCEPTION 'Account % has journal lines: its type, normal balance and group flag cannot change.', OLD.account_code;
+                    END IF;
+
+                    IF OLD.is_group AND NOT NEW.is_group
+                        AND EXISTS (SELECT 1 FROM accounting_chart_of_accounts WHERE parent_id = OLD.id) THEN
+                        RAISE EXCEPTION 'A group account with child accounts cannot become a posting account.';
+                    END IF;
+
+                    IF NEW.account_type_id IS DISTINCT FROM OLD.account_type_id
+                        AND EXISTS (SELECT 1 FROM accounting_chart_of_accounts WHERE parent_id = OLD.id AND account_type_id <> NEW.account_type_id) THEN
+                        RAISE EXCEPTION 'Child accounts must have the same type as their group.';
+                    END IF;
+                END IF;
+
+                IF NEW.parent_id IS NOT NULL THEN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM accounting_chart_of_accounts p
+                        WHERE p.id = NEW.parent_id AND p.is_group AND p.account_type_id = NEW.account_type_id AND p.company_id = NEW.company_id
+                    ) THEN
+                        RAISE EXCEPTION 'The parent account must be a group account of the same type and company.';
+                    END IF;
+
+                    IF TG_OP = 'UPDATE' AND NEW.parent_id IS DISTINCT FROM OLD.parent_id AND EXISTS (
+                        WITH RECURSIVE ancestors (id, parent_id) AS (
+                            SELECT id, parent_id FROM accounting_chart_of_accounts WHERE id = NEW.parent_id
+                            UNION
+                            SELECT a.id, a.parent_id FROM accounting_chart_of_accounts a JOIN ancestors ON a.id = ancestors.parent_id
+                        )
+                        SELECT 1 FROM ancestors WHERE id = NEW.id
+                    ) THEN
+                        RAISE EXCEPTION 'An account cannot be placed under itself or one of its own sub-accounts.';
+                    END IF;
+                END IF;
+
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        SQL);
+
+        DB::statement(<<<'SQL'
+            CREATE OR REPLACE FUNCTION accounting_line_company_guard()
+            RETURNS trigger AS $$
+            BEGIN
+                IF (SELECT company_id FROM accounting_chart_of_accounts WHERE id = NEW.chart_of_account_id)
+                    IS DISTINCT FROM (SELECT company_id FROM accounting_journal_entries WHERE id = NEW.journal_entry_id) THEN
+                    RAISE EXCEPTION 'A journal line must use an account of its entry''s company.';
+                END IF;
+
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        SQL);
+
+        DB::statement(<<<'SQL'
+            CREATE OR REPLACE FUNCTION accounting_journal_group_guard()
+            RETURNS trigger AS $$
+            BEGIN
+                IF NEW.status = 'posted' AND OLD.status <> 'posted' AND EXISTS (
+                    SELECT 1 FROM accounting_journal_entry_lines l
+                    JOIN accounting_chart_of_accounts a ON a.id = l.chart_of_account_id
+                    WHERE l.journal_entry_id = NEW.id AND a.is_group
+                ) THEN
+                    RAISE EXCEPTION 'Journal lines can only post to posting (non-group) accounts.';
+                END IF;
+
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        SQL);
+
+        DB::statement('DROP TRIGGER IF EXISTS acct_coa_guard ON accounting_chart_of_accounts');
+        DB::statement('CREATE TRIGGER acct_coa_guard BEFORE INSERT OR UPDATE ON accounting_chart_of_accounts FOR EACH ROW EXECUTE FUNCTION accounting_coa_guard()');
+        DB::statement('DROP TRIGGER IF EXISTS acct_lines_company_guard ON accounting_journal_entry_lines');
+        DB::statement('CREATE TRIGGER acct_lines_company_guard BEFORE INSERT OR UPDATE OF chart_of_account_id, journal_entry_id ON accounting_journal_entry_lines FOR EACH ROW EXECUTE FUNCTION accounting_line_company_guard()');
+        DB::statement('DROP TRIGGER IF EXISTS acct_journals_group_guard ON accounting_journal_entries');
+        DB::statement('CREATE TRIGGER acct_journals_group_guard BEFORE UPDATE OF status ON accounting_journal_entries FOR EACH ROW EXECUTE FUNCTION accounting_journal_group_guard()');
     }
 
     private function createAuditTriggers(): void

@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Actions\PostJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Actions\ReverseJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\JournalEntryNotEditableException;
+use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use DateTimeInterface;
@@ -18,6 +19,8 @@ class JournalEntryService
      */
     public function create(array $data): JournalEntry
     {
+        $this->assertAccountsInCompany($data['lines']);
+
         return DB::transaction(function () use ($data): JournalEntry {
             $currencyId = $data['currency_id']
                 ?? Currency::query()->where('is_base', true)->value('id');
@@ -60,6 +63,8 @@ class JournalEntryService
         if ($journalEntry->status !== 'draft') {
             throw new JournalEntryNotEditableException('Only draft journal entries can be edited.');
         }
+
+        $this->assertAccountsInCompany($data['lines']);
 
         return DB::transaction(function () use ($journalEntry, $data): JournalEntry {
             $journalEntry = JournalEntry::query()->lockForUpdate()->findOrFail($journalEntry->id);
@@ -120,6 +125,23 @@ class JournalEntryService
 
             return $journalEntry->refresh()->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']);
         });
+    }
+
+    /**
+     * Every line must use an account of the current company (the database rejects it too, with a
+     * less helpful error).
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     */
+    private function assertAccountsInCompany(array $lines): void
+    {
+        $ids = array_values(array_unique(array_map('intval', array_column($lines, 'chart_of_account_id'))));
+        $found = ChartOfAccount::query()->whereIn('id', $ids)->pluck('id')->all();
+        $missing = array_diff($ids, $found);
+
+        if ($missing !== []) {
+            throw new AccountingException('Accounts '.implode(', ', $missing).' do not belong to the current company.');
+        }
     }
 
     public function post(JournalEntry $journalEntry): JournalEntry
