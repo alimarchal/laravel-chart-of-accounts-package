@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/packagist/l/alimarchal/laravel-chart-of-accounts.svg?style=flat-square)](https://packagist.org/packages/alimarchal/laravel-chart-of-accounts)
 [![PHP Version](https://img.shields.io/packagist/php-v/alimarchal/laravel-chart-of-accounts.svg?style=flat-square)](https://packagist.org/packages/alimarchal/laravel-chart-of-accounts)
 
-> **Professional-grade, production-ready Chart of Accounts and double-entry Accounting module for Laravel.**
+> **Chart of Accounts and double-entry accounting module for Laravel.**
 > One-command install. Works with Jetstream (Blade/Livewire) and Breeze (Inertia/React).
 >
 > **Author:** Ali Raza Marchal — [kh.marchal@gmail.com](mailto:kh.marchal@gmail.com)
@@ -14,68 +14,148 @@
 
 ---
 
-## Quality Score: 9.2 / 10
+## Highlights
 
-| Dimension | Score | Notes |
-|-----------|-------|-------|
-| **Architecture** | 9.5/10 | Clean service-layer, Actions pattern, no God classes |
-| **Double-Entry Correctness** | 10/10 | Balance enforced at DB and application layer + UI |
-| **API Coverage** | 9/10 | Full versioned REST API with Eloquent resources |
-| **Frontend Flexibility** | 10/10 | Dual-stack: one env switch (`ACCOUNTING_UI_DRIVER`) |
-| **Reporting Depth** | 9/10 | 10 financial reports covering all standard statements |
-| **Security** | 9/10 | Spatie Permission RBAC, route middleware, `@can` guards |
-| **Developer Experience** | 9.5/10 | One-command install, `JournalEntry::record()` helper, Select2 UI |
-| **Test Coverage** | 8/10 | Feature tests for posting, reversals, voids, edge cases |
-| **Documentation** | 9.5/10 | Full README, CHANGELOG, PHPDoc, API examples |
+- Double-entry journal with draft → posted → reversed / void workflow
+- Balance enforced in **exact cents**; posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite)
+- Hierarchical chart of accounts with integrity rules (no cycles, same-type parents, structural fields locked once used)
+- Accounting periods with close / reopen / fiscal-year close, balance snapshots, retained-earnings roll-forward
+- 10+ reports (GL, trial balance, balance sheet, income statement, cash flow, aged AR/AP, bank & cash book, …)
+- REST API (versioned), Inertia/React and Blade/Livewire UIs
+- Spatie Permission RBAC with privilege-escalation protection, full audit trail
+- Test suite (Pest + Testbench) run in CI on PHP 8.2–8.4, Laravel 11–13, SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+
+---
+
+## How it works (visual guide)
+
+> Every diagram is generated from the Mermaid sources in [`docs/diagrams/`](docs/diagrams) (SVG + PNG in [`docs/images/`](docs/images)).
+
+### 1. Architecture — who calls what
+
+![Architecture](docs/images/01-architecture.png)
+
+### 2. Installation flow
+
+![Installation flow](docs/images/02-installation.png)
+
+### 3. Journal entry lifecycle
+
+![Journal entry lifecycle](docs/images/03-journal-lifecycle.png)
+
+### 4. What happens when an entry is posted
+
+![Posting checks](docs/images/04-posting-checks.png)
+
+### 5. Month-end and year-end close
+
+![Period close](docs/images/05-period-close.png)
+
+### 6. An API request, step by step
+
+![API request](docs/images/06-api-request.png)
 
 ---
 
 ## Requirements
 
-- PHP ^8.2
-- Laravel ^10.0 | ^11.0 | ^12.0 | ^13.0
+- PHP ^8.2 (Laravel 13 requires PHP ^8.3)
+- Laravel ^11.0 | ^12.0 | ^13.0
+- MySQL 8 / MariaDB 10.6+ / PostgreSQL 13+ / SQLite 3.35+
+- `livewire/livewire` ^3|^4 for the Blade UI, or `inertiajs/inertia-laravel` for the React UI
+- `laravel/sanctum` (or another guard configured in `ACCOUNTING_API_MIDDLEWARE`) for the API
 
 ---
 
 ## Installation
 
+Tested end-to-end on a fresh **Laravel 13** app: install takes about one second and the first API call works immediately.
+
 ```bash
+# 1. Package
 composer require alimarchal/laravel-chart-of-accounts
+
+# 2. Choose a UI in .env (default: inertia)
+#    ACCOUNTING_UI_DRIVER=inertia   React (Breeze / React starter kit)
+#    ACCOUNTING_UI_DRIVER=blade     Blade + Livewire (composer require livewire/livewire)
+#    ACCOUNTING_UI_DRIVER=api       REST API only — no web routes, views or Livewire (lightest)
+
+# 3. API authentication (Laravel 11+ ships without it)
+php artisan install:api
 ```
-
-> **Blade/Livewire apps** (Jetstream): add `ACCOUNTING_UI_DRIVER=blade` to `.env` **before** installing.
-> **Inertia/React apps** (Breeze): leave default (`inertia`).
-
-```bash
-php artisan accounting:install
-```
-
-**`accounting:install` does automatically (11 steps):**
-
-1. Publishes accounting migrations
-2. Publishes accounting config (`config/accounting.php`)
-3. Publishes Blade views (`resources/views/vendor/accounting/`)
-4. Publishes public assets — jQuery 3.5.1 + Select2 4.1.0 → `public/vendor/accounting/`
-5. Publishes `spatie/laravel-permission` migrations (if not present)
-6. Publishes `spatie/laravel-activitylog` migrations (if not present)
-7. Runs `php artisan migrate`
-8. Seeds all master data (account types, currencies, COA, permissions, tax codes, periods)
-9. Syncs database objects (stored procedures, views, triggers)
-10. Assigns `super-admin` role to first user
-11. Verifies the installation
-
-**After install — add `HasRoles` to your User model:**
 
 ```php
+// 4. app/Models/User.php
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 }
 ```
 
+```bash
+# 5. Install (idempotent — safe to re-run)
+php artisan accounting:install --admin-email=you@example.com
+```
+
+> Without `--admin-email` the `super-admin` role goes to the **first user** in the users table — verify that is intended.
+
+**`accounting:install` does automatically:**
+
+1. Publishes the config (`config/accounting.php`) and migrations
+2. Publishes `spatie/laravel-permission` and `spatie/laravel-activitylog` migrations (if missing)
+3. Publishes the React pages (`inertia`) or the Select2/jQuery assets (`blade`); `--views` also publishes Blade views for customisation
+4. Runs `migrate --force` (works in production)
+5. Seeds account types, currencies, chart of accounts, current period, roles/permissions and tax codes (never overwrites existing data)
+6. Syncs database objects: reporting views, audit triggers and posted-entry immutability triggers
+7. Assigns `super-admin` (to `--admin-email`, or the first user)
+8. Verifies the installation and warns if the Sanctum guard is missing
+
 Available roles: `super-admin` (all), `admin`, `accountant`, `viewer`.
+
+---
+
+## API quick start
+
+```bash
+# A token for an existing user (or issue tokens from your own login endpoint)
+php artisan tinker --execute="echo App\Models\User::first()->createToken('erp')->plainTextToken;"
+```
+
+```bash
+TOKEN=1|xxxxxxxx
+API=http://localhost:8000/api/v1/accounting
+H=(-H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json")
+
+# Is everything installed?
+curl "${H[@]}" $API/health
+
+# Easiest possible entry: debit one account, credit another (posts immediately)
+curl "${H[@]}" -X POST $API/journal-entries/simple \
+  -H "Idempotency-Key: rent-2026-10" \
+  -d '{"debit_account_code":"5102","credit_account_code":"1101","amount":2500,"description":"Office rent"}'
+
+# Multi-line entry using account codes — no ids needed
+curl "${H[@]}" -X POST $API/journal-entries -d '{
+  "entry_date": "2026-10-04", "reference": "INV-1001", "auto_post": true,
+  "lines": [
+    {"account_code": "1103", "debit": 1500, "credit": 0, "cost_center_code": "ADMIN"},
+    {"account_code": "4101", "debit": 0, "credit": 1500}
+  ]}'
+
+# Balances and reports
+curl "${H[@]}" "$API/chart-of-accounts/tree"
+curl "${H[@]}" "$API/reports/trial-balance"
+curl "${H[@]}" "$API/reports/income-statement?date_from=2026-01-01&date_to=2026-12-31"
+curl "${H[@]}" "$API/reports/balance-sheet?as_of_date=2026-12-31"
+```
+
+* **Full reference:** [`docs/openapi.yaml`](docs/openapi.yaml) (OpenAPI 3.1 — open it in Swagger UI, Redoc, Stoplight, or import into Insomnia).
+* **Postman:** import [`docs/postman_collection.json`](docs/postman_collection.json), set the `host` and `token` variables, send.
+* **Retries are safe:** send an `Idempotency-Key` header when creating entries — a retry returns the original entry (`200`, `Idempotent-Replayed: true`) instead of posting twice.
+* **Errors are predictable:** `401` no token · `403` missing permission · `404` not found · `422` validation (`errors`) or accounting rule (`message`) · `429` rate limit.
 
 ---
 
@@ -87,7 +167,9 @@ After `composer update alimarchal/laravel-chart-of-accounts`:
 php artisan accounting:update
 ```
 
-Re-publishes views, assets, config, JS; runs new migrations; syncs DB objects.
+Refreshes package-owned files (React pages / Select2 assets), runs new migrations (`--force`) and re-syncs the
+database views and triggers. It never overwrites your `config/accounting.php` or customised views
+(`--views` re-publishes Blade views explicitly).
 
 ---
 
@@ -130,17 +212,17 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 // Create a draft entry
 $entry = JournalEntry::record(
     description: 'Office rent payment',
-    debitAccountCode: '5101',   // Rent Expense
-    creditAccountCode: '1101',  // Cash
-    amount: 150000,
+    debitAccountCode: '5102',   // Rent Expense
+    creditAccountCode: '1101',  // Cash In Hand
+    amount: '150000.00',        // strings avoid float rounding
     post: false,                // save as draft
 );
 
 // Create and post immediately
 $entry = JournalEntry::record(
     description: 'Salary payment — June 2026',
-    debitAccountCode: '6101',   // Salaries Expense
-    creditAccountCode: '1101',  // Cash
+    debitAccountCode: '5101',   // Salary Expense
+    creditAccountCode: '1108',  // Operating Bank Account
     amount: 500000,
     post: true,                 // post immediately
     reference: 'SAL-2026-06',
@@ -156,9 +238,9 @@ echo $entry->id;          // auto-assigned ID
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `description` | `string` | Yes | Human-readable transaction description |
-| `debitAccountCode` | `string` | Yes | Account code for the debit line (e.g. `'6101'`) |
+| `debitAccountCode` | `string` | Yes | Account code for the debit line (e.g. `'5101'`) |
 | `creditAccountCode` | `string` | Yes | Account code for the credit line (e.g. `'1101'`) |
-| `amount` | `float` | Yes | Amount — same value debited AND credited |
+| `amount` | `float\|int\|string` | Yes | Amount — same value debited AND credited (rounded to cents) |
 | `post` | `bool` | No | `true` = post immediately, `false` = draft (default) |
 | `reference` | `string\|null` | No | Optional voucher/invoice reference number |
 
@@ -171,7 +253,11 @@ echo $entry->id;          // auto-assigned ID
 - Wraps in a DB transaction
 
 **Returns:** Fresh `JournalEntry` model.
-**Throws:** `ModelNotFoundException` if account code or open period not found.
+**Throws:** `ModelNotFoundException` if an account code or an open period for today is not found;
+`AccountingException` if posting violates a rule (unbalanced, group/inactive account, closed period).
+
+> `JournalEntry::record()` posts as the current user without a permission check — it is a server-side API.
+> Authorize the caller yourself (e.g. `Gate::authorize('journal-entries.post')`) when exposing it to users.
 
 ---
 
@@ -179,7 +265,7 @@ echo $entry->id;          // auto-assigned ID
 
 **Create a draft entry:**
 ```http
-POST /api/accounting/v1/journal-entries
+POST /api/v1/accounting/journal-entries
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -199,28 +285,33 @@ Content-Type: application/json
 
 **Post entry:**
 ```http
-POST /api/accounting/v1/journal-entries/{id}/post
+POST /api/v1/accounting/journal-entries/{id}/post
 Authorization: Bearer {token}
 ```
 
-**Reverse entry:**
+**Reverse entry** (`reversal_date` optional, defaults to today, cannot precede the original):
 ```http
-POST /api/accounting/v1/journal-entries/{id}/reverse
+POST /api/v1/accounting/journal-entries/{id}/reverse
 Authorization: Bearer {token}
 Content-Type: application/json
 
-{ "description": "Reversal of SAL-2026-06" }
+{ "description": "Reversal of SAL-2026-06", "reversal_date": "2026-06-30" }
 ```
+
+`auto_post: true` on create/update additionally requires the `journal-entries.post` permission.
+
+**Errors:** validation failures return `422` with `errors`; accounting rule violations (unbalanced entry,
+closed period, already reversed, account in use, …) return `422` with a `message`.
 
 **Void entry:**
 ```http
-POST /api/accounting/v1/journal-entries/{id}/void
+POST /api/v1/accounting/journal-entries/{id}/void
 Authorization: Bearer {token}
 ```
 
 **List with filters:**
 ```http
-GET /api/accounting/v1/journal-entries?filter[status]=posted&filter[entry_date_from]=2026-06-01&sort=-entry_date
+GET /api/v1/accounting/journal-entries?filter[status]=posted&filter[entry_date_from]=2026-06-01&sort=-entry_date
 ```
 
 ---
@@ -239,30 +330,30 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 
 ## Full REST API Reference
 
-Base URL: `/api/accounting/v1`
+Base URL: `/api/v1/accounting` — `ACCOUNTING_API_PREFIX`; middleware `ACCOUNTING_API_MIDDLEWARE` (default `api,auth:sanctum`)
+plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per user). Every endpoint checks a permission.
+Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/account-types` | List / Create |
-| GET/PUT/DELETE | `/account-types/{id}` | Show / Update / Delete |
-| GET/POST | `/chart-of-accounts` | List / Create |
-| GET/PUT/DELETE | `/chart-of-accounts/{id}` | Show / Update / Delete |
-| GET/POST | `/currencies` | List / Create |
-| GET | `/accounting-periods` | List periods |
-| GET/POST | `/journal-entries` | List / Create |
-| GET | `/journal-entries/{id}` | Show with lines |
-| PUT | `/journal-entries/{id}` | Update draft |
-| POST | `/journal-entries/{id}/post` | Post draft |
-| POST | `/journal-entries/{id}/void` | Void |
-| POST | `/journal-entries/{id}/reverse` | Reverse |
-| GET/POST | `/reconciliations` | List / Create |
-| GET | `/bank-accounts` | List |
-| GET | `/cost-centers` | List |
-| GET | `/tax-codes` | List |
-| GET | `/tax-rates` | List |
-| GET | `/account-balance-snapshots` | Period-end snapshots |
+| Method | Endpoint | Description | Permission |
+|--------|----------|-------------|------------|
+| GET | `/health` | Installation health (503 if unhealthy) | `accounting.view` |
+| GET/POST | `/journal-entries` | List (filters, sort, `include=lines`) / Create (+`auto_post`) | `journal-entries.view` / `.create` |
+| POST | `/journal-entries/simple` | Two-line entry by account codes | `journal-entries.create` (+`.post`) |
+| GET/PUT | `/journal-entries/{id}` | Show with lines / Update draft | `journal-entries.view` / `.update` |
+| POST | `/journal-entries/{id}/post` | Post a draft | `journal-entries.post` |
+| POST | `/journal-entries/{id}/reverse` | Reverse (optional `reversal_date`) | `journal-entries.reverse` |
+| POST | `/journal-entries/{id}/void` | Void a draft | `journal-entries.void` |
+| GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
+| GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
+| GET | `/chart-of-accounts/{id}/balance` | Balance as of a date (groups include children) | `chart-of-accounts.view` |
+| GET/PUT/DELETE | `/chart-of-accounts/{id}` | Show / Update / Delete | `chart-of-accounts.*` |
+| GET/POST, GET/PUT/DELETE | `/periods`, `/periods/{id}` | CRUD (no overlaps) | `periods.*` |
+| POST | `/periods/{id}/close` · `/reopen` · `/close-fiscal-year` | Period workflow | `periods.close` / `periods.reopen` |
+| GET | `/account-balance-snapshots[/{id}]` | Period-end snapshots | `account-balance-snapshots.view` |
+| CRUD | `/account-types`, `/currencies`, `/cost-centers`, `/bank-accounts`, `/reconciliations`, `/tax-codes`, `/tax-rates` | Master data | `<resource>.view/create/update/delete` |
+| GET | `/reports/trial-balance` · `balance-sheet` · `income-statement` · `general-ledger` · `cash-flow` · `bank-book` · `cash-book` · `aged-receivables` · `aged-payables` · `account-statement` | Financial reports (posted entries only) | `reports.<name>.view` |
 
-All list endpoints support `?filter[field]=value`, `?sort=field`, `?page=N`.
+List endpoints support `?filter[field]=value`, `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
 
 ---
 
@@ -273,24 +364,39 @@ php artisan vendor:publish --tag=accounting-config
 ```
 
 ```php
-// config/accounting.php
+// config/accounting.php (abridged)
 return [
-    'ui_driver'              => env('ACCOUNTING_UI_DRIVER', 'inertia'),   // 'inertia' or 'blade'
+    'ui_driver'              => env('ACCOUNTING_UI_DRIVER', 'inertia'),   // 'inertia' | 'blade' | 'api'
     'route_prefix'           => env('ACCOUNTING_ROUTE_PREFIX', 'accounting'),
     'route_name_prefix'      => env('ACCOUNTING_ROUTE_NAME_PREFIX', 'accounting'),
     'settings_route_prefix'  => env('SETTINGS_ROUTE_PREFIX', 'settings'),
     'api_prefix'             => env('ACCOUNTING_API_PREFIX', 'api/v1/accounting'),
-    'middleware'             => ['web', 'auth'],
-    'use_permissions'        => true,
+    'api_middleware'         => env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum'), // comma separated
+    'api_enabled'            => env('ACCOUNTING_API_ENABLED', true),
+    'api_rate_limit'         => env('ACCOUNTING_API_RATE_LIMIT', 120),     // per minute per user; 0 = off
+    'api_max_per_page'       => env('ACCOUNTING_API_MAX_PER_PAGE', 100),
+    'users_table'            => env('ACCOUNTING_USERS_TABLE', 'users'),
     'defaults' => [
-        'currency_code'                     => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
-        'cash_account_code'                 => env('ACCOUNTING_CASH_ACCOUNT_CODE', '1101'),
-        'bank_account_code'                 => env('ACCOUNTING_BANK_ACCOUNT_CODE', '1102'),
-        'retained_earnings_account_code'    => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE', '3101'),
-        'rounding_account_code'             => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
+        'currency_code'                  => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
+        'cash_account_code'              => env('ACCOUNTING_CASH_ACCOUNT_CODE', '1101'),   // + child accounts
+        'bank_account_code'              => env('ACCOUNTING_BANK_ACCOUNT_CODE', '1102'),   // group: all bank accounts
+        'retained_earnings_account_code' => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE', '3101'),
+        'rounding_account_code'          => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
     ],
+    'aging' => [
+        'receivable_account_codes' => ['1103', '1104'],
+        'payable_account_codes'    => ['2101', '2102', '2103', '2104'],
+    ],
+    'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'general'), // 'general' or 'school'
+    'permissions'  => [/* … */],
+    'roles'        => [/* super-admin, accountant, admin, viewer */],
 ];
 ```
+
+Accounts referenced by `defaults.*_account_code` are protected: their code cannot change and they cannot be
+deactivated or deleted.
+
+The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` permission check.
 
 ---
 
@@ -306,8 +412,8 @@ return [
 | `accounting:health-check` | Run accounting health checks |
 | `accounting:rebuild-snapshots` | Rebuild account balance snapshots |
 | `accounting:close-fiscal-year` | Close the current fiscal year |
-| `accounting:close-period` | Close the current accounting period |
-| `accounting:open-period` | Open a new accounting period |
+| `accounting:close-period` | Close an accounting period (snapshots, totals, net income) |
+| `accounting:open-period` | Reopen a closed accounting period |
 
 ---
 
@@ -319,7 +425,7 @@ return [
 | `ChartOfAccount` | `accounting_chart_of_accounts` | Hierarchical account tree |
 | `Currency` | `accounting_currencies` | Currencies and exchange rates |
 | `AccountingPeriod` | `accounting_periods` | Fiscal periods with open/close state |
-| `JournalEntry` | `accounting_journal_entries` | Entry header (draft/posted/void/reversed) |
+| `JournalEntry` | `accounting_journal_entries` | Entry header (draft / posted / void) |
 | `JournalEntryLine` | `accounting_journal_entry_lines` | Debit/credit lines |
 | `BankAccount` | `accounting_bank_accounts` | Bank account register |
 | `Reconciliation` | `accounting_reconciliations` | Bank reconciliation records |
@@ -354,6 +460,10 @@ return [
 
 Roles: `super-admin` (all), `admin`, `accountant`, `viewer`.
 
+**Privilege-escalation protection:** a user can only assign roles and permissions they hold themselves, only a
+super-admin can manage super-admin users or the `super-admin` role, and changing a user's roles requires
+`user.assign-role` (direct permissions: `user.assign-permission`). Role management requires `accounting.manage-settings`.
+
 ---
 
 ## Select2 Integration
@@ -361,7 +471,7 @@ Roles: `super-admin` (all), `admin`, `accountant`, `viewer`.
 All `<select>` elements use **Select2 4.1.0** served from `public/vendor/accounting/`:
 
 ```
-public/vendor/accounting/jquery.min.js       — jQuery 3.5.1
+public/vendor/accounting/jquery.min.js       — jQuery 3.7.1
 public/vendor/accounting/select2.min.js      — Select2 4.1.0
 public/vendor/accounting/select2.min.css     — Select2 CSS
 ```
@@ -383,15 +493,65 @@ php artisan vendor:publish --tag=accounting-assets --force
 
 | Status | Description |
 |--------|-------------|
-| **Draft** | Editable, not in balances |
-| **Posted** | Locked, balances updated, period must be open |
-| **Reversed** | Counter-entry with swapped debits/credits (GAAP method) |
-| **Voided** | Cancelled without counter-entry |
+| **Draft** | Editable, not included in balances or reports |
+| **Posted** | Locked (immutable in the database), included in balances; the period must be open |
+| **Void** | Cancelled draft — posted entries cannot be voided, they must be reversed |
 
-Balance is enforced at three layers:
-1. **UI** — Save button disabled until balanced; real-time status badge
-2. **Application** — `save()` rejects if `|debits − credits| ≥ 0.01`
-3. **Service** — `JournalEntryService::post()` validates before posting
+**Reversal:** reversing a posted entry posts a mirror entry (debits ↔ credits). Both stay `posted` and net to
+zero (GAAP); the original is flagged via `reversed_by_entry_id` — use `$entry->isReversed()` or
+`JournalEntry::reversed()`. A reversal cannot itself be reversed.
+
+Integrity is enforced in layers:
+1. **UI** — Save is disabled until debits equal credits.
+2. **Application** — `PostJournalEntryAction` checks, in exact cents: ≥ 2 lines, each line either debit or
+   credit, active posting (non-group) accounts, account currency, debits = credits, open period (row-locked).
+3. **Database** — triggers reject any change to posted entries/lines (amounts, accounts, dates, status, deletes);
+   PostgreSQL also has CHECK constraints (one-sided lines, positive FX rates, single base currency).
+
+### Periods
+
+- Periods may not overlap. A period's dates cannot change, and it cannot be deleted, once it contains entries.
+- Closing requires `periods.close`, refuses while drafts are dated in the period, writes balance snapshots
+  (opening, movement, closing) and stores revenue − expenses as `closing_net_income`.
+- Reopening requires `periods.reopen`. `accounting:close-fiscal-year` additionally posts a closing entry that
+  moves income-statement balances to retained earnings.
+
+### Chart of accounts rules
+
+- No cycles; a parent must be a **group** account of the **same account type**.
+- Once an account has journal lines its code, type, normal balance and group flag are locked (rename or deactivate instead).
+- Accounts with children or journal lines cannot be deleted; system accounts cannot be deleted.
+- Omitted `is_active` / `is_group` on update are left unchanged; `normal_balance` defaults to the account type's.
+
+### Seeding
+
+`accounting:seed` only **creates missing** records — it never renames, re-activates or re-rates existing
+accounts/currencies and never reopens closed periods. `ACCOUNTING_CHART_PRESET=general` (default) seeds
+industry-neutral names; `school` seeds education-specific names. With a base currency other than PKR only the
+base currency is seeded.
+
+---
+
+## Testing
+
+```bash
+composer test                     # Pest on in-memory SQLite
+DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_DATABASE=coa_test DB_USERNAME=postgres composer test
+composer analyse                  # Larastan level 5
+composer format:check             # Pint
+```
+
+---
+
+## Production checklist
+
+- Run `php artisan accounting:install --admin-email=…` and confirm who holds `super-admin`.
+- Add `HasRoles` to your user model; keep `verified` email enforcement on.
+- Protect the API with Sanctum (or set `ACCOUNTING_API_MIDDLEWARE`) and rate-limit it.
+- Run `php artisan accounting:update` after every upgrade (re-syncs triggers and views).
+- Back up before closing a fiscal year; restrict `periods.reopen` to a small group.
+- Known limitations: single company per database (no tenant scoping); multi-currency stores an FX rate per
+  entry but reports are in transaction amounts; the default exchange rates in the seeder are samples.
 
 ---
 
@@ -409,11 +569,17 @@ A: Run `php artisan accounting:update`.
 **Q: Can I create GL entries without the UI?**
 A: Yes — use `JournalEntry::record(description, debitCode, creditCode, amount, post: true)`.
 
+**Q: Why do I get a 422 "Posted journal entries are immutable"?**
+A: Posted entries can't be edited or deleted — reverse them and post a corrected entry.
+
 **Q: Why is the Save button disabled?**
 A: Debits and credits must be equal before saving. Enter matching amounts in the debit/credit columns.
 
 **Q: What is `accounting:update`?**
-A: Re-publishes views, assets, config with `--force`, runs new migrations, syncs DB objects. Run after every `composer update`.
+A: Refreshes package assets, runs new migrations and re-syncs DB objects without touching your config. Run after every `composer update`.
+
+**Q: I only need the API — how do I keep it light?**
+A: Set `ACCOUNTING_UI_DRIVER=api`. No web routes, views or Livewire components are loaded; only the 71 API routes.
 
 ---
 

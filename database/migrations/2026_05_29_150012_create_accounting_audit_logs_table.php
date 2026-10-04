@@ -17,7 +17,7 @@ return new class extends Migration
             $table->json('new_values')->nullable();
             $table->json('changed_fields')->nullable();
             $table->json('metadata')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained('users', indexName: 'acct_audit_logs_user_fk')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_audit_logs_user_fk')->nullOnDelete();
             $table->ipAddress('ip_address')->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamp('created_at')->useCurrent();

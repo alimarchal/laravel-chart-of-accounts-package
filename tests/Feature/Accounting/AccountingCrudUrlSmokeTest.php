@@ -3,7 +3,7 @@
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
-use App\Models\User;
+use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 
 beforeEach(function (): void {
     $this->withoutVite();

@@ -22,6 +22,6 @@ abstract class AccountingModel extends Model
             return $this->table;
         }
 
-        return 'accounting_' . Str::snake(Str::pluralStudly(class_basename($this)));
+        return 'accounting_'.Str::snake(Str::pluralStudly(class_basename($this)));
     }
 }

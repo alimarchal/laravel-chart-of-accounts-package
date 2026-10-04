@@ -169,11 +169,20 @@ Route::middleware(['web', 'auth', 'verified'])
         $resourceRoutes('users', UserBladeController::class, 'users', 'user', 'user');
         Route::get('users/{user}/permissions', [UserBladeController::class, 'editPermissions'])
             ->name('users.permissions.edit')
-            ->middleware('can:user.assign-role');
+            ->middleware('can:user.assign-permission');
         Route::post('users/{user}/permissions', [UserBladeController::class, 'syncPermissions'])
             ->name('users.permissions.sync')
-            ->middleware('can:user.assign-role');
-        $resourceRoutes('roles', RoleBladeController::class, 'roles', 'accounting.manage-settings', 'role');
+            ->middleware('can:user.assign-permission');
+        // Role management is guarded by a single ability (there are no roles.* permissions).
+        Route::middleware('can:accounting.manage-settings')->group(function (): void {
+            Route::get('roles', [RoleBladeController::class, 'index'])->name('roles.index');
+            Route::get('roles/create', [RoleBladeController::class, 'create'])->name('roles.create');
+            Route::post('roles', [RoleBladeController::class, 'store'])->name('roles.store');
+            Route::get('roles/{role}', [RoleBladeController::class, 'show'])->name('roles.show');
+            Route::get('roles/{role}/edit', [RoleBladeController::class, 'edit'])->name('roles.edit');
+            Route::match(['put', 'patch'], 'roles/{role}', [RoleBladeController::class, 'update'])->name('roles.update');
+            Route::delete('roles/{role}', [RoleBladeController::class, 'destroy'])->name('roles.destroy');
+        });
         Route::get('permissions', [PermissionBladeController::class, 'index'])
             ->name('permissions.index')
             ->middleware('can:accounting.manage-settings');

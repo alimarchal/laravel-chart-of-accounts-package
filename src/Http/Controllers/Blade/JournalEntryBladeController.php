@@ -18,7 +18,7 @@ class JournalEntryBladeController extends Controller
 {
     public function index(): View
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']))
+        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']), request())
             ->allowedFilters(
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('description'),
@@ -63,7 +63,12 @@ class JournalEntryBladeController extends Controller
 
     public function reverse(Request $request, JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse
     {
-        $service->reverse($journalEntry, $request->string('description')->toString() ?: null);
+        $validated = $request->validate([
+            'description' => ['nullable', 'string', 'max:1000'],
+            'reversal_date' => ['nullable', 'date'],
+        ]);
+
+        $service->reverse($journalEntry, $validated['description'] ?? null, $validated['reversal_date'] ?? null);
 
         return back()->with('success', 'Journal entry reversed.');
     }

@@ -2,9 +2,9 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
 
 class AccountingAuditLog extends Model
 {
@@ -39,6 +39,32 @@ class AccountingAuditLog extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', User::class));
+        return $this->belongsTo(config('auth.providers.users.model'));
+    }
+
+    /**
+     * Write an application-level audit record for a business action on a model.
+     *
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
+     * @param  array<string, mixed>|null  $metadata
+     */
+    public static function record(Model $model, string $action, ?array $oldValues = null, ?array $newValues = null, ?array $metadata = null): self
+    {
+        $request = app()->runningInConsole() ? null : request();
+
+        return static::query()->create([
+            'table_name' => $model->getTable(),
+            'record_id' => $model->getKey(),
+            'action' => $action,
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+            'changed_fields' => $newValues !== null ? array_keys($newValues) : null,
+            'metadata' => $metadata,
+            'user_id' => Auth::id(),
+            'ip_address' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+            'created_at' => now(),
+        ]);
     }
 }

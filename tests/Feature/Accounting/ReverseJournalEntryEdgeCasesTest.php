@@ -32,10 +32,10 @@ it('reverses a posted journal entry with swapped debits and credits', function (
     $cashLine = $reversal->lines->firstWhere('chart_of_account_id', $cash->id);
     $incomeLine = $reversal->lines->firstWhere('chart_of_account_id', $income->id);
 
-    expect((float) $cashLine->credit_amount)->toEqual(1000.0)
-        ->and((float) $cashLine->debit_amount)->toEqual(0.0)
-        ->and((float) $incomeLine->debit_amount)->toEqual(1000.0)
-        ->and((float) $incomeLine->credit_amount)->toEqual(0.0);
+    expect((float) $cashLine->credit)->toEqual(1000.0)
+        ->and((float) $cashLine->debit)->toEqual(0.0)
+        ->and((float) $incomeLine->debit)->toEqual(1000.0)
+        ->and((float) $incomeLine->credit)->toEqual(0.0);
 });
 
 it('marks original entry as reversed after reversal', function (): void {

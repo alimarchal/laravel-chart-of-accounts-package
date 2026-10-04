@@ -2,9 +2,13 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Resources;
 
+use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin ChartOfAccount
+ */
 class AccountResource extends JsonResource
 {
     /**
@@ -19,9 +23,14 @@ class AccountResource extends JsonResource
             'normal_balance' => $this->normal_balance,
             'is_group' => $this->is_group,
             'is_active' => $this->is_active,
+            'is_system' => $this->is_system,
             'parent_id' => $this->parent_id,
+            'account_type_id' => $this->account_type_id,
+            'currency_id' => $this->currency_id,
+            'description' => $this->description,
             'account_type' => $this->whenLoaded('accountType'),
             'currency' => $this->whenLoaded('currency'),
+            'children' => AccountResource::collection($this->whenLoaded('childrenRecursive')),
         ];
     }
 }

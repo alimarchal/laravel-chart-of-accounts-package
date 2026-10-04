@@ -1,0 +1,1 @@
+<div>{{ $header ?? '' }}{{ $slot }}</div>

@@ -2,10 +2,13 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
-use Illuminate\Routing\Controller;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -37,7 +40,7 @@ abstract class SimpleAccountingResourceController extends Controller
         return Inertia::render('accounting/resources/index', [
             'title' => $this->title(),
             'routeName' => $this->routeName(),
-            'records' => QueryBuilder::for($model::query())
+            'records' => QueryBuilder::for($model::query(), request())
                 ->allowedFilters(...$this->allowedFilters())
                 ->defaultSort('-id')
                 ->paginate(25)
@@ -72,7 +75,7 @@ abstract class SimpleAccountingResourceController extends Controller
 
         $this->normalizeCheckboxes($request);
 
-        $record = $model::query()->create($request->validate($this->rules()));
+        $record = $this->persistCreate($request->validate($this->rules()));
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.index')
             ->with('success', $this->title().' created: '.$record->getKey());
@@ -110,7 +113,7 @@ abstract class SimpleAccountingResourceController extends Controller
 
         $this->normalizeCheckboxes($request);
 
-        $record->update($request->validate($this->rules($record)));
+        $record = $this->persistUpdate($record, $request->validate($this->rules($record)));
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.index')
             ->with('success', $this->title().' updated: '.$record->getKey());
@@ -119,10 +122,46 @@ abstract class SimpleAccountingResourceController extends Controller
     public function destroy(int|string $record): RedirectResponse
     {
         $record = $this->findRecord($record);
-        $record->delete();
+        $this->persistDelete($record);
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.index')
             ->with('success', $this->title().' deleted: '.$record->getKey());
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function persistCreate(array $data): Model
+    {
+        /** @var class-string<Model> $model */
+        $model = $this->model();
+
+        return $model::query()->create($data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function persistUpdate(Model $record, array $data): Model
+    {
+        $record->update($data);
+
+        return $record;
+    }
+
+    protected function persistDelete(Model $record): void
+    {
+        try {
+            // Own transaction/savepoint: a foreign-key violation must not abort an outer transaction.
+            DB::transaction(fn () => $record->delete());
+        } catch (QueryException $exception) {
+            // Foreign-key violation (SQLSTATE 23000 / 23503): the record is still referenced.
+            if (in_array((string) $exception->getCode(), ['23000', '23503'], true)) {
+                throw new AccountingException('This record is in use by other accounting records and cannot be deleted.');
+            }
+
+            throw $exception;
+        }
     }
 
     protected function findRecord(int|string $record): Model

@@ -3,8 +3,8 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Reports\AccountStatementReport;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 

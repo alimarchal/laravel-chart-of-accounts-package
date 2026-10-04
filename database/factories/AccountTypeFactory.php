@@ -16,7 +16,7 @@ class AccountTypeFactory extends Factory
     {
         return [
             'code' => strtoupper(fake()->unique()->lexify('???')),
-            'name' => fake()->words(2, true),
+            'name' => fake()->unique()->words(3, true),
             'normal_balance' => fake()->randomElement(['debit', 'credit']),
             'report_group' => fake()->randomElement(['BalanceSheet', 'IncomeStatement']),
             'description' => fake()->sentence(),

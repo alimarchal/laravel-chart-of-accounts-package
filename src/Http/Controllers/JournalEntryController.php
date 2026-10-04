@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Actions\VoidJournalEntryAction;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\JournalEntryNotEditableException;
 use Alimarchal\LaravelChartOfAccounts\Http\Requests\StoreJournalEntryRequest;
 use Alimarchal\LaravelChartOfAccounts\Http\Requests\UpdateJournalEntryRequest;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
@@ -10,9 +11,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -22,7 +23,7 @@ class JournalEntryController extends Controller
 {
     public function index(): Response
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']))
+        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']), request())
             ->allowedFilters(...[
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('description'),
@@ -108,7 +109,7 @@ class JournalEntryController extends Controller
 
     public function store(StoreJournalEntryRequest $request, JournalEntryService $service): RedirectResponse
     {
-        $entry = $service->create($request->validated());
+        $entry = $service->create($request->journalData());
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $entry)->with('success', 'Journal entry created.');
     }
@@ -116,8 +117,8 @@ class JournalEntryController extends Controller
     public function update(UpdateJournalEntryRequest $request, JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse
     {
         try {
-            $entry = $service->updateDraft($journalEntry, $request->validated());
-        } catch (\DomainException $exception) {
+            $entry = $service->updateDraft($journalEntry, $request->journalData());
+        } catch (JournalEntryNotEditableException $exception) {
             return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $journalEntry)->with('error', $exception->getMessage());
         }
 
@@ -133,7 +134,12 @@ class JournalEntryController extends Controller
 
     public function reverse(Request $request, JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse
     {
-        $service->reverse($journalEntry, $request->string('description')->toString() ?: null);
+        $validated = $request->validate([
+            'description' => ['nullable', 'string', 'max:1000'],
+            'reversal_date' => ['nullable', 'date'],
+        ]);
+
+        $service->reverse($journalEntry, $validated['description'] ?? null, $validated['reversal_date'] ?? null);
 
         return back()->with('success', 'Journal entry reversed.');
     }

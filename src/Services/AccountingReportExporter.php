@@ -62,7 +62,7 @@ class AccountingReportExporter
             $rowNumber = $index + 1;
             $sheetXml .= "<row r=\"{$rowNumber}\">";
 
-            foreach (array_values($row) as $column => $value) {
+            foreach (array_values($row) as $column => $value) { // @phpstan-ignore arrayValues.list (rows may be associative)
                 $cell = chr(65 + $column).$rowNumber;
                 $escaped = htmlspecialchars((string) $value, ENT_QUOTES | ENT_XML1);
                 $sheetXml .= "<c r=\"{$cell}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";

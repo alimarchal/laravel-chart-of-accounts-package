@@ -1,0 +1,4005 @@
+{
+ "item": [
+  {
+   "name": "Journal entries",
+   "description": "Create, post, reverse and void double-entry journal entries.",
+   "item": [
+    {
+     "id": "df5e9d3e-55da-4244-83db-3780e89454e1",
+     "name": "List entries",
+     "request": {
+      "name": "List entries",
+      "description": {
+       "content": "Permission: `journal-entries.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": " (This can only be one of draft,posted,void)",
+          "type": "text/plain"
+         },
+         "key": "filter[status]",
+         "value": "draft"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[reference]",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[description]",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[currency_id]",
+         "value": "<integer>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[accounting_period_id]",
+         "value": "<integer>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[entry_date_from]",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[entry_date_to]",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": " (This can only be one of entry_date,-entry_date,id,-id,reference,-reference,created_at,-created_at)",
+          "type": "text/plain"
+         },
+         "key": "sort",
+         "value": "id"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": " (This can only be one of lines)",
+          "type": "text/plain"
+         },
+         "key": "include",
+         "value": "lines"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "7d69616f-ae27-42ac-bb26-32911870adfe",
+     "name": "Create (and optionally post) an entry",
+     "request": {
+      "name": "Create (and optionally post) an entry",
+      "description": {
+       "content": "Lines may use account codes. Rule violations (unbalanced, group account, closed period) return 422 with a message.\n\nPermission: `journal-entries.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "disabled": false,
+        "description": {
+         "content": "Same key + same body \u2192 original entry is returned (200). Same key + different body \u2192 422.",
+         "type": "text/plain"
+        },
+        "key": "Idempotency-Key",
+        "value": "<string>"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "94f5d43b-8ea5-4263-aa2f-4ddc7fc73fbd",
+     "name": "Two-line entry by account codes",
+     "request": {
+      "name": "Two-line entry by account codes",
+      "description": {
+       "content": "Debits one account and credits another with the same amount; posts by default.\n\nPermission: `journal-entries.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries",
+        "simple"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "disabled": false,
+        "description": {
+         "content": "Same key + same body \u2192 original entry is returned (200). Same key + different body \u2192 422.",
+         "type": "text/plain"
+        },
+        "key": "Idempotency-Key",
+        "value": "<string>"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"debit_account_code\": \"<string>\",\n  \"credit_account_code\": \"<string>\",\n  \"amount\": \"<number>\",\n  \"entry_date\": \"<string,null-date>\",\n  \"description\": \"<string,null>\",\n  \"reference\": \"<string,null>\",\n  \"post\": true\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "556d5692-6b3f-4474-a236-1eed300fb665",
+     "name": "Show an entry with lines",
+     "request": {
+      "name": "Show an entry with lines",
+      "description": {
+       "content": "Permission: `journal-entries.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "dc3c7942-ca51-459f-bb69-ae46ee2695c7",
+     "name": "Update a draft (PATCH also accepted)",
+     "request": {
+      "name": "Update a draft (PATCH also accepted)",
+      "description": {
+       "content": "Only drafts; lines with an id are updated, lines without one are added, missing lines are removed.\n\nPermission: `journal-entries.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "69ddb0e5-593d-457f-97d4-129bc0c99811",
+     "name": "Post a draft",
+     "request": {
+      "name": "Post a draft",
+      "description": {
+       "content": "Permission: `journal-entries.post`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries",
+        ":id",
+        "post"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "fcc0c2a0-fdc9-4683-8ba8-674986c5001d",
+     "name": "Reverse a posted entry",
+     "request": {
+      "name": "Reverse a posted entry",
+      "description": {
+       "content": "Permission: `journal-entries.reverse`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries",
+        ":id",
+        "reverse"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"description\": \"<string,null>\",\n  \"reversal_date\": \"<string,null-date>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "f4c907b0-a9f5-42e2-81f7-f8f696fcbc74",
+     "name": "Void a draft",
+     "request": {
+      "name": "Void a draft",
+      "description": {
+       "content": "Posted entries cannot be voided \u2014 reverse them.\n\nPermission: `journal-entries.void`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "journal-entries",
+        ":id",
+        "void"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Chart of accounts",
+   "description": "Hierarchical accounts, the account tree and account balances.",
+   "item": [
+    {
+     "id": "90edade5-086c-4c93-8342-4ff115d892b2",
+     "name": "List accounts",
+     "request": {
+      "name": "List accounts",
+      "description": {
+       "content": "Permission: `chart-of-accounts.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "chart-of-accounts"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[account_code]",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[account_name]",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[account_type_id]",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[currency_id]",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[is_group]",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[is_active]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "7eefdaa4-b861-4095-b792-3731afc6a37f",
+     "name": "Create an account",
+     "request": {
+      "name": "Create an account",
+      "description": {
+       "content": "Permission: `chart-of-accounts.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "chart-of-accounts"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "5eabea6c-eb22-4877-9efc-bf1e6db492d1",
+     "name": "Whole chart as a nested tree",
+     "request": {
+      "name": "Whole chart as a nested tree",
+      "description": {
+       "content": "Permission: `chart-of-accounts.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "chart-of-accounts",
+        "tree"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "32b0a9e8-8d72-4514-b1e9-8f4c15d3a8e1",
+     "name": "Account balance",
+     "request": {
+      "name": "Account balance",
+      "description": {
+       "content": "Posted entries only; a group account includes all of its child accounts.\n\nPermission: `chart-of-accounts.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "chart-of-accounts",
+        ":id",
+        "balance"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "as_of_date",
+         "value": "<date>"
+        }
+       ],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "4b2f2df2-c192-4586-b8a7-f34a5d0f4cf7",
+     "name": "Show an account",
+     "request": {
+      "name": "Show an account",
+      "description": {
+       "content": "Permission: `chart-of-accounts.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "chart-of-accounts",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "1d714a1c-b329-4c78-84db-28050914c1ba",
+     "name": "Update an account (PATCH also accepted)",
+     "request": {
+      "name": "Update an account (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `chart-of-accounts.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "chart-of-accounts",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "99e4e29d-886c-47b9-9757-7b1a5a1feeb2",
+     "name": "Delete an account",
+     "request": {
+      "name": "Delete an account",
+      "description": {
+       "content": "422 for system accounts, accounts with children or journal lines.\n\nPermission: `chart-of-accounts.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "chart-of-accounts",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Reports",
+   "description": "Financial statements and ledgers (posted entries only).",
+   "item": [
+    {
+     "id": "7f81963e-647d-44da-a66d-8cff3f69cb10",
+     "name": "Trial balance",
+     "request": {
+      "name": "Trial balance",
+      "description": {
+       "content": "All posted activity per account; totals.difference is 0 when balanced.\n\nPermission: `reports.trial-balance.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "trial-balance"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "5439d5db-8d6c-4ac5-ad92-edaf17cec090",
+     "name": "Balance sheet",
+     "request": {
+      "name": "Balance sheet",
+      "description": {
+       "content": "Includes a 'Current Earnings (unclosed)' row; totals: assets, liabilities_and_equity, difference.\n\nPermission: `reports.balance-sheet.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "balance-sheet"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "as_of_date",
+         "value": "<date>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "9cd5e68b-1d34-42c4-8a43-41a42a5a8102",
+     "name": "Income statement",
+     "request": {
+      "name": "Income statement",
+      "description": {
+       "content": "Defaults to the period containing today; closing entries excluded. totals: revenue, expenses, net_income.\n\nPermission: `reports.income-statement.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "income-statement"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_from",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_to",
+         "value": "<date>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "c84b3637-375b-47ab-8d0f-26625ae417e8",
+     "name": "General ledger",
+     "request": {
+      "name": "General ledger",
+      "description": {
+       "content": "Permission: `reports.general-ledger.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "general-ledger"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_from",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_to",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "account_id",
+         "value": "<integer>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": " (This can only be one of posted,draft,void,all)",
+          "type": "text/plain"
+         },
+         "key": "status",
+         "value": "posted"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "e9316066-0f05-4042-907e-4959ca286b90",
+     "name": "Cash flow",
+     "request": {
+      "name": "Cash flow",
+      "description": {
+       "content": "Movements on cash and bank accounts (and their child accounts).\n\nPermission: `reports.cash-flow.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "cash-flow"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_from",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_to",
+         "value": "<date>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "65ffa990-fc2b-4d57-9ac3-9e6c10d397e4",
+     "name": "Bank book",
+     "request": {
+      "name": "Bank book",
+      "description": {
+       "content": "Permission: `reports.bank-book.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "bank-book"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_from",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_to",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "account_id",
+         "value": "<integer>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": " (This can only be one of posted,draft,void,all)",
+          "type": "text/plain"
+         },
+         "key": "status",
+         "value": "posted"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "bank_account_id",
+         "value": "<integer>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "07cb35b4-79d5-4e0f-b69d-8a6d5ea03cb7",
+     "name": "Cash book",
+     "request": {
+      "name": "Cash book",
+      "description": {
+       "content": "Permission: `reports.cash-book.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "cash-book"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_from",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_to",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "account_id",
+         "value": "<integer>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": " (This can only be one of posted,draft,void,all)",
+          "type": "text/plain"
+         },
+         "key": "status",
+         "value": "posted"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "200c335d-cb49-4e78-8960-154f62430603",
+     "name": "Aged receivables",
+     "request": {
+      "name": "Aged receivables",
+      "description": {
+       "content": "Buckets: current, 1-30, 31-60, 61-90, over 90 days.\n\nPermission: `reports.aged-receivables.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "aged-receivables"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "as_of_date",
+         "value": "<date>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "143d1661-0d8d-4676-ab10-4ba7baca0919",
+     "name": "Aged payables",
+     "request": {
+      "name": "Aged payables",
+      "description": {
+       "content": "Buckets: current, 1-30, 31-60, 61-90, over 90 days.\n\nPermission: `reports.aged-payables.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "aged-payables"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "as_of_date",
+         "value": "<date>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "ae0bb4d8-78d5-40ae-9a23-5d273c879536",
+     "name": "Account statement",
+     "request": {
+      "name": "Account statement",
+      "description": {
+       "content": "account_id or account_code is required.\n\nPermission: `reports.account-statement.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reports",
+        "account-statement"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "account_code",
+         "value": "<string>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "account_id",
+         "value": "<integer>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_from",
+         "value": "<date>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "date_to",
+         "value": "<date>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Periods",
+   "description": "Accounting periods, closing and balance snapshots.",
+   "item": [
+    {
+     "id": "ae4335fe-e6e3-470f-9373-29ad638560a1",
+     "name": "List periods",
+     "request": {
+      "name": "List periods",
+      "description": {
+       "content": "Permission: `periods.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "9b335b29-50a1-4d23-afe2-017ab7218e5c",
+     "name": "Create periods",
+     "request": {
+      "name": "Create periods",
+      "description": {
+       "content": "Permission: `periods.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "5e601e42-c274-41a6-8586-f57151edf20c",
+     "name": "Show periods",
+     "request": {
+      "name": "Show periods",
+      "description": {
+       "content": "Permission: `periods.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "1352da7d-5292-47e4-836e-fac22f85d8c8",
+     "name": "Update periods (PATCH also accepted)",
+     "request": {
+      "name": "Update periods (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `periods.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "73f82303-d6c6-4502-894e-8ac0ef76efa9",
+     "name": "Delete periods",
+     "request": {
+      "name": "Delete periods",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `periods.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "fc76afee-7f45-473d-8ebf-736b12d80969",
+     "name": "Close a period",
+     "request": {
+      "name": "Close a period",
+      "description": {
+       "content": "Writes balance snapshots and stores totals and net income. Fails (422) while drafts are dated in the period.\n\nPermission: `periods.close`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods",
+        ":id",
+        "close"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "4f6e9603-10dd-4932-8270-cc53b13d7136",
+     "name": "Reopen a closed period",
+     "request": {
+      "name": "Reopen a closed period",
+      "description": {
+       "content": "Permission: `periods.reopen`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods",
+        ":id",
+        "reopen"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "1107020c-cb6a-4724-ad14-8d90e7e2048a",
+     "name": "Year-end close",
+     "request": {
+      "name": "Year-end close",
+      "description": {
+       "content": "Posts a closing entry moving income-statement balances to retained earnings, then closes the period.\n\nPermission: `periods.close`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "periods",
+        ":id",
+        "close-fiscal-year"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "6de33e06-94dc-4e25-a2cf-85e5e8694561",
+     "name": "List balance snapshots",
+     "request": {
+      "name": "List balance snapshots",
+      "description": {
+       "content": "Permission: `account-balance-snapshots.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "account-balance-snapshots"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[chart_of_account_id]",
+         "value": "<integer>"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "filter[accounting_period_id]",
+         "value": "<integer>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "e29fc754-acab-46da-8f4a-428fe4d6d8e8",
+     "name": "Show a balance snapshot",
+     "request": {
+      "name": "Show a balance snapshot",
+      "description": {
+       "content": "Permission: `account-balance-snapshots.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "account-balance-snapshots",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Account types",
+   "description": "Asset, liability, equity, income and expense types.",
+   "item": [
+    {
+     "id": "c550592b-d382-489d-a2b3-06a9a3b1a915",
+     "name": "List account-types",
+     "request": {
+      "name": "List account-types",
+      "description": {
+       "content": "Permission: `account-types.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "account-types"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "567feb17-721e-4245-af86-712b7bf7b2d7",
+     "name": "Create account-types",
+     "request": {
+      "name": "Create account-types",
+      "description": {
+       "content": "Permission: `account-types.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "account-types"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"credit\",\n  \"report_group\": \"IncomeStatement\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "a0378aa4-34bf-4086-a560-cf88793b4fcf",
+     "name": "Show account-types",
+     "request": {
+      "name": "Show account-types",
+      "description": {
+       "content": "Permission: `account-types.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "account-types",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "7538296b-33ea-474c-ac8f-060f6bf3ad08",
+     "name": "Update account-types (PATCH also accepted)",
+     "request": {
+      "name": "Update account-types (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `account-types.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "account-types",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"credit\",\n  \"report_group\": \"IncomeStatement\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "6ceb1aec-aeff-4b76-bd01-9374ca3bee06",
+     "name": "Delete account-types",
+     "request": {
+      "name": "Delete account-types",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `account-types.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "account-types",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Currencies",
+   "description": "Currencies and exchange rates (exactly one base currency).",
+   "item": [
+    {
+     "id": "c178ee17-145a-4926-9bf2-907994d6943e",
+     "name": "List currencies",
+     "request": {
+      "name": "List currencies",
+      "description": {
+       "content": "Permission: `currencies.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "currencies"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "60617a52-fc63-4a32-bc0f-40678d98fd85",
+     "name": "Create currencies",
+     "request": {
+      "name": "Create currencies",
+      "description": {
+       "content": "Permission: `currencies.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "currencies"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"exchange_rate_to_base\": \"<number>\",\n  \"symbol\": \"<string,null>\",\n  \"is_base\": \"<boolean>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "05233993-34ac-4ff3-94a0-abb9d62a8231",
+     "name": "Show currencies",
+     "request": {
+      "name": "Show currencies",
+      "description": {
+       "content": "Permission: `currencies.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "currencies",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "cd1568ce-b305-459d-900d-aa873cdb0b5a",
+     "name": "Update currencies (PATCH also accepted)",
+     "request": {
+      "name": "Update currencies (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `currencies.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "currencies",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"exchange_rate_to_base\": \"<number>\",\n  \"symbol\": \"<string,null>\",\n  \"is_base\": \"<boolean>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "7ad5880a-fb57-46ad-9dcd-f35f629fc537",
+     "name": "Delete currencies",
+     "request": {
+      "name": "Delete currencies",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `currencies.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "currencies",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Cost centers",
+   "description": "Cost centers and projects for line-level analysis.",
+   "item": [
+    {
+     "id": "221bbc6f-bf79-4d58-9d9b-1280a52e1cf6",
+     "name": "List cost-centers",
+     "request": {
+      "name": "List cost-centers",
+      "description": {
+       "content": "Permission: `cost-centers.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "cost-centers"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "51993063-47db-4482-a3e5-58056d602842",
+     "name": "Create cost-centers",
+     "request": {
+      "name": "Create cost-centers",
+      "description": {
+       "content": "Permission: `cost-centers.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "cost-centers"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "83be978e-5819-4900-b13b-2ee9625e2c37",
+     "name": "Show cost-centers",
+     "request": {
+      "name": "Show cost-centers",
+      "description": {
+       "content": "Permission: `cost-centers.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "cost-centers",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "6793d595-f4a3-4517-a901-4afb48626751",
+     "name": "Update cost-centers (PATCH also accepted)",
+     "request": {
+      "name": "Update cost-centers (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `cost-centers.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "cost-centers",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "bb1901af-0b87-4470-b787-af7db4f31a55",
+     "name": "Delete cost-centers",
+     "request": {
+      "name": "Delete cost-centers",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `cost-centers.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "cost-centers",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Bank accounts",
+   "description": "Bank accounts linked to GL accounts.",
+   "item": [
+    {
+     "id": "7d8284e3-81fe-4da1-9bbc-040dbb28d8c6",
+     "name": "List bank-accounts",
+     "request": {
+      "name": "List bank-accounts",
+      "description": {
+       "content": "Permission: `bank-accounts.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "bank-accounts"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "79a56d81-ac21-47c5-b1d2-59b4925b8c60",
+     "name": "Create bank-accounts",
+     "request": {
+      "name": "Create bank-accounts",
+      "description": {
+       "content": "Permission: `bank-accounts.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "bank-accounts"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"account_name\": \"<string>\",\n  \"account_number\": \"<string>\",\n  \"chart_of_account_id\": \"<integer,null>\",\n  \"bank_name\": \"<string,null>\",\n  \"branch\": \"<string,null>\",\n  \"iban\": \"<string,null>\",\n  \"swift_code\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "380ff834-4362-4084-9fd1-237d9b4ef6f5",
+     "name": "Show bank-accounts",
+     "request": {
+      "name": "Show bank-accounts",
+      "description": {
+       "content": "Permission: `bank-accounts.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "bank-accounts",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "5aa1187a-9b97-4646-9281-85f255b2a17f",
+     "name": "Update bank-accounts (PATCH also accepted)",
+     "request": {
+      "name": "Update bank-accounts (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `bank-accounts.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "bank-accounts",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"account_name\": \"<string>\",\n  \"account_number\": \"<string>\",\n  \"chart_of_account_id\": \"<integer,null>\",\n  \"bank_name\": \"<string,null>\",\n  \"branch\": \"<string,null>\",\n  \"iban\": \"<string,null>\",\n  \"swift_code\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "b6e724b2-1252-498c-875b-a50b29467065",
+     "name": "Delete bank-accounts",
+     "request": {
+      "name": "Delete bank-accounts",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `bank-accounts.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "bank-accounts",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Reconciliations",
+   "description": "Bank statement reconciliations.",
+   "item": [
+    {
+     "id": "5da8bbc4-10ec-4d7c-b369-1ba5d1eeeb85",
+     "name": "List reconciliations",
+     "request": {
+      "name": "List reconciliations",
+      "description": {
+       "content": "Permission: `reconciliations.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reconciliations"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "d5fdcf8e-fc5c-45a1-bce3-2c96ce848a2d",
+     "name": "Create reconciliations",
+     "request": {
+      "name": "Create reconciliations",
+      "description": {
+       "content": "Permission: `reconciliations.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reconciliations"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"draft\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "46b26e15-ddd2-4679-a944-8008ce572c69",
+     "name": "Show reconciliations",
+     "request": {
+      "name": "Show reconciliations",
+      "description": {
+       "content": "Permission: `reconciliations.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reconciliations",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "10989d55-face-4e55-82c1-a283d6bd0de9",
+     "name": "Update reconciliations (PATCH also accepted)",
+     "request": {
+      "name": "Update reconciliations (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `reconciliations.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reconciliations",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"draft\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "3daa360b-7c03-4ce9-99ae-0e8ab5dfbdf0",
+     "name": "Delete reconciliations",
+     "request": {
+      "name": "Delete reconciliations",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `reconciliations.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "reconciliations",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "Tax",
+   "description": "Tax codes and dated tax rates.",
+   "item": [
+    {
+     "id": "ce9e15f6-d83a-46fb-befc-2f679784d1f8",
+     "name": "List tax-codes",
+     "request": {
+      "name": "List tax-codes",
+      "description": {
+       "content": "Permission: `tax-codes.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-codes"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "5c743e88-d33c-43a4-b7df-852b857ba3c5",
+     "name": "Create tax-codes",
+     "request": {
+      "name": "Create tax-codes",
+      "description": {
+       "content": "Permission: `tax-codes.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-codes"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "bf24b00e-bb0a-49c2-807d-d0994cd8d70b",
+     "name": "Show tax-codes",
+     "request": {
+      "name": "Show tax-codes",
+      "description": {
+       "content": "Permission: `tax-codes.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-codes",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "a8331c43-28a3-41db-93f7-7ce5bbfdb913",
+     "name": "Update tax-codes (PATCH also accepted)",
+     "request": {
+      "name": "Update tax-codes (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `tax-codes.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-codes",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "ebfc279d-d9ad-4dcf-95a9-d63d13f57406",
+     "name": "Delete tax-codes",
+     "request": {
+      "name": "Delete tax-codes",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `tax-codes.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-codes",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "d8e04d92-2990-4abd-8e38-f9390c55075a",
+     "name": "List tax-rates",
+     "request": {
+      "name": "List tax-rates",
+      "description": {
+       "content": "Permission: `tax-rates.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-rates"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "page",
+         "value": "1"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "",
+          "type": "text/plain"
+         },
+         "key": "per_page",
+         "value": "15"
+        },
+        {
+         "disabled": false,
+         "description": {
+          "content": "Partial match on code/name where available",
+          "type": "text/plain"
+         },
+         "key": "filter[code]",
+         "value": "<string>"
+        }
+       ],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "dcac558b-68a0-45f7-b8e2-dc8663bbf88e",
+     "name": "Create tax-rates",
+     "request": {
+      "name": "Create tax-rates",
+      "description": {
+       "content": "Permission: `tax-rates.create`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-rates"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "POST",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tax_code_id\": \"<integer>\",\n  \"rate\": \"<number>\",\n  \"effective_from\": \"<date>\",\n  \"effective_to\": \"<string,null-date>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "67c6e3c2-f31d-49c3-a835-25c063749196",
+     "name": "Show tax-rates",
+     "request": {
+      "name": "Show tax-rates",
+      "description": {
+       "content": "Permission: `tax-rates.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-rates",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "b0e93784-8975-48c2-982f-7f56e61f3fa0",
+     "name": "Update tax-rates (PATCH also accepted)",
+     "request": {
+      "name": "Update tax-rates (PATCH also accepted)",
+      "description": {
+       "content": "Permission: `tax-rates.update`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-rates",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "PUT",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tax_code_id\": \"<integer>\",\n  \"rate\": \"<number>\",\n  \"effective_from\": \"<date>\",\n  \"effective_to\": \"<string,null-date>\",\n  \"is_active\": \"<boolean>\"\n}",
+       "options": {
+        "raw": {
+         "headerFamily": "json",
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    },
+    {
+     "id": "923e4bc4-ff20-47ed-9a9b-adacceecfb9f",
+     "name": "Delete tax-rates",
+     "request": {
+      "name": "Delete tax-rates",
+      "description": {
+       "content": "Returns 422 if the record is still referenced.\n\nPermission: `tax-rates.delete`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "tax-rates",
+        ":id"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": [
+        {
+         "type": "any",
+         "value": "<integer>",
+         "key": "id",
+         "disabled": false,
+         "description": {
+          "content": "(Required) ",
+          "type": "text/plain"
+         }
+        }
+       ]
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "DELETE",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "System",
+   "description": "Installation health.",
+   "item": [
+    {
+     "id": "343e3d55-3539-4099-8c26-8d125314c56f",
+     "name": "Installation health",
+     "request": {
+      "name": "Installation health",
+      "description": {
+       "content": "Permission: `accounting.view`.",
+       "type": "text/plain"
+      },
+      "url": {
+       "path": [
+        "health"
+       ],
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "query": [],
+       "variable": []
+      },
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "method": "GET",
+      "body": {}
+     },
+     "response": [],
+     "event": [],
+     "protocolProfileBehavior": {
+      "disableBodyPruning": true
+     }
+    }
+   ]
+  }
+ ],
+ "auth": {
+  "type": "bearer",
+  "bearer": [
+   {
+    "key": "token",
+    "value": "{{token}}",
+    "type": "string"
+   }
+  ]
+ },
+ "event": [],
+ "variable": [
+  {
+   "key": "host",
+   "value": "http://localhost:8000"
+  },
+  {
+   "key": "baseUrl",
+   "value": "{{host}}/api/v1/accounting"
+  },
+  {
+   "key": "token",
+   "value": "paste-a-sanctum-token-here"
+  }
+ ],
+ "info": {
+  "_postman_id": "1c86c44b-7e38-44aa-98d1-2d5c7c5bb9c8",
+  "name": "Laravel Chart of Accounts API",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+  "description": "Generated from docs/openapi.yaml. Set the \"host\" and \"token\" collection variables, then run any request."
+ }
+}

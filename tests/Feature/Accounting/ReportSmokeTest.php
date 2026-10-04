@@ -1,7 +1,7 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
-use App\Models\User;
+use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 
 beforeEach(function (): void {
     $this->withoutVite();

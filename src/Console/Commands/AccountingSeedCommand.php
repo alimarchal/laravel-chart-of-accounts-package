@@ -16,6 +16,7 @@ class AccountingSeedCommand extends Command
     {
         Artisan::call('db:seed', [
             '--class' => AccountingDatabaseSeeder::class,
+            '--force' => true,
             '--no-interaction' => true,
         ], $this->output);
 

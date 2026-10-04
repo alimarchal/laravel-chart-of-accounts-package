@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -13,6 +14,12 @@ class AccountBalancesBladeController extends Controller
 {
     public function __invoke(Request $request): View
     {
+        // Dates are interpolated into raw SQL below, so they must be strictly validated and normalised.
+        $request->validate([
+            'as_of_date' => ['nullable', 'date_format:Y-m-d'],
+            'accounting_period_id' => ['nullable', 'integer'],
+        ]);
+
         $perPage = (int) $request->input('per_page', 100);
         if (! in_array($perPage, [10, 25, 50, 100, 250])) {
             $perPage = 100;
@@ -31,6 +38,8 @@ class AccountBalancesBladeController extends Controller
         } else {
             $asOfDate = now()->format('Y-m-d');
         }
+
+        $asOfDate = Carbon::parse($asOfDate)->toDateString();
 
         $balancesQuery = DB::table('accounting_chart_of_accounts as a')
             ->select([

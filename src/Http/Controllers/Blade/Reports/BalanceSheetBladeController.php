@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -12,6 +13,12 @@ class BalanceSheetBladeController extends Controller
 {
     public function __invoke(Request $request): View
     {
+        // Dates are interpolated into raw SQL below, so they must be strictly validated and normalised.
+        $request->validate([
+            'as_of_date' => ['nullable', 'date_format:Y-m-d'],
+            'accounting_period_id' => ['nullable', 'integer'],
+        ]);
+
         $asOfDate = $request->input('as_of_date');
         $periodId = $request->input('accounting_period_id');
 
@@ -25,6 +32,8 @@ class BalanceSheetBladeController extends Controller
         } else {
             $asOfDate = now()->format('Y-m-d');
         }
+
+        $asOfDate = Carbon::parse($asOfDate)->toDateString();
 
         $accounts = DB::table('accounting_chart_of_accounts as a')
             ->select([

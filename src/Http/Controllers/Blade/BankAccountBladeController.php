@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -14,7 +15,7 @@ class BankAccountBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $bankAccounts = QueryBuilder::for(BankAccount::query())
+        $bankAccounts = QueryBuilder::for(BankAccount::query(), request())
             ->allowedFilters(
                 AllowedFilter::partial('account_name'),
                 AllowedFilter::partial('bank_name'),
@@ -66,7 +67,8 @@ class BankAccountBladeController extends Controller
 
     public function destroy(BankAccount $record): RedirectResponse
     {
-        $record->delete();
+        // Own transaction/savepoint: a foreign-key violation must not abort an outer transaction.
+        DB::transaction(fn () => $record->delete());
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.bank-accounts.index')->with('success', 'Bank account deleted.');
     }

@@ -21,8 +21,8 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->boolean('is_system')->default(false);
             $table->json('metadata')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_coa_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_coa_updated_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_coa_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_coa_updated_by_fk')->nullOnDelete();
             $table->timestamps();
 
             $table->unique('account_code', 'acct_coa_code_unique');

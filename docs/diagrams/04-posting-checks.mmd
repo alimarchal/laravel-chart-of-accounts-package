@@ -1,0 +1,28 @@
+flowchart TD
+    S(["POST /journal-entries/{id}/post<br/>or auto_post: true"]) --> P0{"User has<br/>journal-entries.post?"}
+    P0 -->|no| X0["403 Forbidden"]
+    P0 -->|yes| L["Lock the entry row<br/>(SELECT … FOR UPDATE)"]
+    L --> P1{"Status = draft?"}
+    P1 -->|no| X1["422 Only draft journal<br/>entries can be posted"]
+    P1 -->|yes| P2{"At least 2 lines?"}
+    P2 -->|no| X2["422 Needs two lines"]
+    P2 -->|yes| P3{"Each line: debit XOR credit,<br/>amount > 0?"}
+    P3 -->|no| X3["422 Each line must have<br/>either debit or credit"]
+    P3 -->|yes| P4{"Every account active<br/>and not a group?"}
+    P4 -->|no| X4["422 Only active<br/>posting accounts"]
+    P4 -->|yes| P5{"Account currency =<br/>base or entry currency?"}
+    P5 -->|no| X5["422 Currency mismatch"]
+    P5 -->|yes| P6{"Σ debit = Σ credit<br/>(exact cents)?"}
+    P6 -->|no| X6["422 Journal entry<br/>is not balanced"]
+    P6 -->|yes| P7{"Open period covering<br/>the entry date?<br/>(period row locked)"}
+    P7 -->|no| X7["422 No open<br/>accounting period"]
+    P7 -->|yes| OK["status = posted<br/>posted_at, posted_by, period set"]
+    OK --> AUD["Audit log: JOURNAL_POSTED<br/>+ DB trigger row snapshot"]
+    AUD --> DONE(["200 Posted entry<br/>now immutable"])
+
+    classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    classDef good fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef check fill:#fef3c7,stroke:#b45309,color:#78350f
+    class X0,X1,X2,X3,X4,X5,X6,X7 bad
+    class OK,AUD,DONE good
+    class P0,P1,P2,P3,P4,P5,P6,P7 check

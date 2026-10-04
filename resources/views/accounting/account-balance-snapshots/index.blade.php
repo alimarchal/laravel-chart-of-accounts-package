@@ -22,7 +22,7 @@
         @foreach ($snapshots as $i => $snap)
         <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
             <td class="py-1 px-2 text-center">{{ $snapshots->firstItem() + $i }}</td>
-            <td class="py-1 px-2">{{ optional($snap->period)->name }}</td>
+            <td class="py-1 px-2">{{ optional($snap->accountingPeriod)->name }}</td>
             <td class="py-1 px-2 font-mono">{{ optional($snap->account)->account_code }}</td>
             <td class="py-1 px-2">{{ optional($snap->account)->account_name }}</td>
             <td class="py-1 px-2 text-right font-mono">{{ number_format($snap->opening_balance, 2) }}</td>

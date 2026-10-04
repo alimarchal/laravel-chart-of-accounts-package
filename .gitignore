@@ -4,3 +4,5 @@ node_modules/
 .phpunit.result.cache
 coverage/
 .DS_Store
+composer.lock
+build/

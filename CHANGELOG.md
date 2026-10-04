@@ -2,6 +2,113 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.0.0] - 2026-10-04
+
+Production-hardening release. It fixes security vulnerabilities and accounting-correctness bugs; a few
+behaviour changes are breaking — read **Upgrading** below.
+
+### Security
+- **SQL injection** in the Blade Balance Sheet, Income Statement and Account Balances reports: the
+  `as_of_date` / `start_date` / `end_date` query parameters were interpolated into raw SQL. They are now
+  validated (`Y-m-d`) and normalised before use.
+- **Privilege escalation** in user/role management: an `admin` could assign `super-admin` (or any role or
+  permission) to themselves or others, reset a super-admin's password, and settings managers could widen
+  any role. New `PrivilegeGuard`: you can only grant roles/permissions you hold, only a super-admin can
+  manage super-admins or the `super-admin` role, and changing roles requires `user.assign-role`.
+- **Segregation of duties**: `auto_post=true` now requires `journal-entries.post` (previously
+  `journal-entries.create` was enough to post).
+- Period status could be changed to closed/open through the edit form, bypassing `periods.close` /
+  `periods.reopen` and the close procedure. Status changes now run the close/reopen actions and require
+  those permissions.
+- The Livewire journal entry form now authorizes `save()` and locks `entryId`.
+
+### Fixed — accounting correctness
+- `closing_net_income` was always ≈ 0 (credits − debits of *all* accounts); it is now revenue − expenses.
+- Closing a period with draft entries is blocked; posting and closing lock the period row so they cannot interleave.
+- Fiscal-year close failed on income-statement accounts with a contra balance (zero-amount lines).
+- Balance checks use exact integer cents (`Support\Money`) instead of floats.
+- Balance snapshots now carry the opening balance (previously always 0) — closing balances were period movement only.
+- Bank Book was always empty with the seeded chart (it filtered on the `1102` *group* account) and Cash Flow
+  ignored all bank activity. Both now include child accounts and accounts linked to `BankAccount` records.
+- Bank/Cash Book totals ignored the account filter and summed the whole ledger.
+- General Ledger, Account Statement, Bank/Cash Book and Cash Flow included **draft and void** entries.
+- Aged Receivables/Payables buckets overlapped (91–180 days counted twice); buckets now sum to the balance.
+- Balance Sheet did not balance before year-end (unclosed earnings missing) and showed a meaningless
+  "statement total"; it now adds a *Current Earnings (unclosed)* row and reports assets vs liabilities + equity.
+- Income Statement (Inertia) had no date range, showed zero for a closed year (closing entries), and the
+  React page *added* expenses to revenue for net income.
+- Re-running `accounting:seed` reopened a closed fiscal year and overwrote user edits to accounts and
+  exchange rates; seeders now only create missing records. The currency seeder honours `ACCOUNTING_BASE_CURRENCY`.
+- Balance Snapshot pages crashed (non-existent `period` relation) and their filters used non-existent columns.
+- React Bank/Cash Book pages read non-existent `debit_amount` / `credit_amount` columns.
+- Role management routes checked non-existent `accounting.manage-settings.*` permissions (always 403).
+- Deleting a record still referenced elsewhere (currency, account type, tax code, …) returned a 500; package
+  routes now answer 422 / flash error. The base currency can no longer be deleted.
+
+### Fixed — chart of accounts
+- Updating an account through the API without `is_active` / `is_group` silently **deactivated** it or turned a
+  group into a posting account. Absent flags are now left unchanged.
+- Hierarchy cycles (an account under itself or its descendant) are rejected; the parent must be a group account
+  of the same account type.
+- Code, type, normal balance and group flag are locked once an account has journal lines.
+- Accounts referenced by `config('accounting.defaults')` cannot have their code changed, be deactivated or deleted.
+- Deleting an account with children or journal lines (and any generic resource still referenced) returns a clear
+  422 / flash error instead of a 500.
+- `normal_balance` defaults to the account type's (contra accounts may still override it).
+- The tree is built from a single query instead of one query per level.
+
+### Added
+- Business-rule violations (`AccountingRuleViolation`) render as **HTTP 422** JSON or redirect-back-with-error.
+- Database triggers on MySQL/MariaDB, PostgreSQL and SQLite make **posted journal entries and their lines immutable**.
+- MySQL/MariaDB/SQLite audit triggers record full old/new row values (PostgreSQL already did).
+- Accounting periods may not overlap; dates of a period with entries cannot change; such periods cannot be deleted.
+- Optional `reversal_date` when reversing; reversals of reversals and back-dated reversals are rejected.
+- `JournalEntry::isReversed()`, `reversed()` and `posted()` scopes; audit records for void, reverse, close and reopen.
+- `ChartOfAccountService` and `AccountingPeriodService` hold all integrity rules for API, Inertia and Blade.
+- Config: `chart_preset` (`general` default, `school`), `aging.*_account_codes`, `users_table`.
+- `accounting:install --admin-email=` chooses who receives the super-admin role.
+- Test suite runs inside the package (Orchestra Testbench): **170 tests** covering security, ledger integrity,
+  reports and seeders; CI matrix for PHP 8.2–8.4 × Laravel 11–13, plus MySQL, MariaDB and PostgreSQL jobs.
+- Larastan (level 5) and Pint in CI.
+
+### Changed
+- **Dropped Laravel 10** (end-of-life; models use the `casts()` method, which Laravel 10 ignores, so it never worked correctly).
+- `composer.lock` is no longer committed (library packages should not ship a lock file).
+- jQuery bundled asset upgraded 3.5.1 → 3.7.1.
+
+### Added — API & developer experience
+- Journal lines accept `account_code` / `cost_center_code`; entries accept `currency_code`.
+- `POST /journal-entries/simple` — two-line entry by account codes.
+- `Idempotency-Key` header on journal creation: safe retries, no double posting.
+- Report endpoints (trial balance, balance sheet, income statement, general ledger, cash flow, bank/cash book,
+  aged AR/AP, account statement), `/chart-of-accounts/tree`, `/chart-of-accounts/{id}/balance`,
+  `/periods/{id}/close|reopen|close-fiscal-year`, `/health`.
+- API rate limiting (`ACCOUNTING_API_RATE_LIMIT`) and a `per_page` cap (`ACCOUNTING_API_MAX_PER_PAGE`).
+- `ACCOUNTING_UI_DRIVER=api` — API-only mode that loads no web routes, views or Livewire.
+- `docs/openapi.yaml` (OpenAPI 3.1) and `docs/postman_collection.json`; a test fails if a route is undocumented.
+- Visual guide: architecture, installation, journal lifecycle, posting checks, period close and API request
+  diagrams in `docs/images/` (sources in `docs/diagrams/`), embedded in the README.
+- Bank accounts can be linked to a posting GL account through the API.
+
+### Fixed — installation
+- `accounting:install`, `accounting:update` and `accounting:seed` failed in production (missing `--force`).
+- `accounting:install` did not publish the React pages, so the Inertia UI could not render.
+- `accounting:update` overwrote `config/accounting.php` and customised views; views are no longer published by default.
+- Tax rates: duplicate (tax code, start date) returned a 500; now a validation error.
+- More than one base currency could exist; the base currency can no longer change after entries are posted.
+
+### Upgrading from 1.x
+1. `composer update alimarchal/laravel-chart-of-accounts` then `php artisan accounting:update`
+   (re-publishes views/assets and re-syncs database objects — this installs the new triggers).
+2. **Existing school installs**: set `ACCOUNTING_CHART_PRESET=school` so any accounts added by future seeding
+   use the school names. Existing accounts are never renamed.
+3. Reversed entries keep `status = posted` (both entries stay in the ledger, GAAP-style); use
+   `isReversed()` / `reversed()` instead of looking for a `reversed` status.
+4. Reports now exclude drafts by default; pass `status=all` to the General Ledger to see every status.
+5. Clients that set a period's `status` via update need the `periods.close` / `periods.reopen` permissions.
+6. API clients that relied on 500 responses for rule violations now receive 422 with a `message`.
+7. If your users table is not `users`, set `ACCOUNTING_USERS_TABLE` **before** running the migrations on a new install.
+
 ## [1.4.0] - 2026-06-05
 
 ### Changed

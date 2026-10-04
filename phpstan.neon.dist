@@ -1,0 +1,24 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+        - routes
+        - database
+    databaseMigrationsPath:
+        - database/migrations
+        - tests/Fixtures/database
+    tmpDir: build/phpstan
+    ignoreErrors:
+        # Package views are namespaced ("accounting::…") and registered at runtime.
+        - identifier: argument.type
+          message: '#view-string#'
+        # The user model is configurable (auth.providers.users.model) and must use Spatie's HasRoles.
+        - identifier: method.notFound
+          path: src/Http/Controllers/Blade/UserBladeController.php
+        - identifier: argument.type
+          path: src/Http/Controllers/Blade/UserBladeController.php
+        - identifier: property.notFound
+          path: src/Http/Controllers/Blade/UserBladeController.php

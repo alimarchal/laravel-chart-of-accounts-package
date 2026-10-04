@@ -22,7 +22,7 @@ class AuditLogBladeController extends Controller
             $query->whereDate('created_at', '<=', $dateTo);
         }
 
-        $auditLogs = QueryBuilder::for($query)
+        $auditLogs = QueryBuilder::for($query, request())
             ->allowedFilters(
                 AllowedFilter::partial('table_name'),
                 AllowedFilter::exact('action'),

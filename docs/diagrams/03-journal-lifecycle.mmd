@@ -1,0 +1,30 @@
+stateDiagram-v2
+    direction LR
+    [*] --> Draft: create<br/>(journal-entries.create)
+
+    Draft --> Draft: edit lines<br/>(journal-entries.update)
+    Draft --> Posted: post<br/>(journal-entries.post)<br/>all checks pass
+    Draft --> Void: void<br/>(journal-entries.void)
+
+    Posted --> Reversed: reverse<br/>(journal-entries.reverse)
+
+    state Reversed {
+        direction LR
+        Original: Original entry<br/>stays "posted"<br/>reversed_by_entry_id set
+        Mirror: Reversal entry<br/>debits ⇄ credits<br/>status "posted"
+        Original --> Mirror: nets to zero
+    }
+
+    Void --> [*]
+    Reversed --> [*]
+
+    note right of Posted
+        Immutable in the database:
+        amounts, accounts, dates and status
+        can never change. Correct by reversing.
+    end note
+
+    note right of Draft
+        Not in balances or reports.
+        Can be saved unbalanced.
+    end note

@@ -1,0 +1,36 @@
+flowchart TD
+    A(["Start: Laravel 11 / 12 / 13 app"]) --> B["composer require<br/>alimarchal/laravel-chart-of-accounts"]
+    B --> C{"Which UI?<br/>ACCOUNTING_UI_DRIVER"}
+    C -->|"inertia (React)"| C1["Breeze / React starter kit"]
+    C -->|"blade (Livewire)"| C2["composer require livewire/livewire"]
+    C -->|"api (no UI, lightest)"| C3["REST API only"]
+    C1 --> D
+    C2 --> D
+    C3 --> D
+    D["php artisan install:api<br/>(Laravel Sanctum)"] --> E["Add HasRoles + HasApiTokens<br/>to App\\Models\\User"]
+    E --> F["php artisan accounting:install<br/>--admin-email=you@company.com"]
+
+    subgraph Install["What accounting:install does"]
+        direction TB
+        F1["1. Publish config + migrations"] --> F2["2. Publish Spatie permission &<br/>activity-log migrations (if missing)"]
+        F2 --> F3["3. Publish React pages (inertia)<br/>or Select2 assets (blade)"]
+        F3 --> F4["4. migrate --force"]
+        F4 --> F5["5. Seed: account types, currencies,<br/>chart of accounts, period, roles, tax"]
+        F5 --> F6["6. Sync DB objects:<br/>views + audit + immutability triggers"]
+        F6 --> F7["7. Give super-admin to --admin-email"]
+        F7 --> F8["8. Verify (health check)"]
+    end
+
+    F --> F1
+    F8 --> G{"Health OK?"}
+    G -->|no| H["Read the output,<br/>fix, run again (idempotent)"]
+    H --> F
+    G -->|yes| I["Create a token:<br/>$user->createToken('erp')"]
+    I --> J(["First call:<br/>GET /api/v1/accounting/health → 200"])
+
+    classDef step fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+    classDef ok fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef warn fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    class B,D,E,F,I,C1,C2,C3 step
+    class J,A ok
+    class H warn

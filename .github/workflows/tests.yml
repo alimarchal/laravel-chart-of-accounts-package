@@ -1,0 +1,122 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sqlite:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} (SQLite)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+        laravel: ['11.*', '12.*', '13.*']
+        include:
+          - laravel: '11.*'
+            testbench: '9.*'
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+        exclude:
+          - laravel: '13.*'
+            php: '8.2'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_sqlite, sqlite3, intl, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        run: vendor/bin/pest
+
+  databases:
+    name: ${{ matrix.db }} (PHP 8.3 / Laravel 12)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [mysql, mariadb, pgsql]
+        include:
+          - db: mysql
+            port: 3306
+            username: root
+          - db: mariadb
+            port: 3306
+            username: root
+          - db: pgsql
+            port: 5432
+            username: postgres
+    services:
+      mysql:
+        image: ${{ matrix.db == 'mysql' && 'mysql:8.0' || matrix.db == 'mariadb' && 'mariadb:11' || 'postgres:16' }}
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: coa_test
+          MARIADB_ROOT_PASSWORD: secret
+          MARIADB_DATABASE: coa_test
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: coa_test
+        ports:
+          - ${{ matrix.port }}:${{ matrix.port }}
+        options: >-
+          --health-cmd="${{ matrix.db == 'pgsql' && 'pg_isready' || 'mysqladmin ping -psecret || healthcheck.sh --connect' }}"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      DB_CONNECTION: ${{ matrix.db }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: ${{ matrix.port }}
+      DB_DATABASE: coa_test
+      DB_USERNAME: ${{ matrix.username }}
+      DB_PASSWORD: secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, pdo_pgsql, intl, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:12.*" "orchestra/testbench:10.*" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        run: vendor/bin/pest
+
+  quality:
+    name: Static analysis & code style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, intl, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Larastan
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: Pint
+        run: vendor/bin/pint --test

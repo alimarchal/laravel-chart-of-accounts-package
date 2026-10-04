@@ -2,15 +2,38 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
-use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
-use Illuminate\Foundation\Auth\User;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\JournalEntryFactory;
+use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property int $id
+ * @property Carbon $entry_date
+ * @property int|null $accounting_period_id
+ * @property int $currency_id
+ * @property string $fx_rate_to_base
+ * @property string|null $reference
+ * @property string|null $description
+ * @property string $status draft|posted|void
+ * @property Carbon|null $posted_at
+ * @property int|null $posted_by
+ * @property int|null $reverses_entry_id
+ * @property int|null $reversed_by_entry_id
+ * @property Carbon|null $reversed_at
+ * @property bool $is_closing_entry
+ * @property int|null $closes_period_id
+ * @property-read Collection<int, JournalEntryLine> $lines
+ * @property-read AccountingPeriod|null $accountingPeriod
+ * @property-read Currency $currency
+ */
 class JournalEntry extends AccountingModel
 {
     /** @use HasFactory<JournalEntryFactory> */
@@ -18,6 +41,7 @@ class JournalEntry extends AccountingModel
 
     use SoftDeletes;
 
+    protected $hidden = ['idempotency_hash'];
 
     protected $fillable = [
         'entry_date',
@@ -25,6 +49,8 @@ class JournalEntry extends AccountingModel
         'currency_id',
         'fx_rate_to_base',
         'reference',
+        'idempotency_key',
+        'idempotency_hash',
         'description',
         'status',
         'posted_at',
@@ -66,7 +92,33 @@ class JournalEntry extends AccountingModel
 
     public function poster(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'posted_by');
+        return $this->belongsTo(config('auth.providers.users.model'), 'posted_by');
+    }
+
+    /**
+     * A reversed entry stays "posted" (GAAP) and points at its reversal.
+     */
+    public function isReversed(): bool
+    {
+        return $this->reversed_by_entry_id !== null;
+    }
+
+    /**
+     * @param  Builder<JournalEntry>  $query
+     * @return Builder<JournalEntry>
+     */
+    public function scopeReversed(Builder $query): Builder
+    {
+        return $query->whereNotNull('reversed_by_entry_id');
+    }
+
+    /**
+     * @param  Builder<JournalEntry>  $query
+     * @return Builder<JournalEntry>
+     */
+    public function scopePosted(Builder $query): Builder
+    {
+        return $query->where('status', 'posted');
     }
 
     public function reversesEntry(): BelongsTo
@@ -94,16 +146,18 @@ class JournalEntry extends AccountingModel
      *
      * @param  string  $debitAccountCode  Account code for the debit line
      * @param  string  $creditAccountCode  Account code for the credit line
+     * @param  float|int|string  $amount  Amount debited AND credited (strings avoid float rounding)
      * @param  bool  $post  true = post immediately, false = draft
      */
     public static function record(
         string $description,
         string $debitAccountCode,
         string $creditAccountCode,
-        float $amount,
+        float|int|string $amount,
         bool $post = false,
         ?string $reference = null,
     ): static {
+        $amount = Money::fromCents(Money::toCents($amount));
         $debitAccount = ChartOfAccount::where('account_code', $debitAccountCode)->firstOrFail();
         $creditAccount = ChartOfAccount::where('account_code', $creditAccountCode)->firstOrFail();
         $currency = Currency::where('is_base', true)->firstOrFail();

@@ -23,13 +23,14 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Balance Sheet', href: '/accounting/reports/balance-sheet' },
 ];
 
-export default function BalanceSheet({ rows }: { rows: StatementRow[] }) {
+type Totals = { assets: number; liabilities_and_equity: number; difference: number };
+
+export default function BalanceSheet({ rows, totals }: { rows: StatementRow[]; totals: Totals }) {
     const grouped = rows.reduce<Record<string, StatementRow[]>>((carry, row) => {
         carry[row.account_type] = [...(carry[row.account_type] ?? []), row];
 
         return carry;
     }, {});
-    const total = rows.reduce((sum, row) => sum + Number(row.balance ?? 0), 0);
 
     return (
         <>
@@ -52,9 +53,19 @@ export default function BalanceSheet({ rows }: { rows: StatementRow[] }) {
                     </div>
                 </div>
 
-                <div className="rounded-lg border p-4">
-                    <div className="text-sm text-muted-foreground">Statement total</div>
-                    <div className="mt-1 text-2xl font-semibold tabular-nums">{money(total)}</div>
+                <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-lg border p-4">
+                        <div className="text-sm text-muted-foreground">Total assets</div>
+                        <div className="mt-1 text-2xl font-semibold tabular-nums">{money(totals.assets)}</div>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                        <div className="text-sm text-muted-foreground">Liabilities + equity</div>
+                        <div className="mt-1 text-2xl font-semibold tabular-nums">{money(totals.liabilities_and_equity)}</div>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                        <div className="text-sm text-muted-foreground">Difference</div>
+                        <div className={`mt-1 text-2xl font-semibold tabular-nums ${Math.abs(totals.difference) < 0.005 ? '' : 'text-red-600'}`}>{money(totals.difference)}</div>
+                    </div>
                 </div>
 
                 <div className="overflow-hidden rounded-lg border">

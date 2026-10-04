@@ -5,9 +5,17 @@ return [
     'route_name_prefix' => env('ACCOUNTING_ROUTE_NAME_PREFIX', 'accounting'),
     'settings_route_prefix' => env('SETTINGS_ROUTE_PREFIX', 'settings'),
     'settings_route_name_prefix' => env('SETTINGS_ROUTE_NAME_PREFIX', 'settings'),
-    'ui_driver' => env('ACCOUNTING_UI_DRIVER', 'inertia'), // 'inertia' or 'blade'
+    // 'inertia' (React), 'blade' (Livewire) or 'api' (REST API only — no web routes, views or Livewire loaded).
+    'ui_driver' => env('ACCOUNTING_UI_DRIVER', 'inertia'),
     'api_prefix' => env('ACCOUNTING_API_PREFIX', 'api/v1/accounting'),
+    // Table referenced by created_by / updated_by / posted_by foreign keys in the package migrations.
+    'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
+
+    // REST API switches and limits.
+    'api_enabled' => (bool) env('ACCOUNTING_API_ENABLED', true),
+    'api_rate_limit' => (int) env('ACCOUNTING_API_RATE_LIMIT', 120), // requests per minute per user/IP; 0 disables
+    'api_max_per_page' => (int) env('ACCOUNTING_API_MAX_PER_PAGE', 100),
 
     'defaults' => [
         'currency_code' => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
@@ -16,6 +24,16 @@ return [
         'retained_earnings_account_code' => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE', '3101'),
         'rounding_account_code' => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
     ],
+
+    // Accounts (and their child accounts) included in the aged receivables / payables reports.
+    'aging' => [
+        'receivable_account_codes' => ['1103', '1104'],
+        'payable_account_codes' => ['2101', '2102', '2103', '2104'],
+    ],
+
+    // Chart of accounts seeded by accounting:seed for NEW accounts: 'general' or 'school'.
+    // Existing accounts are never overwritten by the seeder.
+    'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'general'),
 
     'permissions' => [
         'accounting.view',

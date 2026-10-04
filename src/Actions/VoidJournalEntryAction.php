@@ -2,23 +2,34 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
-use InvalidArgumentException;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Voids a draft journal entry. Posted entries must be reversed instead.
+ */
 class VoidJournalEntryAction
 {
     public function execute(JournalEntry $journalEntry): JournalEntry
     {
-        if ($journalEntry->status === 'posted') {
-            throw new InvalidArgumentException('Posted journal entries must be reversed instead of voided.');
-        }
+        return DB::transaction(function () use ($journalEntry): JournalEntry {
+            $entry = JournalEntry::query()->lockForUpdate()->findOrFail($journalEntry->id);
 
-        if ($journalEntry->status === 'void') {
-            throw new InvalidArgumentException('Journal entry is already voided.');
-        }
+            if ($entry->status === 'posted') {
+                throw new AccountingException('Posted journal entries must be reversed instead of voided.');
+            }
 
-        $journalEntry->forceFill(['status' => 'void'])->save();
+            if ($entry->status === 'void') {
+                throw new AccountingException('Journal entry is already voided.');
+            }
 
-        return $journalEntry->refresh();
+            $entry->forceFill(['status' => 'void'])->save();
+
+            AccountingAuditLog::record($entry, 'JOURNAL_VOIDED', ['status' => 'draft'], ['status' => 'void']);
+
+            return $entry->refresh();
+        });
     }
 }

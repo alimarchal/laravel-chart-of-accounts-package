@@ -2,7 +2,7 @@
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
-use App\Models\User;
+use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
 

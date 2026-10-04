@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -16,7 +17,7 @@ class ReconciliationBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $reconciliations = QueryBuilder::for(Reconciliation::query()->with('bankAccount'))
+        $reconciliations = QueryBuilder::for(Reconciliation::query()->with('bankAccount'), request())
             ->allowedFilters(
                 AllowedFilter::exact('bank_account_id'),
                 AllowedFilter::exact('status'),
@@ -73,7 +74,8 @@ class ReconciliationBladeController extends Controller
 
     public function destroy(Reconciliation $record): RedirectResponse
     {
-        $record->delete();
+        // Own transaction/savepoint: a foreign-key violation must not abort an outer transaction.
+        DB::transaction(fn () => $record->delete());
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.reconciliations.index')->with('success', 'Reconciliation deleted.');
     }

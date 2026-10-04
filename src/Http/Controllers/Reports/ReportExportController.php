@@ -11,8 +11,8 @@ use Alimarchal\LaravelChartOfAccounts\Reports\GeneralLedgerReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\IncomeStatementReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\TrialBalanceReport;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingReportExporter;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Symfony\Component\HttpFoundation\Response;
 
 class ReportExportController extends Controller
