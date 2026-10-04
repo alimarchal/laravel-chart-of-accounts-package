@@ -9,7 +9,9 @@ use Alimarchal\LaravelChartOfAccounts\Http\Resources\AccountResource;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingHealthCheckService;
+use Alimarchal\LaravelChartOfAccounts\Services\AccountingPeriodService;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
+use Alimarchal\LaravelChartOfAccounts\Services\PeriodCloseChecklist;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Http\JsonResponse;
@@ -68,9 +70,26 @@ class AccountingApiController extends Controller
         return response()->json(['data' => $action->execute($period)]);
     }
 
-    public function reopenPeriod(AccountingPeriod $period, ReopenAccountingPeriodAction $action): JsonResponse
+    public function reopenPeriod(Request $request, AccountingPeriod $period, ReopenAccountingPeriodAction $action): JsonResponse
     {
-        return response()->json(['data' => $action->execute($period)]);
+        $data = $request->validate(['reason' => ['nullable', 'string', 'max:500']]);
+
+        return response()->json(['data' => $action->execute($period, $data['reason'] ?? null)]);
+    }
+
+    /**
+     * Pre-close checks (and, with ?year_end=1, the closing entry the year-end close would post).
+     */
+    public function periodCloseChecklist(Request $request, AccountingPeriod $period, PeriodCloseChecklist $checklist): JsonResponse
+    {
+        return response()->json(['data' => $checklist->build($period, $request->boolean('year_end'))]);
+    }
+
+    public function generateMonthlyPeriods(Request $request, AccountingPeriodService $periods): JsonResponse
+    {
+        $data = $request->validate(['start_date' => ['required', 'date']]);
+
+        return response()->json(['data' => $periods->generateMonthly($data['start_date'])], 201);
     }
 
     public function closeFiscalYear(AccountingPeriod $period, CloseFiscalYearAction $action): JsonResponse

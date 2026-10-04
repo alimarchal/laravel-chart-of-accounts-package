@@ -10,6 +10,21 @@
             backRoute="accounting.dashboard" />
     </x-slot>
 
+    @can('periods.create')
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        @if(session('success'))<div class="mb-3 rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
+        @if(session('error'))<div class="mb-3 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
+        <form method="POST" action="{{ route('accounting.periods.generate-monthly') }}" class="flex flex-wrap items-end gap-2 bg-white shadow rounded-lg p-3">
+            @csrf
+            <div>
+                <label for="start_date" class="block text-sm font-medium text-gray-700">Create 12 monthly periods for the fiscal year starting</label>
+                <input id="start_date" type="date" name="start_date" required class="mt-1 rounded-md border-gray-300 text-sm">
+            </div>
+            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600">Create monthly periods</button>
+        </form>
+    </div>
+    @endcan
+
     <x-accounting::filter-section :action="route('accounting.periods.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -60,6 +75,9 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <div class="flex justify-center space-x-2">
+                        @can('periods.view')
+                        <a href="{{ route('accounting.periods.close.show', $period) }}" class="inline-flex items-center px-2 h-8 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-md" title="Close checklist">{{ $period->status === 'open' ? 'Close…' : 'Closing' }}</a>
+                        @endcan
                         <a href="{{ route('accounting.periods.show', $period) }}" class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:bg-blue-100 rounded-md" title="View">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </a>

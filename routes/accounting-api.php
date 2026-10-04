@@ -50,7 +50,13 @@ Route::middleware($apiMiddleware)
     ->group(function () use ($apiResourceRoutes): void {
         $apiResourceRoutes('account-types', AccountTypeApiController::class, 'account-types', 'account-types');
         $apiResourceRoutes('currencies', CurrencyApiController::class, 'currencies', 'currencies');
+        Route::post('periods/generate-monthly', [AccountingApiController::class, 'generateMonthlyPeriods'])
+            ->name('periods.generate-monthly')
+            ->middleware('can:periods.create');
         $apiResourceRoutes('periods', AccountingPeriodApiController::class, 'periods', 'periods');
+        Route::get('periods/{period}/close-checklist', [AccountingApiController::class, 'periodCloseChecklist'])
+            ->name('periods.close-checklist')
+            ->middleware('can:periods.view');
         Route::post('periods/{period}/close', [AccountingApiController::class, 'closePeriod'])
             ->name('periods.close')
             ->middleware('can:periods.close');

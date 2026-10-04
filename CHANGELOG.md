@@ -2,6 +2,31 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.3.0] - 2026-10-05
+
+Month-end and year-end close release.
+
+### Added
+- **Close workspace** (React and Blade): a checklist before closing a period — entries waiting for approval,
+  drafts in the period, trial balance balanced, earlier periods closed, bank lines reconciled, retained
+  earnings account set up — each linking to the screen that fixes it. Blocking items disable the close button.
+  API: `GET /periods/{id}/close-checklist[?year_end=1]`.
+- **Year-end close preview**: the closing entry is shown before it is posted.
+- **Monthly periods**: twelve months for a fiscal year in one click / `POST /periods/generate-monthly`; the
+  fiscal-year end month is marked in the periods list.
+- New periods list (React) with status, net income and Month-end / Year-end close actions.
+- Reopening asks for a reason (kept in the audit trail; optional `reason` in the API).
+
+### Fixed
+- **Year-end close with monthly periods** only zeroed the last month's income and expenses. It now uses every
+  income-statement balance up to the year end (net of earlier closing entries), so monthly and yearly periods
+  both close the whole year — and any earlier unclosed years are swept to retained earnings as well.
+- Reopening a year-end closed period left its closing entry in place, so closing again double-counted. The
+  closing entry is now reversed on reopen and the period's closing figures are cleared.
+
+### Changed
+- Year-end close requires earlier periods to be closed; periods are reopened newest first.
+
 ## [2.2.0] - 2026-10-05
 
 Multi-company release.
