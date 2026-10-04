@@ -17,7 +17,7 @@ class BankAccountFactory extends Factory
         return [
             'chart_of_account_id' => ChartOfAccountFactory::new()->debitNormal()->posting(),
             'account_name' => fake()->company().' Bank',
-            'account_number' => fake()->numerify('####-####-####'),
+            'account_number' => fake()->unique()->numerify('####-####-####'),
             'bank_name' => fake()->randomElement(['HBL', 'MCB', 'UBL', 'ABL', 'Meezan Bank', 'Allied Bank']),
             'branch' => fake()->city(),
             'iban' => 'PK'.fake()->numerify('##XXXX################'),

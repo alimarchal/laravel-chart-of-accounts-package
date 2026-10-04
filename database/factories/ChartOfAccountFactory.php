@@ -28,7 +28,7 @@ class ChartOfAccountFactory extends Factory
                     'is_active' => true,
                 ]
             ),
-            'account_code' => fake()->unique()->numerify('####'),
+            'account_code' => fake()->unique()->bothify('T-#####'), // never collides with seeded numeric codes
             'account_name' => fake()->words(3, true),
             'normal_balance' => fake()->randomElement(['debit', 'credit']),
             'description' => fake()->sentence(),

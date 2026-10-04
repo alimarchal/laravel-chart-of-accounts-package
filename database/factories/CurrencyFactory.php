@@ -15,7 +15,7 @@ class CurrencyFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => strtoupper(fake()->unique()->currencyCode()),
+            'code' => 'X'.strtoupper(fake()->unique()->lexify('??')), // never collides with seeded ISO codes
             'name' => fake()->word(),
             'symbol' => fake()->randomElement(['$', '€', '£', '¥', '₨', '₹']),
             'exchange_rate_to_base' => fake()->randomFloat(8, 0.1, 10.0),
