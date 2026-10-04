@@ -1,5 +1,6 @@
 <?php
 
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountBalanceSnapshotBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingDashboardBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingPeriodBladeController;
@@ -107,6 +108,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         $resourceRoutes('bank-accounts', BankAccountBladeController::class, 'bank-accounts', 'bank-accounts');
         $resourceRoutes('reconciliations', ReconciliationBladeController::class, 'reconciliations', 'reconciliations');
         $resourceRoutes('tax-codes', TaxCodeBladeController::class, 'tax-codes', 'tax-codes');
+        Route::post('journal-entries/{journalEntry}/attachments', [AttachmentController::class, 'store'])->name('journal-entries.attachments.store')->middleware('can:attachments.create');
+        Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download')->middleware('can:attachments.view');
+        Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy')->middleware('can:attachments.delete');
         Route::get('control-accounts', [ControlAccountBladeController::class, 'page'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
         Route::post('control-accounts/recommended', [ControlAccountBladeController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
         Route::put('chart-of-accounts/{chartOfAccount}/control-type', [ControlAccountBladeController::class, 'setType'])->name('chart-of-accounts.control-type')->middleware('can:control-accounts.manage');

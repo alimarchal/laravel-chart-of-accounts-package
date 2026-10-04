@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
+use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherNumberService;
 use Alimarchal\LaravelChartOfAccounts\Support\BaseAmounts;
@@ -43,6 +44,7 @@ class PostJournalEntryAction
             // Reversals and closing entries follow the entries they come from.
             if (! $systemGenerated) {
                 ControlAccounts::assertCanPost($entry);
+                app(AttachmentService::class)->assertEvidence($entry);
             }
 
             $this->writeBaseAmounts($entry);

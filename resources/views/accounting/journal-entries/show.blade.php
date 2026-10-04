@@ -126,6 +126,46 @@
             </table>
         </div>
 
+        @can('attachments.view')
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mt-4">
+            <div class="flex items-center justify-between border-b p-4">
+                <h3 class="font-semibold text-gray-700">Supporting documents ({{ count($attachments ?? []) }})</h3>
+                @if ($journalEntry->status !== 'draft' && count($attachments ?? []))<span class="text-xs text-gray-500">Kept as evidence: posted entries cannot lose attachments.</span>@endif
+            </div>
+            @forelse ($attachments ?? [] as $attachment)
+                <div class="flex flex-wrap items-center gap-3 border-b px-4 py-2 text-sm">
+                    <a href="{{ route('accounting.attachments.download', $attachment['id']) }}" class="font-medium text-indigo-700 hover:underline">{{ $attachment['original_name'] }}</a>
+                    <span class="text-gray-500">{{ number_format($attachment['size'] / 1024, 0) }} KB{{ $attachment['uploaded_by'] ? ' · '.$attachment['uploaded_by'] : '' }}{{ $attachment['description'] ? ' — '.$attachment['description'] : '' }}</span>
+                    @if ($journalEntry->status === 'draft')
+                        @can('attachments.delete')
+                        <form method="POST" action="{{ route('accounting.attachments.destroy', $attachment['id']) }}" class="ml-auto" onsubmit="return confirm(@js('Remove '.$attachment['original_name'].'?'))">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-red-700 hover:underline">Remove</button>
+                        </form>
+                        @endcan
+                    @endif
+                </div>
+            @empty
+                <div class="p-4 text-sm text-gray-500">No documents attached yet.</div>
+            @endforelse
+            @if ($journalEntry->status !== 'void')
+                @can('attachments.create')
+                <form method="POST" action="{{ route('accounting.journal-entries.attachments.store', $journalEntry) }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3 p-4">
+                    @csrf
+                    <div>
+                        <input type="file" name="files[]" multiple required class="text-sm" accept="{{ collect(config('accounting.attachments.mimes', []))->map(fn ($m) => '.'.$m)->implode(',') }}">
+                        <div class="text-xs text-gray-500">Up to {{ round(config('accounting.attachments.max_size_kb', 10240) / 1024) }} MB each.</div>
+                        @error('files')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+                        @error('files.*')<div class="text-xs text-red-600">{{ $message }}</div>@enderror
+                    </div>
+                    <input type="text" name="description" placeholder="Description (optional)" class="rounded-md border-gray-300 text-sm w-64">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600">Attach</button>
+                </form>
+                @endcan
+            @endif
+        </div>
+        @endcan
+
         @if (isset($trail) && $trail->isNotEmpty())
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mt-4">
             <h3 class="font-semibold text-gray-700 mb-2">Audit trail</h3>

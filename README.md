@@ -24,6 +24,7 @@
 - **Multi-currency** — every line keeps its frozen base-currency amount; all reports are in the base currency
 - **Voucher numbering** — JV, CPV, CRV, BPV, BRV (and your own types) with **gapless** numbers such as `JV-2026-00012`, issued at posting, restarting per fiscal year or month, locked in the database
 - **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
+- **Attachments** — scanned bills, receipts and contracts on every entry, stored privately, never removable once posted, duplicate-file warning, optional "evidence required above" amount
 - **Control accounts** — receivables, payables, inventory, payroll and tax control accounts that only their module may post to, with a manual-postings exception list
 - **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
 - **12 reports** — trial balance, balance sheet, income statement, cash flow, general ledger, account statement (running balance), bank & cash book, aged AR/AP — export to CSV (streamed, any size), XLSX, PDF
@@ -495,6 +496,33 @@ to it**. A manual journal entry (UI or API) touching a control account is refuse
 
 ---
 
+## Attachments (supporting documents)
+
+Every journal entry can carry its evidence — the scanned bill, receipt, contract or bank advice. Use the
+**Supporting documents** panel on the entry page (React and Blade) or the API.
+
+- **Private storage**: files go to `ACCOUNTING_ATTACHMENTS_DISK` (default `local`, i.e. `storage/app/private`) under
+  `accounting/{company}/{yyyy}/{mm}/{uuid}.ext` and are served only through the authorised download route
+  (`attachments.view`, company-scoped). Paths never leave the server.
+- **Limits**: `ACCOUNTING_ATTACHMENTS_MAX_KB` (default 10 MB) and `config('accounting.attachments.mimes')`
+  (pdf, images, Office files, csv, txt, xml, zip).
+- **Evidence is kept**: documents of posted or voided entries cannot be removed; drafts can lose them. Every upload
+  and removal is in the audit trail (`ATTACHMENT_ADDED` / `ATTACHMENT_REMOVED`, with the SHA-256 of the file).
+- **Duplicate warning**: a file that is already attached to another entry (same SHA-256) is flagged — the classic
+  "same bill booked twice" check.
+- **Evidence required above an amount**: `ACCOUNTING_ATTACHMENTS_REQUIRED_ABOVE=50000` makes entries of that total
+  (base currency) or more need at least one document before they are posted or submitted for approval.
+- Permissions: `attachments.view` (every role that sees the journal), `attachments.create` and `attachments.delete`
+  (accountant). API: `GET/POST /journal-entries/{id}/attachments` (multipart `file`, `description`),
+  `GET /attachments/{id}/download`, `DELETE /attachments/{id}`.
+
+```php
+app(AttachmentService::class)->attach($entry, $request->file('bill'), 'Supplier bill');
+$entry->attachments;   // morphMany
+```
+
+---
+
 ## Multi-company
 
 Run several companies (legal entities) from one installation. Each company has its **own chart of
@@ -660,6 +688,9 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | POST | `/journal-entries/{id}/void` | Void a draft | `journal-entries.void` |
 | POST | `/journal-entries/{id}/submit` | Submit a draft for approval (maker-checker) | `journal-entries.create` |
 | POST | `/journal-entries/{id}/approve` · `/reject` | Approve (posts it) / reject with `reason` | `journal-entries.approve` |
+| GET/POST | `/journal-entries/{id}/attachments` | Supporting documents / attach one (multipart) | `attachments.view` / `.create` |
+| GET | `/attachments/{id}/download` | Download a document | `attachments.view` |
+| DELETE | `/attachments/{id}` | Remove a document of a draft | `attachments.delete` |
 | GET | `/control-accounts` | Control accounts with balances and manual postings | `chart-of-accounts.view` |
 | POST | `/control-accounts/recommended` | Mark the recommended control accounts | `control-accounts.manage` |
 | GET | `/control-accounts/{id}/manual-postings` | Manual postings to a control account | `chart-of-accounts.view` |

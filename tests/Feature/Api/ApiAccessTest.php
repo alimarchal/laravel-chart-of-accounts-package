@@ -4,6 +4,7 @@ use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountBalanceSnapshot;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
+use Alimarchal\LaravelChartOfAccounts\Models\Attachment;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
@@ -14,9 +15,12 @@ use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
+use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function (): void {
@@ -60,6 +64,7 @@ function concreteUri(Route $route): string
             'tax-rates' => TaxRate::class,
             'voucher-types' => VoucherType::class,
             'control-accounts' => ChartOfAccount::class,
+            'attachments' => Attachment::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
         };
@@ -91,7 +96,9 @@ it('returns 401 JSON for unauthenticated calls to every endpoint', function (): 
 });
 
 it('returns 403 for a viewer on every write endpoint', function (): void {
-    journal(['1101' => 10, '4101' => -10]);
+    Storage::fake('local');
+    $entry = journal(['1101' => 10, '4101' => -10]);
+    app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
     BankAccount::factory()->create();
     Reconciliation::factory()->create();
 

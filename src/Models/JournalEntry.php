@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -123,6 +124,14 @@ class JournalEntry extends AccountingModel
     public function scopeForSource(Builder $query, Model $source): Builder
     {
         return $query->where('sourceable_type', $source->getMorphClass())->where('sourceable_id', $source->getKey());
+    }
+
+    /**
+     * Supporting documents (bills, receipts, contracts …).
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 
     public function voucherType(): BelongsTo
