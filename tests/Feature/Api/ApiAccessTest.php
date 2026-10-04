@@ -22,6 +22,7 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 
 beforeEach(function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
@@ -65,6 +66,8 @@ function concreteUri(Route $route): string
             'voucher-types' => VoucherType::class,
             'control-accounts' => ChartOfAccount::class,
             'attachments' => Attachment::class,
+            'users' => User::class,
+            'roles' => Role::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
         };

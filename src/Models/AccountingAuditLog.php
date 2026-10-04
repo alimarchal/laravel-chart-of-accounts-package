@@ -71,7 +71,7 @@ class AccountingAuditLog extends Model
         return static::query()->create([
             'company_id' => match (true) {
                 $model instanceof Company => $model->getKey(),
-                $model->getAttribute('company_id') !== null => $model->getAttribute('company_id'),
+                ($model->getAttributes()['company_id'] ?? null) !== null => $model->getAttributes()['company_id'],
                 $model instanceof Currency, $model instanceof AccountType => null,
                 default => CurrentCompany::currentId(),
             },

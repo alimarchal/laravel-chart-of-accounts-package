@@ -6,11 +6,13 @@ import {
     CalendarDays,
     FileText,
     Hash,
+    KeyRound,
     Landmark,
     Percent,
     ReceiptText,
     ShieldCheck,
     Scale,
+    Users,
     WalletCards,
 } from 'lucide-react';
 import { CompanySwitcher } from '@/components/accounting/company-switcher';
@@ -129,6 +131,12 @@ export default function AccountingDashboard({ summary }: Props) {
                       icon: Building2,
                   },
               ]
+            : []),
+        ...(permissions['user.view']
+            ? [{ title: 'Users', href: '/accounting/users', icon: Users }]
+            : []),
+        ...(permissions['accounting.manage-settings']
+            ? [{ title: 'Roles', href: '/accounting/roles', icon: KeyRound }]
             : []),
         ...(company.enabled && permissions['companies.manage']
             ? [

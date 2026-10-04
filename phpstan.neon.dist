@@ -22,5 +22,9 @@ parameters:
           path: src/Http/Controllers/Blade/UserBladeController.php
         - identifier: argument.type
           path: src/Http/Controllers/Blade/UserBladeController.php
-        - identifier: property.notFound
-          path: src/Http/Controllers/Blade/UserBladeController.php
+        - identifier: method.notFound
+          path: src/Services/UserManagementService.php
+        - identifier: method.notFound
+          path: src/Http/Controllers/Api/UserApiController.php
+        - identifier: method.notFound
+          path: src/Http/Controllers/UserController.php

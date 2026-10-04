@@ -5,7 +5,7 @@
       "description": "Create, post, reverse and void double-entry journal entries.",
       "item": [
         {
-          "id": "f66737d1-d010-4dc5-8e33-656408d11a2e",
+          "id": "77794833-9ef7-486c-929b-499de7c81a5c",
           "name": "List entries",
           "request": {
             "name": "List entries",
@@ -46,7 +46,7 @@
                     "type": "text/plain"
                   },
                   "key": "filter[status]",
-                  "value": "posted"
+                  "value": "void"
                 },
                 {
                   "disabled": false,
@@ -145,7 +145,7 @@
                     "type": "text/plain"
                   },
                   "key": "sort",
-                  "value": "-id"
+                  "value": "-reference"
                 },
                 {
                   "disabled": false,
@@ -184,7 +184,7 @@
           }
         },
         {
-          "id": "0e5457ee-75a4-4f4d-acce-3cfd3beaf93f",
+          "id": "7ae00e76-49a1-438d-b974-c0cb33f79dfe",
           "name": "Create (and optionally post) an entry",
           "request": {
             "name": "Create (and optionally post) an entry",
@@ -242,7 +242,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"bill\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
+              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"invoice\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -258,7 +258,7 @@
           }
         },
         {
-          "id": "af4ac94e-daaa-46a1-b8fa-e941f92d7ff3",
+          "id": "781050fc-992c-4460-8072-9e3f6832ecf8",
           "name": "Two-line entry by account codes",
           "request": {
             "name": "Two-line entry by account codes",
@@ -333,7 +333,7 @@
           }
         },
         {
-          "id": "7090f471-8d1a-44d3-9d19-db81f2fec41c",
+          "id": "be38d0f2-ca1e-42ea-bfb6-b72088a16fb7",
           "name": "Show an entry with lines",
           "request": {
             "name": "Show an entry with lines",
@@ -388,7 +388,7 @@
           }
         },
         {
-          "id": "2f773593-f811-40b1-a74c-70ec65b60cad",
+          "id": "8ec93464-5c15-474d-a12b-0464c705d6a5",
           "name": "Update a draft (PATCH also accepted)",
           "request": {
             "name": "Update a draft (PATCH also accepted)",
@@ -440,7 +440,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"bill\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
+              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"invoice\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -456,7 +456,7 @@
           }
         },
         {
-          "id": "496ca193-6303-4024-85a4-7a3b9738d351",
+          "id": "11ea65db-07c6-479e-a909-257cf25450d3",
           "name": "Post a draft",
           "request": {
             "name": "Post a draft",
@@ -512,7 +512,7 @@
           }
         },
         {
-          "id": "6dba916a-cf1e-48aa-9d74-76df85702c79",
+          "id": "29a5e9ed-294c-42c1-8efe-7d5c9da85ac0",
           "name": "Reverse a posted entry",
           "request": {
             "name": "Reverse a posted entry",
@@ -581,7 +581,7 @@
           }
         },
         {
-          "id": "e2960541-df89-484e-b8d1-523a98ef01d8",
+          "id": "d4eedeaa-7077-44ff-b067-42538a8ae380",
           "name": "Submit a draft for approval (maker)",
           "request": {
             "name": "Submit a draft for approval (maker)",
@@ -637,7 +637,7 @@
           }
         },
         {
-          "id": "a05f4d2d-7f64-4193-a164-e19ba5bf9405",
+          "id": "195041d6-2bad-47b1-bd5a-a1ba20819f10",
           "name": "Approve and post (checker)",
           "request": {
             "name": "Approve and post (checker)",
@@ -693,7 +693,7 @@
           }
         },
         {
-          "id": "7dd95a12-5cd7-46dc-9d60-a120f7fb45d9",
+          "id": "2db1648a-5a8a-4c2b-b1ad-98597399ed19",
           "name": "Reject back to the maker (checker)",
           "request": {
             "name": "Reject back to the maker (checker)",
@@ -762,7 +762,7 @@
           }
         },
         {
-          "id": "a432ed2b-6c74-4acc-bc3e-f1e64c3bad32",
+          "id": "3463dd8f-8934-4ac7-9d16-3929941632f8",
           "name": "Void a draft",
           "request": {
             "name": "Void a draft",
@@ -818,7 +818,7 @@
           }
         },
         {
-          "id": "9097a473-fe6c-48c8-b97b-9a0b2d4300b8",
+          "id": "17b1bc8c-863e-471e-bec9-bd0494b968fc",
           "name": "Supporting documents of an entry",
           "request": {
             "name": "Supporting documents of an entry",
@@ -874,7 +874,7 @@
           }
         },
         {
-          "id": "68d29858-7b0c-4565-a99c-6993c10f134d",
+          "id": "c387caee-687f-4ba2-8ae9-53ae04d15fe1",
           "name": "Attach a document (multipart/form-data)",
           "request": {
             "name": "Attach a document (multipart/form-data)",
@@ -955,7 +955,7 @@
           }
         },
         {
-          "id": "92f87cb9-d238-4839-98b1-cfcfd1492eb1",
+          "id": "a268ec4a-d8e7-46e1-9ee4-84d670a703a9",
           "name": "Download a document",
           "request": {
             "name": "Download a document",
@@ -1011,7 +1011,7 @@
           }
         },
         {
-          "id": "9e490583-4c5d-4d5d-a0dd-fdfefc7565c6",
+          "id": "4f3a8b07-e8d0-458a-b9b4-04e6b390aaa7",
           "name": "Remove a document of a draft",
           "request": {
             "name": "Remove a document of a draft",
@@ -1072,7 +1072,7 @@
       "description": "Hierarchical accounts, the account tree and account balances.",
       "item": [
         {
-          "id": "637fa07d-bb87-4d16-a564-3b3278512bb9",
+          "id": "180a0c0e-2f3d-4360-91a5-1b6db04cf8cc",
           "name": "List accounts",
           "request": {
             "name": "List accounts",
@@ -1188,7 +1188,7 @@
           }
         },
         {
-          "id": "7a7f681b-74e5-42a6-a651-ffd0f7646771",
+          "id": "79480443-b771-476f-8763-c8b5e0acc35d",
           "name": "Create an account",
           "request": {
             "name": "Create an account",
@@ -1228,7 +1228,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
+              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"debit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -1244,7 +1244,7 @@
           }
         },
         {
-          "id": "b487340d-cc35-4a87-9ef1-6684ecc81500",
+          "id": "21acf240-20f0-435a-b097-be852c30ad0b",
           "name": "Whole chart as a nested tree",
           "request": {
             "name": "Whole chart as a nested tree",
@@ -1288,7 +1288,7 @@
           }
         },
         {
-          "id": "dcd57540-ab78-45ad-acdd-2c5afa75c1a3",
+          "id": "db5f1fea-abee-47d5-a254-e534b66b8e03",
           "name": "Account balance",
           "request": {
             "name": "Account balance",
@@ -1354,7 +1354,7 @@
           }
         },
         {
-          "id": "9a527ca4-25c2-4772-b4f3-344d1454aed0",
+          "id": "cbe60821-3918-4ae2-be6b-6545488d579f",
           "name": "Show an account",
           "request": {
             "name": "Show an account",
@@ -1409,7 +1409,7 @@
           }
         },
         {
-          "id": "46a8178b-6d1a-440a-8aaa-d3ab1875ce7f",
+          "id": "9231201b-bb08-4f09-b709-53ec7ae82f29",
           "name": "Update an account (PATCH also accepted)",
           "request": {
             "name": "Update an account (PATCH also accepted)",
@@ -1461,7 +1461,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
+              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"debit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -1477,7 +1477,7 @@
           }
         },
         {
-          "id": "a3774b88-e4f5-4ebe-be6b-6ec977ce3ad3",
+          "id": "652d8897-487d-4e68-a474-41f0e9ac8b40",
           "name": "Delete an account",
           "request": {
             "name": "Delete an account",
@@ -1532,7 +1532,7 @@
           }
         },
         {
-          "id": "bbef1f5c-6a21-4832-b3b8-eb94deb85b42",
+          "id": "e38f6c30-6b36-4db2-9005-e17f46942197",
           "name": "Control accounts with balances and manual postings",
           "request": {
             "name": "Control accounts with balances and manual postings",
@@ -1575,7 +1575,7 @@
           }
         },
         {
-          "id": "cec7eaf4-bd06-4c8a-b114-349229bea7a8",
+          "id": "1872429e-0b56-4713-9c01-34d7ecdc9906",
           "name": "Mark the recommended control accounts",
           "request": {
             "name": "Mark the recommended control accounts",
@@ -1619,7 +1619,7 @@
           }
         },
         {
-          "id": "8f18fa3c-b98c-40a2-87c0-85a441f586bd",
+          "id": "1edb9f19-5554-4b0a-b901-9659a018fb4b",
           "name": "Manual postings to a control account",
           "request": {
             "name": "Manual postings to a control account",
@@ -1675,7 +1675,7 @@
           }
         },
         {
-          "id": "b919bd6e-4f3d-4e03-ad19-67d67dc2aa3d",
+          "id": "6e718d6c-79d7-44b7-98d9-6f9593d2dc1e",
           "name": "Set or clear an account's control type",
           "request": {
             "name": "Set or clear an account's control type",
@@ -1750,7 +1750,7 @@
       "description": "Financial statements and ledgers (posted entries only).",
       "item": [
         {
-          "id": "8d86db38-8f61-420b-aafe-af604b426c8c",
+          "id": "2d8059da-4acf-4a1b-8e32-783e613146c8",
           "name": "Trial balance",
           "request": {
             "name": "Trial balance",
@@ -1794,7 +1794,7 @@
           }
         },
         {
-          "id": "e9af1a47-632f-4ef5-b25d-f33dba5bf82d",
+          "id": "1ca48f6b-8efe-40f2-8bf6-a74a23173da0",
           "name": "Balance sheet",
           "request": {
             "name": "Balance sheet",
@@ -1866,7 +1866,7 @@
           }
         },
         {
-          "id": "ca520692-1200-47af-a9e3-570df553a778",
+          "id": "ba430120-3d9b-4cda-a857-e85f624e9805",
           "name": "Income statement",
           "request": {
             "name": "Income statement",
@@ -1929,7 +1929,7 @@
           }
         },
         {
-          "id": "c7da497c-f751-40df-bbf9-d69141ca495e",
+          "id": "544fe10e-a744-4772-b94a-7258c4f62f08",
           "name": "General ledger",
           "request": {
             "name": "General ledger",
@@ -2037,7 +2037,7 @@
           }
         },
         {
-          "id": "3fd6c955-2243-4206-b5a0-16393c1e3433",
+          "id": "4481a68b-ac4f-4831-bd07-afd7b816e9a3",
           "name": "Cash flow",
           "request": {
             "name": "Cash flow",
@@ -2118,7 +2118,7 @@
           }
         },
         {
-          "id": "340bd68b-d2e0-4e52-a4a2-b0d264c8a053",
+          "id": "c5c4c7c7-3623-4979-9459-b70bd9182f7c",
           "name": "Bank book",
           "request": {
             "name": "Bank book",
@@ -2226,7 +2226,7 @@
           }
         },
         {
-          "id": "4ae4123c-9898-406e-8753-763d779dde3d",
+          "id": "c6490761-dbfa-4ee3-a9bc-6cb0e12c4d3f",
           "name": "Cash book",
           "request": {
             "name": "Cash book",
@@ -2334,7 +2334,7 @@
           }
         },
         {
-          "id": "ac5bc498-cf91-49b8-997e-78555ebd75fe",
+          "id": "ff5cde4b-d2d1-4031-9a1b-8299ca0bafc0",
           "name": "Aged receivables",
           "request": {
             "name": "Aged receivables",
@@ -2406,7 +2406,7 @@
           }
         },
         {
-          "id": "4bea10fa-c766-4b2f-b885-1e229bd4395e",
+          "id": "324da80c-c649-4733-9f41-da6b9a91431b",
           "name": "Aged payables",
           "request": {
             "name": "Aged payables",
@@ -2478,7 +2478,7 @@
           }
         },
         {
-          "id": "1e3732aa-9383-42c4-b489-76b40fb5f14c",
+          "id": "d0b7545f-9996-4204-ab17-8c420f6f44db",
           "name": "Account statement",
           "request": {
             "name": "Account statement",
@@ -2577,7 +2577,7 @@
           }
         },
         {
-          "id": "3fab71b9-f4fe-4346-97be-7de4a67f4514",
+          "id": "07607d0f-85fa-4f89-a39f-b46dd767eceb",
           "name": "Consolidated report",
           "request": {
             "name": "Consolidated report",
@@ -2635,7 +2635,7 @@
               "variable": [
                 {
                   "type": "any",
-                  "value": "trial-balance",
+                  "value": "balance-sheet",
                   "key": "report",
                   "disabled": false,
                   "description": {
@@ -2676,7 +2676,7 @@
       "description": "Accounting periods, closing and balance snapshots.",
       "item": [
         {
-          "id": "730582dd-5ef8-4674-a098-529f5a462c37",
+          "id": "e8d70765-d76c-4c4f-961a-e23cfe0a4ad4",
           "name": "List periods",
           "request": {
             "name": "List periods",
@@ -2747,7 +2747,7 @@
           }
         },
         {
-          "id": "22b4ce5f-6cf4-43b3-9850-f967fea1fb75",
+          "id": "31435e9b-b3ca-48fe-9c1f-5da74982ff55",
           "name": "Create periods",
           "request": {
             "name": "Create periods",
@@ -2787,7 +2787,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"archived\"\n}",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -2803,7 +2803,7 @@
           }
         },
         {
-          "id": "7372d510-a8c8-4cf9-a50c-9a2535b191e8",
+          "id": "43d1a410-48eb-4f0b-8888-378c3056a225",
           "name": "Show periods",
           "request": {
             "name": "Show periods",
@@ -2858,7 +2858,7 @@
           }
         },
         {
-          "id": "c6fb4df6-bf1f-4b61-8a4b-0925de452592",
+          "id": "a3320a1a-6357-4d8a-8517-6e7e82c3ffe0",
           "name": "Update periods (PATCH also accepted)",
           "request": {
             "name": "Update periods (PATCH also accepted)",
@@ -2910,7 +2910,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"archived\"\n}",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -2926,7 +2926,7 @@
           }
         },
         {
-          "id": "a3c25d45-2a81-43be-8ce2-e71210246131",
+          "id": "0d43e5ea-53f4-4c36-95c3-8de5ae80a15e",
           "name": "Delete periods",
           "request": {
             "name": "Delete periods",
@@ -2981,7 +2981,7 @@
           }
         },
         {
-          "id": "28dbb95b-a750-4e79-b290-d4623b1f0dda",
+          "id": "54edc975-8d1a-4377-8564-a37d13c12c06",
           "name": "Close a period",
           "request": {
             "name": "Close a period",
@@ -3037,7 +3037,7 @@
           }
         },
         {
-          "id": "35a97d6d-46fb-4e6c-a4a1-60e4011b5aae",
+          "id": "23af8fed-16e9-4e98-8277-dfa7819f4191",
           "name": "Reopen a closed period",
           "request": {
             "name": "Reopen a closed period",
@@ -3106,7 +3106,7 @@
           }
         },
         {
-          "id": "515bc761-3b01-4d02-80a7-de1b6c855fc9",
+          "id": "25870833-e8cf-4191-adf8-02702eacdd52",
           "name": "Pre-close checklist",
           "request": {
             "name": "Pre-close checklist",
@@ -3172,7 +3172,7 @@
           }
         },
         {
-          "id": "f4ac3999-79d6-4abc-a790-aa894585ab95",
+          "id": "a65c6edf-d97b-42d0-9cdc-c4b0149359b5",
           "name": "Create twelve monthly periods",
           "request": {
             "name": "Create twelve monthly periods",
@@ -3229,7 +3229,7 @@
           }
         },
         {
-          "id": "cf06c2ce-c0b5-4fb1-9413-d086c039ef29",
+          "id": "2ff496e2-cdfa-45d9-a955-daf36a45860e",
           "name": "Year-end close",
           "request": {
             "name": "Year-end close",
@@ -3285,7 +3285,7 @@
           }
         },
         {
-          "id": "80f79425-418c-4d0a-97a1-f159ed4ada86",
+          "id": "f687041a-724e-4c56-84e8-69e958db1f19",
           "name": "List balance snapshots",
           "request": {
             "name": "List balance snapshots",
@@ -3365,7 +3365,7 @@
           }
         },
         {
-          "id": "2e7bf1e7-60bf-4cfe-9622-3cbcc474e7f0",
+          "id": "d0000bf3-28b8-4e90-9805-cbe7467d8005",
           "name": "Show a balance snapshot",
           "request": {
             "name": "Show a balance snapshot",
@@ -3426,7 +3426,7 @@
       "description": "Asset, liability, equity, income and expense types.",
       "item": [
         {
-          "id": "3cd03032-a4ba-4300-adb2-14993b3bce58",
+          "id": "4bcd3141-2dc1-4958-a868-644e37213a61",
           "name": "List account-types",
           "request": {
             "name": "List account-types",
@@ -3497,7 +3497,7 @@
           }
         },
         {
-          "id": "147f4c22-5b4b-4992-9675-838e363d06a9",
+          "id": "1b85c69a-412c-445b-afdc-4d9bc99461e3",
           "name": "Create account-types",
           "request": {
             "name": "Create account-types",
@@ -3537,7 +3537,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"debit\",\n  \"report_group\": \"BalanceSheet\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"debit\",\n  \"report_group\": \"IncomeStatement\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -3553,7 +3553,7 @@
           }
         },
         {
-          "id": "0dafc254-4065-4532-a76d-cfa349e76b8f",
+          "id": "67d4dbd7-197d-489d-b206-71c8f738404c",
           "name": "Show account-types",
           "request": {
             "name": "Show account-types",
@@ -3608,7 +3608,7 @@
           }
         },
         {
-          "id": "5bd18c4a-1b40-4475-8e26-97477a5fdfba",
+          "id": "5bac3d1c-2fc8-42bd-9616-929f7c328d59",
           "name": "Update account-types (PATCH also accepted)",
           "request": {
             "name": "Update account-types (PATCH also accepted)",
@@ -3660,7 +3660,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"debit\",\n  \"report_group\": \"BalanceSheet\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"debit\",\n  \"report_group\": \"IncomeStatement\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -3676,7 +3676,7 @@
           }
         },
         {
-          "id": "6d3f2ae0-1f22-4c39-84c6-44c15c549178",
+          "id": "6d6bc9be-df7e-4f69-80c0-de1df0a9bf76",
           "name": "Delete account-types",
           "request": {
             "name": "Delete account-types",
@@ -3737,7 +3737,7 @@
       "description": "Currencies and exchange rates (exactly one base currency).",
       "item": [
         {
-          "id": "a34558c5-5b35-4e60-88b0-261d9a244367",
+          "id": "eb1ce6ee-59d2-4d3a-b477-00a3ef92606d",
           "name": "List currencies",
           "request": {
             "name": "List currencies",
@@ -3808,7 +3808,7 @@
           }
         },
         {
-          "id": "2d376faf-7227-41a4-bcec-d16ad0641c1c",
+          "id": "b1fec21d-04d4-4fdf-9617-c6c1d3e45846",
           "name": "Create currencies",
           "request": {
             "name": "Create currencies",
@@ -3864,7 +3864,7 @@
           }
         },
         {
-          "id": "92278462-30f2-4b37-887f-1887641e92b5",
+          "id": "ed8486ad-a7bf-4c34-a898-0cd27e9bc0c4",
           "name": "Show currencies",
           "request": {
             "name": "Show currencies",
@@ -3919,7 +3919,7 @@
           }
         },
         {
-          "id": "8932c28b-6bd3-4337-9b57-36e0847bad8f",
+          "id": "7e38297f-419f-411b-beb5-29f87c181bdc",
           "name": "Update currencies (PATCH also accepted)",
           "request": {
             "name": "Update currencies (PATCH also accepted)",
@@ -3987,7 +3987,7 @@
           }
         },
         {
-          "id": "2f41ee98-905f-49d9-a783-1b0ad76c27da",
+          "id": "aef639a4-fd4e-4681-a501-4a6f4b911844",
           "name": "Delete currencies",
           "request": {
             "name": "Delete currencies",
@@ -4048,7 +4048,7 @@
       "description": "Cost centers and projects for line-level analysis.",
       "item": [
         {
-          "id": "23eca228-1adb-43a1-b76c-337db11638e5",
+          "id": "3933db4d-bb14-4e14-b3b9-e96922af7e21",
           "name": "List cost-centers",
           "request": {
             "name": "List cost-centers",
@@ -4119,7 +4119,7 @@
           }
         },
         {
-          "id": "3831d3eb-5717-467a-8322-36735c349b58",
+          "id": "4290aba9-e33a-496b-949b-116bc5d3eeef",
           "name": "Create cost-centers",
           "request": {
             "name": "Create cost-centers",
@@ -4159,7 +4159,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"cost_center\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -4175,7 +4175,7 @@
           }
         },
         {
-          "id": "230525ff-e247-4303-b1d1-300d7b3f01a9",
+          "id": "a88ad740-cddd-437b-888f-95a98281760f",
           "name": "Show cost-centers",
           "request": {
             "name": "Show cost-centers",
@@ -4230,7 +4230,7 @@
           }
         },
         {
-          "id": "cc37f417-0801-4fdc-9eb3-0815603f2c48",
+          "id": "0eea0fc3-3b5a-449a-a709-0d597721cca2",
           "name": "Update cost-centers (PATCH also accepted)",
           "request": {
             "name": "Update cost-centers (PATCH also accepted)",
@@ -4282,7 +4282,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"cost_center\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -4298,7 +4298,7 @@
           }
         },
         {
-          "id": "00f1d97a-59e9-4486-a132-ef5999b6bc22",
+          "id": "fa17475c-280e-43f2-956e-6de4e2c35977",
           "name": "Delete cost-centers",
           "request": {
             "name": "Delete cost-centers",
@@ -4359,7 +4359,7 @@
       "description": "Bank accounts linked to GL accounts.",
       "item": [
         {
-          "id": "6be3ba6f-93f4-4e60-886e-e9cc98ad1689",
+          "id": "fa5043ae-3d9f-462a-8a88-3a0dedbbc0c2",
           "name": "List bank-accounts",
           "request": {
             "name": "List bank-accounts",
@@ -4430,7 +4430,7 @@
           }
         },
         {
-          "id": "56d03572-c064-4fc8-9785-c656ff7076b6",
+          "id": "c185770f-3b3b-416d-99ac-f92efec18550",
           "name": "Create bank-accounts",
           "request": {
             "name": "Create bank-accounts",
@@ -4486,7 +4486,7 @@
           }
         },
         {
-          "id": "f9816689-79e8-4167-8830-fc0e31af4707",
+          "id": "17f6968c-cbf8-4ca9-a9c8-b762c3ceface",
           "name": "Show bank-accounts",
           "request": {
             "name": "Show bank-accounts",
@@ -4541,7 +4541,7 @@
           }
         },
         {
-          "id": "9b5bb3fa-95f3-42da-9698-7dd050ba8c9a",
+          "id": "6f913286-abdc-47a9-bfca-777d2de41a82",
           "name": "Update bank-accounts (PATCH also accepted)",
           "request": {
             "name": "Update bank-accounts (PATCH also accepted)",
@@ -4609,7 +4609,7 @@
           }
         },
         {
-          "id": "38277987-e942-4bcd-8c54-564ba313c09f",
+          "id": "2ade29f6-b3ee-4992-90c7-b97b33c4cb83",
           "name": "Delete bank-accounts",
           "request": {
             "name": "Delete bank-accounts",
@@ -4670,7 +4670,7 @@
       "description": "Bank statement reconciliations.",
       "item": [
         {
-          "id": "4c527315-0d8c-403e-a8ff-e2993852b480",
+          "id": "9bb6f45b-01ca-45c9-b5ae-aa089be1a570",
           "name": "List reconciliations",
           "request": {
             "name": "List reconciliations",
@@ -4741,7 +4741,7 @@
           }
         },
         {
-          "id": "4bd34f7d-f733-44a5-a0ad-00485a19db11",
+          "id": "95226299-054f-4c6f-9ecb-7ae1a7a8268e",
           "name": "Create reconciliations",
           "request": {
             "name": "Create reconciliations",
@@ -4781,7 +4781,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"void\"\n}",
+              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"draft\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -4797,7 +4797,7 @@
           }
         },
         {
-          "id": "5a1be88c-a051-4af1-94b6-913929d0a7ea",
+          "id": "3004e436-c385-4467-bb67-c90a30046319",
           "name": "Show reconciliations",
           "request": {
             "name": "Show reconciliations",
@@ -4852,7 +4852,7 @@
           }
         },
         {
-          "id": "0d219b93-6662-4667-86a5-4e4ad63e7590",
+          "id": "29a0f2dd-fbe9-4dfc-b8ca-fc8511d7127a",
           "name": "Update reconciliations (PATCH also accepted)",
           "request": {
             "name": "Update reconciliations (PATCH also accepted)",
@@ -4904,7 +4904,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"void\"\n}",
+              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"draft\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -4920,7 +4920,7 @@
           }
         },
         {
-          "id": "7399174f-7c0a-4cc1-9456-01faef19f279",
+          "id": "6b9f23ba-8a21-467c-9c7c-2854b02eaa07",
           "name": "Delete reconciliations",
           "request": {
             "name": "Delete reconciliations",
@@ -4981,7 +4981,7 @@
       "description": "Tax codes and dated tax rates.",
       "item": [
         {
-          "id": "b7262d2b-10d2-4898-9e18-3ea0707e0679",
+          "id": "7892be36-a8f5-4bfa-8dfe-357ea8f0c99e",
           "name": "List tax-codes",
           "request": {
             "name": "List tax-codes",
@@ -5052,7 +5052,7 @@
           }
         },
         {
-          "id": "42ee72f3-9509-4236-94fb-a8a18bd3511e",
+          "id": "aa98bb1e-f613-4ab6-9060-b8a6e932ef23",
           "name": "Create tax-codes",
           "request": {
             "name": "Create tax-codes",
@@ -5108,7 +5108,7 @@
           }
         },
         {
-          "id": "11e5c83d-0e72-495f-b6eb-4da0343f372a",
+          "id": "2ae5c4d2-818a-4a36-bd9d-d406349f5e7d",
           "name": "Show tax-codes",
           "request": {
             "name": "Show tax-codes",
@@ -5163,7 +5163,7 @@
           }
         },
         {
-          "id": "69cd92cd-3ecd-4e70-9012-391d51d2ebac",
+          "id": "36e1c950-0c88-44df-af70-b05c1bf0b8d5",
           "name": "Update tax-codes (PATCH also accepted)",
           "request": {
             "name": "Update tax-codes (PATCH also accepted)",
@@ -5231,7 +5231,7 @@
           }
         },
         {
-          "id": "9ed54732-f51d-405d-9449-dc82a5507315",
+          "id": "1a31285f-574f-4c69-bb75-e28062ca2980",
           "name": "Delete tax-codes",
           "request": {
             "name": "Delete tax-codes",
@@ -5286,7 +5286,7 @@
           }
         },
         {
-          "id": "33e06843-9dd0-435d-b7f1-112c8b9dd71b",
+          "id": "206cf561-0f92-4a7b-9b5e-589ffc6da76e",
           "name": "List tax-rates",
           "request": {
             "name": "List tax-rates",
@@ -5357,7 +5357,7 @@
           }
         },
         {
-          "id": "d677158c-f0a6-4038-8e35-bda9837065c4",
+          "id": "33b7f568-6a5c-4cf0-9c60-edf506d5c67e",
           "name": "Create tax-rates",
           "request": {
             "name": "Create tax-rates",
@@ -5413,7 +5413,7 @@
           }
         },
         {
-          "id": "0d14c7ba-7326-42f2-8cb9-8ae394f6a957",
+          "id": "06a4a1be-aea0-4803-a183-a8cd1bc5be53",
           "name": "Show tax-rates",
           "request": {
             "name": "Show tax-rates",
@@ -5468,7 +5468,7 @@
           }
         },
         {
-          "id": "bdbb85d4-8d4a-44db-b62a-1f92cd038057",
+          "id": "4d92213d-5357-40a2-a162-dd2a5dd472a5",
           "name": "Update tax-rates (PATCH also accepted)",
           "request": {
             "name": "Update tax-rates (PATCH also accepted)",
@@ -5536,7 +5536,7 @@
           }
         },
         {
-          "id": "3b4443f0-26a6-4e08-8c35-281d76066074",
+          "id": "afb1d8d1-49f3-417c-916b-1a336a211116",
           "name": "Delete tax-rates",
           "request": {
             "name": "Delete tax-rates",
@@ -5597,7 +5597,7 @@
       "description": "Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series.",
       "item": [
         {
-          "id": "665011d5-3e40-4658-988d-10d06d130b22",
+          "id": "543bb48c-aa73-459a-ab34-fb157d5f582e",
           "name": "List voucher types with their next numbers",
           "request": {
             "name": "List voucher types with their next numbers",
@@ -5650,7 +5650,7 @@
           }
         },
         {
-          "id": "cfcb2f45-d0ab-405f-bf2b-e21433701edc",
+          "id": "0da73ce2-4ead-4877-b840-2f5e571f330a",
           "name": "Create a voucher type",
           "request": {
             "name": "Create a voucher type",
@@ -5706,7 +5706,7 @@
           }
         },
         {
-          "id": "3dbb1ed8-d637-4dba-aa10-7fb40d165089",
+          "id": "f5dfc8fe-7bdb-484b-977f-cc65212a0d78",
           "name": "Show a voucher type",
           "request": {
             "name": "Show a voucher type",
@@ -5761,7 +5761,7 @@
           }
         },
         {
-          "id": "d0fd4227-fe24-49e1-917d-15b006a1ecbd",
+          "id": "45e48a41-9edd-454f-ae46-51d0722e29ee",
           "name": "Update a voucher type (PATCH also accepted)",
           "request": {
             "name": "Update a voucher type (PATCH also accepted)",
@@ -5829,7 +5829,7 @@
           }
         },
         {
-          "id": "443f1d81-df45-4cfb-a43d-19f6dbb3db00",
+          "id": "11e18f30-7f28-40f4-a730-3488d1b537ba",
           "name": "Delete an unused voucher type",
           "request": {
             "name": "Delete an unused voucher type",
@@ -5884,7 +5884,7 @@
           }
         },
         {
-          "id": "ccc5c46b-9ab1-4350-8539-a834e01e0097",
+          "id": "bf3ade35-a389-408c-a152-2191c51e855e",
           "name": "Preview the next number",
           "request": {
             "name": "Preview the next number",
@@ -5956,7 +5956,7 @@
       "description": "Companies (multi-company), access and consolidation.",
       "item": [
         {
-          "id": "aa4ec345-e004-4cf4-8fa5-bd64ef09976b",
+          "id": "7891baf0-01d0-47c0-a9fe-635645aec9cf",
           "name": "Companies you can work in",
           "request": {
             "name": "Companies you can work in",
@@ -5999,7 +5999,7 @@
           }
         },
         {
-          "id": "4496a5b0-19d8-4417-b983-b2de70d833e9",
+          "id": "cfb6d925-3abf-4c67-a528-eed2afc0ac7e",
           "name": "Create a company",
           "request": {
             "name": "Create a company",
@@ -6039,7 +6039,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"dgY\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
+              "raw": "{\n  \"code\": \"h7PXlnHK2\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -6055,7 +6055,7 @@
           }
         },
         {
-          "id": "50e769a6-aa3f-4b15-9486-1e2611701360",
+          "id": "2de0726c-eb0e-4f79-a7bf-b302775f7b00",
           "name": "Show a company with its members",
           "request": {
             "name": "Show a company with its members",
@@ -6110,7 +6110,7 @@
           }
         },
         {
-          "id": "19f92de0-0578-42aa-99b7-1527e436fbee",
+          "id": "3174ec5b-3569-42d4-b669-57fedf9697d5",
           "name": "Update a company",
           "request": {
             "name": "Update a company",
@@ -6162,7 +6162,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"44Ci_4fAD1H\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
+              "raw": "{\n  \"code\": \"3hBCxeR\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -6178,7 +6178,7 @@
           }
         },
         {
-          "id": "234aa847-9225-438c-89a7-cc151bc9b84e",
+          "id": "14bb0bf1-987f-4410-a9a2-ec1efd1b12c7",
           "name": "Give a user access",
           "request": {
             "name": "Give a user access",
@@ -6247,7 +6247,7 @@
           }
         },
         {
-          "id": "f0d1fa19-f32d-4afc-a281-08851dc795df",
+          "id": "c17c1640-93ec-4f42-adaf-ca438def3ecf",
           "name": "Remove a user's access",
           "request": {
             "name": "Remove a user's access",
@@ -6316,11 +6316,798 @@
       ]
     },
     {
+      "name": "Users & roles",
+      "description": "Users, roles and permissions — privilege-checked and audited.",
+      "item": [
+        {
+          "id": "285a3358-cc3d-44c8-bee0-2e4192f44925",
+          "name": "List users",
+          "request": {
+            "name": "List users",
+            "description": {
+              "content": "Permission: `user.view`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "users"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "per_page",
+                  "value": "15"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "filter[name]",
+                  "value": "<string>"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "filter[email]",
+                  "value": "<string>"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "filter[role]",
+                  "value": "<string>"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "ffc92099-d6fb-4b9f-bb6c-2c28752a55cf",
+          "name": "Create a user",
+          "request": {
+            "name": "Create a user",
+            "description": {
+              "content": "Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values).\n\nPermission: `user.create`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "users"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"email\": \"<email>\",\n  \"password\": \"<string>\",\n  \"password_confirmation\": \"<string>\",\n  \"roles\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "ce2d2f60-c0c5-4675-98cb-057a752a8953",
+          "name": "Show a user with all effective permissions",
+          "request": {
+            "name": "Show a user with all effective permissions",
+            "description": {
+              "content": "Permission: `user.view`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "users",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f44269dd-9352-4c3d-970d-461f33a61f34",
+          "name": "Update a user (PATCH also accepted)",
+          "request": {
+            "name": "Update a user (PATCH also accepted)",
+            "description": {
+              "content": "Send only what changes; `roles` replaces the roles. Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values).\n\nPermission: `user.update`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "users",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"email\": \"<email>\",\n  \"password\": \"<string>\",\n  \"password_confirmation\": \"<string>\",\n  \"roles\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f597e566-1363-4ef5-9d73-23f6eb819f2d",
+          "name": "Delete a user",
+          "request": {
+            "name": "Delete a user",
+            "description": {
+              "content": "Not yourself. Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values).\n\nPermission: `user.delete`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "users",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "654a2c3d-9760-43e3-848f-ac795b106360",
+          "name": "Replace a user's roles",
+          "request": {
+            "name": "Replace a user's roles",
+            "description": {
+              "content": "Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values). The audit row lists added and removed roles.\n\nPermission: `user.assign-role`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "users",
+                ":id",
+                "roles"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roles\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "b8915665-9f05-406b-9cdf-72bfed988e17",
+          "name": "Replace a user's direct permissions",
+          "request": {
+            "name": "Replace a user's direct permissions",
+            "description": {
+              "content": "On top of the roles. Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values).\n\nPermission: `user.assign-permission`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "users",
+                ":id",
+                "permissions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissions\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f4ca4142-8aa7-4b35-b198-5930d26ecf27",
+          "name": "List roles with permission and user counts",
+          "request": {
+            "name": "List roles with permission and user counts",
+            "description": {
+              "content": "Permission: `accounting.manage-settings`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "roles"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "1894fe81-b61c-46f3-9187-ab3727fb5ca8",
+          "name": "Create a role",
+          "request": {
+            "name": "Create a role",
+            "description": {
+              "content": "Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values).\n\nPermission: `accounting.manage-settings`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "roles"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"permissions\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "fd217b52-1ab4-429b-825a-a6f70a56a1b8",
+          "name": "Show a role",
+          "request": {
+            "name": "Show a role",
+            "description": {
+              "content": "Permission: `accounting.manage-settings`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "e5b3313f-9972-4697-b55f-855c6d8f1e21",
+          "name": "Update a role (PATCH also accepted)",
+          "request": {
+            "name": "Update a role (PATCH also accepted)",
+            "description": {
+              "content": "super-admin cannot be renamed (422). Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values).\n\nPermission: `accounting.manage-settings`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"permissions\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "7b29ff4e-6e7d-4437-87e9-866bfc865475",
+          "name": "Delete a role",
+          "request": {
+            "name": "Delete a role",
+            "description": {
+              "content": "super-admin cannot be deleted (422). Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values).\n\nPermission: `accounting.manage-settings`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "558e671a-7a90-45a6-ad34-bc08e39c0cab",
+          "name": "All permissions grouped by area",
+          "request": {
+            "name": "All permissions grouped by area",
+            "description": {
+              "content": "Permission: `accounting.manage-settings`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "permissions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ]
+    },
+    {
       "name": "System",
       "description": "Installation health.",
       "item": [
         {
-          "id": "4b8b1279-c926-49ba-a93f-22d03955eaae",
+          "id": "bec21d84-6a38-42f1-b054-3decc506899f",
           "name": "Installation health",
           "request": {
             "name": "Installation health",
