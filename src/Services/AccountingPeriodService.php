@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -49,6 +50,33 @@ class AccountingPeriodService
             $data['status'] = 'open';
 
             return AccountingPeriod::query()->create($data);
+        });
+    }
+
+    /**
+     * Twelve monthly periods for the fiscal year starting at $start (month-end closing works per
+     * month; year-end close runs on the last one). Refused if any month overlaps an existing period.
+     *
+     * @return Collection<int, AccountingPeriod>
+     */
+    public function generateMonthly(Carbon|string $start): Collection
+    {
+        $first = Carbon::parse($start)->startOfMonth();
+        $last = $first->copy()->addYear()->subDay();
+
+        return DB::transaction(function () use ($first, $last): Collection {
+            $this->assertNoOverlap($first->toDateString(), $last->toDateString());
+
+            return collect(range(0, 11))->map(function (int $offset) use ($first): AccountingPeriod {
+                $month = $first->copy()->addMonthsNoOverflow($offset);
+
+                return AccountingPeriod::query()->create([
+                    'name' => $month->format('F Y'),
+                    'start_date' => $month->toDateString(),
+                    'end_date' => $month->copy()->endOfMonth()->toDateString(),
+                    'status' => 'open',
+                ]);
+            });
         });
     }
 

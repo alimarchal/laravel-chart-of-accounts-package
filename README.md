@@ -22,7 +22,7 @@
 - **Maker-checker approvals** — entries above a threshold need a second person to approve; nobody approves their own work
 - **Roles with segregation of duties** — super-admin, admin, accountant (maker), approver (checker), auditor, viewer; `accounting:roles` audits the matrix
 - **Multi-currency** — every line keeps its frozen base-currency amount; all reports are in the base currency
-- **Periods** — close / reopen / fiscal-year close, balance snapshots, retained-earnings roll-forward
+- **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
 - **12 reports** — trial balance, balance sheet, income statement, cash flow, general ledger, account statement (running balance), bank & cash book, aged AR/AP — export to CSV (streamed, any size), XLSX, PDF
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
 - **Events & signed webhooks** for every ledger action (posted, reversed, approved, period closed, …)
@@ -565,7 +565,9 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET | `/chart-of-accounts/{id}/balance` | Balance as of a date (groups include children) | `chart-of-accounts.view` |
 | GET/PUT/DELETE | `/chart-of-accounts/{id}` | Show / Update / Delete | `chart-of-accounts.*` |
 | GET/POST, GET/PUT/DELETE | `/periods`, `/periods/{id}` | CRUD (no overlaps) | `periods.*` |
-| POST | `/periods/{id}/close` · `/reopen` · `/close-fiscal-year` | Period workflow | `periods.close` / `periods.reopen` |
+| POST | `/periods/{id}/close` · `/reopen` (`reason`) · `/close-fiscal-year` | Period workflow | `periods.close` / `periods.reopen` |
+| GET | `/periods/{id}/close-checklist` | Pre-close checks; `?year_end=1` adds the closing entry preview | `periods.view` |
+| POST | `/periods/generate-monthly` | Twelve monthly periods for a fiscal year (`start_date`) | `periods.create` |
 | GET | `/account-balance-snapshots[/{id}]` | Period-end snapshots | `account-balance-snapshots.view` |
 | CRUD | `/account-types`, `/currencies`, `/cost-centers`, `/bank-accounts`, `/reconciliations`, `/tax-codes`, `/tax-rates` | Master data | `<resource>.view/create/update/delete` |
 | GET | `/reports/trial-balance` · `balance-sheet` · `income-statement` · `general-ledger` · `cash-flow` · `bank-book` · `cash-book` · `aged-receivables` · `aged-payables` · `account-statement` | Financial reports (posted entries only) | `reports.<name>.view` |
@@ -827,13 +829,37 @@ Integrity is enforced in layers:
 3. **Database** — triggers reject any change to posted entries/lines (amounts, accounts, dates, status, deletes);
    PostgreSQL also has CHECK constraints (one-sided lines, positive FX rates, single base currency).
 
-### Periods
+### Periods — month-end and year-end close
 
+Open **Accounting → Periods** (React or Blade). Use yearly periods, or click **Monthly periods** to create
+twelve months for a fiscal year (`POST /periods/generate-monthly`); the last month of the fiscal year is
+marked *year end*.
+
+**Close workspace** — *Month-end close* / *Year-end close* on a period opens a checklist
+(`GET /periods/{id}/close-checklist[?year_end=1]`):
+
+| Check | Blocks closing? |
+|---|---|
+| No entries waiting for approval | ✕ yes |
+| No draft entries dated in the period | ✕ yes |
+| Trial balance is balanced | ✕ yes |
+| Earlier periods are closed | ⚠ warns at month end, ✕ blocks at year end |
+| Bank lines reconciled | ⚠ warns |
+| Retained earnings account is set up (year end) | ✕ yes |
+
+Each item links to the screen that fixes it. The year-end workspace also shows the **closing entry preview**
+before anything is posted.
+
+- **Month-end close** (`periods.close`) writes balance snapshots (opening, movement, closing), stores the
+  totals and net income, and locks the period against postings.
+- **Year-end close** posts a closing entry that brings every income and expense account to zero and moves the
+  result to retained earnings (`ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE`), then closes the period. It uses
+  each account's balance up to the year end, so it works with monthly or yearly periods and sweeps any earlier
+  unclosed years too.
+- **Reopen** (`periods.reopen`) needs a reason, which is kept in the audit trail. Periods are reopened newest
+  first. Reopening a year-end period reverses its closing entry automatically, so closing it again
+  recalculates the result from the corrected figures.
 - Periods may not overlap. A period's dates cannot change, and it cannot be deleted, once it contains entries.
-- Closing requires `periods.close`, refuses while drafts are dated in the period, writes balance snapshots
-  (opening, movement, closing) and stores revenue − expenses as `closing_net_income`.
-- Reopening requires `periods.reopen`. `accounting:close-fiscal-year` additionally posts a closing entry that
-  moves income-statement balances to retained earnings.
 
 ### Chart of accounts rules
 

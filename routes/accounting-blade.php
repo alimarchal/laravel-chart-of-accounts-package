@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ChartOfAccountBlade
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CostCenterBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CurrencyBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\JournalEntryBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\PeriodCloseBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\PermissionBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ReconciliationBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports\AccountBalancesBladeController;
@@ -68,7 +69,12 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
 
         $resourceRoutes('account-types', AccountTypeBladeController::class, 'account-types', 'account-types');
         $resourceRoutes('currencies', CurrencyBladeController::class, 'currencies', 'currencies');
+        Route::post('periods/generate-monthly', [PeriodCloseBladeController::class, 'generateMonthly'])->name('periods.generate-monthly')->middleware('can:periods.create');
         $resourceRoutes('periods', AccountingPeriodBladeController::class, 'periods', 'periods', 'period');
+        Route::get('periods/{period}/close', [PeriodCloseBladeController::class, 'workspace'])->name('periods.close.show')->middleware('can:periods.view');
+        Route::post('periods/{period}/close', [PeriodCloseBladeController::class, 'close'])->name('periods.close')->middleware('can:periods.close');
+        Route::post('periods/{period}/close-fiscal-year', [PeriodCloseBladeController::class, 'closeFiscalYear'])->name('periods.close-fiscal-year')->middleware('can:periods.close');
+        Route::post('periods/{period}/reopen', [PeriodCloseBladeController::class, 'reopen'])->name('periods.reopen')->middleware('can:periods.reopen');
 
         Route::get('chart-of-accounts/tree', [ChartOfAccountBladeController::class, 'tree'])
             ->name('chart-of-accounts.tree')

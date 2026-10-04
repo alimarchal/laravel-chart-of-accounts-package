@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CostCenterController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CurrencyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\JournalEntryController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PeriodCloseController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReconciliationController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\AccountStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\AgedPayablesController;
@@ -79,6 +80,13 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         $resourceRoutes('account-types', AccountTypeController::class, 'account-types', 'account-types');
         $resourceRoutes('currencies', CurrencyController::class, 'currencies', 'currencies');
         $resourceRoutes('periods', AccountingPeriodController::class, 'periods', 'periods');
+        // Month-end / year-end close. Registered after the resource routes: GET periods replaces the generic list.
+        Route::get('periods', [PeriodCloseController::class, 'index'])->name('periods.index')->middleware('can:periods.view');
+        Route::post('periods/generate-monthly', [PeriodCloseController::class, 'generateMonthly'])->name('periods.generate-monthly')->middleware('can:periods.create');
+        Route::get('periods/{period}/close', [PeriodCloseController::class, 'show'])->name('periods.close.show')->middleware('can:periods.view');
+        Route::post('periods/{period}/close', [PeriodCloseController::class, 'close'])->name('periods.close')->middleware('can:periods.close');
+        Route::post('periods/{period}/close-fiscal-year', [PeriodCloseController::class, 'closeFiscalYear'])->name('periods.close-fiscal-year')->middleware('can:periods.close');
+        Route::post('periods/{period}/reopen', [PeriodCloseController::class, 'reopen'])->name('periods.reopen')->middleware('can:periods.reopen');
 
         Route::get('chart-of-accounts/tree', [ChartOfAccountController::class, 'tree'])
             ->name('chart-of-accounts.tree')

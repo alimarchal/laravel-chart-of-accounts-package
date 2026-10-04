@@ -1,29 +1,34 @@
 flowchart TD
-    A(["Month / year end"]) --> B{"Year end?"}
-    B -->|"no — POST /periods/{id}/close"| C
-    B -->|"yes — POST /periods/{id}/close-fiscal-year"| Y1
+    A(["Month end / year end"]) --> W["Open the close workspace<br/>Periods → Month-end / Year-end close<br/>(GET /periods/{id}/close-checklist)"]
+    W --> K{"Checklist"}
+    K -->|"✕ entries waiting for approval<br/>✕ drafts dated in the period<br/>✕ trial balance not balanced<br/>✕ earlier periods open (year end)"| FIX["Fix them first<br/>(each item links to the screen)"]
+    FIX --> W
+    K -->|"⚠ unreconciled bank lines<br/>⚠ earlier periods open (month end)"| REV["Review — does not block"]
+    K -->|"all ✓"| B{"Year end?"}
+    REV --> B
+    B -->|"no — Close"| C
+    B -->|"yes — Post closing entry & close year"| Y1
 
-    subgraph YE["Fiscal-year close (extra steps)"]
+    subgraph YE["Year-end close"]
         direction TB
-        Y1["Sum each income-statement account<br/>for the period (posted only)"] --> Y2["Build a closing entry that brings<br/>every revenue / expense account to 0<br/>(contra balances handled)"]
-        Y2 --> Y3["Net income → Retained earnings<br/>(config: retained_earnings_account_code)"]
+        Y1["Balance of every income &amp; expense account<br/>up to the year end (all unclosed years,<br/>so monthly or yearly periods both work)"] --> Y2["Preview shown first: closing entry brings<br/>each account to 0 (contra balances handled)"]
+        Y2 --> Y3["Net income → retained earnings"]
         Y3 --> Y4["Post closing entry<br/>is_closing_entry = true"]
     end
 
     Y4 --> C
-    C["Lock the period row"] --> D{"Status = open?"}
-    D -->|no| X1["422 Only open periods<br/>can be closed"]
-    D -->|yes| E{"Any drafts dated<br/>in this period?"}
-    E -->|yes| X2["422 Post or void the<br/>drafts first"]
-    E -->|no| F["Balance snapshots per account:<br/>opening · debits · credits · closing"]
-    F --> G["Store totals and<br/>net income = revenue − expenses"]
-    G --> H["status = closed<br/>audit: PERIOD_CLOSED"]
+    C["Lock the period row"] --> F["Balance snapshots per account:<br/>opening · debits · credits · closing"]
+    F --> G["Store totals and net income"]
+    G --> H["status = closed · audit: PERIOD_CLOSED"]
     H --> I(["No more postings into this period"])
-    I -.->|"POST /periods/{id}/reopen<br/>(periods.reopen)"| R["status = open<br/>audit: PERIOD_REOPENED"]
+    I -.->|"Reopen with a reason (periods.reopen)<br/>newest period first"| R["status = open · reason in the audit trail<br/>year-end closing entry reversed automatically"]
+    R -.->|"close again"| W
 
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    classDef warn fill:#fef3c7,stroke:#b45309,color:#78350f
     classDef good fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef ye fill:#ede9fe,stroke:#6d28d9,color:#3b0764
-    class X1,X2 bad
+    class FIX bad
+    class REV warn
     class H,I good
     class Y1,Y2,Y3,Y4 ye

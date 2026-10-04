@@ -137,7 +137,23 @@ for uri, (tag, schema_name, perm, props, req) in crud.items():
     }
 
 paths["/periods/{id}/close"] = {"parameters": [ID], "post": op("Periods", "Close a period", "periods.close", {"200": resp("Closed period", data(ref("Period"))), **E404_422}, desc="Writes balance snapshots and stores totals and net income. Fails (422) while drafts are dated in the period.", opid="close_period")}
-paths["/periods/{id}/reopen"] = {"parameters": [ID], "post": op("Periods", "Reopen a closed period", "periods.reopen", {"200": resp("Reopened period", data(ref("Period"))), **E404_422}, opid="reopen_period")}
+paths["/periods/{id}/reopen"] = {"parameters": [ID], "post": op("Periods", "Reopen a closed period", "periods.reopen", {"200": resp("Reopened period", data(ref("Period"))), **E404_422},
+    body={"type": "object", "properties": {"reason": {"type": "string", "maxLength": 500, "description": "Kept in the audit trail."}}},
+    desc="Periods are reopened newest first (422 while a later period is closed). A year-end closing entry is reversed automatically.", opid="reopen_period")}
+schemas["CloseChecklist"] = {"type": "object", "properties": {
+    "period": ref("Period"), "year_end": {"type": "boolean"}, "can_close": {"type": "boolean"},
+    "checks": {"type": "array", "items": {"type": "object", "properties": {
+        "key": {"type": "string", "example": "drafts"}, "label": {"type": "string"}, "status": {"type": "string", "enum": ["pass", "fail", "warn", "info"]},
+        "detail": {"type": ["string", "null"]}, "count": {"type": ["integer", "null"]}, "link": {"type": ["string", "null"], "description": "Web path under the accounting prefix"}}}},
+    "summary": {"type": "object", "properties": {"posted_entries": {"type": "integer"}, "net_income": ref("Money"), "total_debits": ref("Money"), "total_credits": ref("Money")}},
+    "closing_entry": {"type": ["object", "null"], "description": "Year end only: the lines the year-end close would post.", "properties": {
+        "lines": {"type": "array", "items": {"type": "object"}}, "net_income": ref("Money"), "retained_earnings": {"type": ["object", "null"]}}}}}
+paths["/periods/{id}/close-checklist"] = {"parameters": [ID], "get": op("Periods", "Pre-close checklist", "periods.view", {"200": resp("Checklist", data(ref("CloseChecklist"))), **E404},
+    params=[{"name": "year_end", "in": "query", "schema": {"type": "boolean"}, "description": "Year-end checks and the closing entry preview."}],
+    desc="'fail' items block closing; 'warn' items are worth reviewing.", opid="period_close_checklist")}
+paths["/periods/generate-monthly"] = {"post": op("Periods", "Create twelve monthly periods", "periods.create", {"201": resp("Created periods", data({"type": "array", "items": ref("Period")})), **E422},
+    body={"type": "object", "required": ["start_date"], "properties": {"start_date": {"type": "string", "format": "date", "description": "First day of the fiscal year."}}},
+    desc="Refused (422) if any month overlaps an existing period.", opid="generate_monthly_periods")}
 paths["/periods/{id}/close-fiscal-year"] = {"parameters": [ID], "post": op("Periods", "Year-end close", "periods.close", {"200": resp("Closed period with its closing entry", data(ref("Period"))), **E404_422}, desc="Posts a closing entry moving income-statement balances to retained earnings, then closes the period.", opid="close_fiscal_year")}
 paths["/health"] = {"get": op("System", "Installation health", "accounting.view", {"200": resp("Healthy", ref("Health")), "503": resp("Unhealthy", ref("Health")), **E}, opid="health")}
 
@@ -248,7 +264,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.2.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.3.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

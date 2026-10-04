@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.2.0
+  version: 2.3.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -1551,7 +1551,11 @@ paths:
       - Periods
       summary: Reopen a closed period
       operationId: reopen_period
-      description: 'Permission: `periods.reopen`.'
+      description: 'Periods are reopened newest first (422 while a later period is closed). A year-end closing entry is reversed
+        automatically.
+
+
+        Permission: `periods.reopen`.'
       responses:
         '200':
           description: Reopened period
@@ -1574,6 +1578,103 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                  description: Kept in the audit trail.
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /periods/{id}/close-checklist:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Periods
+      summary: Pre-close checklist
+      operationId: period_close_checklist
+      description: '''fail'' items block closing; ''warn'' items are worth reviewing.
+
+
+        Permission: `periods.view`.'
+      responses:
+        '200':
+          description: Checklist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CloseChecklist'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: year_end
+        in: query
+        schema:
+          type: boolean
+        description: Year-end checks and the closing entry preview.
+      - $ref: '#/components/parameters/Company'
+  /periods/generate-monthly:
+    post:
+      tags:
+      - Periods
+      summary: Create twelve monthly periods
+      operationId: generate_monthly_periods
+      description: 'Refused (422) if any month overlaps an existing period.
+
+
+        Permission: `periods.create`.'
+      responses:
+        '201':
+          description: Created periods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Period'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - start_date
+              properties:
+                start_date:
+                  type: string
+                  format: date
+                  description: First day of the fiscal year.
       parameters:
       - $ref: '#/components/parameters/Company'
   /periods/{id}/close-fiscal-year:
@@ -4168,6 +4269,72 @@ components:
           format: date
         is_active:
           type: boolean
+    CloseChecklist:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        year_end:
+          type: boolean
+        can_close:
+          type: boolean
+        checks:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                example: drafts
+              label:
+                type: string
+              status:
+                type: string
+                enum:
+                - pass
+                - fail
+                - warn
+                - info
+              detail:
+                type:
+                - string
+                - 'null'
+              count:
+                type:
+                - integer
+                - 'null'
+              link:
+                type:
+                - string
+                - 'null'
+                description: Web path under the accounting prefix
+        summary:
+          type: object
+          properties:
+            posted_entries:
+              type: integer
+            net_income:
+              $ref: '#/components/schemas/Money'
+            total_debits:
+              $ref: '#/components/schemas/Money'
+            total_credits:
+              $ref: '#/components/schemas/Money'
+        closing_entry:
+          type:
+          - object
+          - 'null'
+          description: 'Year end only: the lines the year-end close would post.'
+          properties:
+            lines:
+              type: array
+              items:
+                type: object
+            net_income:
+              $ref: '#/components/schemas/Money'
+            retained_earnings:
+              type:
+              - object
+              - 'null'
     Company:
       type: object
       properties:
