@@ -5,6 +5,7 @@ import {
     Building2,
     CalendarDays,
     FileText,
+    Hash,
     Landmark,
     Percent,
     ReceiptText,
@@ -63,6 +64,11 @@ export default function AccountingDashboard({ summary }: Props) {
         },
         { title: 'Tax Codes', href: '/accounting/tax-codes', icon: Percent },
         { title: 'Tax Rates', href: '/accounting/tax-rates', icon: Percent },
+        {
+            title: 'Voucher Types',
+            href: '/accounting/voucher-types',
+            icon: Hash,
+        },
         {
             title: 'Snapshots',
             href: '/accounting/account-balance-snapshots',

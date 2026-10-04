@@ -14,6 +14,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReconciliationApiCont
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReportApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxCodeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxRateApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\VoucherTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
 use Illuminate\Support\Facades\Route;
@@ -98,6 +99,10 @@ Route::middleware($apiMiddleware)
         $apiResourceRoutes('reconciliations', ReconciliationApiController::class, 'reconciliations', 'reconciliations');
         $apiResourceRoutes('tax-codes', TaxCodeApiController::class, 'tax-codes', 'tax-codes');
         $apiResourceRoutes('tax-rates', TaxRateApiController::class, 'tax-rates', 'tax-rates');
+        $apiResourceRoutes('voucher-types', VoucherTypeApiController::class, 'voucher-types', 'voucher-types');
+        Route::get('voucher-types/{record}/next-number', [VoucherTypeApiController::class, 'nextNumber'])
+            ->name('voucher-types.next-number')
+            ->middleware('can:voucher-types.view');
         Route::get('account-balance-snapshots', [AccountBalanceSnapshotApiController::class, 'index'])
             ->name('account-balance-snapshots.index')
             ->middleware('can:account-balance-snapshots.view');

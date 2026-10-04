@@ -28,6 +28,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\TrialBalanceController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxCodeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxRateController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\ShareAccountingInertiaData;
 use Illuminate\Support\Facades\Route;
@@ -121,6 +122,10 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
             ->middleware('can:reconciliations.update');
         $resourceRoutes('tax-codes', TaxCodeController::class, 'tax-codes', 'tax-codes');
         $resourceRoutes('tax-rates', TaxRateController::class, 'tax-rates', 'tax-rates');
+        Route::get('voucher-types', [VoucherTypeController::class, 'index'])->name('voucher-types.index')->middleware('can:voucher-types.view');
+        Route::post('voucher-types', [VoucherTypeController::class, 'store'])->name('voucher-types.store')->middleware('can:voucher-types.create');
+        Route::match(['put', 'patch'], 'voucher-types/{record}', [VoucherTypeController::class, 'update'])->name('voucher-types.update')->middleware('can:voucher-types.update');
+        Route::delete('voucher-types/{record}', [VoucherTypeController::class, 'destroy'])->name('voucher-types.destroy')->middleware('can:voucher-types.delete');
         Route::get('account-balance-snapshots', [AccountBalanceSnapshotController::class, 'index'])
             ->name('account-balance-snapshots.index')
             ->middleware('can:account-balance-snapshots.view');

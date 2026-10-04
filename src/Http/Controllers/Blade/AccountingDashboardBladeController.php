@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
+use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
@@ -33,6 +34,7 @@ class AccountingDashboardBladeController extends Controller
             'postedJournalEntries' => JournalEntry::query()->where('status', 'posted')->count(),
             'taxCodes' => TaxCode::query()->count(),
             'taxRates' => TaxRate::query()->count(),
+            'voucherTypes' => VoucherType::query()->count(),
             'reconciliations' => Reconciliation::query()->count(),
             'balanceSnapshots' => AccountBalanceSnapshot::query()->count(),
             'users' => app(config('auth.providers.users.model'))->newQuery()->count(),

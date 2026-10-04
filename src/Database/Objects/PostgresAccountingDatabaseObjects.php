@@ -58,7 +58,11 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
      */
     private function createImmutabilityTriggers(): void
     {
-        DB::statement(<<<'SQL'
+        $voucher = Schema::hasColumn('accounting_journal_entries', 'voucher_number')
+            ? 'OR NEW.voucher_number IS DISTINCT FROM OLD.voucher_number OR NEW.voucher_type_id IS DISTINCT FROM OLD.voucher_type_id'
+            : '';
+
+        DB::statement(str_replace('__VOUCHER__', $voucher, <<<'SQL'
             CREATE OR REPLACE FUNCTION accounting_journal_posted_guard()
             RETURNS trigger AS $$
             BEGIN
@@ -68,6 +72,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                     OR NEW.entry_date IS DISTINCT FROM OLD.entry_date
                     OR NEW.currency_id IS DISTINCT FROM OLD.currency_id
                     OR NEW.company_id IS DISTINCT FROM OLD.company_id
+                    __VOUCHER__
                     OR NEW.fx_rate_to_base IS DISTINCT FROM OLD.fx_rate_to_base
                     OR NEW.deleted_at IS DISTINCT FROM OLD.deleted_at
                 ) THEN
@@ -77,7 +82,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                 RETURN COALESCE(NEW, OLD);
             END;
             $$ LANGUAGE plpgsql;
-        SQL);
+        SQL));
 
         DB::statement(<<<'SQL'
             CREATE OR REPLACE FUNCTION accounting_line_posted_guard()

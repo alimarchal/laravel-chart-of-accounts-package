@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class JournalEntryService
 {
     /**
-     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
+     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
      */
     public function create(array $data): JournalEntry
     {
@@ -26,6 +26,7 @@ class JournalEntryService
                 ?? Currency::query()->where('is_base', true)->value('id');
 
             $journalEntry = JournalEntry::query()->create([
+                'voucher_type_id' => $data['voucher_type_id'] ?? null,
                 'entry_date' => $data['entry_date'],
                 'currency_id' => $currencyId,
                 'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,
@@ -51,12 +52,12 @@ class JournalEntryService
                 app(PostJournalEntryAction::class)->execute($journalEntry, (bool) ($data['system_generated'] ?? false));
             }
 
-            return $journalEntry->refresh()->load(['lines.account', 'currency', 'accountingPeriod']);
+            return $journalEntry->refresh()->load(['lines.account', 'currency', 'accountingPeriod', 'voucherType']);
         });
     }
 
     /**
-     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
+     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
      */
     public function updateDraft(JournalEntry $journalEntry, array $data): JournalEntry
     {
@@ -80,6 +81,7 @@ class JournalEntryService
             app(JournalApprovalService::class)->resetForEdit($journalEntry);
 
             $journalEntry->update([
+                'voucher_type_id' => array_key_exists('voucher_type_id', $data) ? $data['voucher_type_id'] : $journalEntry->voucher_type_id,
                 'entry_date' => $data['entry_date'],
                 'currency_id' => $currencyId,
                 'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,
@@ -123,7 +125,7 @@ class JournalEntryService
                 app(PostJournalEntryAction::class)->execute($journalEntry->refresh());
             }
 
-            return $journalEntry->refresh()->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']);
+            return $journalEntry->refresh()->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType']);
         });
     }
 

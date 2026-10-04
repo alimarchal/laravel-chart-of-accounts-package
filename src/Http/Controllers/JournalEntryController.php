@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Illuminate\Http\RedirectResponse;
@@ -24,9 +25,11 @@ class JournalEntryController extends Controller
 {
     public function index(): Response
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']), request())
+        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name']), request())
             ->allowedFilters(...[
                 AllowedFilter::partial('reference'),
+                AllowedFilter::partial('voucher_number'),
+                AllowedFilter::exact('voucher_type_id'),
                 AllowedFilter::partial('description'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('currency_id'),
@@ -46,6 +49,7 @@ class JournalEntryController extends Controller
                 ->where('is_active', true)
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
+            'voucherTypes' => VoucherType::query()->orderBy('code')->get(['id', 'code', 'name']),
         ]);
     }
 
@@ -68,6 +72,11 @@ class JournalEntryController extends Controller
                 ->get(['id', 'code', 'name', 'is_base']),
             'costCenters' => CostCenter::query()
                 ->where('is_active', true)
+                ->orderBy('code')
+                ->get(['id', 'code', 'name']),
+            'voucherTypes' => VoucherType::query()
+                ->where('is_active', true)
+                ->orderByDesc('is_system')
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
         ]);
@@ -99,12 +108,17 @@ class JournalEntryController extends Controller
                 ->where('is_active', true)
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
+            'voucherTypes' => VoucherType::query()
+                ->where('is_active', true)
+                ->orderByDesc('is_system')
+                ->orderBy('code')
+                ->get(['id', 'code', 'name']),
         ]);
     }
 
     public function show(JournalEntry $journalEntry): Response
     {
-        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']);
+        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType']);
 
         return Inertia::render('accounting/journal-entries/show', [
             'entry' => $journalEntry,

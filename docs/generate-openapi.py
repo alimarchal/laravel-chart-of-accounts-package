@@ -60,7 +60,11 @@ schemas = {
      "cost_center_id": {"type": ["integer", "null"]}, "cost_center_code": {"type": ["string", "null"]},
      "debit": ref("Money"), "credit": ref("Money"), "description": {"type": ["string", "null"]}, "reconciliation_status": {"type": ["string", "null"]}}},
  "JournalEntry": {"type": "object", "properties": {
-     "id": {"type": "integer"}, "entry_date": {"type": "string", "format": "date"}, "reference": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]},
+     "id": {"type": "integer"},
+     "voucher_number": {"type": ["string", "null"], "example": "JV-2026-00012", "description": "Issued when the entry is posted (gapless per voucher type); null for drafts. Never changes afterwards."},
+     "voucher_type_id": {"type": ["integer", "null"]},
+     "voucher_type": {"type": ["object", "null"], "properties": {"id": {"type": "integer"}, "code": {"type": "string", "example": "JV"}, "name": {"type": "string"}}},
+     "entry_date": {"type": "string", "format": "date"}, "reference": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]},
      "status": {"type": "string", "enum": ["draft", "posted", "void"]}, "currency_id": {"type": "integer"}, "fx_rate_to_base": {"type": "string"},
      "accounting_period_id": {"type": ["integer", "null"]}, "posted_at": {"type": ["string", "null"], "format": "date-time"},
      "approval": {"type": "object", "properties": {
@@ -81,6 +85,8 @@ schemas = {
      "debit": {"type": "number", "minimum": 0, "multipleOf": 0.01, "example": 1500}, "credit": {"type": "number", "minimum": 0, "multipleOf": 0.01, "example": 0},
      "description": {"type": ["string", "null"], "maxLength": 255}}},
  "JournalEntryInput": {"type": "object", "required": ["entry_date", "lines"], "properties": {
+     "voucher_type_id": {"type": ["integer", "null"], "description": "An active voucher type; default JV."},
+     "voucher_type_code": {"type": ["string", "null"], "example": "CPV", "description": "Alternative to voucher_type_id."},
      "entry_date": {"type": "string", "format": "date"}, "currency_id": {"type": ["integer", "null"]}, "currency_code": {"type": ["string", "null"], "example": "PKR", "description": "Alternative to currency_id. Defaults to the base currency."},
      "fx_rate_to_base": {"type": ["number", "null"], "exclusiveMinimum": 0, "default": 1}, "reference": {"type": ["string", "null"], "maxLength": 255}, "description": {"type": ["string", "null"]},
      "auto_post": {"type": "boolean", "default": False, "description": "Post immediately; requires `journal-entries.post`. Rejected (422) when maker-checker requires approval."},
@@ -173,9 +179,10 @@ paths["/journal-entries"] = {
  "get": op("Journal entries", "List entries", "journal-entries.view", {"200": resp("Paginated entries", paginated(ref("JournalEntry"))), **E}, params=PAGE + [
     {"name": "filter[status]", "in": "query", "schema": {"type": "string", "enum": ["draft", "posted", "void"]}},
     {"name": "filter[reference]", "in": "query", "schema": {"type": "string"}}, {"name": "filter[description]", "in": "query", "schema": {"type": "string"}},
+    {"name": "filter[voucher_number]", "in": "query", "schema": {"type": "string"}, "description": "Partial match, e.g. JV-2026-"}, {"name": "filter[voucher_type_id]", "in": "query", "schema": {"type": "integer"}},
     {"name": "filter[currency_id]", "in": "query", "schema": {"type": "integer"}}, {"name": "filter[accounting_period_id]", "in": "query", "schema": {"type": "integer"}},
     {"name": "filter[entry_date_from]", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "filter[entry_date_to]", "in": "query", "schema": {"type": "string", "format": "date"}},
-    {"name": "sort", "in": "query", "schema": {"type": "string", "enum": ["entry_date", "-entry_date", "id", "-id", "reference", "-reference", "created_at", "-created_at"]}},
+    {"name": "sort", "in": "query", "schema": {"type": "string", "enum": ["entry_date", "-entry_date", "id", "-id", "reference", "-reference", "voucher_number", "-voucher_number", "created_at", "-created_at"]}},
     {"name": "include", "in": "query", "schema": {"type": "string", "enum": ["lines"]}}], opid="list_journal_entries"),
  "post": op("Journal entries", "Create (and optionally post) an entry", "journal-entries.create", created, params=idem, body=ref("JournalEntryInput"), desc="Lines may use account codes. Rule violations (unbalanced, group account, closed period) return 422 with a message.", opid="create_journal_entry")}
 paths["/journal-entries/simple"] = {"post": op("Journal entries", "Two-line entry by account codes", "journal-entries.create", created, params=idem, body=ref("SimpleEntryInput"), desc="Debits one account and credits another with the same amount; posts by default.", opid="create_simple_journal_entry")}
@@ -188,6 +195,22 @@ paths["/journal-entries/{id}/submit"] = {"parameters": [ID], "post": op("Journal
 paths["/journal-entries/{id}/approve"] = {"parameters": [ID], "post": op("Journal entries", "Approve and post (checker)", "journal-entries.approve", {"200": resp("Approved and posted entry", data(ref("JournalEntry"))), **E404_422}, desc="The checker must be a different user from the maker and the submitter.", opid="approve_journal_entry")}
 paths["/journal-entries/{id}/reject"] = {"parameters": [ID], "post": op("Journal entries", "Reject back to the maker (checker)", "journal-entries.approve", {"200": resp("Rejected draft", data(ref("JournalEntry"))), **E404_422}, body={"type": "object", "required": ["reason"], "properties": {"reason": {"type": "string", "maxLength": 2000}}}, opid="reject_journal_entry")}
 paths["/journal-entries/{id}/void"] = {"parameters": [ID], "post": op("Journal entries", "Void a draft", "journal-entries.void", {"200": resp("Voided entry", data(ref("JournalEntry"))), **E404_422}, desc="Posted entries cannot be voided — reverse them.", opid="void_journal_entry")}
+
+vt_props = {"code": {"type": "string", "maxLength": 20, "example": "SV", "description": "Upper-case; fixed once entries are numbered."},
+    "name": {"type": "string", "example": "Sales Voucher"}, "prefix": {"type": "string", "maxLength": 20, "example": "SV"},
+    "format": {"type": "string", "default": "{PREFIX}-{FY}-{SEQ:5}", "description": "Tokens {PREFIX} {FY} {YYYY} {YY} {MM} {SEQ} {SEQ:n}. Yearly series need {FY}; monthly ones {MM} and a year token."},
+    "reset": {"type": "string", "enum": ["yearly", "monthly", "never"], "default": "yearly", "description": "When numbering restarts; fixed once entries are numbered."},
+    "description": {"type": ["string", "null"]}, "is_active": {"type": "boolean", "default": True}}
+schemas["VoucherType"] = {"type": "object", "properties": {"id": {"type": "integer"}, **vt_props, "is_system": {"type": "boolean", "description": "The default type (JV): cannot be deleted or deactivated."},
+    "next_number": {"type": "string", "example": "SV-2026-00001", "description": "What the next posting today would get (not reserved)."}, "entries_count": {"type": "integer"}}}
+paths["/voucher-types"] = {
+ "get": op("Voucher types", "List voucher types with their next numbers", "voucher-types.view", {"200": resp("Voucher types", data({"type": "array", "items": ref("VoucherType")})), **E}, params=[{"name": "filter[is_active]", "in": "query", "schema": {"type": "boolean"}}], opid="list_voucher_types"),
+ "post": op("Voucher types", "Create a voucher type", "voucher-types.create", {"201": resp("Created", data(ref("VoucherType"))), **E422}, body={"type": "object", "required": ["code", "name", "prefix"], "properties": vt_props}, opid="create_voucher_type")}
+paths["/voucher-types/{id}"] = {"parameters": [ID],
+ "get": op("Voucher types", "Show a voucher type", "voucher-types.view", {"200": resp("Voucher type", data(ref("VoucherType"))), **E404}, opid="show_voucher_type"),
+ "put": op("Voucher types", "Update a voucher type (PATCH also accepted)", "voucher-types.update", {"200": resp("Updated", data(ref("VoucherType"))), **E404_422}, body={"type": "object", "properties": vt_props}, desc="Send only the fields to change. 422 when changing the code or reset of a numbered series, or deactivating JV.", opid="update_voucher_type"),
+ "delete": op("Voucher types", "Delete an unused voucher type", "voucher-types.delete", {"204": resp("Deleted"), **E404_422}, desc="422 for the default type and for types used by entries (deactivate them instead).", opid="delete_voucher_type")}
+paths["/voucher-types/{id}/next-number"] = {"parameters": [ID], "get": op("Voucher types", "Preview the next number", "voucher-types.view", {"200": resp("Next number", data({"type": "object", "properties": {"voucher_type": {"type": "string"}, "date": {"type": "string", "format": "date"}, "next_number": {"type": "string"}}})), **E404_422}, params=[{"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Default today."}], opid="next_voucher_number")}
 
 paths["/account-balance-snapshots"] = {"get": op("Periods", "List balance snapshots", "account-balance-snapshots.view", {"200": resp("Paginated snapshots", paginated({"type": "object"})), **E}, params=PAGE + [{"name": "filter[chart_of_account_id]", "in": "query", "schema": {"type": "integer"}}, {"name": "filter[accounting_period_id]", "in": "query", "schema": {"type": "integer"}}], opid="list_snapshots")}
 paths["/account-balance-snapshots/{id}"] = {"parameters": [ID], "get": op("Periods", "Show a balance snapshot", "account-balance-snapshots.view", {"200": resp("Snapshot", data({"type": "object"})), **E404}, opid="show_snapshot")}
@@ -264,7 +287,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.4.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.5.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
@@ -289,6 +312,7 @@ spec = {
    ("Bank accounts", "Bank accounts linked to GL accounts."),
    ("Reconciliations", "Bank statement reconciliations."),
    ("Tax", "Tax codes and dated tax rates."),
+   ("Voucher types", "Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series."),
    ("Companies", "Companies (multi-company), access and consolidation."),
    ("System", "Installation health.")]],
  "paths": paths,

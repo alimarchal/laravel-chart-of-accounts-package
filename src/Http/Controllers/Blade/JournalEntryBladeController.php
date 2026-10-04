@@ -19,9 +19,11 @@ class JournalEntryBladeController extends Controller
 {
     public function index(): View
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod'])->withCount('lines'), request())
+        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name'])->withCount('lines'), request())
             ->allowedFilters(
                 AllowedFilter::partial('reference'),
+                AllowedFilter::partial('voucher_number'),
+                AllowedFilter::exact('voucher_type_id'),
                 AllowedFilter::partial('description'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('currency_id'),
@@ -51,7 +53,7 @@ class JournalEntryBladeController extends Controller
 
     public function show(JournalEntry $journalEntry): View
     {
-        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']);
+        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType']);
 
         return view('accounting::journal-entries.show', [
             'journalEntry' => $journalEntry,

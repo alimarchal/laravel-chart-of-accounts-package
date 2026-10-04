@@ -25,7 +25,7 @@ class JournalEntryApiController extends Controller
 {
     use ResolvesPerPage;
 
-    private const RELATIONS = ['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod'];
+    private const RELATIONS = ['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType'];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -36,7 +36,7 @@ class JournalEntryApiController extends Controller
         ]);
 
         return JournalEntryResource::collection(
-            QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']), request())
+            QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType']), request())
                 ->allowedFilters(...[
                     AllowedFilter::partial('reference'),
                     AllowedFilter::partial('description'),
@@ -46,10 +46,10 @@ class JournalEntryApiController extends Controller
                     AllowedFilter::exact('approval_status'),
                     AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
                     AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
-                    AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
-                    AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
+                    AllowedFilter::partial('voucher_number'),
+                    AllowedFilter::exact('voucher_type_id'),
                 ])
-                ->allowedSorts(['entry_date', 'id', 'reference', 'created_at'])
+                ->allowedSorts(['entry_date', 'id', 'reference', 'voucher_number', 'created_at'])
                 ->when($request->input('include') === 'lines', fn ($query) => $query->with(['lines.account', 'lines.costCenter']))
                 ->when(! $request->filled('sort'), fn ($query) => $query->latest('entry_date')->latest('id'))
                 ->paginate($this->perPage())

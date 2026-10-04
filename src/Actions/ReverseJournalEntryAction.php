@@ -43,11 +43,12 @@ class ReverseJournalEntryAction
             }
 
             $reversal = JournalEntry::query()->create([
+                'voucher_type_id' => $entry->voucher_type_id,
                 'entry_date' => $date->toDateString(),
                 'currency_id' => $entry->currency_id,
                 'fx_rate_to_base' => $entry->fx_rate_to_base,
                 'reference' => $entry->reference ? 'REV-'.$entry->reference : 'REV-'.$entry->id,
-                'description' => $description ?? 'Reversal of journal entry #'.$entry->id,
+                'description' => $description ?? 'Reversal of '.($entry->voucher_number ?? 'journal entry #'.$entry->id),
                 'status' => 'draft',
                 'reverses_entry_id' => $entry->id,
             ]);

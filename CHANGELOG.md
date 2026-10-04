@@ -2,6 +2,33 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.5.0] - 2026-10-07
+
+Voucher numbering release.
+
+### Added
+- **Voucher types** per company — Journal (JV), Cash Payment (CPV), Cash Receipt (CRV), Bank Payment (BPV),
+  Bank Receipt (BRV) seeded; add your own. Each has a prefix, a number format (`{PREFIX}-{FY}-{SEQ:5}` →
+  `JV-2026-00012`; tokens `{PREFIX}` `{FY}` `{YYYY}` `{YY}` `{MM}` `{SEQ:n}`) and a restart rule (fiscal year,
+  month, never). Fiscal-year labels follow the company's start month (`2025-26`).
+- **Gapless voucher numbers issued at posting**, inside the posting transaction under a row lock: posting
+  order, no duplicates under concurrency, a failed posting gives its number back, voided drafts leave no gap.
+  Reversals are numbered in the series of the entry they reverse.
+- Voucher numbers and types of posted entries are immutable at the database level (MySQL/MariaDB,
+  PostgreSQL, SQLite); numbers are unique per company.
+- Voucher Types screen (React and Blade) with next-number preview, live format example and validation;
+  voucher type picker in the journal form; voucher number column, filter and page titles in journal screens.
+- API: `/voucher-types` CRUD, `/voucher-types/{id}/next-number`; journal entries accept `voucher_type_id` /
+  `voucher_type_code`, return `voucher_number` and `voucher_type`, filter by `voucher_number` and
+  `voucher_type_id`, sort by `voucher_number`.
+- Permissions `voucher-types.view/create/update/delete` (admin manages; accountant, auditor, viewer view).
+- Upgrade: existing posted entries are numbered as JV in posting order and the series continues from there.
+
+### Fixed
+- Apps with an older published `config/accounting.php` did not see screens and buttons of permissions
+  added by later versions (the shared permission list now always includes the package's own).
+- Journal list (React) showed the raw ISO timestamp as the date.
+
 ## [2.4.0] - 2026-10-06
 
 Chart of accounts guards at the database layer.

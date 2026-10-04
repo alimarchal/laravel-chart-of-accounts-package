@@ -22,6 +22,7 @@
 - **Maker-checker approvals** — entries above a threshold need a second person to approve; nobody approves their own work
 - **Roles with segregation of duties** — super-admin, admin, accountant (maker), approver (checker), auditor, viewer; `accounting:roles` audits the matrix
 - **Multi-currency** — every line keeps its frozen base-currency amount; all reports are in the base currency
+- **Voucher numbering** — JV, CPV, CRV, BPV, BRV (and your own types) with **gapless** numbers such as `JV-2026-00012`, issued at posting, restarting per fiscal year or month, locked in the database
 - **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
 - **12 reports** — trial balance, balance sheet, income statement, cash flow, general ledger, account statement (running balance), bank & cash book, aged AR/AP — export to CSV (streamed, any size), XLSX, PDF
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
@@ -391,6 +392,39 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 
 ---
 
+## Voucher numbering
+
+Every journal entry has a **voucher type**; when it is **posted** it gets the next number of that type's series.
+
+| Code | Voucher | Typical use |
+|------|---------|-------------|
+| `JV` | Journal Voucher (default) | Adjustments, accruals, transfers; reversals and closing entries of untyped entries |
+| `CPV` / `CRV` | Cash Payment / Cash Receipt Voucher | Cash paid / received |
+| `BPV` / `BRV` | Bank Payment / Bank Receipt Voucher | Cheques and transfers out / in |
+
+- **Gapless, in posting order.** The number is taken inside the posting transaction under a row lock, so two
+  users posting at once never get the same number, and a failed posting gives its number back. Drafts have
+  no number, so a voided draft never leaves a gap (auditors check exactly this).
+- **Format** per type, default `{PREFIX}-{FY}-{SEQ:5}` → `JV-2026-00012`. Tokens: `{PREFIX}`, `{FY}` (`2026`, or
+  `2025-26` for a July–June year), `{YYYY}`, `{YY}`, `{MM}`, `{SEQ}` / `{SEQ:n}`.
+- **Restarts** every fiscal year (default), every month (format needs `{MM}` and a year), or never.
+- **Locked:** the database refuses to change a posted entry's voucher number or type. A type with numbered
+  entries keeps its code and restart rule (name, prefix and format may change; new numbers use them).
+  The default type `JV` cannot be deleted or deactivated; other used types can only be deactivated.
+- A **reversal** is numbered in the series of the entry it reverses (`BRV-2026-00002` reverses `BRV-2026-00001`).
+- Choose the type in the journal form (React and Blade), or send `voucher_type_code` / `voucher_type_id` to the API.
+  Manage types under **Accounting → Voucher Types** (`voucher-types.*`; admin manages, everyone else views).
+- Upgrading numbers the entries already posted as `JV`, in posting order, and continues the series from there.
+
+```php
+$entry = JournalEntry::query()->find($id);
+$entry->voucher_number;          // "CPV-2026-00007" (null while draft)
+$entry->voucherType->name;       // "Cash Payment Voucher"
+app(VoucherNumberService::class)->preview($type, '2026-11-01');   // next number, not reserved
+```
+
+---
+
 ## Multi-company
 
 Run several companies (legal entities) from one installation. Each company has its **own chart of
@@ -556,6 +590,9 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | POST | `/journal-entries/{id}/void` | Void a draft | `journal-entries.void` |
 | POST | `/journal-entries/{id}/submit` | Submit a draft for approval (maker-checker) | `journal-entries.create` |
 | POST | `/journal-entries/{id}/approve` · `/reject` | Approve (posts it) / reject with `reason` | `journal-entries.approve` |
+| GET/POST | `/voucher-types` | Voucher types with their next numbers / Create | `voucher-types.view` / `.create` |
+| GET/PUT/DELETE | `/voucher-types/{id}` | Show / Update / Delete an unused type | `voucher-types.*` |
+| GET | `/voucher-types/{id}/next-number` | Preview the next number (`?date=`), nothing reserved | `voucher-types.view` |
 | GET/POST | `/companies` | Companies you can use / Create a company | `accounting.view` / `companies.manage` |
 | GET/PUT | `/companies/{id}` | Show (with members) / Update | `companies.manage` |
 | POST/DELETE | `/companies/{id}/users[/{user}]` | Give / remove a user's access | `companies.manage` |
@@ -573,7 +610,8 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET | `/reports/trial-balance` · `balance-sheet` · `income-statement` · `general-ledger` · `cash-flow` · `bank-book` · `cash-book` · `aged-receivables` · `aged-payables` · `account-statement` | Financial reports (posted entries only) | `reports.<name>.view` |
 
 List endpoints support `?filter[field]=value`, `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
-Journal entries also filter by `filter[approval_status]=pending|approved|rejected` and `filter[entry_date_from]` / `filter[entry_date_to]`.
+Journal entries also filter by `filter[approval_status]=pending|approved|rejected`, `filter[voucher_number]` (partial),
+`filter[voucher_type_id]` and `filter[entry_date_from]` / `filter[entry_date_to]`.
 Ledger-style reports (general ledger, account statement, cash flow, bank & cash book) are paginated and return `totals` for the whole filter, not just the page.
 
 ---
@@ -666,7 +704,9 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 | `ChartOfAccount` | `accounting_chart_of_accounts` | Hierarchical account tree |
 | `Currency` | `accounting_currencies` | Currencies and exchange rates |
 | `AccountingPeriod` | `accounting_periods` | Fiscal periods with open/close state |
-| `JournalEntry` | `accounting_journal_entries` | Entry header (draft / posted / void) |
+| `JournalEntry` | `accounting_journal_entries` | Entry header (draft / posted / void), voucher type and number |
+| `VoucherType` | `accounting_voucher_types` | Voucher types (JV, CPV, CRV, BPV, BRV, …) and their number format |
+| `VoucherSequence` | `accounting_voucher_sequences` | Next number per voucher type and fiscal year / month |
 | `JournalEntryLine` | `accounting_journal_entry_lines` | Debit/credit lines |
 | `BankAccount` | `accounting_bank_accounts` | Bank account register |
 | `Reconciliation` | `accounting_reconciliations` | Bank reconciliation records |
@@ -686,7 +726,7 @@ the person who approves it):
 | Role | Who | Can | Cannot |
 |------|-----|-----|--------|
 | `super-admin` | Owner | Everything | Approve **its own** entries under maker-checker |
-| `admin` | IT / user admin | Users, roles, permissions, companies and who can use them | Record, post, approve or close anything |
+| `admin` | IT / user admin | Users, roles, permissions, companies and who can use them, voucher types | Record, post, approve or close anything |
 | `accountant` | **Maker** | Record, edit, post (below the approval threshold), reverse, void drafts, close periods, bank & reconciliations, tax, FX rates | Approve, reopen periods, manage users/roles |
 | `approver` | **Checker** | Approve or reject entries; read ledger & reports | Create, edit or post entries |
 | `auditor` | Internal / external audit | Read everything incl. the audit trail | Change anything |

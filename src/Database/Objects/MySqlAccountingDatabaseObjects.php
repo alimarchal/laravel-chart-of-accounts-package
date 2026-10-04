@@ -69,11 +69,15 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
         }
 
         $message = "SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Posted journal entries are immutable; reverse them instead.'";
+        $voucher = Schema::hasColumn('accounting_journal_entries', 'voucher_number')
+            ? 'OR NOT (NEW.voucher_number <=> OLD.voucher_number) OR NOT (NEW.voucher_type_id <=> OLD.voucher_type_id)'
+            : '';
         $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
 
         DB::unprepared("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries FOR EACH ROW BEGIN
             IF OLD.status = 'posted' AND (NEW.status <> 'posted' OR NEW.entry_date <> OLD.entry_date OR NEW.currency_id <> OLD.currency_id
                 OR NEW.company_id <> OLD.company_id
+                {$voucher}
                 OR NEW.fx_rate_to_base <> OLD.fx_rate_to_base OR NOT (NEW.deleted_at <=> OLD.deleted_at)) THEN {$message}; END IF;
         END");
         DB::unprepared("CREATE TRIGGER acct_journals_posted_guard_delete BEFORE DELETE ON accounting_journal_entries FOR EACH ROW BEGIN

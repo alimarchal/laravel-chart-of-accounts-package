@@ -131,11 +131,15 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
     private function createImmutabilityTriggers(): void
     {
         $abort = "SELECT RAISE(ABORT, 'Posted journal entries are immutable; reverse them instead.')";
+        $voucher = Schema::hasColumn('accounting_journal_entries', 'voucher_number')
+            ? 'OR NEW.voucher_number IS NOT OLD.voucher_number OR NEW.voucher_type_id IS NOT OLD.voucher_type_id'
+            : '';
         $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
 
         DB::statement("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries
             WHEN OLD.status = 'posted' AND (NEW.status <> 'posted' OR NEW.entry_date IS NOT OLD.entry_date OR NEW.currency_id IS NOT OLD.currency_id
                 OR NEW.company_id IS NOT OLD.company_id
+                {$voucher}
                 OR NEW.fx_rate_to_base IS NOT OLD.fx_rate_to_base OR NEW.deleted_at IS NOT OLD.deleted_at)
             BEGIN {$abort}; END");
         DB::statement("CREATE TRIGGER acct_journals_posted_guard_delete BEFORE DELETE ON accounting_journal_entries

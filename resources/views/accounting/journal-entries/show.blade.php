@@ -1,7 +1,7 @@
 <x-accounting::app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Journal Entry #{{ $journalEntry->id }} — {{ $journalEntry->reference }}</h2>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">@if ($journalEntry->voucher_number){{ $journalEntry->voucherType?->name ?? 'Voucher' }} {{ $journalEntry->voucher_number }}@else{{ $journalEntry->voucherType?->name ?? 'Journal entry' }} (draft #{{ $journalEntry->id }})@endif{{ $journalEntry->reference ? ' — '.$journalEntry->reference : '' }}</h2>
             <div class="flex gap-2">
                 @if ($journalEntry->status === 'draft' && $requiresApproval)
                     @if (in_array($journalEntry->approval_status, [null, 'rejected'], true))
