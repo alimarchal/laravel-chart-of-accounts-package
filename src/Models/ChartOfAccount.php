@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\ChartOfAccountFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class ChartOfAccount extends AccountingModel
 {
+    use BelongsToCompany;
+
     /** @use HasFactory<ChartOfAccountFactory> */
     use HasFactory;
 

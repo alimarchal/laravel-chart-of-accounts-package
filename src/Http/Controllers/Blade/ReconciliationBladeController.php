@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -84,7 +85,7 @@ class ReconciliationBladeController extends Controller
     private function rules(?Reconciliation $record = null): array
     {
         return [
-            'bank_account_id' => ['required', 'exists:accounting_bank_accounts,id'],
+            'bank_account_id' => ['required', CompanyRule::exists('accounting_bank_accounts', 'id')],
             'statement_date' => ['required', 'date'],
             'statement_balance' => ['required', 'numeric'],
             'book_balance' => ['required', 'numeric'],

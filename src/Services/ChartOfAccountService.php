@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Services;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,10 +29,10 @@ class ChartOfAccountService
     public function rules(?ChartOfAccount $record = null): array
     {
         return [
-            'parent_id' => ['nullable', 'integer', Rule::exists('accounting_chart_of_accounts', 'id')],
+            'parent_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')],
             'account_type_id' => ['required', Rule::exists('accounting_account_types', 'id')],
             'currency_id' => ['required', Rule::exists('accounting_currencies', 'id')],
-            'account_code' => ['required', 'string', 'max:30', Rule::unique('accounting_chart_of_accounts', 'account_code')->ignore($record?->id)],
+            'account_code' => ['required', 'string', 'max:30', CompanyRule::unique('accounting_chart_of_accounts', 'account_code')->ignore($record?->id)],
             'account_name' => ['required', 'string', 'max:255'],
             // Optional: defaults to the account type's normal balance. May differ for contra accounts.
             'normal_balance' => ['nullable', Rule::in(['debit', 'credit'])],

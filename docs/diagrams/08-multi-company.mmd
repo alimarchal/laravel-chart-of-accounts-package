@@ -1,0 +1,25 @@
+flowchart TD
+    R(["Request: web, API or command"]) --> W{"Which company?"}
+    W -->|"API"| H["X-Company header<br/>(code or id)"]
+    W -->|"Web"| S["Company chosen in the switcher<br/>(session)"]
+    W -->|"Neither"| D["User's default company,<br/>else first company they can use"]
+    W -->|"Command / job"| C["--company option, the period's<br/>company, or the default company"]
+    H --> A{"Can this user<br/>use the company?"}
+    S --> A
+    D --> A
+    C --> Q
+    A -->|"unknown"| X404["404"]
+    A -->|"no access"| X403["403"]
+    A -->|"yes: assigned, or super-admin"| Q["Every query scoped to the company<br/>(models, reports, validation rules)"]
+    Q --> DB[("Accounts · periods · journal · reports<br/>of this company only")]
+    Q --> T{{"Database triggers:<br/>posted entries cannot change company;<br/>audit rows record the company"}}
+    Q -.->|"consolidated reports"| G["Each company's report side by side<br/>+ group total (shared base currency)"]
+
+    classDef step fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+    classDef ok fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    classDef check fill:#fef3c7,stroke:#b45309,color:#78350f
+    class H,S,D,C step
+    class Q,DB,G,T ok
+    class X404,X403 bad
+    class W,A check

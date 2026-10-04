@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
@@ -35,7 +36,7 @@ class BalanceSheetBladeController extends Controller
 
         $asOfDate = Carbon::parse($asOfDate)->toDateString();
 
-        $accounts = DB::table('accounting_chart_of_accounts as a')
+        $accounts = DB::table('accounting_chart_of_accounts as a')->where('a.company_id', CurrentCompany::currentId())
             ->select([
                 'a.id as account_id',
                 'a.account_code',
@@ -68,6 +69,7 @@ class BalanceSheetBladeController extends Controller
                         $sub->select(DB::raw(1))
                             ->from('accounting_journal_entry_lines as jel2')
                             ->join('accounting_journal_entries as je2', 'je2.id', '=', 'jel2.journal_entry_id')
+                            ->whereIn('je2.company_id', CurrentCompany::ids())
                             ->whereColumn('jel2.chart_of_account_id', 'a.id')
                             ->where('je2.status', '=', 'posted');
                     });
@@ -91,7 +93,7 @@ class BalanceSheetBladeController extends Controller
 
         $groupedAccounts = $accounts->groupBy('account_type');
 
-        $netIncomeData = DB::table('accounting_chart_of_accounts as a')
+        $netIncomeData = DB::table('accounting_chart_of_accounts as a')->where('a.company_id', CurrentCompany::currentId())
             ->select([
                 'at.name as account_type',
                 DB::raw("
@@ -119,6 +121,7 @@ class BalanceSheetBladeController extends Controller
                         $sub->select(DB::raw(1))
                             ->from('accounting_journal_entry_lines as jel2')
                             ->join('accounting_journal_entries as je2', 'je2.id', '=', 'jel2.journal_entry_id')
+                            ->whereIn('je2.company_id', CurrentCompany::ids())
                             ->whereColumn('jel2.chart_of_account_id', 'a.id')
                             ->where('je2.status', '=', 'posted');
                     });

@@ -14,9 +14,11 @@ it('backfills base amounts for entries posted before the upgrade', function (): 
     $usd = Currency::query()->where('code', 'USD')->value('id');
     $pkr = Currency::query()->where('is_base', true)->value('id');
     $period = DB::table('accounting_periods')->value('id');
+    $company = DB::table('accounting_companies')->value('id');
 
-    $legacy = function (int $currency, string $rate, array $lines) use ($period): void {
+    $legacy = function (int $currency, string $rate, array $lines) use ($period, $company): void {
         $id = DB::table('accounting_journal_entries')->insertGetId([
+            'company_id' => $company,
             'entry_date' => now()->toDateString(), 'accounting_period_id' => $period, 'currency_id' => $currency,
             'fx_rate_to_base' => $rate, 'status' => 'posted', 'is_closing_entry' => false,
             'created_at' => now(), 'updated_at' => now(),

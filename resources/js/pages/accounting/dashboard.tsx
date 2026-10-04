@@ -11,15 +11,19 @@ import {
     Scale,
     WalletCards,
 } from 'lucide-react';
+import { CompanySwitcher } from '@/components/accounting/company-switcher';
 import Heading from '@/components/heading';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAccounting } from '@/lib/accounting';
 
 type Props = {
     summary: Record<string, number>;
 };
 
 export default function AccountingDashboard({ summary }: Props) {
+    const { company, permissions, flash } = useAccounting();
     const sections = [
         {
             title: 'Chart of Accounts',
@@ -105,16 +109,42 @@ export default function AccountingDashboard({ summary }: Props) {
             icon: FileText,
         },
         { title: 'Audit Logs', href: '/accounting/audit-logs', icon: FileText },
+        ...(company.enabled && permissions['reports.consolidated.view']
+            ? [
+                  {
+                      title: 'Consolidated Reports',
+                      href: '/accounting/reports/consolidated',
+                      icon: Building2,
+                  },
+              ]
+            : []),
+        ...(company.enabled && permissions['companies.manage']
+            ? [
+                  {
+                      title: 'Companies',
+                      href: '/accounting/companies',
+                      icon: Building2,
+                  },
+              ]
+            : []),
     ];
 
     return (
         <>
             <Head title="Accounting" />
             <div className="space-y-6 p-4">
-                <Heading
-                    title="Accounting"
-                    description="General ledger, chart of accounts, periods, and financial reports."
-                />
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                    <Heading
+                        title="Accounting"
+                        description="General ledger, chart of accounts, periods, and financial reports."
+                    />
+                    <CompanySwitcher />
+                </div>
+                {flash.success ? (
+                    <Alert className="border-green-500/30 bg-green-500/5">
+                        <AlertDescription>{flash.success}</AlertDescription>
+                    </Alert>
+                ) : null}
                 <div className="grid gap-3 md:grid-cols-4">
                     {Object.entries(summary).map(([label, value]) => (
                         <Card key={label} className="rounded-lg">

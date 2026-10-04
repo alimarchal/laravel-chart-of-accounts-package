@@ -17,6 +17,7 @@
 ## Highlights
 
 - **Double-entry journal** — draft → posted → reversed / void, balanced in **exact cents**
+- **Multi-company** — any number of companies in one database, each with its own chart, periods, journal and reports; per-user access, a company switcher, and consolidated group reports
 - **Tamper-proof ledger** — posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite) and every change is written to an audit log
 - **Maker-checker approvals** — entries above a threshold need a second person to approve; nobody approves their own work
 - **Roles with segregation of duties** — super-admin, admin, accountant (maker), approver (checker), auditor, viewer; `accounting:roles` audits the matrix
@@ -61,6 +62,10 @@
 ### 7. Maker-checker approval
 
 ![Maker-checker](docs/images/07-maker-checker.png)
+
+### 8. Multi-company: which company a request works in
+
+![Multi-company](docs/images/08-multi-company.png)
 
 ---
 
@@ -164,6 +169,7 @@ createInertiaApp({
 ACCOUNTING_BASE_CURRENCY=USD            # default PKR; set before installing
 ACCOUNTING_CHART_PRESET=general         # or "school"
 ACCOUNTING_ROUTE_PREFIX=accounting      # URL prefix for the web UI
+ACCOUNTING_MULTI_COMPANY=true           # several companies (see below)
 ACCOUNTING_APPROVALS_ENABLED=true       # maker-checker (see below)
 ACCOUNTING_APPROVAL_THRESHOLD=100000    # in base currency; 0 = every entry
 ACCOUNTING_WEBHOOK_URLS=https://erp.example.com/hooks/accounting
@@ -385,6 +391,46 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 
 ---
 
+## Multi-company
+
+Run several companies (legal entities) from one installation. Each company has its **own chart of
+accounts, periods, journal, cost centers, bank accounts, tax codes, reports and audit trail**; account
+types and currencies are shared, and every company reports in the shared base currency.
+
+```env
+ACCOUNTING_MULTI_COMPANY=true      # off by default: a single-company install works exactly as before
+```
+
+Existing data is moved to the default company (`MAIN`) by the migration, so upgrading changes nothing
+until you add a second company.
+
+**Create a company** (chart of accounts, current fiscal year, cost centers and tax codes are created for it):
+
+```bash
+php artisan accounting:create-company SUB "Subsidiary Ltd" --fiscal-start=7 --user=accountant@example.com
+```
+
+…or in the React UI (**Accounting → Companies**, permission `companies.manage`), or with
+`POST /api/v1/accounting/companies`. `--fiscal-start=7` gives a July–June fiscal year.
+
+**Who sees what**
+
+| | |
+|---|---|
+| Access | A user works only in companies they are given access to (Companies screen, `POST /companies/{id}/users`, or `--user`). `super-admin` works in all companies. Roles are the same in every company. |
+| Web UI | A company switcher on the accounting dashboard (React) and above every Blade page. Add `<CompanySwitcher />` from `@/components/accounting/company-switcher` to your sidebar to show it everywhere. |
+| API | Send `X-Company: SUB` (code or id). Without it the user's default company is used. Unknown company → `404`, no access → `403`. |
+| Commands | `accounting:close-period {id}` and friends work in the company that owns the period; `--company=SUB` on `accounting:seed`, `verify`, `health-check`, `rebuild-snapshots`. |
+| Isolation | Records of another company are never returned (`404` by id); ids and codes of another company are rejected in requests; a journal line can never use another company's account; a posted entry cannot be moved to another company (database trigger). |
+
+**Consolidated reports** (`reports.consolidated.view`): trial balance, balance sheet and income statement
+for several companies side by side with a group total — **Accounting → Consolidated Reports**, or
+`GET /api/v1/accounting/reports/consolidated/{trial-balance|balance-sheet|income-statement}?companies=MAIN,SUB`.
+Intercompany balances are not eliminated automatically; post elimination entries in a separate
+consolidation company if you need them.
+
+---
+
 ## Maker-checker approvals
 
 Turn on four-eyes control for journal entries:
@@ -510,6 +556,10 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | POST | `/journal-entries/{id}/void` | Void a draft | `journal-entries.void` |
 | POST | `/journal-entries/{id}/submit` | Submit a draft for approval (maker-checker) | `journal-entries.create` |
 | POST | `/journal-entries/{id}/approve` · `/reject` | Approve (posts it) / reject with `reason` | `journal-entries.approve` |
+| GET/POST | `/companies` | Companies you can use / Create a company | `accounting.view` / `companies.manage` |
+| GET/PUT | `/companies/{id}` | Show (with members) / Update | `companies.manage` |
+| POST/DELETE | `/companies/{id}/users[/{user}]` | Give / remove a user's access | `companies.manage` |
+| GET | `/reports/consolidated/{report}` | Group trial balance, balance sheet, income statement | `reports.consolidated.view` |
 | GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
 | GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
 | GET | `/chart-of-accounts/{id}/balance` | Balance as of a date (groups include children) | `chart-of-accounts.view` |
@@ -545,6 +595,11 @@ return [
     'api_rate_limit'         => env('ACCOUNTING_API_RATE_LIMIT', 120),     // per minute per user; 0 = off
     'api_max_per_page'       => env('ACCOUNTING_API_MAX_PER_PAGE', 100),
     'users_table'            => env('ACCOUNTING_USERS_TABLE', 'users'),
+    'multi_company' => [
+        'enabled'              => env('ACCOUNTING_MULTI_COMPANY', false),
+        'header'               => env('ACCOUNTING_COMPANY_HEADER', 'X-Company'),
+        'default_company_code' => env('ACCOUNTING_DEFAULT_COMPANY', 'MAIN'),
+    ],
     'export_max_rows'        => ['xlsx' => 50000, 'pdf' => 2000],        // ACCOUNTING_EXPORT_MAX_*_ROWS; CSV is unlimited
     'approvals' => [
         'enabled'             => env('ACCOUNTING_APPROVALS_ENABLED', false),
@@ -596,6 +651,7 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 | `accounting:close-period` | Close an accounting period (snapshots, totals, net income) |
 | `accounting:open-period` | Reopen a closed accounting period |
 | `accounting:roles` | Print the role × permission matrix; fails if a role can both create and approve entries |
+| `accounting:create-company` | Create a company with its own chart, fiscal year, cost centers and tax codes (`--fiscal-start`, `--user`, `--empty`) |
 
 ---
 
@@ -603,7 +659,8 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 
 | Model | Table | Description |
 |-------|-------|-------------|
-| `AccountType` | `accounting_account_types` | Asset, Liability, Equity, Revenue, Expense |
+| `Company` | `accounting_companies` | Companies; `accounting_company_user` holds who may use each |
+| `AccountType` | `accounting_account_types` | Asset, Liability, Equity, Revenue, Expense (shared) |
 | `ChartOfAccount` | `accounting_chart_of_accounts` | Hierarchical account tree |
 | `Currency` | `accounting_currencies` | Currencies and exchange rates |
 | `AccountingPeriod` | `accounting_periods` | Fiscal periods with open/close state |
@@ -627,7 +684,7 @@ the person who approves it):
 | Role | Who | Can | Cannot |
 |------|-----|-----|--------|
 | `super-admin` | Owner | Everything | Approve **its own** entries under maker-checker |
-| `admin` | IT / user admin | Users, roles, permissions | Record, post, approve or close anything |
+| `admin` | IT / user admin | Users, roles, permissions, companies and who can use them | Record, post, approve or close anything |
 | `accountant` | **Maker** | Record, edit, post (below the approval threshold), reverse, void drafts, close periods, bank & reconciliations, tax, FX rates | Approve, reopen periods, manage users/roles |
 | `approver` | **Checker** | Approve or reject entries; read ledger & reports | Create, edit or post entries |
 | `auditor` | Internal / external audit | Read everything incl. the audit trail | Change anything |
@@ -656,6 +713,8 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | `accounting.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `accounting.manage-settings` | ✔ | ✔ |  |  |  |  |
+| `companies.manage` | ✔ | ✔ |  |  |  |  |
+| `reports.consolidated.view` | ✔ |  | ✔ |  | ✔ | ✔ |
 | `user.view` | ✔ | ✔ |  |  |  |  |
 | `user.create` | ✔ | ✔ |  |  |  |  |
 | `user.update` | ✔ | ✔ |  |  |  |  |
@@ -813,7 +872,8 @@ composer format:check             # Pint
 - [ ] API behind Sanctum (or your guard) with the rate limit on (`ACCOUNTING_API_RATE_LIMIT`).
 - [ ] `php artisan config:cache route:cache` in deploys; `php artisan accounting:update` after every upgrade.
 - [ ] Back up before closing a fiscal year; give `periods.reopen` to as few people as possible.
-- [ ] Known limitations: one company per database (no tenant scoping); seeded exchange rates are samples — set your own.
+- [ ] Multi-company: give each user access only to their companies; review `accounting:roles` (roles apply in every company).
+- [ ] Known limitations: all companies share one base currency; consolidation does not eliminate intercompany balances; seeded exchange rates are samples — set your own.
 
 ---
 
@@ -851,6 +911,9 @@ A: Add the menu link, and on an Inertia 2 starter kit the small `app.tsx` additi
 
 **Q: My XLSX/PDF export returns 422.**
 A: The report has more rows than the XLSX/PDF limit. Narrow the dates/account, export CSV (unlimited), or raise `ACCOUNTING_EXPORT_MAX_XLSX_ROWS` / `ACCOUNTING_EXPORT_MAX_PDF_ROWS`.
+
+**Q: Can I run several companies?**
+A: Yes — `ACCOUNTING_MULTI_COMPANY=true`, then `php artisan accounting:create-company`. See [Multi-company](#multi-company).
 
 **Q: Is Laravel 14 supported?**
 A: Laravel 14 is expected in Q1 2027 and requires PHP 8.4. CI already runs the suite against Laravel's development branch; the version constraint will be widened as soon as 14.0 and the test tooling (Pest, Testbench) are released.

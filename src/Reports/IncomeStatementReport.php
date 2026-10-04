@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,7 @@ class IncomeStatementReport
             ->join('accounting_account_types as type', 'type.id', '=', 'coa.account_type_id')
             ->join('accounting_journal_entry_lines as line', 'line.chart_of_account_id', '=', 'coa.id')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
+            ->whereIn('entry.company_id', CurrentCompany::ids())
             ->where('type.report_group', 'IncomeStatement')
             ->where('entry.status', 'posted')
             ->where('entry.is_closing_entry', false)

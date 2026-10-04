@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Actions;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountBalanceSnapshot;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +54,7 @@ class CreateAccountBalanceSnapshotsAction
     {
         $query = DB::table('accounting_journal_entry_lines as line')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
+            ->whereIn('entry.company_id', [CurrentCompany::currentId()])
             ->where('entry.status', 'posted')
             ->groupBy('line.chart_of_account_id')
             ->selectRaw('line.chart_of_account_id, COALESCE(SUM(line.base_debit), 0) as debits, COALESCE(SUM(line.base_credit), 0) as credits');

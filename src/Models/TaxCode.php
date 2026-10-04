@@ -2,10 +2,13 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TaxCode extends AccountingModel
 {
+    use BelongsToCompany;
+
     protected $table = 'accounting_tax_codes';
 
     protected $fillable = [

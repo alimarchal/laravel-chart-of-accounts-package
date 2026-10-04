@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,7 @@ class TrialBalanceReport
     public function rows(): Collection
     {
         return DB::table('vw_accounting_trial_balance')
+            ->whereIn('company_id', CurrentCompany::ids())
             ->orderBy('account_code')
             ->get();
     }
@@ -35,6 +37,7 @@ class TrialBalanceReport
         }
 
         $row = DB::table('vw_accounting_trial_balance')
+            ->whereIn('company_id', CurrentCompany::ids())
             ->selectRaw('COALESCE(SUM(total_debits), 0) as debit, COALESCE(SUM(total_credits), 0) as credit')
             ->first();
 

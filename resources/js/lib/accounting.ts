@@ -1,11 +1,18 @@
 import { usePage } from '@inertiajs/react';
 
+export type CompanySummary = { id: number; code: string; name: string };
+
 /**
  * Data shared with every accounting page by the package's ShareAccountingInertiaData middleware
  * (independent of the host app's HandleInertiaRequests).
  */
 export type AccountingShared = {
     permissions: Record<string, boolean>;
+    company: {
+        enabled: boolean;
+        current: CompanySummary | null;
+        list: CompanySummary[];
+    };
     flash: { success?: string | null; error?: string | null };
     approvals: { enabled: boolean; threshold: string };
 };
@@ -19,6 +26,11 @@ export function useAccounting(): AccountingShared {
         approvals: props.accounting?.approvals ?? {
             enabled: false,
             threshold: '0',
+        },
+        company: props.accounting?.company ?? {
+            enabled: false,
+            current: null,
+            list: [],
         },
     };
 }

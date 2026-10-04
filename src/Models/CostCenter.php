@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\CostCenterFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CostCenter extends AccountingModel
 {
+    use BelongsToCompany;
+
     /** @use HasFactory<CostCenterFactory> */
     use HasFactory;
 

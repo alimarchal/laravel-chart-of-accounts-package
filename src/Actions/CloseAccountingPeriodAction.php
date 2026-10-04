@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class CloseAccountingPeriodAction
 
             $totals = DB::table('accounting_journal_entry_lines as line')
                 ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
+                ->whereIn('entry.company_id', [CurrentCompany::currentId()])
                 ->where('entry.status', 'posted')
                 ->where('entry.accounting_period_id', $period->id)
                 ->selectRaw('COALESCE(SUM(line.base_debit), 0) as debits, COALESCE(SUM(line.base_credit), 0) as credits')
@@ -70,6 +72,7 @@ class CloseAccountingPeriodAction
     {
         $row = DB::table('accounting_journal_entry_lines as line')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
+            ->whereIn('entry.company_id', [CurrentCompany::currentId()])
             ->join('accounting_chart_of_accounts as coa', 'coa.id', '=', 'line.chart_of_account_id')
             ->join('accounting_account_types as type', 'type.id', '=', 'coa.account_type_id')
             ->where('entry.status', 'posted')

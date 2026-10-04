@@ -3,8 +3,8 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Validation\Rule;
 
 class TaxCodeController extends SimpleAccountingResourceController
 {
@@ -36,7 +36,7 @@ class TaxCodeController extends SimpleAccountingResourceController
     protected function rules(?Model $record = null): array
     {
         return [
-            'code' => ['required', 'string', 'max:30', Rule::unique('accounting_tax_codes', 'code')->ignore($record?->getKey())],
+            'code' => ['required', 'string', 'max:30', CompanyRule::unique('accounting_tax_codes', 'code')->ignore($record?->getKey())],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],

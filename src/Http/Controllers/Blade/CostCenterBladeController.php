@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -79,7 +80,7 @@ class CostCenterBladeController extends Controller
     private function rules(?CostCenter $record = null): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', Rule::unique('accounting_cost_centers', 'code')->ignore($record?->id)],
+            'code' => ['required', 'string', 'max:50', CompanyRule::unique('accounting_cost_centers', 'code')->ignore($record?->id)],
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', Rule::in(['cost_center', 'project'])],
             'description' => ['nullable', 'string'],

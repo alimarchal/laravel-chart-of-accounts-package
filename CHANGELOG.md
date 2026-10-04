@@ -2,6 +2,50 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.2.0] - 2026-10-05
+
+Multi-company release.
+
+### Added
+- **Multi-company** (`ACCOUNTING_MULTI_COMPANY=true`): any number of companies in one database, each with
+  its own chart of accounts, periods, journal, cost centers, bank accounts, reconciliations, tax codes,
+  snapshots, reports and audit trail. Account types and currencies are shared.
+- Company access per user (`accounting_company_user`); `super-admin` works in every company. Company
+  switcher on the React dashboard (`<CompanySwitcher />` for your sidebar) and above every Blade page;
+  `X-Company` header (code or id) for the API; `404` for unknown and `403` for inaccessible companies.
+- **Companies** screen (React) and API (`/companies`, `/companies/{id}/users`) to create companies, edit
+  them and manage who may use them — changes are audited. New permission `companies.manage` (admin).
+- `php artisan accounting:create-company` — creates a company with its own chart of accounts, fiscal year
+  (`--fiscal-start` month), cost centers and tax codes; `--user` grants access.
+- **Consolidated reports** (`reports.consolidated.view`): trial balance, balance sheet and income
+  statement for several companies side by side with a group total (React page and
+  `/reports/consolidated/{report}`); zero balances hidden unless `include_zero=1`.
+- `--company` option on `accounting:seed`, `verify`, `health-check` and `rebuild-snapshots`; period
+  commands run in the company that owns the period.
+- Webhook payloads name the company of the entry or period.
+- The seeded fiscal year follows the company's fiscal-year start month.
+
+### Security / integrity
+- Every company-owned query is scoped: Eloquent global scope, company filters on every report and raw
+  query, and company-aware `exists`/`unique` validation rules (ids and codes of another company are
+  rejected). Records of another company return 404.
+- A journal line can never use another company's account or cost center (checked when posting).
+- `company_id` is not mass-assignable and never changes; a posted entry cannot be moved to another
+  company (database trigger on MySQL/MariaDB, PostgreSQL and SQLite). Audit rows record their company.
+
+### Fixed
+- Permissions and roles introduced by a new version were not created when the app had published an older
+  `config/accounting.php` — the seeder now always includes the package's own permission list and grants.
+- A command that switches company no longer leaves that company active for the rest of the process.
+
+### Upgrading
+```bash
+composer update alimarchal/laravel-chart-of-accounts
+php artisan accounting:update        # moves existing data into the default company "MAIN", adds the new permissions
+```
+Nothing changes for single-company installs. Codes that were unique across the database (account codes,
+cost centers, tax codes, bank account numbers, idempotency keys) are now unique per company.
+
 ## [2.1.0] - 2026-10-04
 
 Enterprise controls release: maker-checker, segregation-of-duties roles, events and webhooks, base-currency

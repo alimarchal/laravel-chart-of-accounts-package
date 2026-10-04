@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $description
  * @property string|null $reconciliation_status
  * @property-read JournalEntry $journalEntry
- * @property-read ChartOfAccount $account
+ * @property-read ChartOfAccount|null $account company-scoped: null for an account of another company
  * @property-read CostCenter|null $costCenter
  */
 class JournalEntryLine extends Model

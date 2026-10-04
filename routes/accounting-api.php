@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingPeriodApiCo
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\BankAccountApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ChartOfAccountApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CompanyApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CostCenterApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CurrencyApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\JournalEntryApiController;
@@ -13,6 +14,8 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReconciliationApiCont
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReportApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxCodeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxRateApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
+use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
 use Illuminate\Support\Facades\Route;
 
 $apiResourceRoutes = function (string $uri, string $controller, string $routeName, string $permissionPrefix): void {
@@ -38,6 +41,8 @@ $apiMiddleware = config('accounting.api_middleware', ['api', 'auth:sanctum']);
 if ((int) config('accounting.api_rate_limit', 120) > 0) {
     $apiMiddleware[] = 'throttle:accounting-api';
 }
+
+$apiMiddleware[] = EnsureAccountingCompanyAccess::class;
 
 Route::middleware($apiMiddleware)
     ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
@@ -127,6 +132,31 @@ Route::middleware($apiMiddleware)
         Route::post('journal-entries/{journalEntry}/void', [JournalEntryApiController::class, 'void'])
             ->name('journal-entries.void')
             ->middleware('can:journal-entries.void');
+
+        // Companies (multi-company). Listing works for every user; managing needs companies.manage.
+        Route::get('companies', [CompanyApiController::class, 'index'])
+            ->name('companies.index')
+            ->middleware('can:accounting.view');
+        Route::post('companies', [CompanyApiController::class, 'store'])
+            ->name('companies.store')
+            ->middleware('can:companies.manage');
+        Route::get('companies/{company}', [CompanyApiController::class, 'show'])
+            ->name('companies.show')
+            ->middleware('can:companies.manage');
+        Route::match(['put', 'patch'], 'companies/{company}', [CompanyApiController::class, 'update'])
+            ->name('companies.update')
+            ->middleware('can:companies.manage');
+        Route::post('companies/{company}/users', [CompanyApiController::class, 'grant'])
+            ->name('companies.users.grant')
+            ->middleware('can:companies.manage');
+        Route::delete('companies/{company}/users/{user}', [CompanyApiController::class, 'revoke'])
+            ->name('companies.users.revoke')
+            ->whereNumber('user')
+            ->middleware('can:companies.manage');
+        Route::get('reports/consolidated/{report}', [CompanyApiController::class, 'consolidated'])
+            ->name('reports.consolidated')
+            ->whereIn('report', ConsolidatedReport::REPORTS)
+            ->middleware('can:reports.consolidated.view');
 
         Route::prefix('reports')->name('reports.')->group(function (): void {
             $reports = [

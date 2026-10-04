@@ -34,7 +34,9 @@ class AccountingDatabaseObjectSynchronizer
         return Schema::hasTable('accounting_journal_entry_lines')
             && Schema::hasColumn('accounting_journal_entry_lines', 'base_debit')
             && Schema::hasColumn('accounting_journal_entries', 'approval_status')
-            && Schema::hasColumn('accounting_journal_entries', 'idempotency_key');
+            && Schema::hasColumn('accounting_journal_entries', 'idempotency_key')
+            && Schema::hasColumn('accounting_journal_entries', 'company_id')
+            && Schema::hasColumn('accounting_audit_logs', 'company_id');
     }
 
     public function drop(): void

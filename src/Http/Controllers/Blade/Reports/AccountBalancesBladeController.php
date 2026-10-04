@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
@@ -41,7 +42,7 @@ class AccountBalancesBladeController extends Controller
 
         $asOfDate = Carbon::parse($asOfDate)->toDateString();
 
-        $balancesQuery = DB::table('accounting_chart_of_accounts as a')
+        $balancesQuery = DB::table('accounting_chart_of_accounts as a')->where('a.company_id', CurrentCompany::currentId())
             ->select([
                 'a.id as account_id',
                 'a.account_code',

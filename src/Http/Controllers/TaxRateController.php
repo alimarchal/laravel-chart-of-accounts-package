@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Rules\UniqueTaxRateStart;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Database\Eloquent\Model;
 
 class TaxRateController extends SimpleAccountingResourceController
@@ -38,7 +39,7 @@ class TaxRateController extends SimpleAccountingResourceController
     protected function rules(?Model $record = null): array
     {
         return [
-            'tax_code_id' => ['required', 'exists:accounting_tax_codes,id'],
+            'tax_code_id' => ['required', CompanyRule::exists('accounting_tax_codes', 'id')],
             'rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'effective_from' => [
                 'required',

@@ -12,6 +12,16 @@ return [
     'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
 
+    // Several companies in one database. Off: everything belongs to the default company and no company
+    // switching or access checks happen (single-company installs behave exactly as before).
+    // On: users see only the companies they are assigned to (super-admin sees all); the web UI keeps
+    // the current company in the session, the API takes it from the X-Company header (id or code).
+    'multi_company' => [
+        'enabled' => (bool) env('ACCOUNTING_MULTI_COMPANY', false),
+        'header' => env('ACCOUNTING_COMPANY_HEADER', 'X-Company'),
+        'default_company_code' => env('ACCOUNTING_DEFAULT_COMPANY', 'MAIN'),
+    ],
+
     // REST API switches and limits.
     'api_enabled' => (bool) env('ACCOUNTING_API_ENABLED', true),
     'api_rate_limit' => (int) env('ACCOUNTING_API_RATE_LIMIT', 120), // requests per minute per user/IP; 0 disables
@@ -60,6 +70,8 @@ return [
     'permissions' => [
         'accounting.view',
         'accounting.manage-settings',
+        'companies.manage',
+        'reports.consolidated.view',
         'user.view',
         'user.create',
         'user.update',
@@ -150,6 +162,7 @@ return [
             'chart-of-accounts.view',
             'journal-entries.view',
             'reports.trial-balance.view',
+            'companies.manage',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
         ],
@@ -185,6 +198,7 @@ return [
             'tax-rates.update',
             'reports.general-ledger.view',
             'reports.trial-balance.view',
+            'reports.consolidated.view',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
             'reports.cash-flow.view',
@@ -229,6 +243,7 @@ return [
             'account-balance-snapshots.view',
             'reports.general-ledger.view',
             'reports.trial-balance.view',
+            'reports.consolidated.view',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
             'reports.cash-flow.view',
@@ -249,6 +264,7 @@ return [
             'account-balance-snapshots.view',
             'reports.general-ledger.view',
             'reports.trial-balance.view',
+            'reports.consolidated.view',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
             'reports.cash-flow.view',

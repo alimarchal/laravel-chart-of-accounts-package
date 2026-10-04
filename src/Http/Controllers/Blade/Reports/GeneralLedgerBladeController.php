@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,7 @@ class GeneralLedgerBladeController extends Controller
 
         $query = DB::table('accounting_journal_entry_lines as jel')
             ->join('accounting_journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+            ->whereIn('je.company_id', CurrentCompany::ids())
             ->join('accounting_chart_of_accounts as coa', 'coa.id', '=', 'jel.chart_of_account_id')
             ->leftJoin('accounting_cost_centers as cc', 'cc.id', '=', 'jel.cost_center_id')
             ->select([
@@ -119,12 +121,14 @@ class GeneralLedgerBladeController extends Controller
             ->first();
 
         $accounts = DB::table('accounting_chart_of_accounts')
+            ->where('company_id', CurrentCompany::currentId())
             ->whereNotNull('account_code')
             ->orderBy('account_code')
             ->get(['account_code', 'account_name'])
             ->unique('account_code');
 
         $costCenters = DB::table('accounting_cost_centers')
+            ->where('company_id', CurrentCompany::currentId())
             ->orderBy('code')
             ->get(['code', 'name']);
 

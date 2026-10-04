@@ -105,7 +105,21 @@ class PostJournalEntryAction
         $totalDebit = 0;
         $totalCredit = 0;
 
+        $foreignCostCenters = DB::table('accounting_cost_centers')
+            ->whereIn('id', $entry->lines->pluck('cost_center_id')->filter()->unique()->values())
+            ->where('company_id', '<>', $entry->company_id)
+            ->exists();
+
+        if ($foreignCostCenters) {
+            throw new AccountingException('A cost center on this entry belongs to another company.');
+        }
+
         foreach ($entry->lines as $line) {
+            // The account relation is company-scoped: an account of another company does not load.
+            if ($line->account === null || (int) $line->account->company_id !== (int) $entry->company_id) {
+                throw new AccountingException('Every account on a journal entry must belong to the entry\'s company.');
+            }
+
             $debit = Money::toCents($line->getRawOriginal('debit'));
             $credit = Money::toCents($line->getRawOriginal('credit'));
 

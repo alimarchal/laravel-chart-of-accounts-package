@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -90,11 +91,11 @@ class JournalEntryForm extends Component
 
         $this->validate([
             'entry_date' => ['required', 'date'],
-            'accounting_period_id' => ['required', 'exists:accounting_periods,id'],
+            'accounting_period_id' => ['required', CompanyRule::exists('accounting_periods', 'id')],
             'currency_id' => ['required', 'exists:accounting_currencies,id'],
             'fx_rate_to_base' => ['required', 'numeric', 'min:0'],
             'lines' => ['required', 'array', 'min:2'],
-            'lines.*.chart_of_account_id' => ['required', 'exists:accounting_chart_of_accounts,id'],
+            'lines.*.chart_of_account_id' => ['required', CompanyRule::exists('accounting_chart_of_accounts', 'id')],
             'lines.*.debit' => ['required', 'numeric', 'min:0'],
             'lines.*.credit' => ['required', 'numeric', 'min:0'],
         ]);

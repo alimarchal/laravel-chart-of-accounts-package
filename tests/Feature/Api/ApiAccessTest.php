@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
@@ -41,7 +42,12 @@ function concreteUri(Route $route): string
         $resource = explode('/', substr($route->uri(), 0, strpos($route->uri(), '{')));
         $resource = $resource[count($resource) - 2];
 
+        if ($resource === 'consolidated') {
+            return 'trial-balance';
+        }
+
         $model = match ($resource) {
+            'companies' => Company::class,
             'account-types' => AccountType::class,
             'currencies' => Currency::class,
             'periods' => AccountingPeriod::class,
@@ -127,7 +133,8 @@ it('caps per_page to protect the server', function (): void {
 });
 
 it('documents every API route in docs/openapi.yaml', function (): void {
-    $spec = file_get_contents(__DIR__.'/../../../docs/openapi.yaml');
+    // Parameter names may differ between routes and the spec ({company}, {id}): compare them as {id}.
+    $spec = preg_replace('/\{[a-z_]+\}/', '{id}', file_get_contents(__DIR__.'/../../../docs/openapi.yaml'));
     $prefix = trim((string) config('accounting.api_prefix'), '/');
 
     foreach (apiRoutes() as $route) {

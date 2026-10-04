@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountBalanceSnapshot;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Database\Eloquent\Model;
 
 class AccountBalanceSnapshotController extends SimpleAccountingResourceController
@@ -43,8 +44,8 @@ class AccountBalanceSnapshotController extends SimpleAccountingResourceControlle
     protected function rules(?Model $record = null): array
     {
         return [
-            'chart_of_account_id' => ['required', 'exists:accounting_chart_of_accounts,id'],
-            'accounting_period_id' => ['required', 'exists:accounting_periods,id'],
+            'chart_of_account_id' => ['required', CompanyRule::exists('accounting_chart_of_accounts', 'id')],
+            'accounting_period_id' => ['required', CompanyRule::exists('accounting_periods', 'id')],
             'snapshot_date' => ['required', 'date'],
             'opening_balance' => ['required', 'numeric'],
             'period_debits' => ['required', 'numeric'],

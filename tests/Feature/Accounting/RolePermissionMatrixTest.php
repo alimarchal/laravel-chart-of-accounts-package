@@ -99,3 +99,20 @@ it('never removes permissions an admin customised when seeding again', function 
         ->and(Role::findByName('super-admin')->hasPermissionTo('reports.new-report.view'))->toBeTrue()
         ->and(Permission::query()->where('name', 'reports.new-report.view')->exists())->toBeTrue();
 });
+
+it('adds permissions introduced by the package even when the app published an older config', function (): void {
+    // An app that published config/accounting.php before companies existed.
+    $old = array_values(array_diff(config('accounting.permissions'), ['companies.manage', 'reports.consolidated.view']));
+    $oldRoles = collect(config('accounting.roles'))->map(fn ($perms) => $perms === ['*'] ? $perms : array_values(array_diff($perms, ['companies.manage', 'reports.consolidated.view'])))->all();
+    config(['accounting.permissions' => $old, 'accounting.roles' => $oldRoles]);
+    // ...and whose database predates them.
+    Permission::query()->whereIn('name', ['companies.manage', 'reports.consolidated.view'])->delete();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $this->seed(AccountingPermissionSeeder::class);
+
+    expect(Permission::query()->where('name', 'companies.manage')->exists())->toBeTrue()
+        ->and(Role::findByName('admin')->hasPermissionTo('companies.manage'))->toBeTrue()
+        ->and(Role::findByName('accountant')->hasPermissionTo('reports.consolidated.view'))->toBeTrue()
+        ->and(Role::findByName('super-admin')->hasPermissionTo('companies.manage'))->toBeTrue();
+});

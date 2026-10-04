@@ -3,11 +3,11 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -78,7 +78,7 @@ class TaxCodeBladeController extends Controller
     private function rules(?TaxCode $record = null): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', Rule::unique('accounting_tax_codes', 'code')->ignore($record?->id)],
+            'code' => ['required', 'string', 'max:50', CompanyRule::unique('accounting_tax_codes', 'code')->ignore($record?->id)],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
