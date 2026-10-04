@@ -58,7 +58,7 @@ it('starts a company fiscal year in its own start month', function (): void {
 });
 
 it('lets two companies use the same account codes but not duplicate them inside one company', function (): void {
-    expect(fn () => ($this->inSub)(fn () => ChartOfAccount::query()->firstOrFail()->replicate()->save()))
+    expect(fn () => savepoint(fn () => ($this->inSub)(fn () => ChartOfAccount::query()->firstOrFail()->replicate()->save())))
         ->toThrow(QueryException::class);
 });
 
@@ -142,7 +142,7 @@ it('never posts a line to another company\'s account, even from PHP', function (
 it('does not let a posted entry move to another company at the database level', function (): void {
     $entry = journal(['1101' => 10, '4101' => -10]);
 
-    expect(fn () => DB::table('accounting_journal_entries')->where('id', $entry->id)->update(['company_id' => $this->sub->id]))
+    expect(fn () => savepoint(fn () => DB::table('accounting_journal_entries')->where('id', $entry->id)->update(['company_id' => $this->sub->id])))
         ->toThrow(QueryException::class);
 });
 

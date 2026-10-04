@@ -12,6 +12,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         $this->drop();
         $this->createAuditTriggers();
         $this->createImmutabilityTriggers();
+        $this->createChartGuards();
 
         DB::statement(<<<'SQL'
             CREATE VIEW IF NOT EXISTS vw_accounting_general_ledger AS
@@ -81,7 +82,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_update");
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_delete");
         }
-        foreach ($this->immutabilityTriggers() as $trigger) {
+        foreach ([...$this->immutabilityTriggers(), ...$this->chartGuardTriggers()] as $trigger) {
             DB::statement("DROP TRIGGER IF EXISTS {$trigger}");
         }
     }
@@ -153,6 +154,91 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
     /**
      * @return array<int, string>
      */
+    private function chartGuardTriggers(): array
+    {
+        return [
+            'acct_coa_guard_insert',
+            'acct_coa_guard_company',
+            'acct_coa_guard_used',
+            'acct_coa_guard_children',
+            'acct_coa_guard_child_type',
+            'acct_coa_guard_parent',
+            'acct_coa_guard_cycle',
+            'acct_lines_company_guard_insert',
+            'acct_lines_company_guard_update',
+            'acct_journals_group_guard',
+        ];
+    }
+
+    /**
+     * Chart-of-accounts integrity at the database layer (the application enforces the same rules with
+     * friendlier messages): parents are group accounts of the same type and company, no cycles, the
+     * meaning of an account with journal lines cannot change, groups with children stay groups,
+     * journal lines stay in their entry's company, and only posting accounts can be posted to.
+     */
+    private function createChartGuards(): void
+    {
+        // Created once the multi-company migration has added company_id.
+        if (! Schema::hasColumn('accounting_chart_of_accounts', 'company_id')) {
+            return;
+        }
+
+        $abort = fn (string $message) => "SELECT RAISE(ABORT, '{$message}')";
+        $badParent = 'NEW.parent_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM accounting_chart_of_accounts p
+            WHERE p.id = NEW.parent_id AND p.is_group = 1 AND p.account_type_id = NEW.account_type_id AND p.company_id IS NEW.company_id
+        )';
+        $parentMessage = 'The parent account must be a group account of the same type and company.';
+
+        DB::statement("CREATE TRIGGER acct_coa_guard_insert BEFORE INSERT ON accounting_chart_of_accounts
+            WHEN {$badParent} BEGIN {$abort($parentMessage)}; END");
+        DB::statement("CREATE TRIGGER acct_coa_guard_company BEFORE UPDATE ON accounting_chart_of_accounts
+            WHEN NEW.company_id IS NOT OLD.company_id BEGIN {$abort('An account cannot move to another company.')}; END");
+        DB::statement("CREATE TRIGGER acct_coa_guard_used BEFORE UPDATE ON accounting_chart_of_accounts
+            WHEN (NEW.account_type_id IS NOT OLD.account_type_id OR NEW.normal_balance IS NOT OLD.normal_balance OR NEW.is_group IS NOT OLD.is_group)
+                AND EXISTS (SELECT 1 FROM accounting_journal_entry_lines WHERE chart_of_account_id = OLD.id)
+            BEGIN {$abort('An account with journal lines: its type, normal balance and group flag cannot change.')}; END");
+        DB::statement("CREATE TRIGGER acct_coa_guard_children BEFORE UPDATE ON accounting_chart_of_accounts
+            WHEN OLD.is_group = 1 AND NEW.is_group = 0 AND EXISTS (SELECT 1 FROM accounting_chart_of_accounts WHERE parent_id = OLD.id)
+            BEGIN {$abort('A group account with child accounts cannot become a posting account.')}; END");
+        DB::statement("CREATE TRIGGER acct_coa_guard_child_type BEFORE UPDATE ON accounting_chart_of_accounts
+            WHEN NEW.account_type_id IS NOT OLD.account_type_id
+                AND EXISTS (SELECT 1 FROM accounting_chart_of_accounts WHERE parent_id = OLD.id AND account_type_id <> NEW.account_type_id)
+            BEGIN {$abort('Child accounts must have the same type as their group.')}; END");
+        DB::statement("CREATE TRIGGER acct_coa_guard_parent BEFORE UPDATE ON accounting_chart_of_accounts
+            WHEN {$badParent} BEGIN {$abort($parentMessage)}; END");
+
+        // SQLite triggers cannot use recursive CTEs: walk up to 20 ancestor levels with joins.
+        $levels = 20;
+        $joins = collect(range(2, $levels))
+            ->map(fn (int $i) => 'LEFT JOIN accounting_chart_of_accounts a'.$i.' ON a'.$i.'.id = a'.($i - 1).'.parent_id')
+            ->implode(' ');
+        $ids = collect(range(1, $levels))->map(fn (int $i) => "a{$i}.id")->implode(', ');
+
+        DB::statement("CREATE TRIGGER acct_coa_guard_cycle BEFORE UPDATE OF parent_id ON accounting_chart_of_accounts
+            WHEN NEW.parent_id IS NOT NULL AND NEW.parent_id IS NOT OLD.parent_id AND EXISTS (
+                SELECT 1 FROM accounting_chart_of_accounts a1 {$joins} WHERE a1.id = NEW.parent_id AND NEW.id IN ({$ids})
+            )
+            BEGIN {$abort('An account cannot be placed under itself or one of its own sub-accounts.')}; END");
+
+        $otherCompany = '(SELECT company_id FROM accounting_chart_of_accounts WHERE id = NEW.chart_of_account_id)
+            IS NOT (SELECT company_id FROM accounting_journal_entries WHERE id = NEW.journal_entry_id)';
+        $lineMessage = 'A journal line must use an account of its entry company.';
+
+        DB::statement("CREATE TRIGGER acct_lines_company_guard_insert BEFORE INSERT ON accounting_journal_entry_lines
+            WHEN {$otherCompany} BEGIN {$abort($lineMessage)}; END");
+        DB::statement("CREATE TRIGGER acct_lines_company_guard_update BEFORE UPDATE OF chart_of_account_id, journal_entry_id ON accounting_journal_entry_lines
+            WHEN {$otherCompany} BEGIN {$abort($lineMessage)}; END");
+
+        DB::statement("CREATE TRIGGER acct_journals_group_guard BEFORE UPDATE OF status ON accounting_journal_entries
+            WHEN NEW.status = 'posted' AND OLD.status <> 'posted' AND EXISTS (
+                SELECT 1 FROM accounting_journal_entry_lines l
+                JOIN accounting_chart_of_accounts a ON a.id = l.chart_of_account_id
+                WHERE l.journal_entry_id = NEW.id AND a.is_group = 1
+            )
+            BEGIN {$abort('Journal lines can only post to posting (non-group) accounts.')}; END");
+    }
+
     /**
      * SQL for the company an audited row belongs to: its own company_id, its journal entry's for
      * lines, NULL for shared tables (currencies).
@@ -166,6 +252,9 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         };
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function auditedTables(): array
     {
         return [

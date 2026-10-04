@@ -5,9 +5,19 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Tests\BladeTestCase;
 use Alimarchal\LaravelChartOfAccounts\Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 
 uses(TestCase::class)->in('Feature');
 uses(BladeTestCase::class)->in('Blade');
+
+/**
+ * Run a statement that is expected to fail in a savepoint: PostgreSQL aborts the surrounding test
+ * transaction on any error, which would break the rest of the test and its teardown.
+ */
+function savepoint(callable $statement): mixed
+{
+    return DB::transaction($statement);
+}
 
 function account(string $code): ChartOfAccount
 {

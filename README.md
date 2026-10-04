@@ -18,7 +18,7 @@
 
 - **Double-entry journal** — draft → posted → reversed / void, balanced in **exact cents**
 - **Multi-company** — any number of companies in one database, each with its own chart, periods, journal and reports; per-user access, a company switcher, and consolidated group reports
-- **Tamper-proof ledger** — posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite) and every change is written to an audit log
+- **Tamper-proof ledger** — posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite), the chart-of-accounts rules (valid tree, locked used accounts, same-company lines, no posting to group accounts) are enforced there too, and every change is written to an audit log
 - **Maker-checker approvals** — entries above a threshold need a second person to approve; nobody approves their own work
 - **Roles with segregation of duties** — super-admin, admin, accountant (maker), approver (checker), auditor, viewer; `accounting:roles` audits the matrix
 - **Multi-currency** — every line keeps its frozen base-currency amount; all reports are in the base currency
@@ -826,7 +826,8 @@ Integrity is enforced in layers:
 1. **UI** — Save is disabled until debits equal credits.
 2. **Application** — `PostJournalEntryAction` checks, in exact cents: ≥ 2 lines, each line either debit or
    credit, active posting (non-group) accounts, account currency, debits = credits, open period (locked so a concurrent period close cannot interleave; concurrent postings do not block each other).
-3. **Database** — triggers reject any change to posted entries/lines (amounts, accounts, dates, status, deletes);
+3. **Database** — triggers reject any change to posted entries/lines (amounts, accounts, dates, status, deletes),
+   posting to group accounts, lines on another company's accounts and invalid account trees (see *Chart of accounts rules*);
    PostgreSQL also has CHECK constraints (one-sided lines, positive FX rates, single base currency).
 
 ### Periods — month-end and year-end close
@@ -867,6 +868,22 @@ before anything is posted.
 - Once an account has journal lines its code, type, normal balance and group flag are locked (rename or deactivate instead).
 - Accounts with children or journal lines cannot be deleted; system accounts cannot be deleted.
 - Omitted `is_active` / `is_group` on update are left unchanged; `normal_balance` defaults to the account type's.
+- Journal lines can only use **posting** (non-group) accounts of the entry's own company — rejected when the
+  entry is saved (`422`), when it is posted, and by the database.
+
+**Enforced by the database too.** These rules hold even for writes that bypass the application (raw SQL,
+imports, other apps on the same database): triggers on MySQL/MariaDB, PostgreSQL and SQLite reject
+
+| Write | Rejected when |
+|---|---|
+| Insert / update an account | the parent is not a group account of the same type and company; the move creates a cycle |
+| Update an account | it has journal lines and its type, normal balance or group flag changes; it is a group with children and becomes a posting account; its type changes away from its children's; it moves to another company |
+| Insert / update a journal line | the account belongs to another company than the entry |
+| Post a journal entry | a line uses a group account |
+
+The account **code** is not locked at the database level (lines reference the account id, so history is
+kept); the application still locks it for used accounts. `php artisan migrate` adds the triggers to existing
+installs.
 
 ### Seeding
 
