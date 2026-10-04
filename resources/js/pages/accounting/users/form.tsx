@@ -213,8 +213,8 @@ export default function UserForm({
                                     permissions
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                    Extra permissions on top of the roles. Prefer
-                                    roles; use this for exceptions.
+                                    Extra permissions on top of the roles.
+                                    Prefer roles; use this for exceptions.
                                     {isSelf
                                         ? ' You cannot widen your own access beyond what you hold.'
                                         : ''}
