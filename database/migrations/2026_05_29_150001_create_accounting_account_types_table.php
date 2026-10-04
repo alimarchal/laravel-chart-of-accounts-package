@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('report_group', 30);
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_types_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_types_updated_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_types_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_types_updated_by_fk')->nullOnDelete();
             $table->timestamps();
 
             $table->unique('code', 'acct_types_code_unique');

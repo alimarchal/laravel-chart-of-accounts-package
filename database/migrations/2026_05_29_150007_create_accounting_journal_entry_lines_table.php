@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('reconciliation_status', ['unreconciled', 'cleared', 'reconciled'])->default('unreconciled');
             $table->unsignedBigInteger('reconciliation_id')->nullable();
             $table->timestamp('reconciled_at')->nullable();
-            $table->foreignId('reconciled_by')->nullable()->constrained('users', indexName: 'acct_lines_reconciled_by_fk')->nullOnDelete();
+            $table->foreignId('reconciled_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_lines_reconciled_by_fk')->nullOnDelete();
             $table->timestamps();
 
             $table->unique(['journal_entry_id', 'line_no'], 'acct_lines_journal_line_unique');

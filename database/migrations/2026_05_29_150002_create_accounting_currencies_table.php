@@ -16,8 +16,8 @@ return new class extends Migration
             $table->decimal('exchange_rate_to_base', 18, 8)->default(1);
             $table->boolean('is_base')->default(false);
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_currencies_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_currencies_updated_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_currencies_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_currencies_updated_by_fk')->nullOnDelete();
             $table->timestamps();
 
             $table->unique('code', 'acct_currencies_code_unique');

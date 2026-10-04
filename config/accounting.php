@@ -7,6 +7,8 @@ return [
     'settings_route_name_prefix' => env('SETTINGS_ROUTE_NAME_PREFIX', 'settings'),
     'ui_driver' => env('ACCOUNTING_UI_DRIVER', 'inertia'), // 'inertia' or 'blade'
     'api_prefix' => env('ACCOUNTING_API_PREFIX', 'api/v1/accounting'),
+    // Table referenced by created_by / updated_by / posted_by foreign keys in the package migrations.
+    'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
 
     'defaults' => [

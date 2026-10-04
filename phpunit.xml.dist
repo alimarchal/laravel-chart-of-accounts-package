@@ -7,6 +7,9 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <testsuite name="Blade">
+            <directory>tests/Blade</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>

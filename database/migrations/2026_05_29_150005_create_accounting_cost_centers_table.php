@@ -18,8 +18,8 @@ return new class extends Migration
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_cost_centers_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_cost_centers_updated_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_cost_centers_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_cost_centers_updated_by_fk')->nullOnDelete();
             $table->timestamps();
 
             $table->unique('code', 'acct_cost_centers_code_unique');

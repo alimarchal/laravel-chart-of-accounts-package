@@ -15,8 +15,8 @@ return new class extends Migration
             $table->date('effective_from');
             $table->date('effective_to')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_tax_rates_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_tax_rates_updated_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_tax_rates_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_tax_rates_updated_by_fk')->nullOnDelete();
             $table->timestamps();
 
             $table->unique(['tax_code_id', 'effective_from'], 'acct_tax_rates_code_from_unique');

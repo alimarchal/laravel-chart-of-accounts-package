@@ -18,14 +18,14 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->enum('status', ['draft', 'posted', 'void'])->default('draft');
             $table->timestamp('posted_at')->nullable();
-            $table->foreignId('posted_by')->nullable()->constrained('users', indexName: 'acct_journals_posted_by_fk')->nullOnDelete();
+            $table->foreignId('posted_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_journals_posted_by_fk')->nullOnDelete();
             $table->foreignId('reverses_entry_id')->nullable()->constrained('accounting_journal_entries', indexName: 'acct_journals_reverses_fk')->restrictOnDelete();
             $table->foreignId('reversed_by_entry_id')->nullable()->constrained('accounting_journal_entries', indexName: 'acct_journals_reversed_by_fk')->restrictOnDelete();
             $table->timestamp('reversed_at')->nullable();
             $table->boolean('is_closing_entry')->default(false);
             $table->foreignId('closes_period_id')->nullable()->constrained('accounting_periods', indexName: 'acct_journals_closes_period_fk')->nullOnDelete();
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_journals_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_journals_updated_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_journals_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_journals_updated_by_fk')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 

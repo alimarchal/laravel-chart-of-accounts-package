@@ -16,9 +16,9 @@ return new class extends Migration
             $table->decimal('book_balance', 18, 2)->default(0);
             $table->enum('status', ['draft', 'completed', 'void'])->default('draft');
             $table->timestamp('completed_at')->nullable();
-            $table->foreignId('completed_by')->nullable()->constrained('users', indexName: 'acct_reconciliations_completed_by_fk')->nullOnDelete();
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_reconciliations_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_reconciliations_updated_by_fk')->nullOnDelete();
+            $table->foreignId('completed_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_reconciliations_completed_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_reconciliations_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_reconciliations_updated_by_fk')->nullOnDelete();
             $table->timestamps();
 
             $table->unique(['bank_account_id', 'statement_date'], 'acct_reconciliations_bank_date_unique');

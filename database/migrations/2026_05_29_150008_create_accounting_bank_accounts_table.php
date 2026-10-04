@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('swift_code')->nullable();
             $table->boolean('is_active')->default(true);
             $table->text('description')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'acct_bank_accounts_created_by_fk')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users', indexName: 'acct_bank_accounts_updated_by_fk')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_bank_accounts_created_by_fk')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained(config('accounting.users_table', 'users'), indexName: 'acct_bank_accounts_updated_by_fk')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 
