@@ -922,7 +922,12 @@ A: Laravel 14 is expected in Q1 2027 and requires PHP 8.4. CI already runs the s
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for full version history.
+See [CHANGELOG.md](CHANGELOG.md) for full version history and [Releases](https://github.com/alimarchal/laravel-chart-of-accounts-package/releases) for release notes.
+
+**Releasing (maintainers):** add a `## [x.y.z] - date` section to `CHANGELOG.md`, merge, then push the tag
+(`git tag vx.y.z && git push origin vx.y.z`) — or run **Actions → Release → Run workflow** with the tag. The
+workflow creates the tag if needed and publishes a GitHub Release with that CHANGELOG section; Packagist
+picks the tag up automatically.
 
 ---
 

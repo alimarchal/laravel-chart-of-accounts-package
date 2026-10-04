@@ -1,0 +1,90 @@
+name: Release
+
+# Creates a GitHub Release whose notes are the matching section of CHANGELOG.md.
+#  - Automatically when a version tag (v2.2.0) is pushed.
+#  - Manually (Actions → Release → Run workflow) for a version: the tag is created on the given commit
+#    (default: the head of the branch the workflow runs on) if it does not exist yet.
+# Packagist picks up the tag on its own.
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag, e.g. v2.2.0 (needs a "## [2.2.0]" section in CHANGELOG.md)'
+        required: true
+      target:
+        description: 'Commit SHA or branch to tag (default: the branch this runs on)'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_TARGET: ${{ inputs.target }}
+        run: |
+          TAG="${INPUT_TAG:-$GITHUB_REF_NAME}"
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$TAG' is not a version tag like v2.2.0"; exit 1
+          fi
+          TARGET="${INPUT_TARGET:-$GITHUB_SHA}"
+          SHA="$(git rev-parse --verify "$TARGET^{commit}")"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Release notes from CHANGELOG.md
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::CHANGELOG.md has no '## [$VERSION]' section"; exit 1
+          fi
+
+      - name: Create tag (manual runs)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists at $(git rev-parse "$TAG^{commit}")"
+          else
+            git tag "$TAG" "$SHA"
+            git push origin "refs/tags/$TAG"
+          fi
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes-file release-notes.md
+          else
+            # Only the highest version is marked "Latest" (older releases may be published later).
+            git fetch -q --tags origin
+            HIGHEST="$(git tag -l 'v*.*.*' | sort -V | tail -n 1)"
+            LATEST=false; [ "$HIGHEST" = "$TAG" ] && LATEST=true
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md --verify-tag --latest="$LATEST"
+          fi
