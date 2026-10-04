@@ -65,7 +65,7 @@ class ConsolidatedReport
             }
         }
 
-        if (! ($filters['include_zero'] ?? false)) {
+        if (! $includeZero) {
             $rows = array_filter($rows, fn (array $row) => $row['balance_cents'] !== 0 || array_filter($row['companies']) !== []);
         }
 
