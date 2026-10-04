@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class JournalEntryService
 {
     /**
-     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
+     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
      */
     public function create(array $data): JournalEntry
     {
@@ -29,6 +29,8 @@ class JournalEntryService
                 'reference' => $data['reference'] ?? null,
                 'description' => $data['description'] ?? null,
                 'status' => 'draft',
+                'idempotency_key' => $data['idempotency_key'] ?? null,
+                'idempotency_hash' => $data['idempotency_hash'] ?? null,
             ]);
 
             foreach (array_values($data['lines']) as $index => $line) {

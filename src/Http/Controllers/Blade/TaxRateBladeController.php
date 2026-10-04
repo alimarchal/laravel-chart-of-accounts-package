@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
+use Alimarchal\LaravelChartOfAccounts\Rules\UniqueTaxRateStart;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -16,7 +17,7 @@ class TaxRateBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $taxRates = QueryBuilder::for(TaxRate::query()->with('taxCode'))
+        $taxRates = QueryBuilder::for(TaxRate::query()->with('taxCode'), request())
             ->allowedFilters(
                 AllowedFilter::exact('tax_code_id'),
                 AllowedFilter::exact('is_active'),
@@ -87,7 +88,11 @@ class TaxRateBladeController extends Controller
         return [
             'tax_code_id' => ['required', 'exists:accounting_tax_codes,id'],
             'rate' => ['required', 'numeric', 'min:0', 'max:100'],
-            'effective_from' => ['required', 'date'],
+            'effective_from' => [
+                'required',
+                'date',
+                new UniqueTaxRateStart(request()->input('tax_code_id'), $record?->getKey()),
+            ],
             'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
             'is_active' => ['sometimes', 'boolean'],
         ];

@@ -16,7 +16,7 @@ class AccountTypeBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $accountTypes = QueryBuilder::for(AccountType::query())
+        $accountTypes = QueryBuilder::for(AccountType::query(), request())
             ->allowedFilters(
                 AllowedFilter::partial('name'),
                 AllowedFilter::partial('code'),

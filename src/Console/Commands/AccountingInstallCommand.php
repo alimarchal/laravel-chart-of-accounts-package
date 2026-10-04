@@ -4,11 +4,14 @@ namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 
 class AccountingInstallCommand extends Command
 {
-    protected $signature = 'accounting:install {--admin-email= : Email of the user to receive the super-admin role (defaults to the first user)}';
+    protected $signature = 'accounting:install
+        {--admin-email= : Email of the user to receive the super-admin role (defaults to the first user)}
+        {--views : Also publish the Blade views for customisation (not needed otherwise)}';
 
     protected $description = 'Full setup: publish assets, run migrations (including Spatie), seed master data, and verify.';
 
@@ -20,11 +23,23 @@ class AccountingInstallCommand extends Command
         $this->info('Publishing accounting config...');
         Artisan::call('vendor:publish', ['--tag' => 'accounting-config', '--no-interaction' => true], $this->output);
 
-        $this->info('Publishing accounting views...');
-        Artisan::call('vendor:publish', ['--tag' => 'accounting-views', '--no-interaction' => true], $this->output);
+        $driver = config('accounting.ui_driver', 'inertia');
 
-        $this->info('Publishing accounting public assets (select2, jQuery)...');
-        Artisan::call('vendor:publish', ['--tag' => 'accounting-assets', '--no-interaction' => true], $this->output);
+        // Views are served from the package; publishing them freezes them and hides future fixes.
+        if ($this->option('views')) {
+            $this->info('Publishing accounting views...');
+            Artisan::call('vendor:publish', ['--tag' => 'accounting-views', '--no-interaction' => true], $this->output);
+        }
+
+        if ($driver === 'blade') {
+            $this->info('Publishing accounting public assets (select2, jQuery)...');
+            Artisan::call('vendor:publish', ['--tag' => 'accounting-assets', '--no-interaction' => true], $this->output);
+        }
+
+        if ($driver === 'inertia') {
+            $this->info('Publishing Inertia/React pages to resources/js/pages/accounting...');
+            Artisan::call('vendor:publish', ['--tag' => 'accounting-js', '--no-interaction' => true], $this->output);
+        }
 
         if (! $this->spatiePermissionMigrationExists()) {
             $this->info('Publishing spatie/laravel-permission migrations...');
@@ -44,7 +59,7 @@ class AccountingInstallCommand extends Command
         }
 
         $this->info('Running all migrations...');
-        Artisan::call('migrate', ['--no-interaction' => true], $this->output);
+        Artisan::call('migrate', ['--force' => true, '--no-interaction' => true], $this->output);
 
         $this->info('Seeding accounting master data...');
         Artisan::call('accounting:seed', [], $this->output);
@@ -53,6 +68,8 @@ class AccountingInstallCommand extends Command
         Artisan::call('accounting:sync-db-objects', [], $this->output);
 
         $this->assignSuperAdminToFirstUser();
+
+        $this->warnIfApiGuardMissing();
 
         $this->info('Verifying installation...');
         $verifyExitCode = Artisan::call('accounting:verify', [], $this->output);
@@ -67,12 +84,30 @@ class AccountingInstallCommand extends Command
         $this->info('Accounting module installed successfully!');
         $this->info('   Visit /accounting after logging in.');
         $this->newLine();
-        $this->line('   Set ACCOUNTING_UI_DRIVER=blade in .env for Blade/Livewire (Jetstream).');
-        $this->line('   Set ACCOUNTING_UI_DRIVER=inertia in .env for Inertia/React.');
+        $this->line('   UI driver: '.$driver.' (ACCOUNTING_UI_DRIVER = inertia | blade | api).');
+        $this->line('   REST API: /'.trim((string) config('accounting.api_prefix'), '/').' — see docs/openapi.yaml.');
         $this->newLine();
         $this->line('   Run "php artisan accounting:update" after future package upgrades.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The API defaults to auth:sanctum. Laravel 11+ apps only have Sanctum after "php artisan install:api".
+     */
+    private function warnIfApiGuardMissing(): void
+    {
+        if (! config('accounting.api_enabled', true)) {
+            return;
+        }
+
+        $usesSanctum = in_array('auth:sanctum', (array) config('accounting.api_middleware', []), true);
+
+        if ($usesSanctum && ! array_key_exists('sanctum', (array) config('auth.guards', [])) && ! class_exists(Sanctum::class)) {
+            $this->warn('The REST API uses auth:sanctum, but Laravel Sanctum is not installed.');
+            $this->line('   Run "php artisan install:api" (and add HasApiTokens to your User model),');
+            $this->line('   or set ACCOUNTING_API_MIDDLEWARE to your own guard, or ACCOUNTING_API_ENABLED=false.');
+        }
     }
 
     private function assignSuperAdminToFirstUser(): void

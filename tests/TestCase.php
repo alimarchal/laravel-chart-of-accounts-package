@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Tests;
 
 use Alimarchal\LaravelChartOfAccounts\LaravelChartOfAccountsServiceProvider;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\ServiceProvider;
 use Laravel\Sanctum\SanctumServiceProvider;
@@ -32,6 +33,22 @@ abstract class TestCase extends Orchestra
         $providers[] = LaravelChartOfAccountsServiceProvider::class;
 
         return $providers;
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Laravel's recommended strictness: fail on lazy loading (N+1), missing attributes and
+        // silently discarded mass-assignment, so performance and data bugs surface in tests.
+        Model::shouldBeStrict();
+    }
+
+    protected function tearDown(): void
+    {
+        Model::shouldBeStrict(false);
+
+        parent::tearDown();
     }
 
     protected function defineEnvironment($app): void

@@ -16,7 +16,7 @@ class CurrencyBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $currencies = QueryBuilder::for(Currency::query())
+        $currencies = QueryBuilder::for(Currency::query(), request())
             ->allowedFilters(
                 AllowedFilter::partial('code'),
                 AllowedFilter::partial('name'),

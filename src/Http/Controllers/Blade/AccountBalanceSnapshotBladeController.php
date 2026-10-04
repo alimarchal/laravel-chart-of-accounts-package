@@ -15,7 +15,7 @@ class AccountBalanceSnapshotBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $snapshots = QueryBuilder::for(AccountBalanceSnapshot::query()->with(['account', 'accountingPeriod']))
+        $snapshots = QueryBuilder::for(AccountBalanceSnapshot::query()->with(['account', 'accountingPeriod']), request())
             ->allowedFilters(
                 AllowedFilter::exact('account_id', 'chart_of_account_id'),
                 AllowedFilter::exact('period_id', 'accounting_period_id'),

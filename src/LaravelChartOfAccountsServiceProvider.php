@@ -24,10 +24,13 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\GeneralLedgerLivewir
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\IncomeStatementLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\TrialBalanceLivewire;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -78,22 +81,33 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
             ]);
         }
 
-        if (config('accounting.ui_driver') === 'blade') {
+        $driver = config('accounting.ui_driver', 'inertia');
+
+        // Web UI: only the selected driver's routes, views and components are loaded.
+        if ($driver === 'blade') {
             $this->loadRoutesFrom(__DIR__.'/../routes/accounting-blade.php');
-        } else {
+        } elseif ($driver === 'inertia') {
             $this->loadRoutesFrom(__DIR__.'/../routes/accounting.php');
         }
-        $this->loadRoutesFrom(__DIR__.'/../routes/accounting-api.php');
+
+        if (config('accounting.api_enabled', true)) {
+            $this->registerRateLimiter();
+            $this->loadRoutesFrom(__DIR__.'/../routes/accounting-api.php');
+        }
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->registerExceptionRendering();
 
+        if ($driver === 'api') {
+            return;
+        }
+
         $this->loadViewsFrom(__DIR__.'/../resources/views/accounting', 'accounting');
 
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/accounting/components', 'accounting');
 
-        if (class_exists(Livewire::class)) {
+        if ($driver === 'blade' && class_exists(Livewire::class)) {
             Livewire::component('accounting::journal-entry-form', JournalEntryForm::class);
             Livewire::component('accounting::reports.general-ledger', GeneralLedgerLivewire::class);
             Livewire::component('accounting::reports.trial-balance', TrialBalanceLivewire::class);
@@ -105,6 +119,20 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
             Livewire::component('accounting::reports.bank-book', BankBookLivewire::class);
             Livewire::component('accounting::reports.cash-book', CashBookLivewire::class);
         }
+    }
+
+    /**
+     * "accounting-api": per authenticated user (or IP) per minute; ACCOUNTING_API_RATE_LIMIT=0 disables it.
+     */
+    private function registerRateLimiter(): void
+    {
+        RateLimiter::for('accounting-api', function (Request $request) {
+            $perMinute = (int) config('accounting.api_rate_limit', 120);
+
+            return $perMinute > 0
+                ? Limit::perMinute($perMinute)->by($request->user()?->getAuthIdentifier() ?: $request->ip())
+                : Limit::none();
+        });
     }
 
     /**
@@ -124,7 +152,8 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         $handler->renderable(function (\Throwable $exception, Request $request) {
             $message = match (true) {
                 $exception instanceof AccountingRuleViolation => $exception->getMessage(),
-                $this->isForeignKeyViolationOnPackageRoute($exception, $request) => 'This record is in use by other accounting records and cannot be deleted or changed.',
+                $exception instanceof UniqueConstraintViolationException && $this->isConstraintViolationOnPackageRoute($exception, $request) => 'A record with the same unique values already exists.',
+                $this->isConstraintViolationOnPackageRoute($exception, $request) => 'This record is in use by other accounting records and cannot be deleted or changed.',
                 default => null,
             };
 
@@ -144,7 +173,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
      * Foreign-key violations raised by this package's own routes (e.g. deleting a currency still in use)
      * are user errors, not server errors. Other routes of the host application are left untouched.
      */
-    private function isForeignKeyViolationOnPackageRoute(\Throwable $exception, Request $request): bool
+    private function isConstraintViolationOnPackageRoute(\Throwable $exception, Request $request): bool
     {
         if (! $exception instanceof QueryException
             || ! in_array((string) $exception->getCode(), ['23000', '23503'], true)) {

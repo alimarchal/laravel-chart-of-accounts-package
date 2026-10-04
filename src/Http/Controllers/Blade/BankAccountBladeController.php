@@ -15,7 +15,7 @@ class BankAccountBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $bankAccounts = QueryBuilder::for(BankAccount::query())
+        $bankAccounts = QueryBuilder::for(BankAccount::query(), request())
             ->allowedFilters(
                 AllowedFilter::partial('account_name'),
                 AllowedFilter::partial('bank_name'),

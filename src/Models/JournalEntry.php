@@ -41,12 +41,16 @@ class JournalEntry extends AccountingModel
 
     use SoftDeletes;
 
+    protected $hidden = ['idempotency_hash'];
+
     protected $fillable = [
         'entry_date',
         'accounting_period_id',
         'currency_id',
         'fx_rate_to_base',
         'reference',
+        'idempotency_key',
+        'idempotency_hash',
         'description',
         'status',
         'posted_at',

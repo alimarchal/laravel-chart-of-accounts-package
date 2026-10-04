@@ -1,0 +1,3369 @@
+openapi: 3.1.0
+info:
+  title: Laravel Chart of Accounts API
+  version: 2.0.0
+  description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
+
+
+    * **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).
+
+    * **Permissions:** every endpoint requires a Spatie permission (listed per operation).
+
+    * **Rate limit:** `ACCOUNTING_API_RATE_LIMIT` requests/minute per user (default 120) → 429.
+
+    * **Pagination:** `?page=` and `?per_page=` (max `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
+
+    * **Errors:** 422 with `message` (accounting rules) and `errors` (validation).
+
+    * **Money:** amounts are returned as decimal strings with two decimals.
+
+    * **Retries:** send `Idempotency-Key` when creating journal entries.'
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+- url: '{host}/api/v1/accounting'
+  variables:
+    host:
+      default: http://localhost:8000
+security:
+- bearerAuth: []
+tags:
+- name: Journal entries
+  description: Create, post, reverse and void double-entry journal entries.
+- name: Chart of accounts
+  description: Hierarchical accounts, the account tree and account balances.
+- name: Reports
+  description: Financial statements and ledgers (posted entries only).
+- name: Periods
+  description: Accounting periods, closing and balance snapshots.
+- name: Account types
+  description: Asset, liability, equity, income and expense types.
+- name: Currencies
+  description: Currencies and exchange rates (exactly one base currency).
+- name: Cost centers
+  description: Cost centers and projects for line-level analysis.
+- name: Bank accounts
+  description: Bank accounts linked to GL accounts.
+- name: Reconciliations
+  description: Bank statement reconciliations.
+- name: Tax
+  description: Tax codes and dated tax rates.
+- name: System
+  description: Installation health.
+paths:
+  /account-types:
+    get:
+      tags:
+      - Account types
+      summary: List account-types
+      operationId: list_account_types
+      description: 'Permission: `account-types.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/AccountType'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Account types
+      summary: Create account-types
+      operationId: create_account_types
+      description: 'Permission: `account-types.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/AccountType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountType'
+  /account-types/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Account types
+      summary: Show account-types
+      operationId: show_account_types
+      description: 'Permission: `account-types.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/AccountType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Account types
+      summary: Update account-types (PATCH also accepted)
+      operationId: update_account_types
+      description: 'Permission: `account-types.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/AccountType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountType'
+    delete:
+      tags:
+      - Account types
+      summary: Delete account-types
+      operationId: delete_account_types
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `account-types.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /currencies:
+    get:
+      tags:
+      - Currencies
+      summary: List currencies
+      operationId: list_currencies
+      description: 'Permission: `currencies.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/Currency'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Currencies
+      summary: Create currencies
+      operationId: create_currencies
+      description: 'Permission: `currencies.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/Currency'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Currency'
+  /currencies/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Currencies
+      summary: Show currencies
+      operationId: show_currencies
+      description: 'Permission: `currencies.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/Currency'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Currencies
+      summary: Update currencies (PATCH also accepted)
+      operationId: update_currencies
+      description: 'Permission: `currencies.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/Currency'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Currency'
+    delete:
+      tags:
+      - Currencies
+      summary: Delete currencies
+      operationId: delete_currencies
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `currencies.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /periods:
+    get:
+      tags:
+      - Periods
+      summary: List periods
+      operationId: list_periods
+      description: 'Permission: `periods.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/PeriodInput'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Periods
+      summary: Create periods
+      operationId: create_periods
+      description: 'Permission: `periods.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/PeriodInput'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeriodInput'
+  /periods/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Periods
+      summary: Show periods
+      operationId: show_periods
+      description: 'Permission: `periods.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/PeriodInput'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Periods
+      summary: Update periods (PATCH also accepted)
+      operationId: update_periods
+      description: 'Permission: `periods.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/PeriodInput'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeriodInput'
+    delete:
+      tags:
+      - Periods
+      summary: Delete periods
+      operationId: delete_periods
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `periods.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /cost-centers:
+    get:
+      tags:
+      - Cost centers
+      summary: List cost-centers
+      operationId: list_cost_centers
+      description: 'Permission: `cost-centers.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/CostCenter'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Cost centers
+      summary: Create cost-centers
+      operationId: create_cost_centers
+      description: 'Permission: `cost-centers.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/CostCenter'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CostCenter'
+  /cost-centers/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Cost centers
+      summary: Show cost-centers
+      operationId: show_cost_centers
+      description: 'Permission: `cost-centers.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/CostCenter'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Cost centers
+      summary: Update cost-centers (PATCH also accepted)
+      operationId: update_cost_centers
+      description: 'Permission: `cost-centers.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/CostCenter'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CostCenter'
+    delete:
+      tags:
+      - Cost centers
+      summary: Delete cost-centers
+      operationId: delete_cost_centers
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `cost-centers.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /bank-accounts:
+    get:
+      tags:
+      - Bank accounts
+      summary: List bank-accounts
+      operationId: list_bank_accounts
+      description: 'Permission: `bank-accounts.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/BankAccount'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Bank accounts
+      summary: Create bank-accounts
+      operationId: create_bank_accounts
+      description: 'Permission: `bank-accounts.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/BankAccount'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankAccount'
+  /bank-accounts/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Bank accounts
+      summary: Show bank-accounts
+      operationId: show_bank_accounts
+      description: 'Permission: `bank-accounts.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/BankAccount'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Bank accounts
+      summary: Update bank-accounts (PATCH also accepted)
+      operationId: update_bank_accounts
+      description: 'Permission: `bank-accounts.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/BankAccount'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankAccount'
+    delete:
+      tags:
+      - Bank accounts
+      summary: Delete bank-accounts
+      operationId: delete_bank_accounts
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `bank-accounts.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /reconciliations:
+    get:
+      tags:
+      - Reconciliations
+      summary: List reconciliations
+      operationId: list_reconciliations
+      description: 'Permission: `reconciliations.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/Reconciliation'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Reconciliations
+      summary: Create reconciliations
+      operationId: create_reconciliations
+      description: 'Permission: `reconciliations.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/Reconciliation'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reconciliation'
+  /reconciliations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Reconciliations
+      summary: Show reconciliations
+      operationId: show_reconciliations
+      description: 'Permission: `reconciliations.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/Reconciliation'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Reconciliations
+      summary: Update reconciliations (PATCH also accepted)
+      operationId: update_reconciliations
+      description: 'Permission: `reconciliations.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/Reconciliation'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reconciliation'
+    delete:
+      tags:
+      - Reconciliations
+      summary: Delete reconciliations
+      operationId: delete_reconciliations
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `reconciliations.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /tax-codes:
+    get:
+      tags:
+      - Tax
+      summary: List tax-codes
+      operationId: list_tax_codes
+      description: 'Permission: `tax-codes.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/TaxCode'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Tax
+      summary: Create tax-codes
+      operationId: create_tax_codes
+      description: 'Permission: `tax-codes.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/TaxCode'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxCode'
+  /tax-codes/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Tax
+      summary: Show tax-codes
+      operationId: show_tax_codes
+      description: 'Permission: `tax-codes.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/TaxCode'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Tax
+      summary: Update tax-codes (PATCH also accepted)
+      operationId: update_tax_codes
+      description: 'Permission: `tax-codes.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/TaxCode'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxCode'
+    delete:
+      tags:
+      - Tax
+      summary: Delete tax-codes
+      operationId: delete_tax_codes
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `tax-codes.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /tax-rates:
+    get:
+      tags:
+      - Tax
+      summary: List tax-rates
+      operationId: list_tax_rates
+      description: 'Permission: `tax-rates.view`.'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        allOf:
+                        - type: object
+                          properties:
+                            id:
+                              type: integer
+                        - $ref: '#/components/schemas/TaxRate'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[code]
+        in: query
+        schema:
+          type: string
+        description: Partial match on code/name where available
+    post:
+      tags:
+      - Tax
+      summary: Create tax-rates
+      operationId: create_tax_rates
+      description: 'Permission: `tax-rates.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/TaxRate'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxRate'
+  /tax-rates/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Tax
+      summary: Show tax-rates
+      operationId: show_tax_rates
+      description: 'Permission: `tax-rates.view`.'
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/TaxRate'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Tax
+      summary: Update tax-rates (PATCH also accepted)
+      operationId: update_tax_rates
+      description: 'Permission: `tax-rates.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/TaxRate'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxRate'
+    delete:
+      tags:
+      - Tax
+      summary: Delete tax-rates
+      operationId: delete_tax_rates
+      description: 'Returns 422 if the record is still referenced.
+
+
+        Permission: `tax-rates.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /periods/{id}/close:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Periods
+      summary: Close a period
+      operationId: close_period
+      description: 'Writes balance snapshots and stores totals and net income. Fails (422) while drafts are dated in the period.
+
+
+        Permission: `periods.close`.'
+      responses:
+        '200':
+          description: Closed period
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Period'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /periods/{id}/reopen:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Periods
+      summary: Reopen a closed period
+      operationId: reopen_period
+      description: 'Permission: `periods.reopen`.'
+      responses:
+        '200':
+          description: Reopened period
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Period'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /periods/{id}/close-fiscal-year:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Periods
+      summary: Year-end close
+      operationId: close_fiscal_year
+      description: 'Posts a closing entry moving income-statement balances to retained earnings, then closes the period.
+
+
+        Permission: `periods.close`.'
+      responses:
+        '200':
+          description: Closed period with its closing entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Period'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /health:
+    get:
+      tags:
+      - System
+      summary: Installation health
+      operationId: health
+      description: 'Permission: `accounting.view`.'
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          description: Unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /chart-of-accounts:
+    get:
+      tags:
+      - Chart of accounts
+      summary: List accounts
+      operationId: list_accounts
+      description: 'Permission: `chart-of-accounts.view`.'
+      responses:
+        '200':
+          description: Paginated accounts
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Account'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[account_code]
+        in: query
+        schema:
+          type: string
+      - name: filter[account_name]
+        in: query
+        schema:
+          type: string
+      - name: filter[account_type_id]
+        in: query
+        schema:
+          type: string
+      - name: filter[currency_id]
+        in: query
+        schema:
+          type: string
+      - name: filter[is_group]
+        in: query
+        schema:
+          type: string
+      - name: filter[is_active]
+        in: query
+        schema:
+          type: string
+    post:
+      tags:
+      - Chart of accounts
+      summary: Create an account
+      operationId: create_account
+      description: 'Permission: `chart-of-accounts.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Account'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountInput'
+  /chart-of-accounts/tree:
+    get:
+      tags:
+      - Chart of accounts
+      summary: Whole chart as a nested tree
+      operationId: account_tree
+      description: 'Permission: `chart-of-accounts.view`.'
+      responses:
+        '200':
+          description: Root accounts with nested children
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /chart-of-accounts/{id}/balance:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Chart of accounts
+      summary: Account balance
+      operationId: account_balance
+      description: 'Posted entries only; a group account includes all of its child accounts.
+
+
+        Permission: `chart-of-accounts.view`.'
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AccountBalance'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of_date
+        in: query
+        schema:
+          type: string
+          format: date
+  /chart-of-accounts/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Chart of accounts
+      summary: Show an account
+      operationId: show_account
+      description: 'Permission: `chart-of-accounts.view`.'
+      responses:
+        '200':
+          description: Account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Account'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Chart of accounts
+      summary: Update an account (PATCH also accepted)
+      operationId: update_account
+      description: 'Permission: `chart-of-accounts.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Account'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountInput'
+    delete:
+      tags:
+      - Chart of accounts
+      summary: Delete an account
+      operationId: delete_account
+      description: '422 for system accounts, accounts with children or journal lines.
+
+
+        Permission: `chart-of-accounts.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /journal-entries:
+    get:
+      tags:
+      - Journal entries
+      summary: List entries
+      operationId: list_journal_entries
+      description: 'Permission: `journal-entries.view`.'
+      responses:
+        '200':
+          description: Paginated entries
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/JournalEntry'
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[status]
+        in: query
+        schema:
+          type: string
+          enum:
+          - draft
+          - posted
+          - void
+      - name: filter[reference]
+        in: query
+        schema:
+          type: string
+      - name: filter[description]
+        in: query
+        schema:
+          type: string
+      - name: filter[currency_id]
+        in: query
+        schema:
+          type: integer
+      - name: filter[accounting_period_id]
+        in: query
+        schema:
+          type: integer
+      - name: filter[entry_date_from]
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: filter[entry_date_to]
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - entry_date
+          - -entry_date
+          - id
+          - -id
+          - reference
+          - -reference
+          - created_at
+          - -created_at
+      - name: include
+        in: query
+        schema:
+          type: string
+          enum:
+          - lines
+    post:
+      tags:
+      - Journal entries
+      summary: Create (and optionally post) an entry
+      operationId: create_journal_entry
+      description: 'Lines may use account codes. Rule violations (unbalanced, group account, closed period) return 422 with
+        a message.
+
+
+        Permission: `journal-entries.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '200':
+          description: Replay of an earlier request with the same Idempotency-Key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+          headers:
+            Idempotent-Replayed:
+              schema:
+                type: string
+                enum:
+                - 'true'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JournalEntryInput'
+  /journal-entries/simple:
+    post:
+      tags:
+      - Journal entries
+      summary: Two-line entry by account codes
+      operationId: create_simple_journal_entry
+      description: 'Debits one account and credits another with the same amount; posts by default.
+
+
+        Permission: `journal-entries.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '200':
+          description: Replay of an earlier request with the same Idempotency-Key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+          headers:
+            Idempotent-Replayed:
+              schema:
+                type: string
+                enum:
+                - 'true'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleEntryInput'
+  /journal-entries/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Journal entries
+      summary: Show an entry with lines
+      operationId: show_journal_entry
+      description: 'Permission: `journal-entries.view`.'
+      responses:
+        '200':
+          description: Entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Journal entries
+      summary: Update a draft (PATCH also accepted)
+      operationId: update_journal_entry
+      description: 'Only drafts; lines with an id are updated, lines without one are added, missing lines are removed.
+
+
+        Permission: `journal-entries.update`.'
+      responses:
+        '200':
+          description: Updated draft
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JournalEntryInput'
+  /journal-entries/{id}/post:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Journal entries
+      summary: Post a draft
+      operationId: post_journal_entry
+      description: 'Permission: `journal-entries.post`.'
+      responses:
+        '200':
+          description: Posted entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /journal-entries/{id}/reverse:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Journal entries
+      summary: Reverse a posted entry
+      operationId: reverse_journal_entry
+      description: 'Permission: `journal-entries.reverse`.'
+      responses:
+        '200':
+          description: The posted reversal entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type:
+                  - string
+                  - 'null'
+                reversal_date:
+                  type:
+                  - string
+                  - 'null'
+                  format: date
+                  description: Default today; not before the original date.
+  /journal-entries/{id}/void:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Journal entries
+      summary: Void a draft
+      operationId: void_journal_entry
+      description: 'Posted entries cannot be voided — reverse them.
+
+
+        Permission: `journal-entries.void`.'
+      responses:
+        '200':
+          description: Voided entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JournalEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /account-balance-snapshots:
+    get:
+      tags:
+      - Periods
+      summary: List balance snapshots
+      operationId: list_snapshots
+      description: 'Permission: `account-balance-snapshots.view`.'
+      responses:
+        '200':
+          description: Paginated snapshots
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: object
+                - $ref: '#/components/schemas/PaginationEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[chart_of_account_id]
+        in: query
+        schema:
+          type: integer
+      - name: filter[accounting_period_id]
+        in: query
+        schema:
+          type: integer
+  /account-balance-snapshots/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Periods
+      summary: Show a balance snapshot
+      operationId: show_snapshot
+      description: 'Permission: `account-balance-snapshots.view`.'
+      responses:
+        '200':
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /reports/trial-balance:
+    get:
+      tags:
+      - Reports
+      summary: Trial balance
+      operationId: report_trial_balance
+      description: 'All posted activity per account; totals.difference is 0 when balanced.
+
+
+        Permission: `reports.trial-balance.view`.'
+      responses:
+        '200':
+          description: Trial balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /reports/balance-sheet:
+    get:
+      tags:
+      - Reports
+      summary: Balance sheet
+      operationId: report_balance_sheet
+      description: 'Includes a ''Current Earnings (unclosed)'' row; totals: assets, liabilities_and_equity, difference.
+
+
+        Permission: `reports.balance-sheet.view`.'
+      responses:
+        '200':
+          description: Balance sheet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of_date
+        in: query
+        schema:
+          type: string
+          format: date
+  /reports/income-statement:
+    get:
+      tags:
+      - Reports
+      summary: Income statement
+      operationId: report_income_statement
+      description: 'Defaults to the period containing today; closing entries excluded. totals: revenue, expenses, net_income.
+
+
+        Permission: `reports.income-statement.view`.'
+      responses:
+        '200':
+          description: Income statement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+  /reports/general-ledger:
+    get:
+      tags:
+      - Reports
+      summary: General ledger
+      operationId: report_general_ledger
+      description: 'Permission: `reports.general-ledger.view`.'
+      responses:
+        '200':
+          description: General ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerPage'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: account_id
+        in: query
+        schema:
+          type: integer
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - posted
+          - draft
+          - void
+          - all
+          default: posted
+  /reports/cash-flow:
+    get:
+      tags:
+      - Reports
+      summary: Cash flow
+      operationId: report_cash_flow
+      description: 'Movements on cash and bank accounts (and their child accounts).
+
+
+        Permission: `reports.cash-flow.view`.'
+      responses:
+        '200':
+          description: Cash flow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+  /reports/bank-book:
+    get:
+      tags:
+      - Reports
+      summary: Bank book
+      operationId: report_bank_book
+      description: 'Permission: `reports.bank-book.view`.'
+      responses:
+        '200':
+          description: Bank book
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerPage'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: account_id
+        in: query
+        schema:
+          type: integer
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - posted
+          - draft
+          - void
+          - all
+          default: posted
+      - name: bank_account_id
+        in: query
+        schema:
+          type: integer
+  /reports/cash-book:
+    get:
+      tags:
+      - Reports
+      summary: Cash book
+      operationId: report_cash_book
+      description: 'Permission: `reports.cash-book.view`.'
+      responses:
+        '200':
+          description: Cash book
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerPage'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: account_id
+        in: query
+        schema:
+          type: integer
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - posted
+          - draft
+          - void
+          - all
+          default: posted
+  /reports/aged-receivables:
+    get:
+      tags:
+      - Reports
+      summary: Aged receivables
+      operationId: report_aged_receivables
+      description: 'Buckets: current, 1-30, 31-60, 61-90, over 90 days.
+
+
+        Permission: `reports.aged-receivables.view`.'
+      responses:
+        '200':
+          description: Aged receivables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of_date
+        in: query
+        schema:
+          type: string
+          format: date
+  /reports/aged-payables:
+    get:
+      tags:
+      - Reports
+      summary: Aged payables
+      operationId: report_aged_payables
+      description: 'Buckets: current, 1-30, 31-60, 61-90, over 90 days.
+
+
+        Permission: `reports.aged-payables.view`.'
+      responses:
+        '200':
+          description: Aged payables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of_date
+        in: query
+        schema:
+          type: string
+          format: date
+  /reports/account-statement:
+    get:
+      tags:
+      - Reports
+      summary: Account statement
+      operationId: report_account_statement
+      description: 'account_id or account_code is required.
+
+
+        Permission: `reports.account-statement.view`.'
+      responses:
+        '200':
+          description: Account statement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: account_code
+        in: query
+        schema:
+          type: string
+      - name: account_id
+        in: query
+        schema:
+          type: integer
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Laravel Sanctum personal access token
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 15
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      schema:
+        type: string
+        maxLength: 100
+      description: Same key + same body → original entry is returned (200). Same key + different body → 422.
+  responses:
+    Unauthenticated:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: The user lacks the required permission
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Record not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Validation failed or an accounting rule was violated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+  schemas:
+    Money:
+      type: string
+      pattern: ^-?\d+\.\d{2}$
+      example: '1500.00'
+      description: Decimal amount as a string with two decimals (exact, no floating point).
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - message
+    PaginationEnvelope:
+      type: object
+      properties:
+        links:
+          type: object
+          properties:
+            first:
+              type:
+              - string
+              - 'null'
+            last:
+              type:
+              - string
+              - 'null'
+            prev:
+              type:
+              - string
+              - 'null'
+            next:
+              type:
+              - string
+              - 'null'
+        meta:
+          type: object
+          properties:
+            current_page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            last_page:
+              type: integer
+            from:
+              type:
+              - integer
+              - 'null'
+            to:
+              type:
+              - integer
+              - 'null'
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_code:
+          type: string
+          example: '1101'
+        account_name:
+          type: string
+          example: Cash In Hand
+        normal_balance:
+          type: string
+          enum:
+          - debit
+          - credit
+        is_group:
+          type: boolean
+        is_active:
+          type: boolean
+        is_system:
+          type: boolean
+        parent_id:
+          type:
+          - integer
+          - 'null'
+        account_type_id:
+          type: integer
+        currency_id:
+          type: integer
+        description:
+          type:
+          - string
+          - 'null'
+        account_type:
+          type: object
+        currency:
+          type: object
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+          description: Only in /chart-of-accounts/tree
+    AccountInput:
+      type: object
+      required:
+      - account_type_id
+      - currency_id
+      - account_code
+      - account_name
+      properties:
+        parent_id:
+          type:
+          - integer
+          - 'null'
+          description: Must be a group account of the same account type; no cycles.
+        account_type_id:
+          type: integer
+        currency_id:
+          type: integer
+        account_code:
+          type: string
+          maxLength: 30
+          description: Unique. Locked once the account has journal lines.
+        account_name:
+          type: string
+          maxLength: 255
+        normal_balance:
+          type: string
+          enum:
+          - debit
+          - credit
+          description: Defaults to the account type's normal balance.
+        description:
+          type:
+          - string
+          - 'null'
+        is_group:
+          type: boolean
+          default: false
+          description: Omitted on update = unchanged.
+        is_active:
+          type: boolean
+          default: true
+          description: Omitted on update = unchanged.
+    AccountBalance:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        account_code:
+          type: string
+        account_name:
+          type: string
+        normal_balance:
+          type: string
+        includes_child_accounts:
+          type: boolean
+        as_of_date:
+          type: string
+          format: date
+        total_debit:
+          $ref: '#/components/schemas/Money'
+        total_credit:
+          $ref: '#/components/schemas/Money'
+        balance:
+          $ref: '#/components/schemas/Money'
+    JournalLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        line_no:
+          type: integer
+        chart_of_account_id:
+          type: integer
+        account_code:
+          type: string
+        account_name:
+          type: string
+        cost_center_id:
+          type:
+          - integer
+          - 'null'
+        cost_center_code:
+          type:
+          - string
+          - 'null'
+        debit:
+          $ref: '#/components/schemas/Money'
+        credit:
+          $ref: '#/components/schemas/Money'
+        description:
+          type:
+          - string
+          - 'null'
+        reconciliation_status:
+          type:
+          - string
+          - 'null'
+    JournalEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        entry_date:
+          type: string
+          format: date
+        reference:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+          enum:
+          - draft
+          - posted
+          - void
+        currency_id:
+          type: integer
+        fx_rate_to_base:
+          type: string
+        accounting_period_id:
+          type:
+          - integer
+          - 'null'
+        posted_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        is_reversed:
+          type: boolean
+        reversed_by_entry_id:
+          type:
+          - integer
+          - 'null'
+        reverses_entry_id:
+          type:
+          - integer
+          - 'null'
+        total_debit:
+          $ref: '#/components/schemas/Money'
+        total_credit:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: object
+        accounting_period:
+          type:
+          - object
+          - 'null'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/JournalLine'
+        created_at:
+          type: string
+          format: date-time
+    JournalLineInput:
+      type: object
+      description: Give either chart_of_account_id or account_code; either debit or credit must be > 0.
+      properties:
+        id:
+          type: integer
+          description: Existing line id (updates only); omitted lines are deleted.
+        chart_of_account_id:
+          type: integer
+        account_code:
+          type: string
+          example: '1101'
+        cost_center_id:
+          type:
+          - integer
+          - 'null'
+        cost_center_code:
+          type:
+          - string
+          - 'null'
+          example: ADMIN
+        debit:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 1500
+        credit:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 0
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 255
+    JournalEntryInput:
+      type: object
+      required:
+      - entry_date
+      - lines
+      properties:
+        entry_date:
+          type: string
+          format: date
+        currency_id:
+          type:
+          - integer
+          - 'null'
+        currency_code:
+          type:
+          - string
+          - 'null'
+          example: PKR
+          description: Alternative to currency_id. Defaults to the base currency.
+        fx_rate_to_base:
+          type:
+          - number
+          - 'null'
+          exclusiveMinimum: 0
+          default: 1
+        reference:
+          type:
+          - string
+          - 'null'
+          maxLength: 255
+        description:
+          type:
+          - string
+          - 'null'
+        auto_post:
+          type: boolean
+          default: false
+          description: Post immediately; requires `journal-entries.post`.
+        lines:
+          type: array
+          minItems: 2
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/JournalLineInput'
+      example:
+        entry_date: '2026-10-04'
+        reference: INV-1001
+        auto_post: true
+        lines:
+        - account_code: '1103'
+          debit: 1500
+          credit: 0
+        - account_code: '4101'
+          debit: 0
+          credit: 1500
+    SimpleEntryInput:
+      type: object
+      required:
+      - debit_account_code
+      - credit_account_code
+      - amount
+      properties:
+        debit_account_code:
+          type: string
+          example: '5102'
+        credit_account_code:
+          type: string
+          example: '1101'
+        amount:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+          example: 2500
+        entry_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        description:
+          type:
+          - string
+          - 'null'
+          example: Office rent
+        reference:
+          type:
+          - string
+          - 'null'
+        post:
+          type: boolean
+          default: true
+          description: Requires `journal-entries.post` when true.
+    Period:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+          - archived
+        closed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        closing_total_debits:
+          type:
+          - string
+          - 'null'
+        closing_total_credits:
+          type:
+          - string
+          - 'null'
+        closing_net_income:
+          type:
+          - string
+          - 'null'
+        closing_journal_entry_id:
+          type:
+          - integer
+          - 'null'
+    ReportRows:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        totals:
+          type: object
+    LedgerPage:
+      type: object
+      description: Laravel paginator (data, current_page, per_page, total, …) plus totals.
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        totals:
+          type: object
+          properties:
+            total_debit:
+              type: number
+            total_credit:
+              type: number
+            closing_balance:
+              type: number
+    Health:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        missing_tables:
+          type: array
+          items:
+            type: string
+        base_currency_count:
+          type: integer
+        account_type_count:
+          type: integer
+        chart_of_account_count:
+          type: integer
+    AccountType:
+      type: object
+      required:
+      - code
+      - name
+      - normal_balance
+      - report_group
+      properties:
+        code:
+          type: string
+          maxLength: 20
+          example: ASSET
+        name:
+          type: string
+          example: Asset
+        normal_balance:
+          type: string
+          enum:
+          - debit
+          - credit
+        report_group:
+          type: string
+          enum:
+          - BalanceSheet
+          - IncomeStatement
+        description:
+          type:
+          - string
+          - 'null'
+        is_active:
+          type: boolean
+    Currency:
+      type: object
+      required:
+      - code
+      - name
+      - exchange_rate_to_base
+      properties:
+        code:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: USD
+        name:
+          type: string
+        symbol:
+          type:
+          - string
+          - 'null'
+        exchange_rate_to_base:
+          type: number
+          exclusiveMinimum: 0
+        is_base:
+          type: boolean
+          description: Exactly one base currency; cannot change once entries are posted.
+        is_active:
+          type: boolean
+    PeriodInput:
+      type: object
+      required:
+      - name
+      - start_date
+      - end_date
+      properties:
+        name:
+          type: string
+          example: FY 2027
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+          - archived
+          description: Changing it runs close (`periods.close`) / reopen (`periods.reopen`).
+    CostCenter:
+      type: object
+      required:
+      - code
+      - name
+      - type
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+          - cost_center
+          - project
+        description:
+          type:
+          - string
+          - 'null'
+        is_active:
+          type: boolean
+    BankAccount:
+      type: object
+      required:
+      - account_name
+      - account_number
+      properties:
+        chart_of_account_id:
+          type:
+          - integer
+          - 'null'
+          description: Posting (non-group) GL account, e.g. 1108.
+        account_name:
+          type: string
+        account_number:
+          type: string
+        bank_name:
+          type:
+          - string
+          - 'null'
+        branch:
+          type:
+          - string
+          - 'null'
+        iban:
+          type:
+          - string
+          - 'null'
+        swift_code:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        is_active:
+          type: boolean
+    Reconciliation:
+      type: object
+      required:
+      - bank_account_id
+      - statement_date
+      - statement_balance
+      - book_balance
+      - status
+      properties:
+        bank_account_id:
+          type: integer
+        statement_date:
+          type: string
+          format: date
+        statement_balance:
+          type: number
+        book_balance:
+          type: number
+        status:
+          type: string
+          enum:
+          - draft
+          - completed
+          - void
+    TaxCode:
+      type: object
+      required:
+      - code
+      - name
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        is_active:
+          type: boolean
+    TaxRate:
+      type: object
+      required:
+      - tax_code_id
+      - rate
+      - effective_from
+      properties:
+        tax_code_id:
+          type: integer
+        rate:
+          type: number
+          minimum: 0
+          maximum: 100
+        effective_from:
+          type: string
+          format: date
+          description: Unique per tax code.
+        effective_to:
+          type:
+          - string
+          - 'null'
+          format: date
+        is_active:
+          type: boolean

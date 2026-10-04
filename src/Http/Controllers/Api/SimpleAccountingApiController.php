@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api;
 
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\Concerns\ResolvesPerPage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -10,11 +11,14 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
 abstract class SimpleAccountingApiController extends Controller
 {
+    use ResolvesPerPage;
+
     abstract protected function model(): string;
 
     /**
@@ -28,10 +32,10 @@ abstract class SimpleAccountingApiController extends Controller
         $model = $this->model();
 
         return JsonResource::collection(
-            QueryBuilder::for($model::query())
+            QueryBuilder::for($model::query(), request())
                 ->allowedFilters(...$this->allowedFilters())
                 ->defaultSort('-id')
-                ->paginate()
+                ->paginate($this->perPage())
                 ->withQueryString()
         );
     }
@@ -90,8 +94,9 @@ abstract class SimpleAccountingApiController extends Controller
     protected function persistDelete(Model $record): void
     {
         try {
-            $record->delete();
-        } catch (QueryException $exception) { // @phpstan-ignore catch.neverThrown (delete() can violate a foreign key)
+            // Own transaction/savepoint: a foreign-key violation must not abort an outer transaction.
+            DB::transaction(fn () => $record->delete());
+        } catch (QueryException $exception) {
             // Foreign-key violation (SQLSTATE 23000 / 23503): the record is still referenced.
             if (in_array((string) $exception->getCode(), ['23000', '23503'], true)) {
                 throw new AccountingException('This record is in use by other accounting records and cannot be deleted.');

@@ -23,7 +23,7 @@ class JournalEntryController extends Controller
 {
     public function index(): Response
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']))
+        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']), request())
             ->allowedFilters(...[
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('description'),
@@ -109,7 +109,7 @@ class JournalEntryController extends Controller
 
     public function store(StoreJournalEntryRequest $request, JournalEntryService $service): RedirectResponse
     {
-        $entry = $service->create($request->validated());
+        $entry = $service->create($request->journalData());
 
         return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $entry)->with('success', 'Journal entry created.');
     }
@@ -117,7 +117,7 @@ class JournalEntryController extends Controller
     public function update(UpdateJournalEntryRequest $request, JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse
     {
         try {
-            $entry = $service->updateDraft($journalEntry, $request->validated());
+            $entry = $service->updateDraft($journalEntry, $request->journalData());
         } catch (JournalEntryNotEditableException $exception) {
             return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $journalEntry)->with('error', $exception->getMessage());
         }

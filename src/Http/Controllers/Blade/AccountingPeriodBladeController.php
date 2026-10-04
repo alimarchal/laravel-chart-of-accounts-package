@@ -15,7 +15,7 @@ class AccountingPeriodBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $periods = QueryBuilder::for(AccountingPeriod::query())
+        $periods = QueryBuilder::for(AccountingPeriod::query(), request())
             ->allowedFilters(
                 AllowedFilter::partial('name'),
                 AllowedFilter::exact('status'),

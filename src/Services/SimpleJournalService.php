@@ -39,6 +39,8 @@ class SimpleJournalService
         ?string $reference = null,
         bool $post = false,
         ?string $entryDate = null,
+        ?string $idempotencyKey = null,
+        ?string $idempotencyHash = null,
     ): JournalEntry {
         $cents = Money::toCents($amount);
 
@@ -56,6 +58,8 @@ class SimpleJournalService
             'reference' => $reference,
             'description' => $description,
             'auto_post' => $post,
+            'idempotency_key' => $idempotencyKey,
+            'idempotency_hash' => $idempotencyHash,
             'lines' => [
                 [
                     'chart_of_account_id' => $debitAccount->id,

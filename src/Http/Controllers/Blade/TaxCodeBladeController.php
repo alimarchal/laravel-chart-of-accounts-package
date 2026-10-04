@@ -16,7 +16,7 @@ class TaxCodeBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $taxCodes = QueryBuilder::for(TaxCode::query())
+        $taxCodes = QueryBuilder::for(TaxCode::query(), request())
             ->allowedFilters(
                 AllowedFilter::partial('code'),
                 AllowedFilter::partial('name'),

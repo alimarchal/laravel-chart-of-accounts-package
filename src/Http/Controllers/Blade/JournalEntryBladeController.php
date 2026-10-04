@@ -18,7 +18,7 @@ class JournalEntryBladeController extends Controller
 {
     public function index(): View
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']))
+        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod']), request())
             ->allowedFilters(
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('description'),

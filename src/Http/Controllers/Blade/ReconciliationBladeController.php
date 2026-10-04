@@ -17,7 +17,7 @@ class ReconciliationBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $reconciliations = QueryBuilder::for(Reconciliation::query()->with('bankAccount'))
+        $reconciliations = QueryBuilder::for(Reconciliation::query()->with('bankAccount'), request())
             ->allowedFilters(
                 AllowedFilter::exact('bank_account_id'),
                 AllowedFilter::exact('status'),

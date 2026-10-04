@@ -19,7 +19,7 @@ class ChartOfAccountBladeController extends Controller
 
     public function index(): View
     {
-        $accounts = QueryBuilder::for(ChartOfAccount::query()->with(['accountType', 'currency', 'parent']))
+        $accounts = QueryBuilder::for(ChartOfAccount::query()->with(['accountType', 'currency', 'parent']), request())
             ->allowedFilters(
                 AllowedFilter::partial('account_code'),
                 AllowedFilter::partial('account_name'),

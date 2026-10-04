@@ -1,6 +1,7 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountBalanceSnapshotApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingPeriodApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\BankAccountApiController;
@@ -9,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CostCenterApiControll
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CurrencyApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\JournalEntryApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReconciliationApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReportApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxCodeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxRateApiController;
 use Illuminate\Support\Facades\Route;
@@ -31,13 +33,32 @@ $apiResourceRoutes = function (string $uri, string $controller, string $routeNam
         ->middleware("can:{$permissionPrefix}.delete");
 };
 
-Route::middleware(config('accounting.api_middleware', ['api', 'auth']))
+$apiMiddleware = config('accounting.api_middleware', ['api', 'auth:sanctum']);
+
+if ((int) config('accounting.api_rate_limit', 120) > 0) {
+    $apiMiddleware[] = 'throttle:accounting-api';
+}
+
+Route::middleware($apiMiddleware)
     ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
     ->name('api.accounting.')
     ->group(function () use ($apiResourceRoutes): void {
         $apiResourceRoutes('account-types', AccountTypeApiController::class, 'account-types', 'account-types');
         $apiResourceRoutes('currencies', CurrencyApiController::class, 'currencies', 'currencies');
         $apiResourceRoutes('periods', AccountingPeriodApiController::class, 'periods', 'periods');
+        Route::post('periods/{period}/close', [AccountingApiController::class, 'closePeriod'])
+            ->name('periods.close')
+            ->middleware('can:periods.close');
+        Route::post('periods/{period}/reopen', [AccountingApiController::class, 'reopenPeriod'])
+            ->name('periods.reopen')
+            ->middleware('can:periods.reopen');
+        Route::post('periods/{period}/close-fiscal-year', [AccountingApiController::class, 'closeFiscalYear'])
+            ->name('periods.close-fiscal-year')
+            ->middleware('can:periods.close');
+
+        Route::get('health', [AccountingApiController::class, 'health'])
+            ->name('health')
+            ->middleware('can:accounting.view');
 
         Route::get('chart-of-accounts', [ChartOfAccountApiController::class, 'index'])
             ->name('chart-of-accounts.index')
@@ -45,6 +66,12 @@ Route::middleware(config('accounting.api_middleware', ['api', 'auth']))
         Route::post('chart-of-accounts', [ChartOfAccountApiController::class, 'store'])
             ->name('chart-of-accounts.store')
             ->middleware('can:chart-of-accounts.create');
+        Route::get('chart-of-accounts/tree', [AccountingApiController::class, 'tree'])
+            ->name('chart-of-accounts.tree')
+            ->middleware('can:chart-of-accounts.view');
+        Route::get('chart-of-accounts/{chartOfAccount}/balance', [AccountingApiController::class, 'balance'])
+            ->name('chart-of-accounts.balance')
+            ->middleware('can:chart-of-accounts.view');
         Route::get('chart-of-accounts/{chartOfAccount}', [ChartOfAccountApiController::class, 'show'])
             ->name('chart-of-accounts.show')
             ->middleware('can:chart-of-accounts.view');
@@ -73,6 +100,9 @@ Route::middleware(config('accounting.api_middleware', ['api', 'auth']))
         Route::post('journal-entries', [JournalEntryApiController::class, 'store'])
             ->name('journal-entries.store')
             ->middleware('can:journal-entries.create');
+        Route::post('journal-entries/simple', [JournalEntryApiController::class, 'simple'])
+            ->name('journal-entries.simple')
+            ->middleware('can:journal-entries.create');
         Route::get('journal-entries/{journalEntry}', [JournalEntryApiController::class, 'show'])
             ->name('journal-entries.show')
             ->middleware('can:journal-entries.view');
@@ -88,4 +118,25 @@ Route::middleware(config('accounting.api_middleware', ['api', 'auth']))
         Route::post('journal-entries/{journalEntry}/void', [JournalEntryApiController::class, 'void'])
             ->name('journal-entries.void')
             ->middleware('can:journal-entries.void');
+
+        Route::prefix('reports')->name('reports.')->group(function (): void {
+            $reports = [
+                'trial-balance' => 'trialBalance',
+                'balance-sheet' => 'balanceSheet',
+                'income-statement' => 'incomeStatement',
+                'general-ledger' => 'generalLedger',
+                'cash-flow' => 'cashFlow',
+                'bank-book' => 'bankBook',
+                'cash-book' => 'cashBook',
+                'aged-receivables' => 'agedReceivables',
+                'aged-payables' => 'agedPayables',
+                'account-statement' => 'accountStatement',
+            ];
+
+            foreach ($reports as $uri => $method) {
+                Route::get($uri, [ReportApiController::class, $method])
+                    ->name($uri)
+                    ->middleware("can:reports.{$uri}.view");
+            }
+        });
     });

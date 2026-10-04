@@ -16,7 +16,7 @@ class CostCenterBladeController extends Controller
 {
     public function index(Request $request): View
     {
-        $costCenters = QueryBuilder::for(CostCenter::query())
+        $costCenters = QueryBuilder::for(CostCenter::query(), request())
             ->allowedFilters(
                 AllowedFilter::partial('code'),
                 AllowedFilter::partial('name'),

@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api;
 
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\Concerns\ResolvesPerPage;
 use Alimarchal\LaravelChartOfAccounts\Http\Resources\AccountResource;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
@@ -14,12 +15,14 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class ChartOfAccountApiController extends Controller
 {
+    use ResolvesPerPage;
+
     public function __construct(private readonly ChartOfAccountService $service) {}
 
     public function index(): AnonymousResourceCollection
     {
         return AccountResource::collection(
-            QueryBuilder::for(ChartOfAccount::query()->with(['accountType', 'currency']))
+            QueryBuilder::for(ChartOfAccount::query()->with(['accountType', 'currency']), request())
                 ->allowedFilters(...[
                     AllowedFilter::partial('account_code'),
                     AllowedFilter::partial('account_name'),
@@ -29,7 +32,7 @@ class ChartOfAccountApiController extends Controller
                     AllowedFilter::exact('is_active'),
                 ])
                 ->orderBy('account_code')
-                ->paginate()
+                ->paginate($this->perPage())
                 ->withQueryString()
         );
     }
