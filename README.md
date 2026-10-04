@@ -437,32 +437,110 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 
 ---
 
-## Permissions
+## Roles & permissions
 
-| Permission | Description |
-|------------|-------------|
-| `accounting.view` | View all accounting screens |
-| `accounting.manage-settings` | Manage roles, users, periods |
-| `account-types.view/create/update/delete` | Account type CRUD |
-| `currencies.view/create/update/delete` | Currency CRUD |
-| `periods.view/create/update/delete/close/reopen` | Period management |
-| `chart-of-accounts.view/create/update/delete` | COA CRUD |
-| `cost-centers.view/create/update/delete` | Cost center CRUD |
-| `journal-entries.view/create/update/delete/post/reverse/void` | Journal entry workflow |
-| `bank-accounts.view/create/update/delete` | Bank account CRUD |
-| `reconciliations.view/create/update/delete` | Reconciliation CRUD |
-| `tax-codes.view/create/update/delete` | Tax code CRUD |
-| `tax-rates.view/create/update/delete` | Tax rate CRUD |
-| `account-balance-snapshots.view` | View balance snapshots |
-| `reports.*.view` | View individual reports (GL, TB, BS, IS, CF, AR, AP, BB, CB, AB) |
-| `audit-logs.view` | View audit trail |
-| `user.view/create/update/delete/assign-role/assign-permission` | User management |
+Six roles are seeded, designed around **segregation of duties** (the person who records an entry is not
+the person who approves it):
 
-Roles: `super-admin` (all), `admin`, `accountant`, `viewer`.
+| Role | Who | Can | Cannot |
+|------|-----|-----|--------|
+| `super-admin` | Owner | Everything | Approve **its own** entries under maker-checker |
+| `admin` | IT / user admin | Users, roles, permissions | Record, post, approve or close anything |
+| `accountant` | **Maker** | Record, edit, post (below the approval threshold), reverse, void drafts, close periods, bank & reconciliations, tax, FX rates | Approve, reopen periods, manage users/roles |
+| `approver` | **Checker** | Approve or reject entries; read ledger & reports | Create, edit or post entries |
+| `auditor` | Internal / external audit | Read everything incl. the audit trail | Change anything |
+| `viewer` | Management | Read ledger & reports | Change anything |
 
-**Privilege-escalation protection:** a user can only assign roles and permissions they hold themselves, only a
-super-admin can manage super-admin users or the `super-admin` role, and changing a user's roles requires
-`user.assign-role` (direct permissions: `user.assign-permission`). Role management requires `accounting.manage-settings`.
+```bash
+php artisan accounting:roles            # who-can-what matrix from the database + SoD check
+php artisan accounting:roles --config   # the shipped defaults
+```
+
+`accounting:roles` exits non-zero if any role other than `super-admin` can both create **and** approve
+journal entries — handy as a deployment check.
+
+**Safe to customise:** change roles in the Settings → Roles screen. Re-running `accounting:seed`
+(e.g. after an upgrade) **never removes** permissions you changed — it only adds newly introduced ones.
+
+**Privilege-escalation protection:** a user can only grant roles/permissions they hold themselves, only a
+super-admin can manage super-admin users or the `super-admin` role, changing a user's roles requires
+`user.assign-role` (direct permissions: `user.assign-permission`), role management requires
+`accounting.manage-settings`.
+
+<details>
+<summary>Full role × permission matrix (defaults)</summary>
+
+| Permission | super-admin | admin | accountant | approver | auditor | viewer |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `accounting.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `accounting.manage-settings` | ✔ | ✔ |  |  |  |  |
+| `user.view` | ✔ | ✔ |  |  |  |  |
+| `user.create` | ✔ | ✔ |  |  |  |  |
+| `user.update` | ✔ | ✔ |  |  |  |  |
+| `user.delete` | ✔ |  |  |  |  |  |
+| `user.assign-role` | ✔ | ✔ |  |  |  |  |
+| `user.assign-permission` | ✔ | ✔ |  |  |  |  |
+| `account-types.view` | ✔ |  | ✔ |  | ✔ |  |
+| `account-types.create` | ✔ |  |  |  |  |  |
+| `account-types.update` | ✔ |  |  |  |  |  |
+| `account-types.delete` | ✔ |  |  |  |  |  |
+| `currencies.view` | ✔ |  | ✔ |  | ✔ |  |
+| `currencies.create` | ✔ |  |  |  |  |  |
+| `currencies.update` | ✔ |  | ✔ |  |  |  |
+| `currencies.delete` | ✔ |  |  |  |  |  |
+| `periods.view` | ✔ |  | ✔ |  | ✔ |  |
+| `periods.create` | ✔ |  |  |  |  |  |
+| `periods.update` | ✔ |  |  |  |  |  |
+| `periods.delete` | ✔ |  |  |  |  |  |
+| `periods.close` | ✔ |  | ✔ |  |  |  |
+| `periods.reopen` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `chart-of-accounts.create` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.update` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.delete` | ✔ |  |  |  |  |  |
+| `cost-centers.view` | ✔ |  | ✔ |  | ✔ |  |
+| `cost-centers.create` | ✔ |  | ✔ |  |  |  |
+| `cost-centers.update` | ✔ |  | ✔ |  |  |  |
+| `cost-centers.delete` | ✔ |  |  |  |  |  |
+| `journal-entries.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `journal-entries.create` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.update` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.delete` | ✔ |  |  |  |  |  |
+| `journal-entries.post` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.reverse` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.void` | ✔ |  | ✔ |  |  |  |
+| `journal-entries.approve` | ✔ |  |  | ✔ |  |  |
+| `bank-accounts.view` | ✔ |  | ✔ |  | ✔ |  |
+| `bank-accounts.create` | ✔ |  | ✔ |  |  |  |
+| `bank-accounts.update` | ✔ |  | ✔ |  |  |  |
+| `bank-accounts.delete` | ✔ |  |  |  |  |  |
+| `reconciliations.view` | ✔ |  | ✔ |  | ✔ |  |
+| `reconciliations.create` | ✔ |  | ✔ |  |  |  |
+| `reconciliations.update` | ✔ |  | ✔ |  |  |  |
+| `reconciliations.delete` | ✔ |  |  |  |  |  |
+| `tax-codes.view` | ✔ |  | ✔ |  | ✔ | ✔ |
+| `tax-codes.create` | ✔ |  | ✔ |  |  |  |
+| `tax-codes.update` | ✔ |  | ✔ |  |  |  |
+| `tax-codes.delete` | ✔ |  |  |  |  |  |
+| `tax-rates.view` | ✔ |  | ✔ |  | ✔ | ✔ |
+| `tax-rates.create` | ✔ |  | ✔ |  |  |  |
+| `tax-rates.update` | ✔ |  | ✔ |  |  |  |
+| `tax-rates.delete` | ✔ |  |  |  |  |  |
+| `account-balance-snapshots.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.general-ledger.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.trial-balance.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `reports.balance-sheet.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `reports.income-statement.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `reports.cash-flow.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.aged-receivables.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.aged-payables.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.account-statement.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.account-balances.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.bank-book.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `reports.cash-book.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `audit-logs.view` | ✔ |  | ✔ |  | ✔ |  |
+
+</details>
 
 ---
 

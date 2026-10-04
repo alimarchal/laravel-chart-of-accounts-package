@@ -70,6 +70,7 @@ class AccountingInstallCommand extends Command
         $this->assignSuperAdminToFirstUser();
 
         $this->warnIfApiGuardMissing();
+        $this->checkUserModel();
 
         $this->info('Verifying installation...');
         $verifyExitCode = Artisan::call('accounting:verify', [], $this->output);
@@ -110,6 +111,41 @@ class AccountingInstallCommand extends Command
             $this->line('   Run "php artisan install:api" (and add HasApiTokens to your User model),');
             $this->line('   or set ACCOUNTING_API_MIDDLEWARE to your own guard, or ACCOUNTING_API_ENABLED=false.');
         }
+    }
+
+    /**
+     * Roles need Spatie's HasRoles on the user model; API tokens need Sanctum's HasApiTokens.
+     * Print the exact lines to add instead of failing later with an obscure error.
+     */
+    private function checkUserModel(): void
+    {
+        $model = config('auth.providers.users.model');
+
+        if (! is_string($model) || ! class_exists($model)) {
+            return;
+        }
+
+        $traits = class_uses_recursive($model);
+        $missing = array_filter([
+            'Spatie\\Permission\\Traits\\HasRoles' => ! in_array('Spatie\\Permission\\Traits\\HasRoles', $traits, true),
+            'Laravel\\Sanctum\\HasApiTokens' => config('accounting.api_enabled', true)
+                && class_exists('Laravel\\Sanctum\\HasApiTokens')
+                && ! in_array('Laravel\\Sanctum\\HasApiTokens', $traits, true),
+        ]);
+
+        if ($missing === []) {
+            $this->info('User model OK ('.$model.').');
+
+            return;
+        }
+
+        $this->warn('Add these traits to '.$model.':');
+
+        foreach (array_keys($missing) as $trait) {
+            $this->line('   use '.$trait.';');
+        }
+
+        $this->line('   …and list them in the class body, e.g. "use HasApiTokens, HasFactory, HasRoles, Notifiable;"');
     }
 
     private function assignSuperAdminToFirstUser(): void
