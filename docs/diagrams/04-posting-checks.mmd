@@ -20,7 +20,9 @@ flowchart TD
     P7 -->|no| X7["422 No open<br/>accounting period"]
     P7 -->|yes| P8{"Source document<br/>(e.g. BILL-778) not yet<br/>posted in this company?"}
     P8 -->|no| X8["422 Already posted as<br/>JV-2026-00012 —<br/>reverse that entry first"]
-    P8 -->|yes| BA["Freeze base-currency amounts<br/>(cents-exact, still balanced)"]
+    P8 -->|yes| P9{"Control accounts only from<br/>their module (or user may<br/>post manually)? *"}
+    P9 -->|no| X9["422 Post through the<br/>receivables / payables …<br/>module"]
+    P9 -->|yes| BA["Freeze base-currency amounts<br/>(cents-exact, still balanced)"]
     BA --> DB{"Database:<br/>no line on a group account,<br/>document key unique?"}
     DB -->|no| XD["Rejected by the database<br/>(guards raw SQL and other apps)"]
     DB -->|yes| OK["status = posted<br/>posted_at, posted_by, period set"]
@@ -31,6 +33,6 @@ flowchart TD
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
     classDef good fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef check fill:#fef3c7,stroke:#b45309,color:#78350f
-    class X0,X1,XA,X2,X3,X4,X5,X6,X7,X8,XD bad
+    class X0,X1,XA,X2,X3,X4,X5,X6,X7,X8,X9,XD bad
     class BA,OK,AUD,EV,DONE good
-    class P0,P1,PA,P2,P3,P4,P5,P6,P7,P8,DB check
+    class P0,P1,PA,P2,P3,P4,P5,P6,P7,P8,P9,DB check

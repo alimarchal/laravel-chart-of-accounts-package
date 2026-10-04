@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $normal_balance debit|credit
  * @property string|null $description
  * @property bool $is_group
+ * @property string|null $control_type the sub-ledger this account controls (receivables, payables, …); set through ChartOfAccountService
  * @property bool $is_active
  * @property bool $is_system
  * @property-read ChartOfAccount|null $parent

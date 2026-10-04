@@ -6,8 +6,11 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -39,6 +42,7 @@ class ChartOfAccountService
             'description' => ['nullable', 'string'],
             'is_group' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
+            'control_type' => ['nullable', 'string', Rule::in(array_keys(ControlAccounts::types()))],
         ];
     }
 
@@ -54,6 +58,10 @@ class ChartOfAccountService
             if ($request->has($flag)) {
                 $request->merge([$flag => $request->boolean($flag)]);
             }
+        }
+
+        if ($request->has('control_type') && $request->input('control_type') === '') {
+            $request->merge(['control_type' => null]);
         }
 
         $data = $request->validate($this->rules($record));
@@ -79,8 +87,11 @@ class ChartOfAccountService
     {
         return DB::transaction(function () use ($data): ChartOfAccount {
             $this->assertValid($data);
+            $account = new ChartOfAccount(Arr::except($data, ['control_type']));
+            $this->applyControlType($account, $data);
+            $account->save();
 
-            return ChartOfAccount::query()->create($data);
+            return $account;
         });
     }
 
@@ -93,10 +104,83 @@ class ChartOfAccountService
             $account = ChartOfAccount::query()->lockForUpdate()->findOrFail($account->id);
             $this->assertValid($data, $account);
 
-            $account->update($data);
+            $account->fill(Arr::except($data, ['control_type']));
+            $this->applyControlType($account, $data);
+            $account->save();
 
             return $account->refresh();
         });
+    }
+
+    /**
+     * Mark the seeded sub-ledger accounts (config accounting.control_accounts.recommended) as control
+     * accounts. Accounts already marked, group accounts and missing codes are left alone.
+     *
+     * @return array<int, array{account_code: string, account_name: string, control_type: string}> the accounts marked
+     */
+    public function applyRecommendedControlAccounts(): array
+    {
+        $this->assertCanManageControlAccounts();
+        $marked = [];
+
+        DB::transaction(function () use (&$marked): void {
+            foreach ((array) config('accounting.control_accounts.recommended', []) as $code => $type) {
+                $account = ChartOfAccount::query()->where('account_code', (string) $code)->lockForUpdate()->first();
+
+                if (! $account || $account->is_group || $account->control_type !== null || ! array_key_exists($type, ControlAccounts::types())) {
+                    continue;
+                }
+
+                $account->forceFill(['control_type' => $type])->save();
+                $marked[] = ['account_code' => $account->account_code, 'account_name' => $account->account_name, 'control_type' => $type];
+            }
+        });
+
+        return $marked;
+    }
+
+    /**
+     * Set or clear the control type of an account (control-accounts.manage).
+     */
+    public function setControlType(ChartOfAccount $account, ?string $type): ChartOfAccount
+    {
+        return DB::transaction(function () use ($account, $type): ChartOfAccount {
+            $account = ChartOfAccount::query()->lockForUpdate()->findOrFail($account->id);
+            $this->applyControlType($account, ['control_type' => $type]);
+            $account->save();
+
+            return $account->refresh();
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function applyControlType(ChartOfAccount $account, array $data): void
+    {
+        if (! array_key_exists('control_type', $data) || $data['control_type'] === $account->control_type) {
+            return;
+        }
+
+        $this->assertCanManageControlAccounts();
+        $type = $data['control_type'];
+
+        if ($type !== null && ! array_key_exists($type, ControlAccounts::types())) {
+            throw new AccountingException("Unknown control account type \"{$type}\".");
+        }
+
+        if ($type !== null && $account->is_group) {
+            throw new AccountingException('Only posting accounts can be control accounts; mark the posting accounts under the group.');
+        }
+
+        $account->forceFill(['control_type' => $type]);
+    }
+
+    private function assertCanManageControlAccounts(): void
+    {
+        if (! Auth::user()?->can('control-accounts.manage')) {
+            throw new AccountingException('Changing control accounts needs the "control-accounts.manage" permission.');
+        }
     }
 
     public function delete(ChartOfAccount $account): void

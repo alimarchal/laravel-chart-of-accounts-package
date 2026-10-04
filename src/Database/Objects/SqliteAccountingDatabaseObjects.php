@@ -138,6 +138,10 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
             $voucher .= ' OR NEW.source_document_type IS NOT OLD.source_document_type OR NEW.source_document_number IS NOT OLD.source_document_number OR NEW.source_document_date IS NOT OLD.source_document_date OR NEW.sourceable_type IS NOT OLD.sourceable_type OR NEW.sourceable_id IS NOT OLD.sourceable_id';
         }
+
+        if (Schema::hasColumn('accounting_journal_entries', 'origin_module')) {
+            $voucher .= ' OR NEW.origin_module IS NOT OLD.origin_module';
+        }
         $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
 
         DB::statement("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries

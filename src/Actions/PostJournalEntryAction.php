@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherNumberService;
 use Alimarchal\LaravelChartOfAccounts\Support\BaseAmounts;
+use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -38,6 +39,11 @@ class PostJournalEntryAction
             }
 
             $period = $this->assertPostable($entry, lockPeriod: true);
+
+            // Reversals and closing entries follow the entries they come from.
+            if (! $systemGenerated) {
+                ControlAccounts::assertCanPost($entry);
+            }
 
             $this->writeBaseAmounts($entry);
 

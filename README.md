@@ -24,6 +24,7 @@
 - **Multi-currency** — every line keeps its frozen base-currency amount; all reports are in the base currency
 - **Voucher numbering** — JV, CPV, CRV, BPV, BRV (and your own types) with **gapless** numbers such as `JV-2026-00012`, issued at posting, restarting per fiscal year or month, locked in the database
 - **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
+- **Control accounts** — receivables, payables, inventory, payroll and tax control accounts that only their module may post to, with a manual-postings exception list
 - **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
 - **12 reports** — trial balance, balance sheet, income statement, cash flow, general ledger, account statement (running balance), bank & cash book, aged AR/AP — export to CSV (streamed, any size), XLSX, PDF
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
@@ -52,6 +53,8 @@
 ### 4. What happens when an entry is posted
 
 ![Posting checks](docs/images/04-posting-checks.png)
+
+\* The control-account check is skipped for reversals and year-end closing entries, which follow their source entry.
 
 ### 5. Month-end and year-end close
 
@@ -467,6 +470,31 @@ JournalEntry::forSource($invoice)->get();
 
 ---
 
+## Control accounts
+
+A control account summarises a sub-ledger — customers (Accounts Receivable), suppliers (Accounts Payable), stock,
+fixed assets, payroll or tax. Its balance must always equal the sub-ledger, so **only entries of that module may post
+to it**. A manual journal entry (UI or API) touching a control account is refused:
+
+> Account 1103 Accounts Receivable is the control account for accounts receivable (customers): post through that
+> module, or ask a controller with the "control-accounts.post-manual" permission.
+
+- **Setting up:** open **Accounting → Control Accounts** and click **Recommended setup** (marks 1103 → receivables,
+  2101 → payables, 1151–1153 → inventory, 2103 → payroll, 1107/2104 → tax; `config('accounting.control_accounts.recommended')`),
+  or mark any posting account yourself. Existing installs are **not** marked on upgrade, so nothing changes until you
+  opt in. Changing control accounts needs `control-accounts.manage` (super-admin and admin).
+- **Modules post with their name**: `JournalEntryService::create([... 'origin_module' => 'receivables'])` or
+  `JournalEntry::record(..., module: 'receivables')`. The API never accepts a module, so API clients post as manual.
+  The module of a posted entry is locked in the database.
+- **Controller adjustments**: users with `control-accounts.post-manual` (super-admin only by default) may post manual
+  entries to control accounts — under maker-checker both the submitter and the approver need it. Every such entry
+  appears in the **Manual postings** column and list, which is the first thing an auditor reviews.
+- Reversals and year-end closing entries follow the entry they come from and are never blocked.
+- API: `GET /control-accounts` (balances and manual postings), `POST /control-accounts/recommended`,
+  `GET /control-accounts/{id}/manual-postings`, `PUT /chart-of-accounts/{id}/control-type`; accounts carry `control_type`.
+
+---
+
 ## Multi-company
 
 Run several companies (legal entities) from one installation. Each company has its **own chart of
@@ -632,6 +660,10 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | POST | `/journal-entries/{id}/void` | Void a draft | `journal-entries.void` |
 | POST | `/journal-entries/{id}/submit` | Submit a draft for approval (maker-checker) | `journal-entries.create` |
 | POST | `/journal-entries/{id}/approve` · `/reject` | Approve (posts it) / reject with `reason` | `journal-entries.approve` |
+| GET | `/control-accounts` | Control accounts with balances and manual postings | `chart-of-accounts.view` |
+| POST | `/control-accounts/recommended` | Mark the recommended control accounts | `control-accounts.manage` |
+| GET | `/control-accounts/{id}/manual-postings` | Manual postings to a control account | `chart-of-accounts.view` |
+| PUT | `/chart-of-accounts/{id}/control-type` | Set or clear an account's control type | `control-accounts.manage` |
 | GET/POST | `/voucher-types` | Voucher types with their next numbers / Create | `voucher-types.view` / `.create` |
 | GET/PUT/DELETE | `/voucher-types/{id}` | Show / Update / Delete an unused type | `voucher-types.*` |
 | GET | `/voucher-types/{id}/next-number` | Preview the next number (`?date=`), nothing reserved | `voucher-types.view` |

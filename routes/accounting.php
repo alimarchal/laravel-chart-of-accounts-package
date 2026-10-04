@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ControlAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CostCenterController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CurrencyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\JournalEntryController;
@@ -122,6 +123,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
             ->middleware('can:reconciliations.update');
         $resourceRoutes('tax-codes', TaxCodeController::class, 'tax-codes', 'tax-codes');
         $resourceRoutes('tax-rates', TaxRateController::class, 'tax-rates', 'tax-rates');
+        Route::get('control-accounts', [ControlAccountController::class, 'index'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
+        Route::post('control-accounts/recommended', [ControlAccountController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
+        Route::put('chart-of-accounts/{chartOfAccount}/control-type', [ControlAccountController::class, 'setType'])->name('chart-of-accounts.control-type')->middleware('can:control-accounts.manage');
         Route::get('voucher-types', [VoucherTypeController::class, 'index'])->name('voucher-types.index')->middleware('can:voucher-types.view');
         Route::post('voucher-types', [VoucherTypeController::class, 'store'])->name('voucher-types.store')->middleware('can:voucher-types.create');
         Route::match(['put', 'patch'], 'voucher-types/{record}', [VoucherTypeController::class, 'update'])->name('voucher-types.update')->middleware('can:voucher-types.update');

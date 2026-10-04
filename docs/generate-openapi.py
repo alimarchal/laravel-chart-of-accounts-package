@@ -39,6 +39,7 @@ schemas = {
  "Account": {"type": "object", "properties": {
      "id": {"type": "integer"}, "account_code": {"type": "string", "example": "1101"}, "account_name": {"type": "string", "example": "Cash In Hand"},
      "normal_balance": {"type": "string", "enum": ["debit", "credit"]}, "is_group": {"type": "boolean"}, "is_active": {"type": "boolean"}, "is_system": {"type": "boolean"},
+     "control_type": {"type": ["string", "null"], "enum": ["receivables", "payables", "inventory", "fixed_assets", "payroll", "tax", None], "description": "Set when the account controls a sub-ledger: only that module posts to it."},
      "parent_id": {"type": ["integer", "null"]}, "account_type_id": {"type": "integer"}, "currency_id": {"type": "integer"}, "description": {"type": ["string", "null"]},
      "account_type": {"type": "object"}, "currency": {"type": "object"},
      "children": {"type": "array", "items": ref("Account"), "description": "Only in /chart-of-accounts/tree"}}},
@@ -50,7 +51,8 @@ schemas = {
      "normal_balance": {"type": "string", "enum": ["debit", "credit"], "description": "Defaults to the account type's normal balance."},
      "description": {"type": ["string", "null"]},
      "is_group": {"type": "boolean", "default": False, "description": "Omitted on update = unchanged."},
-     "is_active": {"type": "boolean", "default": True, "description": "Omitted on update = unchanged."}}},
+     "is_active": {"type": "boolean", "default": True, "description": "Omitted on update = unchanged."},
+     "control_type": {"type": ["string", "null"], "description": "Requires `control-accounts.manage`; posting accounts only. Omitted = unchanged."}}},
  "AccountBalance": {"type": "object", "properties": {
      "account_id": {"type": "integer"}, "account_code": {"type": "string"}, "account_name": {"type": "string"},
      "normal_balance": {"type": "string"}, "includes_child_accounts": {"type": "boolean"}, "as_of_date": {"type": "string", "format": "date"},
@@ -222,6 +224,18 @@ paths["/voucher-types/{id}"] = {"parameters": [ID],
  "delete": op("Voucher types", "Delete an unused voucher type", "voucher-types.delete", {"204": resp("Deleted"), **E404_422}, desc="422 for the default type and for types used by entries (deactivate them instead).", opid="delete_voucher_type")}
 paths["/voucher-types/{id}/next-number"] = {"parameters": [ID], "get": op("Voucher types", "Preview the next number", "voucher-types.view", {"200": resp("Next number", data({"type": "object", "properties": {"voucher_type": {"type": "string"}, "date": {"type": "string", "format": "date"}, "next_number": {"type": "string"}}})), **E404_422}, params=[{"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Default today."}], opid="next_voucher_number")}
 
+ctl_row = {"type": "object", "properties": {"id": {"type": "integer"}, "account_code": {"type": "string"}, "account_name": {"type": "string"}, "control_type": {"type": "string"},
+    "control_label": {"type": "string"}, "balance": ref("Money"), "manual_postings": {"type": "integer", "description": "Posted entries that did not come from the account's module"}}}
+paths["/control-accounts"] = {"get": op("Chart of accounts", "Control accounts with balances and manual postings", "chart-of-accounts.view",
+    {"200": resp("Control accounts", {"type": "object", "properties": {"data": {"type": "array", "items": ctl_row}, "types": {"type": "object", "additionalProperties": {"type": "string"}}}}), **E},
+    desc="A control account summarises a sub-ledger (customers, suppliers, stock …). Manual journal entries to it need `control-accounts.post-manual`.", opid="list_control_accounts")}
+paths["/control-accounts/recommended"] = {"post": op("Chart of accounts", "Mark the recommended control accounts", "control-accounts.manage",
+    {"200": resp("Accounts marked now", data({"type": "array", "items": {"type": "object"}})), **E422}, desc="Uses config('accounting.control_accounts.recommended'); accounts already marked are skipped.", opid="recommended_control_accounts")}
+paths["/control-accounts/{id}/manual-postings"] = {"parameters": [ID], "get": op("Chart of accounts", "Manual postings to a control account", "chart-of-accounts.view",
+    {"200": resp("Latest 50 entries", data({"type": "array", "items": {"type": "object"}})), **E404}, opid="control_account_manual_postings")}
+paths["/chart-of-accounts/{id}/control-type"] = {"parameters": [ID], "put": op("Chart of accounts", "Set or clear an account's control type", "control-accounts.manage",
+    {"200": resp("Account", data({"type": "object"})), **E404_422}, body={"type": "object", "required": ["control_type"], "properties": {"control_type": {"type": ["string", "null"]}}}, opid="set_control_type")}
+
 paths["/account-balance-snapshots"] = {"get": op("Periods", "List balance snapshots", "account-balance-snapshots.view", {"200": resp("Paginated snapshots", paginated({"type": "object"})), **E}, params=PAGE + [{"name": "filter[chart_of_account_id]", "in": "query", "schema": {"type": "integer"}}, {"name": "filter[accounting_period_id]", "in": "query", "schema": {"type": "integer"}}], opid="list_snapshots")}
 paths["/account-balance-snapshots/{id}"] = {"parameters": [ID], "get": op("Periods", "Show a balance snapshot", "account-balance-snapshots.view", {"200": resp("Snapshot", data({"type": "object"})), **E404}, opid="show_snapshot")}
 
@@ -297,7 +311,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.6.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.7.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

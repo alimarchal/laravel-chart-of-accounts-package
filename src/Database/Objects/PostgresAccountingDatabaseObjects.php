@@ -66,6 +66,10 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             $voucher .= ' OR NEW.source_document_type IS DISTINCT FROM OLD.source_document_type OR NEW.source_document_number IS DISTINCT FROM OLD.source_document_number OR NEW.source_document_date IS DISTINCT FROM OLD.source_document_date OR NEW.sourceable_type IS DISTINCT FROM OLD.sourceable_type OR NEW.sourceable_id IS DISTINCT FROM OLD.sourceable_id';
         }
 
+        if (Schema::hasColumn('accounting_journal_entries', 'origin_module')) {
+            $voucher .= ' OR NEW.origin_module IS DISTINCT FROM OLD.origin_module';
+        }
+
         DB::statement(str_replace('__VOUCHER__', $voucher, <<<'SQL'
             CREATE OR REPLACE FUNCTION accounting_journal_posted_guard()
             RETURNS trigger AS $$

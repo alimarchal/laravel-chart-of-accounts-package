@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\DB;
  * @property string|null $sourceable_type
  * @property int|null $sourceable_id
  * @property string|null $active_source_key set while this posted entry holds its document
+ * @property string|null $origin_module the sub-ledger module that created the entry (receivables, payables, …); null = manual
  * @property string|null $description
  * @property string $status draft|posted|void
  * @property Carbon|null $posted_at
@@ -69,6 +70,7 @@ class JournalEntry extends AccountingModel
 
     protected $fillable = [
         'voucher_type_id',
+        'origin_module',
         'entry_date',
         'accounting_period_id',
         'currency_id',
@@ -272,6 +274,7 @@ class JournalEntry extends AccountingModel
         ?Model $source = null,
         ?string $documentType = null,
         ?string $documentNumber = null,
+        ?string $module = null,
     ): static {
         $amount = Money::fromCents(Money::toCents($amount));
         $debitAccount = ChartOfAccount::where('account_code', $debitAccountCode)->firstOrFail();
@@ -282,7 +285,7 @@ class JournalEntry extends AccountingModel
             ->where('end_date', '>=', now())
             ->firstOrFail();
 
-        return DB::transaction(function () use ($description, $debitAccount, $creditAccount, $amount, $post, $reference, $currency, $period, $source, $documentType, $documentNumber) {
+        return DB::transaction(function () use ($description, $debitAccount, $creditAccount, $amount, $post, $reference, $currency, $period, $source, $documentType, $documentNumber, $module) {
             /** @var static $entry */
             $entry = static::create([
                 'entry_date' => now()->toDateString(),
@@ -292,6 +295,7 @@ class JournalEntry extends AccountingModel
                 'reference' => $reference,
                 'source_document_type' => $documentType,
                 'source_document_number' => $documentNumber,
+                'origin_module' => $module,
                 'description' => $description,
                 'status' => 'draft',
                 'created_by' => auth()->id(),

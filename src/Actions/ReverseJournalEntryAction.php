@@ -45,6 +45,7 @@ class ReverseJournalEntryAction
 
             $reversal = JournalEntry::query()->create([
                 'voucher_type_id' => $entry->voucher_type_id,
+                'origin_module' => $entry->origin_module,
                 'source_document_type' => $entry->source_document_type,
                 'source_document_number' => $entry->source_document_number,
                 'source_document_date' => $entry->source_document_date,

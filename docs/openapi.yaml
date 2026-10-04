@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.6.0
+  version: 2.7.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -2797,6 +2797,170 @@ paths:
           format: date
         description: Default today.
       - $ref: '#/components/parameters/Company'
+  /control-accounts:
+    get:
+      tags:
+      - Chart of accounts
+      summary: Control accounts with balances and manual postings
+      operationId: list_control_accounts
+      description: 'A control account summarises a sub-ledger (customers, suppliers, stock …). Manual journal entries to it
+        need `control-accounts.post-manual`.
+
+
+        Permission: `chart-of-accounts.view`.'
+      responses:
+        '200':
+          description: Control accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        account_code:
+                          type: string
+                        account_name:
+                          type: string
+                        control_type:
+                          type: string
+                        control_label:
+                          type: string
+                        balance:
+                          $ref: '#/components/schemas/Money'
+                        manual_postings:
+                          type: integer
+                          description: Posted entries that did not come from the account's module
+                  types:
+                    type: object
+                    additionalProperties:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /control-accounts/recommended:
+    post:
+      tags:
+      - Chart of accounts
+      summary: Mark the recommended control accounts
+      operationId: recommended_control_accounts
+      description: 'Uses config(''accounting.control_accounts.recommended''); accounts already marked are skipped.
+
+
+        Permission: `control-accounts.manage`.'
+      responses:
+        '200':
+          description: Accounts marked now
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /control-accounts/{id}/manual-postings:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Chart of accounts
+      summary: Manual postings to a control account
+      operationId: control_account_manual_postings
+      description: 'Permission: `chart-of-accounts.view`.'
+      responses:
+        '200':
+          description: Latest 50 entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/{id}/control-type:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    put:
+      tags:
+      - Chart of accounts
+      summary: Set or clear an account's control type
+      operationId: set_control_type
+      description: 'Permission: `control-accounts.manage`.'
+      responses:
+        '200':
+          description: Account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - control_type
+              properties:
+                control_type:
+                  type:
+                  - string
+                  - 'null'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /account-balance-snapshots:
     get:
       tags:
@@ -3840,6 +4004,19 @@ components:
           type: boolean
         is_system:
           type: boolean
+        control_type:
+          type:
+          - string
+          - 'null'
+          enum:
+          - receivables
+          - payables
+          - inventory
+          - fixed_assets
+          - payroll
+          - tax
+          - null
+          description: 'Set when the account controls a sub-ledger: only that module posts to it.'
         parent_id:
           type:
           - integer
@@ -3903,6 +4080,11 @@ components:
           type: boolean
           default: true
           description: Omitted on update = unchanged.
+        control_type:
+          type:
+          - string
+          - 'null'
+          description: Requires `control-accounts.manage`; posting accounts only. Omitted = unchanged.
     AccountBalance:
       type: object
       properties:

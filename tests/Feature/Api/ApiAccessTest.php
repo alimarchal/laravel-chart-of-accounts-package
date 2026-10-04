@@ -59,6 +59,7 @@ function concreteUri(Route $route): string
             'tax-codes' => TaxCode::class,
             'tax-rates' => TaxRate::class,
             'voucher-types' => VoucherType::class,
+            'control-accounts' => ChartOfAccount::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
         };

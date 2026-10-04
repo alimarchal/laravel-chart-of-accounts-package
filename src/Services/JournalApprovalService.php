@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Events\JournalEntrySubmitted;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +64,7 @@ class JournalApprovalService
 
             // Fail fast: the maker learns about an unbalanced entry or closed period now, not at approval.
             app(PostJournalEntryAction::class)->assertPostable($entry);
+            ControlAccounts::assertCanPost($entry);
 
             $entry->forceFill([
                 'approval_status' => 'pending',
