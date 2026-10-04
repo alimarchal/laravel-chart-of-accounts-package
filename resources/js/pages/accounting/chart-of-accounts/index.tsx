@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Edit, Filter, Plus, Trash2, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { playErrorSound, playSuccessSound } from '@/lib/sounds';
+import { useAccounting, playErrorSound, playSuccessSound } from '@/lib/accounting';
 
 type Account = {
     id: number;
@@ -36,8 +36,7 @@ type Props = {
 };
 
 export default function ChartOfAccountsIndex({ accounts, filters, accountTypes, currencies }: Props) {
-    const { auth, flash } = usePage().props;
-    const permissions = auth.accountingPermissions ?? {};
+    const { permissions, flash } = useAccounting();
     const hasFilters = Object.values(filters ?? {}).some((value) => value && value !== 'all');
     const [filtersOpen, setFiltersOpen] = useState(hasFilters);
     const filterForm = useForm({

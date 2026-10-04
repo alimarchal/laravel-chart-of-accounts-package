@@ -1,10 +1,10 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Edit } from 'lucide-react';
 import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { playErrorSound, playSuccessSound } from '@/lib/sounds';
+import { useAccounting, playErrorSound, playSuccessSound } from '@/lib/accounting';
 
 type Field = {
     name: string;
@@ -32,8 +32,7 @@ function displayValue(value: RecordValue): string {
 }
 
 export default function AccountingResourceShow({ title, routeName, fields, record }: Props) {
-    const { auth, flash } = usePage().props;
-    const permissions = auth.accountingPermissions ?? {};
+    const { permissions, flash } = useAccounting();
 
     useEffect(() => {
         if (flash.success) {

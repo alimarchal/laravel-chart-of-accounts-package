@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Edit, Eye, Filter, Plus, Trash2, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { playErrorSound, playSuccessSound } from '@/lib/sounds';
+import { playErrorSound, playSuccessSound, useAccounting } from '@/lib/accounting';
 
 type RecordValue = string | number | boolean | null;
 
@@ -52,9 +52,8 @@ function displayValue(value: RecordValue): string {
 }
 
 export default function AccountingResourceIndex({ title, routeName, columns, fields, filters, readOnly = false, records }: Props) {
-    const { auth, flash } = usePage().props;
+    const { permissions, flash } = useAccounting();
     const basePath = `/accounting/${routeName}`;
-    const permissions = auth.accountingPermissions ?? {};
     const filterFields = fields.filter((field) => field.filter ?? field.table);
     const filterForm = useForm<Record<string, string>>(
         Object.fromEntries(filterFields.map((field) => [field.name, filters?.[field.name] ?? ''])) as Record<string, string>,

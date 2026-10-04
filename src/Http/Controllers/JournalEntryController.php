@@ -104,8 +104,11 @@ class JournalEntryController extends Controller
 
     public function show(JournalEntry $journalEntry): Response
     {
+        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']);
+
         return Inertia::render('accounting/journal-entries/show', [
-            'entry' => $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod']),
+            'entry' => $journalEntry,
+            'requiresApproval' => $journalEntry->status === 'draft' && app(JournalApprovalService::class)->requiresApproval($journalEntry),
         ]);
     }
 

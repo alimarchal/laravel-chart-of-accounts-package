@@ -1,10 +1,10 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Ban, Edit, RotateCcw, Send } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Ban, CheckCircle2, Edit, RotateCcw, Send, XCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { playErrorSound, playSuccessSound } from '@/lib/sounds';
+import { useAccounting, playErrorSound, playSuccessSound } from '@/lib/accounting';
 
 type JournalLine = {
     id: number;
@@ -28,6 +28,8 @@ type JournalEntry = {
     reference: string | null;
     description: string | null;
     status: 'draft' | 'posted' | 'void';
+    approval_status: 'pending' | 'approved' | 'rejected' | null;
+    rejection_reason: string | null;
     posted_at: string | null;
     lines: JournalLine[];
     currency?: {
@@ -35,17 +37,33 @@ type JournalEntry = {
     };
 };
 
-export default function JournalEntryShow({ entry }: { entry: JournalEntry }) {
-    const { auth, flash } = usePage().props;
-    const permissions = auth.accountingPermissions ?? {};
-    const canEdit = permissions['journal-entries.update'] === true && entry.status === 'draft';
-    const canPost = permissions['journal-entries.post'] === true && entry.status === 'draft';
+export default function JournalEntryShow({ entry, requiresApproval = false }: { entry: JournalEntry; requiresApproval?: boolean }) {
+    const { permissions, flash } = useAccounting();
+    const isDraft = entry.status === 'draft';
+    const canEdit = permissions['journal-entries.update'] === true && isDraft;
+    // Under maker-checker an entry that needs approval is submitted, never posted directly.
+    const canPost = permissions['journal-entries.post'] === true && isDraft && !requiresApproval;
+    const canSubmit = permissions['journal-entries.create'] === true && isDraft && requiresApproval && entry.approval_status !== 'pending';
+    const canReview = permissions['journal-entries.approve'] === true && isDraft && entry.approval_status === 'pending';
     const canReverse = permissions['journal-entries.reverse'] === true && entry.status === 'posted';
     const canVoid = permissions['journal-entries.void'] === true && entry.status === 'draft';
 
     const post = () => router.post(`/accounting/journal-entries/${entry.id}/post`);
     const reverse = () => router.post(`/accounting/journal-entries/${entry.id}/reverse`);
     const voidEntry = () => router.post(`/accounting/journal-entries/${entry.id}/void`);
+    const submit = () => router.post(`/accounting/journal-entries/${entry.id}/submit`);
+    const approve = () => {
+        if (window.confirm('Approve and post this entry?')) {
+            router.post(`/accounting/journal-entries/${entry.id}/approve`);
+        }
+    };
+    const reject = () => {
+        const reason = window.prompt('Reason for rejection');
+
+        if (reason) {
+            router.post(`/accounting/journal-entries/${entry.id}/reject`, { reason });
+        }
+    };
 
     useEffect(() => {
         if (flash.success) {
@@ -86,6 +104,24 @@ export default function JournalEntryShow({ entry }: { entry: JournalEntry }) {
                                 Post
                             </Button>
                         )}
+                        {canSubmit && (
+                            <Button onClick={submit}>
+                                <Send className="size-4" />
+                                Submit for approval
+                            </Button>
+                        )}
+                        {canReview && (
+                            <>
+                                <Button onClick={approve}>
+                                    <CheckCircle2 className="size-4" />
+                                    Approve &amp; post
+                                </Button>
+                                <Button onClick={reject} variant="destructive">
+                                    <XCircle className="size-4" />
+                                    Reject
+                                </Button>
+                            </>
+                        )}
                         {canReverse && (
                             <Button onClick={reverse} variant="outline">
                                 <RotateCcw className="size-4" />
@@ -100,6 +136,18 @@ export default function JournalEntryShow({ entry }: { entry: JournalEntry }) {
                         )}
                     </div>
                 </div>
+
+                {requiresApproval || entry.approval_status ? (
+                    <Alert className={entry.approval_status === 'rejected' ? 'border-red-500/30 bg-red-500/5' : 'border-indigo-500/30 bg-indigo-500/5'}>
+                        <AlertTitle>
+                            {entry.approval_status === 'pending' && 'Awaiting approval'}
+                            {entry.approval_status === 'approved' && 'Approved'}
+                            {entry.approval_status === 'rejected' && 'Rejected — edit and resubmit'}
+                            {!entry.approval_status && 'Approval required before posting'}
+                        </AlertTitle>
+                        {entry.rejection_reason ? <AlertDescription>{entry.rejection_reason}</AlertDescription> : null}
+                    </Alert>
+                ) : null}
 
                 {flash.success ? (
                     <Alert className="border-green-500/30 bg-green-500/5">
