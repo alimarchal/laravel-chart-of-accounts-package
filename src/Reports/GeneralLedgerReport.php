@@ -43,7 +43,11 @@ class GeneralLedgerReport
     public function totals(array $filters = []): array
     {
         $row = $this->baseQuery($filters)
-            ->selectRaw('COALESCE(SUM(debit), 0) as debit, COALESCE(SUM(credit), 0) as credit')
+            // Totals are in the base currency: posted lines carry frozen base amounts, other statuses are converted on the fly.
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN status = 'posted' THEN base_debit ELSE ROUND(debit * fx_rate_to_base, 2) END), 0) as debit,
+                COALESCE(SUM(CASE WHEN status = 'posted' THEN base_credit ELSE ROUND(credit * fx_rate_to_base, 2) END), 0) as credit
+            ")
             ->first();
 
         return [

@@ -19,7 +19,7 @@ abstract class AgingReport
     abstract protected function accountCodes(): array;
 
     /**
-     * SQL expression for the signed amount, e.g. "debit - credit" for receivables.
+     * SQL expression for the signed amount, e.g. "base_debit - base_credit" for receivables (base currency).
      */
     abstract protected function amountExpression(): string;
 

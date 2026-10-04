@@ -8,7 +8,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
+use Alimarchal\LaravelChartOfAccounts\Support\BaseAmounts;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +35,8 @@ class PostJournalEntryAction
             }
 
             $period = $this->assertPostable($entry, lockPeriod: true);
+
+            $this->writeBaseAmounts($entry);
 
             $entry->forceFill([
                 'accounting_period_id' => $period->id,
@@ -73,6 +77,21 @@ class PostJournalEntryAction
         }
 
         return $period;
+    }
+
+    /**
+     * Freeze the base-currency amounts while the entry is still a draft (posted lines are immutable).
+     */
+    private function writeBaseAmounts(JournalEntry $entry): void
+    {
+        $lines = $entry->lines
+            ->sortBy('line_no')
+            ->mapWithKeys(fn ($line) => [$line->id => ['debit' => $line->getRawOriginal('debit'), 'credit' => $line->getRawOriginal('credit')]])
+            ->all();
+
+        foreach (BaseAmounts::compute($lines, (string) $entry->getRawOriginal('fx_rate_to_base')) as $lineId => $amounts) {
+            JournalEntryLine::query()->whereKey($lineId)->update($amounts);
+        }
     }
 
     private function validateLines(JournalEntry $entry): void

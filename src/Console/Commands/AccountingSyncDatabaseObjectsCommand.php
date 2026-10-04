@@ -13,7 +13,12 @@ class AccountingSyncDatabaseObjectsCommand extends Command
 
     public function handle(AccountingDatabaseObjectSynchronizer $synchronizer): int
     {
-        $synchronizer->sync();
+        if (! $synchronizer->sync()) {
+            $this->error('The accounting tables are not fully migrated yet. Run "php artisan migrate" first.');
+
+            return self::FAILURE;
+        }
+
         $this->info('Accounting database objects synced.');
 
         return self::SUCCESS;

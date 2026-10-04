@@ -25,7 +25,7 @@ class CashFlowReport
             ->where('status', 'posted')
             ->when($filters['date_from'] ?? null, fn ($query, string $date) => $query->whereDate('entry_date', '>=', $date))
             ->when($filters['date_to'] ?? null, fn ($query, string $date) => $query->whereDate('entry_date', '<=', $date))
-            ->selectRaw('entry_date, reference, account_code, account_name, journal_description, debit as cash_in, credit as cash_out, debit - credit as net_cash_flow')
+            ->selectRaw('entry_date, reference, account_code, account_name, journal_description, base_debit as cash_in, base_credit as cash_out, base_debit - base_credit as net_cash_flow')
             ->orderBy('entry_date')
             ->orderBy('journal_entry_id')
             ->get();

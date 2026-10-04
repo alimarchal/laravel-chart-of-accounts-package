@@ -2,6 +2,7 @@
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingPermissionSeeder;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Sanctum\Sanctum;
@@ -71,8 +72,10 @@ it('enforces each role on the real API routes', function (): void {
     $check('approver', 'POST', 'journal-entries', 403);
     $check('admin', 'POST', 'journal-entries/simple', 403);
     $check('auditor', 'GET', 'reports/general-ledger', 200);
-    $check('auditor', 'POST', 'periods/1/close', 403);
-    $check('accountant', 'POST', 'periods/1/reopen', 403);
+    // Real ids: on MySQL/Postgres auto-increment values are not reset between tests.
+    $period = AccountingPeriod::query()->value('id');
+    $check('auditor', 'POST', "periods/{$period}/close", 403);
+    $check('accountant', 'POST', "periods/{$period}/reopen", 403);
     $check('accountant', 'GET', 'health', 200);
 });
 

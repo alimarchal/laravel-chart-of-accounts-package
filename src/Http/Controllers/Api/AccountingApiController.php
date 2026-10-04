@@ -41,7 +41,7 @@ class AccountingApiController extends Controller
             ->whereIn('line.chart_of_account_id', $ids)
             ->where('entry.status', 'posted')
             ->whereDate('entry.entry_date', '<=', $asOf)
-            ->selectRaw('COALESCE(SUM(line.debit), 0) as debits, COALESCE(SUM(line.credit), 0) as credits')
+            ->selectRaw('COALESCE(SUM(line.base_debit), 0) as debits, COALESCE(SUM(line.base_credit), 0) as credits')
             ->first();
 
         $debits = Money::toCents((string) $row->debits);

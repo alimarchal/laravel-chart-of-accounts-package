@@ -83,6 +83,8 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                     TG_OP IN ('INSERT', 'DELETE')
                     OR NEW.debit IS DISTINCT FROM OLD.debit
                     OR NEW.credit IS DISTINCT FROM OLD.credit
+                    OR NEW.base_debit IS DISTINCT FROM OLD.base_debit
+                    OR NEW.base_credit IS DISTINCT FROM OLD.base_credit
                     OR NEW.chart_of_account_id IS DISTINCT FROM OLD.chart_of_account_id
                     OR NEW.journal_entry_id IS DISTINCT FROM OLD.journal_entry_id
                 ) THEN
@@ -174,6 +176,8 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                 jed.line_no,
                 jed.debit,
                 jed.credit,
+                jed.base_debit,
+                jed.base_credit,
                 jed.description AS line_description,
                 cc.code AS cost_center_code,
                 cc.name AS cost_center_name,
@@ -195,11 +199,11 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                 at.name AS account_type,
                 at.report_group,
                 coa.normal_balance,
-                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.debit ELSE 0 END), 0) AS total_debits,
-                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.credit ELSE 0 END), 0) AS total_credits,
+                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_debit ELSE 0 END), 0) AS total_debits,
+                COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_credit ELSE 0 END), 0) AS total_credits,
                 CASE
-                    WHEN coa.normal_balance = 'debit' THEN COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.debit - jed.credit ELSE 0 END), 0)
-                    ELSE COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.credit - jed.debit ELSE 0 END), 0)
+                    WHEN coa.normal_balance = 'debit' THEN COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_debit - jed.base_credit ELSE 0 END), 0)
+                    ELSE COALESCE(SUM(CASE WHEN je.status = 'posted' THEN jed.base_credit - jed.base_debit ELSE 0 END), 0)
                 END AS balance
             FROM accounting_chart_of_accounts coa
             JOIN accounting_account_types at ON at.id = coa.account_type_id
