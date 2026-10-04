@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingHealthCheckComm
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingInstallCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRebuildSnapshotsCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRolesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSyncDatabaseObjectsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingUpdateCommand;
@@ -81,6 +82,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingCloseFiscalYearCommand::class,
                 AccountingClosePeriodCommand::class,
                 AccountingOpenPeriodCommand::class,
+                AccountingRolesCommand::class,
             ]);
         }
 
