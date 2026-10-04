@@ -91,9 +91,9 @@ class BalanceSheetReport
         }
 
         return [
-            'assets' => $assets / 100,
-            'liabilities_and_equity' => $claims / 100,
-            'difference' => ($assets - $claims) / 100,
+            'assets' => (float) ($assets / 100),
+            'liabilities_and_equity' => (float) ($claims / 100),
+            'difference' => (float) (($assets - $claims) / 100),
         ];
     }
 
