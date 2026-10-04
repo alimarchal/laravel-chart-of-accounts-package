@@ -92,6 +92,17 @@ return [
         ],
     ],
 
+    // Supporting documents (scanned bills, receipts, contracts) attached to journal entries. Files are stored on
+    // a private disk and only downloaded through the package's authorised route. Attachments of posted entries
+    // cannot be removed. required_above: entries whose total (base currency) is at or above this amount need at
+    // least one attachment before they are posted or submitted for approval (null = never required).
+    'attachments' => [
+        'disk' => env('ACCOUNTING_ATTACHMENTS_DISK', 'local'),
+        'max_size_kb' => (int) env('ACCOUNTING_ATTACHMENTS_MAX_KB', 10240),
+        'mimes' => ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'tif', 'tiff', 'xls', 'xlsx', 'csv', 'doc', 'docx', 'txt', 'xml', 'zip'],
+        'required_above' => env('ACCOUNTING_ATTACHMENTS_REQUIRED_ABOVE'),
+    ],
+
     // Signed webhooks for accounting events (queued when a queue is configured). Empty = disabled.
     'webhooks' => [
         'urls' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_WEBHOOK_URLS', '')))),
@@ -173,6 +184,9 @@ return [
         'voucher-types.delete',
         'control-accounts.manage',
         'control-accounts.post-manual',
+        'attachments.view',
+        'attachments.create',
+        'attachments.delete',
         'account-balance-snapshots.view',
         'reports.general-ledger.view',
         'reports.trial-balance.view',
@@ -228,6 +242,9 @@ return [
             'chart-of-accounts.view',
             'cost-centers.view',
             'journal-entries.view',
+            'attachments.view',
+            'attachments.create',
+            'attachments.delete',
             'bank-accounts.view',
             'reconciliations.view',
             'tax-codes.view',
@@ -269,6 +286,7 @@ return [
             'accounting.view',
             'chart-of-accounts.view',
             'journal-entries.view',
+            'attachments.view',
             'journal-entries.approve',
             'account-balance-snapshots.view',
             'reports.general-ledger.view',
@@ -291,6 +309,7 @@ return [
             'chart-of-accounts.view',
             'cost-centers.view',
             'journal-entries.view',
+            'attachments.view',
             'bank-accounts.view',
             'reconciliations.view',
             'tax-codes.view',
@@ -315,6 +334,7 @@ return [
             'accounting.view',
             'chart-of-accounts.view',
             'journal-entries.view',
+            'attachments.view',
             'tax-codes.view',
             'tax-rates.view',
             'voucher-types.view',

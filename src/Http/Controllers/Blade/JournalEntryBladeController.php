@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Actions\VoidJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Illuminate\Http\RedirectResponse;
@@ -60,6 +61,7 @@ class JournalEntryBladeController extends Controller
         return view('accounting::journal-entries.show', [
             'journalEntry' => $journalEntry,
             'trail' => $journalEntry->trail(),
+            'attachments' => app(AttachmentService::class)->list($journalEntry),
             'requiresApproval' => $journalEntry->status === 'draft' && app(JournalApprovalService::class)->requiresApproval($journalEntry),
         ]);
     }

@@ -65,6 +65,7 @@ class JournalApprovalService
             // Fail fast: the maker learns about an unbalanced entry or closed period now, not at approval.
             app(PostJournalEntryAction::class)->assertPostable($entry);
             ControlAccounts::assertCanPost($entry);
+            app(AttachmentService::class)->assertEvidence($entry);
 
             $entry->forceFill([
                 'approval_status' => 'pending',

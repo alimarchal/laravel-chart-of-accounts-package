@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.8.0] - 2026-10-10
+
+Attachments release.
+
+### Added
+- **Supporting documents on journal entries** (bills, receipts, contracts …): upload several at once from the entry
+  page (React and Blade) or `POST /journal-entries/{id}/attachments`; list and download (`GET …/attachments`,
+  `GET /attachments/{id}/download`).
+- Stored on a private disk (`ACCOUNTING_ATTACHMENTS_DISK`) under `accounting/{company}/{yyyy}/{mm}/`, downloaded
+  only through the authorised, company-scoped route; size and type limits (`ACCOUNTING_ATTACHMENTS_MAX_KB`,
+  `accounting.attachments.mimes`).
+- Documents of posted or voided entries cannot be removed; uploads and removals are audited with the file's
+  SHA-256. A file already attached to another entry is flagged as a possible duplicate.
+- `ACCOUNTING_ATTACHMENTS_REQUIRED_ABOVE`: entries at or above the amount need a document before posting or
+  submission for approval.
+- Permissions `attachments.view` (all journal roles), `attachments.create` and `attachments.delete` (accountant).
+- `Attachment` model, `JournalEntry::attachments()`, `AttachmentService`.
+
 ## [2.7.0] - 2026-10-09
 
 Control accounts release.

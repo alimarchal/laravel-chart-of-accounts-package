@@ -11,6 +11,10 @@ import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+    AttachmentsPanel,
+    type AttachmentItem,
+} from '@/components/accounting/attachments-panel';
 import { money } from '@/components/accounting/ledger';
 import {
     useAccounting,
@@ -66,11 +70,15 @@ export default function JournalEntryShow({
     requiresApproval = false,
     trail = [],
     documentTypes = {},
+    attachments = [],
+    attachmentRules = { max_size_kb: 10240, mimes: [] },
 }: {
     entry: JournalEntry;
     requiresApproval?: boolean;
     trail?: TrailStep[];
     documentTypes?: Record<string, string>;
+    attachments?: AttachmentItem[];
+    attachmentRules?: { max_size_kb: number; mimes: string[] };
 }) {
     const { permissions, flash } = useAccounting();
     const isDraft = entry.status === 'draft';
@@ -361,6 +369,22 @@ export default function JournalEntryShow({
                         </tfoot>
                     </table>
                 </div>
+
+                {permissions['attachments.view'] ? (
+                    <AttachmentsPanel
+                        entryId={entry.id}
+                        attachments={attachments}
+                        canUpload={
+                            permissions['attachments.create'] === true &&
+                            entry.status !== 'void'
+                        }
+                        canRemove={
+                            permissions['attachments.delete'] === true &&
+                            isDraft
+                        }
+                        rules={attachmentRules}
+                    />
+                ) : null}
 
                 {trail.length ? (
                     <div className="rounded-lg border p-4">

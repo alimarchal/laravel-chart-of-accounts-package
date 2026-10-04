@@ -4,6 +4,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountBalanceSnapsho
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingPeriodApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountTypeApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AttachmentApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\BankAccountApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ChartOfAccountApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CompanyApiController;
@@ -100,6 +101,10 @@ Route::middleware($apiMiddleware)
         $apiResourceRoutes('reconciliations', ReconciliationApiController::class, 'reconciliations', 'reconciliations');
         $apiResourceRoutes('tax-codes', TaxCodeApiController::class, 'tax-codes', 'tax-codes');
         $apiResourceRoutes('tax-rates', TaxRateApiController::class, 'tax-rates', 'tax-rates');
+        Route::get('journal-entries/{journalEntry}/attachments', [AttachmentApiController::class, 'index'])->name('journal-entries.attachments.index')->middleware('can:attachments.view');
+        Route::post('journal-entries/{journalEntry}/attachments', [AttachmentApiController::class, 'store'])->name('journal-entries.attachments.store')->middleware('can:attachments.create');
+        Route::get('attachments/{attachment}/download', [AttachmentApiController::class, 'download'])->name('attachments.download')->middleware('can:attachments.view');
+        Route::delete('attachments/{attachment}', [AttachmentApiController::class, 'destroy'])->name('attachments.destroy')->middleware('can:attachments.delete');
         Route::get('control-accounts', [ControlAccountApiController::class, 'index'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
         Route::post('control-accounts/recommended', [ControlAccountApiController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
         Route::get('control-accounts/{chartOfAccount}/manual-postings', [ControlAccountApiController::class, 'manualPostings'])->name('control-accounts.manual-postings')->middleware('can:chart-of-accounts.view');

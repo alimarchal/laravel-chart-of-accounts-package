@@ -4,6 +4,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountBalanceSnapshotCon
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingDashboardController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingPeriodController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountTypeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AuditLogController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountController;
@@ -123,6 +124,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
             ->middleware('can:reconciliations.update');
         $resourceRoutes('tax-codes', TaxCodeController::class, 'tax-codes', 'tax-codes');
         $resourceRoutes('tax-rates', TaxRateController::class, 'tax-rates', 'tax-rates');
+        Route::post('journal-entries/{journalEntry}/attachments', [AttachmentController::class, 'store'])->name('journal-entries.attachments.store')->middleware('can:attachments.create');
+        Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download')->middleware('can:attachments.view');
+        Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy')->middleware('can:attachments.delete');
         Route::get('control-accounts', [ControlAccountController::class, 'index'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
         Route::post('control-accounts/recommended', [ControlAccountController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
         Route::put('chart-of-accounts/{chartOfAccount}/control-type', [ControlAccountController::class, 'setType'])->name('chart-of-accounts.control-type')->middleware('can:control-accounts.manage');

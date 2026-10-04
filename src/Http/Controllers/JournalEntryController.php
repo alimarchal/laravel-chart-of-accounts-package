@@ -11,6 +11,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
+use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
@@ -130,6 +131,8 @@ class JournalEntryController extends Controller
             'entry' => $journalEntry,
             'trail' => $journalEntry->trail(),
             'documentTypes' => SourceDocuments::types(),
+            'attachments' => app(AttachmentService::class)->list($journalEntry),
+            'attachmentRules' => ['max_size_kb' => (int) config('accounting.attachments.max_size_kb', 10240), 'mimes' => (array) config('accounting.attachments.mimes', [])],
             'requiresApproval' => $journalEntry->status === 'draft' && app(JournalApprovalService::class)->requiresApproval($journalEntry),
         ]);
     }

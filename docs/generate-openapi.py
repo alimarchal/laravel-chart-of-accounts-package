@@ -224,6 +224,18 @@ paths["/voucher-types/{id}"] = {"parameters": [ID],
  "delete": op("Voucher types", "Delete an unused voucher type", "voucher-types.delete", {"204": resp("Deleted"), **E404_422}, desc="422 for the default type and for types used by entries (deactivate them instead).", opid="delete_voucher_type")}
 paths["/voucher-types/{id}/next-number"] = {"parameters": [ID], "get": op("Voucher types", "Preview the next number", "voucher-types.view", {"200": resp("Next number", data({"type": "object", "properties": {"voucher_type": {"type": "string"}, "date": {"type": "string", "format": "date"}, "next_number": {"type": "string"}}})), **E404_422}, params=[{"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Default today."}], opid="next_voucher_number")}
 
+schemas["Attachment"] = {"type": "object", "properties": {"id": {"type": "integer"}, "original_name": {"type": "string", "example": "bill-778.pdf"},
+    "mime_type": {"type": ["string", "null"]}, "size": {"type": "integer", "description": "Bytes"}, "sha256": {"type": "string"},
+    "description": {"type": ["string", "null"]}, "uploaded_by": {"type": ["string", "null"]}, "uploaded_at": {"type": ["string", "null"], "format": "date-time"}}}
+paths["/journal-entries/{id}/attachments"] = {"parameters": [ID],
+ "get": op("Journal entries", "Supporting documents of an entry", "attachments.view", {"200": resp("Attachments", data({"type": "array", "items": ref("Attachment")})), **E404}, opid="list_attachments"),
+ "post": op("Journal entries", "Attach a document (multipart/form-data)", "attachments.create",
+    {"201": resp("Attached", {"type": "object", "properties": {"data": ref("Attachment"), "duplicates": {"type": "array", "description": "Other entries carrying the very same file (possible duplicate bill)", "items": {"type": "object", "properties": {"id": {"type": "integer"}, "voucher_number": {"type": ["string", "null"]}}}}}}), **E404_422},
+    desc="Fields: `file` (max `ACCOUNTING_ATTACHMENTS_MAX_KB`, types from `accounting.attachments.mimes`) and optional `description`. Stored on a private disk.", opid="attach_document")}
+paths["/journal-entries/{id}/attachments"]["post"]["requestBody"] = {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string", "format": "binary"}, "description": {"type": "string"}}}}}}
+paths["/attachments/{id}/download"] = {"parameters": [ID], "get": op("Journal entries", "Download a document", "attachments.view", {"200": {"description": "The file", "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}}, **E404}, opid="download_attachment")}
+paths["/attachments/{id}"] = {"parameters": [ID], "delete": op("Journal entries", "Remove a document of a draft", "attachments.delete", {"204": resp("Removed"), **E404_422}, desc="422 for posted or voided entries: their documents are kept as evidence.", opid="remove_attachment")}
+
 ctl_row = {"type": "object", "properties": {"id": {"type": "integer"}, "account_code": {"type": "string"}, "account_name": {"type": "string"}, "control_type": {"type": "string"},
     "control_label": {"type": "string"}, "balance": ref("Money"), "manual_postings": {"type": "integer", "description": "Posted entries that did not come from the account's module"}}}
 paths["/control-accounts"] = {"get": op("Chart of accounts", "Control accounts with balances and manual postings", "chart-of-accounts.view",
@@ -311,7 +323,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.7.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.8.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

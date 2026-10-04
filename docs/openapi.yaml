@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.7.0
+  version: 2.8.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -2797,6 +2797,151 @@ paths:
           format: date
         description: Default today.
       - $ref: '#/components/parameters/Company'
+  /journal-entries/{id}/attachments:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Journal entries
+      summary: Supporting documents of an entry
+      operationId: list_attachments
+      description: 'Permission: `attachments.view`.'
+      responses:
+        '200':
+          description: Attachments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Journal entries
+      summary: Attach a document (multipart/form-data)
+      operationId: attach_document
+      description: 'Fields: `file` (max `ACCOUNTING_ATTACHMENTS_MAX_KB`, types from `accounting.attachments.mimes`) and optional
+        `description`. Stored on a private disk.
+
+
+        Permission: `attachments.create`.'
+      responses:
+        '201':
+          description: Attached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Attachment'
+                  duplicates:
+                    type: array
+                    description: Other entries carrying the very same file (possible duplicate bill)
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        voucher_number:
+                          type:
+                          - string
+                          - 'null'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /attachments/{id}/download:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Journal entries
+      summary: Download a document
+      operationId: download_attachment
+      description: 'Permission: `attachments.view`.'
+      responses:
+        '200':
+          description: The file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /attachments/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    delete:
+      tags:
+      - Journal entries
+      summary: Remove a document of a draft
+      operationId: remove_attachment
+      description: '422 for posted or voided entries: their documents are kept as evidence.
+
+
+        Permission: `attachments.delete`.'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /control-accounts:
     get:
       tags:
@@ -4992,6 +5137,36 @@ components:
           description: What the next posting today would get (not reserved).
         entries_count:
           type: integer
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: integer
+        original_name:
+          type: string
+          example: bill-778.pdf
+        mime_type:
+          type:
+          - string
+          - 'null'
+        size:
+          type: integer
+          description: Bytes
+        sha256:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        uploaded_by:
+          type:
+          - string
+          - 'null'
+        uploaded_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
     Company:
       type: object
       properties:
