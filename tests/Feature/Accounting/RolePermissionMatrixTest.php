@@ -116,3 +116,12 @@ it('adds permissions introduced by the package even when the app published an ol
         ->and(Role::findByName('accountant')->hasPermissionTo('reports.consolidated.view'))->toBeTrue()
         ->and(Role::findByName('super-admin')->hasPermissionTo('companies.manage'))->toBeTrue();
 });
+
+it('shows screens of newly introduced permissions even when the app published an older config', function (): void {
+    // An app whose published config predates voucher types.
+    config(['accounting.permissions' => array_values(array_filter(config('accounting.permissions'), fn (string $p) => ! str_starts_with($p, 'voucher-types.')))]);
+    $this->actingAs(userWithRole('super-admin'))->withoutVite();
+
+    $this->get('/accounting')->assertInertia(fn ($page) => $page
+        ->where('accounting.permissions', fn ($permissions) => ($permissions['voucher-types.create'] ?? false) && ($permissions['voucher-types.view'] ?? false)));
+});

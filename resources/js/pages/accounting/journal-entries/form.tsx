@@ -42,6 +42,12 @@ type CostCenter = {
     name: string;
 };
 
+type VoucherType = {
+    id: number;
+    code: string;
+    name: string;
+};
+
 type JournalLine = {
     chart_of_account_id: string;
     cost_center_id: string;
@@ -55,6 +61,7 @@ type Props = {
     method?: 'post' | 'put';
     title?: string;
     entry?: {
+        voucher_type_id: number | null;
         entry_date: string;
         currency_id: number | null;
         fx_rate_to_base: string | number;
@@ -71,6 +78,7 @@ type Props = {
     accounts: Account[];
     currencies: Currency[];
     costCenters: CostCenter[];
+    voucherTypes: VoucherType[];
 };
 
 const emptyLine = (): JournalLine => ({
@@ -89,6 +97,7 @@ export default function JournalEntryForm({
     accounts,
     currencies,
     costCenters,
+    voucherTypes,
 }: Props) {
     const baseCurrency =
         currencies.find((currency) => currency.is_base) ?? currencies[0];
@@ -106,6 +115,12 @@ export default function JournalEntryForm({
     ];
 
     const form = useForm({
+        // The first type is the default (JV); the voucher number itself is issued on posting.
+        voucher_type_id: entry?.voucher_type_id
+            ? String(entry.voucher_type_id)
+            : voucherTypes[0]
+              ? String(voucherTypes[0].id)
+              : '',
         entry_date: entry?.entry_date?.slice(0, 10) ?? today,
         currency_id: entry?.currency_id
             ? String(entry.currency_id)
@@ -202,12 +217,43 @@ export default function JournalEntryForm({
                         <CardHeader>
                             <CardTitle>Journal header</CardTitle>
                             <CardDescription>
-                                Date, currency, reference, and summary for this
-                                transaction.
+                                Voucher type, date, currency, reference, and
+                                summary. The voucher number is issued when the
+                                entry is posted.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                                <div className="flex flex-col gap-2">
+                                    <Label>Voucher type</Label>
+                                    <Select
+                                        value={form.data.voucher_type_id}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'voucher_type_id',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {voucherTypes.map((type) => (
+                                                <SelectItem
+                                                    key={type.id}
+                                                    value={String(type.id)}
+                                                >
+                                                    {type.code} - {type.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError
+                                        message={form.errors.voucher_type_id}
+                                    />
+                                </div>
+
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="entry_date">
                                         Entry Date

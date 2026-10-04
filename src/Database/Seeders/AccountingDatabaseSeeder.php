@@ -17,6 +17,7 @@ class AccountingDatabaseSeeder extends Seeder
             AccountingCostCenterSeeder::class,
             AccountingTaxCodeSeeder::class,
             AccountingTaxRateSeeder::class,
+            AccountingVoucherTypeSeeder::class,
         ]);
     }
 }

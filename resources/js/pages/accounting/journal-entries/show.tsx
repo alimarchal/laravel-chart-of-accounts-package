@@ -41,6 +41,8 @@ type JournalLine = {
 
 type JournalEntry = {
     id: number;
+    voucher_number: string | null;
+    voucher_type?: { code: string; name: string } | null;
     entry_date: string;
     reference: string | null;
     description: string | null;
@@ -124,11 +126,17 @@ export default function JournalEntryShow({
 
     return (
         <>
-            <Head title={`Journal Entry #${entry.id}`} />
+            <Head
+                title={entry.voucher_number ?? `Journal Entry #${entry.id}`}
+            />
             <div className="space-y-6 p-4">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <Heading
-                        title={`Journal Entry #${entry.id}`}
+                        title={
+                            entry.voucher_number
+                                ? `${entry.voucher_type?.name ?? 'Voucher'} ${entry.voucher_number}`
+                                : `${entry.voucher_type?.name ?? 'Journal entry'} (draft #${entry.id})`
+                        }
                         description={`${entry.entry_date.slice(0, 10)} · ${entry.reference ?? 'No reference'} · ${entry.currency?.code ?? 'Base currency'}`}
                     />
                     <div className="flex flex-wrap gap-2">

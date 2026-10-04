@@ -20,6 +20,9 @@ class JournalEntryResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'voucher_number' => $this->voucher_number,
+            'voucher_type_id' => $this->voucher_type_id,
+            'voucher_type' => $this->whenLoaded('voucherType', fn () => $this->voucherType?->only(['id', 'code', 'name'])),
             'entry_date' => $this->entry_date->toDateString(),
             'reference' => $this->reference,
             'description' => $this->description,

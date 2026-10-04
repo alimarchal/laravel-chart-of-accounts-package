@@ -4,6 +4,7 @@
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.journal-entries.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div><x-accounting::label for="filter_voucher_number" value="Voucher No." /><x-accounting::input id="filter_voucher_number" name="filter[voucher_number]" type="text" class="mt-1 block w-full" placeholder="JV-2026-00012" :value="request('filter.voucher_number')" /></div>
             <div><x-accounting::label for="filter_reference" value="Reference" /><x-accounting::input id="filter_reference" name="filter[reference]" type="text" class="mt-1 block w-full" :value="request('filter.reference')" /></div>
             <div><x-accounting::label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
@@ -26,11 +27,12 @@
         </div>
     </x-accounting::filter-section>
     <x-accounting::data-table :items="$journalEntries"
-        :headers="[['label'=>'#','align'=>'text-center'],['label'=>'Date'],['label'=>'Reference'],['label'=>'Description'],['label'=>'Status','align'=>'text-center'],['label'=>'Lines','align'=>'text-center'],['label'=>'Actions','align'=>'text-center']]"
+        :headers="[['label'=>'#','align'=>'text-center'],['label'=>'Voucher'],['label'=>'Date'],['label'=>'Reference'],['label'=>'Description'],['label'=>'Status','align'=>'text-center'],['label'=>'Lines','align'=>'text-center'],['label'=>'Actions','align'=>'text-center']]"
         emptyMessage="No journal entries found." :emptyRoute="route('accounting.journal-entries.create')" emptyLinkText="Create one">
         @foreach ($journalEntries as $i => $je)
         <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
             <td class="py-1 px-2 text-center">{{ $journalEntries->firstItem() + $i }}</td>
+            <td class="py-1 px-2 whitespace-nowrap">@if ($je->voucher_number)<span class="font-mono">{{ $je->voucher_number }}</span>@else<span class="text-gray-500">{{ $je->voucherType?->code ?? 'JV' }} draft #{{ $je->id }}</span>@endif</td>
             <td class="py-1 px-2">{{ $je->entry_date->format('Y-m-d') }}</td>
             <td class="py-1 px-2 font-mono">{{ $je->reference }}</td>
             <td class="py-1 px-2">{{ Str::limit($je->description, 50) }}</td>

@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
+use Alimarchal\LaravelChartOfAccounts\Support\AccountingPermissions;
 use Illuminate\Console\Command;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -20,7 +21,7 @@ class AccountingRolesCommand extends Command
     {
         $matrix = $this->option('config') ? $this->fromConfig() : $this->fromDatabase();
         $roles = array_keys($matrix);
-        $permissions = (array) config('accounting.permissions', []);
+        $permissions = AccountingPermissions::all();
 
         $this->table(
             array_merge(['Permission'], $roles),
@@ -52,9 +53,9 @@ class AccountingRolesCommand extends Command
      */
     private function fromConfig(): array
     {
-        $all = (array) config('accounting.permissions', []);
+        $all = AccountingPermissions::all();
 
-        return collect((array) config('accounting.roles', []))
+        return collect(AccountingPermissions::roles())
             ->map(fn (array $permissions) => $permissions === ['*'] ? $all : $permissions)
             ->all();
     }

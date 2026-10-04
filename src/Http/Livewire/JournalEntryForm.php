@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\View\View;
@@ -17,6 +18,8 @@ class JournalEntryForm extends Component
 {
     #[Locked]
     public ?int $entryId = null;
+
+    public ?int $voucher_type_id = null;
 
     public string $entry_date = '';
 
@@ -37,6 +40,7 @@ class JournalEntryForm extends Component
     {
         if ($entry && $entry->exists) {
             $this->entryId = $entry->id;
+            $this->voucher_type_id = $entry->voucher_type_id;
             $this->entry_date = $entry->entry_date->format('Y-m-d');
             $this->accounting_period_id = $entry->accounting_period_id;
             $this->currency_id = $entry->currency_id;
@@ -52,6 +56,7 @@ class JournalEntryForm extends Component
             ])->toArray();
         } else {
             $this->entry_date = now()->format('Y-m-d');
+            $this->voucher_type_id = VoucherType::query()->where('code', VoucherType::DEFAULT_CODE)->value('id');
             $this->addLine();
             $this->addLine();
         }
@@ -90,12 +95,13 @@ class JournalEntryForm extends Component
         abort_unless(auth()->user()?->can($this->entryId ? 'journal-entries.update' : 'journal-entries.create'), 403);
 
         $this->validate([
+            'voucher_type_id' => ['nullable', CompanyRule::exists('accounting_voucher_types', 'id')->where('is_active', true)],
             'entry_date' => ['required', 'date'],
             'accounting_period_id' => ['required', CompanyRule::exists('accounting_periods', 'id')],
             'currency_id' => ['required', 'exists:accounting_currencies,id'],
             'fx_rate_to_base' => ['required', 'numeric', 'min:0'],
             'lines' => ['required', 'array', 'min:2'],
-            'lines.*.chart_of_account_id' => ['required', CompanyRule::exists('accounting_chart_of_accounts', 'id')],
+            'lines.*.chart_of_account_id' => ['required', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where('is_group', false)],
             'lines.*.debit' => ['required', 'numeric', 'min:0'],
             'lines.*.credit' => ['required', 'numeric', 'min:0'],
         ]);
@@ -113,6 +119,7 @@ class JournalEntryForm extends Component
         }
 
         $data = [
+            'voucher_type_id' => $this->voucher_type_id,
             'entry_date' => $this->entry_date,
             'accounting_period_id' => $this->accounting_period_id,
             'currency_id' => $this->currency_id,
@@ -141,6 +148,7 @@ class JournalEntryForm extends Component
             'currencies' => Currency::where('is_active', true)->orderBy('code')->get(),
             'accounts' => ChartOfAccount::where('is_active', true)->where('is_group', false)->orderBy('account_code')->get(),
             'costCenters' => CostCenter::where('is_active', true)->orderBy('name')->get(),
+            'voucherTypes' => VoucherType::query()->where('is_active', true)->orderByDesc('is_system')->orderBy('code')->get(['id', 'code', 'name']),
         ]);
     }
 }

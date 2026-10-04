@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Concerns\HasAccountingValidationRules;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -56,6 +57,10 @@ class StoreJournalEntryRequest extends FormRequest
             $merge['currency_id'] = Currency::query()->where('code', strtoupper((string) $this->input('currency_code')))->value('id') ?? 0;
         }
 
+        if (! $this->filled('voucher_type_id') && $this->filled('voucher_type_code')) {
+            $merge['voucher_type_id'] = VoucherType::query()->where('code', strtoupper((string) $this->input('voucher_type_code')))->value('id') ?? 0;
+        }
+
         $this->merge($merge);
     }
 
@@ -80,6 +85,8 @@ class StoreJournalEntryRequest extends FormRequest
     {
         return [
             'entry_date' => ['required', 'date'],
+            'voucher_type_id' => ['nullable', 'integer', CompanyRule::exists('accounting_voucher_types', 'id')->where('is_active', true)],
+            'voucher_type_code' => ['nullable', 'string', 'max:20'],
             'currency_id' => ['nullable', Rule::exists('accounting_currencies', 'id')],
             'currency_code' => ['nullable', 'string', 'size:3'],
             'fx_rate_to_base' => ['nullable', 'numeric', 'gt:0'],
@@ -106,6 +113,7 @@ class StoreJournalEntryRequest extends FormRequest
         return [
             'lines.*.chart_of_account_id.required_without' => 'Each line needs a chart_of_account_id or an account_code.',
             'currency_id.exists' => 'The selected currency is invalid.',
+            'voucher_type_id.exists' => 'Choose an active voucher type of this company.',
             'lines.*.chart_of_account_id.exists' => 'Line :position: choose a posting account of this company (group accounts only total their children).',
             'lines.*.account_code.exists' => 'Line :position: choose a posting account of this company (group accounts only total their children).',
         ];
@@ -119,7 +127,7 @@ class StoreJournalEntryRequest extends FormRequest
     public function journalData(): array
     {
         $data = $this->validated();
-        unset($data['currency_code']);
+        unset($data['currency_code'], $data['voucher_type_code']);
 
         $data['lines'] = array_map(function (array $line): array {
             unset($line['account_code'], $line['cost_center_code']);

@@ -26,12 +26,15 @@ stateDiagram-v2
     Reversed --> [*]
 
     note right of Posted
-        Immutable in the database:
-        amounts, accounts, dates and status
-        can never change. Correct by reversing.
+        Gets its voucher number (JV-2026-00012):
+        gapless per voucher type, in posting order.
+        Immutable in the database: amounts, accounts,
+        dates, status and voucher number never change.
+        Correct by reversing.
     end note
 
     note right of Draft
-        Not in balances or reports.
-        Can be saved unbalanced.
+        Not in balances or reports. Has a voucher
+        type (JV, CPV, CRV, BPV, BRV…) but no number
+        yet, so voided drafts leave no gaps.
     end note

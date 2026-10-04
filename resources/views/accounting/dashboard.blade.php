@@ -138,7 +138,7 @@
                 @endcanany
 
                 {{-- ─── Master Data ─── --}}
-                @canany(['currencies.view','periods.view','cost-centers.view','tax-codes.view','tax-rates.view'])
+                @canany(['currencies.view','periods.view','cost-centers.view','tax-codes.view','tax-rates.view','voucher-types.view'])
                 <div>
                     <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Master Data</p>
                     <div class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -169,6 +169,12 @@
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row href="{{ route('accounting.tax-rates.index') }}" label="Tax Rates" description="Percentage rates per tax code" :count="$summary['taxRates']" icon-bg="bg-pink-500">
                             <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        @endcan
+                        @can('voucher-types.view')
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.voucher-types.index') }}" label="Voucher Types" description="JV, CPV, CRV, BPV, BRV &amp; number series" :count="$summary['voucherTypes'] ?? null" icon-bg="bg-sky-600">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg></x-slot>
                         </x-accounting::settings-row>
                         @endcan
                     </div>

@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingCostCenterSeede
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingPeriodSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingTaxCodeSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingTaxRateSeeder;
+use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingVoucherTypeSeeder;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
@@ -72,7 +73,7 @@ class CompanyService
 
             if ($seed) {
                 $this->companies->runAs($company, function (): void {
-                    foreach ([AccountingPeriodSeeder::class, AccountingChartOfAccountSeeder::class, AccountingCostCenterSeeder::class, AccountingTaxCodeSeeder::class, AccountingTaxRateSeeder::class] as $seeder) {
+                    foreach ([AccountingPeriodSeeder::class, AccountingChartOfAccountSeeder::class, AccountingCostCenterSeeder::class, AccountingTaxCodeSeeder::class, AccountingTaxRateSeeder::class, AccountingVoucherTypeSeeder::class] as $seeder) {
                         app($seeder)->run();
                     }
                 });

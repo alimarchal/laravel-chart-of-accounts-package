@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.4.0
+  version: 2.5.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -54,6 +54,8 @@ tags:
   description: Bank statement reconciliations.
 - name: Tax
   description: Tax codes and dated tax rates.
+- name: Voucher types
+  description: Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series.
 - name: Companies
   description: Companies (multi-company), access and consolidation.
 - name: System
@@ -2037,6 +2039,15 @@ paths:
         in: query
         schema:
           type: string
+      - name: filter[voucher_number]
+        in: query
+        schema:
+          type: string
+        description: Partial match, e.g. JV-2026-
+      - name: filter[voucher_type_id]
+        in: query
+        schema:
+          type: integer
       - name: filter[currency_id]
         in: query
         schema:
@@ -2066,6 +2077,8 @@ paths:
           - -id
           - reference
           - -reference
+          - voucher_number
+          - -voucher_number
           - created_at
           - -created_at
       - name: include
@@ -2495,6 +2508,285 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
+      - $ref: '#/components/parameters/Company'
+  /voucher-types:
+    get:
+      tags:
+      - Voucher types
+      summary: List voucher types with their next numbers
+      operationId: list_voucher_types
+      description: 'Permission: `voucher-types.view`.'
+      responses:
+        '200':
+          description: Voucher types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VoucherType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - name: filter[is_active]
+        in: query
+        schema:
+          type: boolean
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Voucher types
+      summary: Create a voucher type
+      operationId: create_voucher_type
+      description: 'Permission: `voucher-types.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VoucherType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - prefix
+              properties:
+                code:
+                  type: string
+                  maxLength: 20
+                  example: SV
+                  description: Upper-case; fixed once entries are numbered.
+                name:
+                  type: string
+                  example: Sales Voucher
+                prefix:
+                  type: string
+                  maxLength: 20
+                  example: SV
+                format:
+                  type: string
+                  default: '{PREFIX}-{FY}-{SEQ:5}'
+                  description: Tokens {PREFIX} {FY} {YYYY} {YY} {MM} {SEQ} {SEQ:n}. Yearly series need {FY}; monthly ones
+                    {MM} and a year token.
+                reset:
+                  type: string
+                  enum:
+                  - yearly
+                  - monthly
+                  - never
+                  default: yearly
+                  description: When numbering restarts; fixed once entries are numbered.
+                description:
+                  type:
+                  - string
+                  - 'null'
+                is_active:
+                  type: boolean
+                  default: true
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /voucher-types/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Voucher types
+      summary: Show a voucher type
+      operationId: show_voucher_type
+      description: 'Permission: `voucher-types.view`.'
+      responses:
+        '200':
+          description: Voucher type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VoucherType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Voucher types
+      summary: Update a voucher type (PATCH also accepted)
+      operationId: update_voucher_type
+      description: 'Send only the fields to change. 422 when changing the code or reset of a numbered series, or deactivating
+        JV.
+
+
+        Permission: `voucher-types.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VoucherType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  maxLength: 20
+                  example: SV
+                  description: Upper-case; fixed once entries are numbered.
+                name:
+                  type: string
+                  example: Sales Voucher
+                prefix:
+                  type: string
+                  maxLength: 20
+                  example: SV
+                format:
+                  type: string
+                  default: '{PREFIX}-{FY}-{SEQ:5}'
+                  description: Tokens {PREFIX} {FY} {YYYY} {YY} {MM} {SEQ} {SEQ:n}. Yearly series need {FY}; monthly ones
+                    {MM} and a year token.
+                reset:
+                  type: string
+                  enum:
+                  - yearly
+                  - monthly
+                  - never
+                  default: yearly
+                  description: When numbering restarts; fixed once entries are numbered.
+                description:
+                  type:
+                  - string
+                  - 'null'
+                is_active:
+                  type: boolean
+                  default: true
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Voucher types
+      summary: Delete an unused voucher type
+      operationId: delete_voucher_type
+      description: '422 for the default type and for types used by entries (deactivate them instead).
+
+
+        Permission: `voucher-types.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /voucher-types/{id}/next-number:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Voucher types
+      summary: Preview the next number
+      operationId: next_voucher_number
+      description: 'Permission: `voucher-types.view`.'
+      responses:
+        '200':
+          description: Next number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      voucher_type:
+                        type: string
+                      date:
+                        type: string
+                        format: date
+                      next_number:
+                        type: string
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: date
+        in: query
+        schema:
+          type: string
+          format: date
+        description: Default today.
       - $ref: '#/components/parameters/Company'
   /account-balance-snapshots:
     get:
@@ -3662,6 +3954,28 @@ components:
       properties:
         id:
           type: integer
+        voucher_number:
+          type:
+          - string
+          - 'null'
+          example: JV-2026-00012
+          description: Issued when the entry is posted (gapless per voucher type); null for drafts. Never changes afterwards.
+        voucher_type_id:
+          type:
+          - integer
+          - 'null'
+        voucher_type:
+          type:
+          - object
+          - 'null'
+          properties:
+            id:
+              type: integer
+            code:
+              type: string
+              example: JV
+            name:
+              type: string
         entry_date:
           type: string
           format: date
@@ -3817,6 +4131,17 @@ components:
       - entry_date
       - lines
       properties:
+        voucher_type_id:
+          type:
+          - integer
+          - 'null'
+          description: An active voucher type; default JV.
+        voucher_type_code:
+          type:
+          - string
+          - 'null'
+          example: CPV
+          description: Alternative to voucher_type_id.
         entry_date:
           type: string
           format: date
@@ -4335,6 +4660,52 @@ components:
               type:
               - object
               - 'null'
+    VoucherType:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          maxLength: 20
+          example: SV
+          description: Upper-case; fixed once entries are numbered.
+        name:
+          type: string
+          example: Sales Voucher
+        prefix:
+          type: string
+          maxLength: 20
+          example: SV
+        format:
+          type: string
+          default: '{PREFIX}-{FY}-{SEQ:5}'
+          description: Tokens {PREFIX} {FY} {YYYY} {YY} {MM} {SEQ} {SEQ:n}. Yearly series need {FY}; monthly ones {MM} and
+            a year token.
+        reset:
+          type: string
+          enum:
+          - yearly
+          - monthly
+          - never
+          default: yearly
+          description: When numbering restarts; fixed once entries are numbered.
+        description:
+          type:
+          - string
+          - 'null'
+        is_active:
+          type: boolean
+          default: true
+        is_system:
+          type: boolean
+          description: 'The default type (JV): cannot be deleted or deactivated.'
+        next_number:
+          type: string
+          example: SV-2026-00001
+          description: What the next posting today would get (not reserved).
+        entries_count:
+          type: integer
     Company:
       type: object
       properties:

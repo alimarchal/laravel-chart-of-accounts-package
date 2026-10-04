@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Middleware;
 
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountingPermissions;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Closure;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ class ShareAccountingInertiaData
             return [];
         }
 
-        return collect((array) config('accounting.permissions', []))
+        return collect(AccountingPermissions::all())
             ->mapWithKeys(fn (string $permission) => [$permission => $user->can($permission)])
             ->filter()
             ->all();

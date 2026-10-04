@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
+ * @property int $company_id
+ * @property int|null $voucher_type_id
+ * @property string|null $voucher_number set when the entry is posted; never changes afterwards
  * @property Carbon $entry_date
  * @property int|null $accounting_period_id
  * @property int $currency_id
@@ -43,6 +46,7 @@ use Illuminate\Support\Facades\DB;
  * @property-read Collection<int, JournalEntryLine> $lines
  * @property-read AccountingPeriod|null $accountingPeriod
  * @property-read Currency $currency
+ * @property-read VoucherType|null $voucherType
  */
 class JournalEntry extends AccountingModel
 {
@@ -56,6 +60,7 @@ class JournalEntry extends AccountingModel
     protected $hidden = ['idempotency_hash'];
 
     protected $fillable = [
+        'voucher_type_id',
         'entry_date',
         'accounting_period_id',
         'currency_id',
@@ -88,6 +93,11 @@ class JournalEntry extends AccountingModel
             'rejected_at' => 'datetime',
             'is_closing_entry' => 'boolean',
         ];
+    }
+
+    public function voucherType(): BelongsTo
+    {
+        return $this->belongsTo(VoucherType::class, 'voucher_type_id');
     }
 
     public function lines(): HasMany

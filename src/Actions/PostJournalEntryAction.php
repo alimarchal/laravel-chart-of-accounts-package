@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
+use Alimarchal\LaravelChartOfAccounts\Services\VoucherNumberService;
 use Alimarchal\LaravelChartOfAccounts\Support\BaseAmounts;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\Auth;
@@ -39,15 +40,16 @@ class PostJournalEntryAction
             $this->writeBaseAmounts($entry);
 
             $entry->forceFill([
+                ...app(VoucherNumberService::class)->assign($entry),
                 'accounting_period_id' => $period->id,
                 'status' => 'posted',
                 'posted_at' => now(),
                 'posted_by' => Auth::id(),
             ])->save();
 
-            AccountingAuditLog::record($entry, 'JOURNAL_POSTED', ['status' => 'draft'], ['status' => 'posted']);
+            AccountingAuditLog::record($entry, 'JOURNAL_POSTED', ['status' => 'draft'], ['status' => 'posted', 'voucher_number' => $entry->voucher_number]);
 
-            $entry = $entry->refresh()->load(['lines.account', 'currency', 'accountingPeriod']);
+            $entry = $entry->refresh()->load(['lines.account', 'currency', 'accountingPeriod', 'voucherType']);
 
             event(new JournalEntryPosted($entry));
 

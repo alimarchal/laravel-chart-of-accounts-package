@@ -3,6 +3,16 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
+            <x-accounting::label for="voucher_type_id" value="Voucher Type" />
+            <select id="voucher_type_id" wire:model="voucher_type_id"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                @foreach ($voucherTypes as $type)
+                <option value="{{ $type->id }}">{{ $type->code }} - {{ $type->name }}</option>
+                @endforeach
+            </select>
+            <p class="mt-1 text-xs text-gray-500">The voucher number is issued when the entry is posted.</p>
+        </div>
+        <div>
             <x-accounting::label for="entry_date" value="Entry Date" />
             <x-accounting::input id="entry_date" type="date" class="mt-1 block w-full" wire:model="entry_date" required />
         </div>

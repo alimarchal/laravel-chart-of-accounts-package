@@ -39,7 +39,12 @@ and use indexes, so they stay fast regardless of size. Closed periods keep balan
 | 500 posts, 24 concurrent clients | 500 × `201`, 10.8 s (≈ 46 posts/s), p50 0.47 s, p95 0.63 s |
 | 40 concurrent requests with the **same `Idempotency-Key`** | 1 × `201`, 39 × `200` (replayed), **exactly 1 entry created** |
 | Unbalanced entries after the run | **0** |
+| 300 posts as JV and CPV vouchers, 24 concurrent clients (2.5.0) | 300 × `201` in 11.6 s; JV 1…151 and CPV 1…150: **no duplicate and no gap** in either series |
 | Trial balance difference after the run | **0.00** |
+
+The voucher number is taken inside the posting transaction under a row lock on its series
+(`accounting_voucher_sequences`), so postings of the same voucher type queue only for that one row update;
+other types and the rest of the posting still run in parallel.
 
 Posting takes a *shared* lock on the accounting period (closing/reopening takes an exclusive one), so
 postings run in parallel but can never interleave with a period close. Throughput was CPU-bound on

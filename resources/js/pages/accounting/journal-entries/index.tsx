@@ -25,6 +25,8 @@ import {
 
 type Entry = {
     id: number;
+    voucher_number: string | null;
+    voucher_type: { id: number; code: string; name: string } | null;
     entry_date: string;
     reference: string | null;
     description: string | null;
@@ -54,6 +56,7 @@ export default function JournalEntriesIndex({
     );
     const [filtersOpen, setFiltersOpen] = useState(hasFilters);
     const filterForm = useForm({
+        voucher_number: filters.voucher_number ?? '',
         reference: filters.reference ?? '',
         description: filters.description ?? '',
         status: filters.status ?? 'all',
@@ -102,6 +105,7 @@ export default function JournalEntriesIndex({
 
     const resetFilters = () => {
         filterForm.setData({
+            voucher_number: '',
             reference: '',
             description: '',
             status: 'all',
@@ -193,6 +197,24 @@ export default function JournalEntriesIndex({
                                 className="space-y-4"
                             >
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="voucher_number">
+                                            Voucher no.
+                                        </Label>
+                                        <Input
+                                            id="voucher_number"
+                                            placeholder="JV-2026-00012"
+                                            value={
+                                                filterForm.data.voucher_number
+                                            }
+                                            onChange={(event) =>
+                                                filterForm.setData(
+                                                    'voucher_number',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="reference">
                                             Reference
@@ -331,6 +353,7 @@ export default function JournalEntriesIndex({
                     <table className="w-full min-w-[760px] text-sm">
                         <thead className="bg-muted/50 text-left">
                             <tr>
+                                <th className="p-3">Voucher</th>
                                 <th className="p-3">Date</th>
                                 <th className="p-3">Reference</th>
                                 <th className="p-3">Description</th>
@@ -341,7 +364,22 @@ export default function JournalEntriesIndex({
                         <tbody>
                             {entries.data.map((entry) => (
                                 <tr key={entry.id} className="border-t">
-                                    <td className="p-3">{entry.entry_date}</td>
+                                    <td className="p-3 whitespace-nowrap">
+                                        {entry.voucher_number ? (
+                                            <span className="font-mono">
+                                                {entry.voucher_number}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground">
+                                                {entry.voucher_type?.code ??
+                                                    'JV'}{' '}
+                                                draft #{entry.id}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-3 whitespace-nowrap">
+                                        {entry.entry_date.slice(0, 10)}
+                                    </td>
                                     <td className="p-3">{entry.reference}</td>
                                     <td className="p-3">{entry.description}</td>
                                     <td className="p-3">{entry.status}</td>
