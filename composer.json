@@ -32,6 +32,7 @@
         "spatie/laravel-query-builder": "^5.0|^6.0"
     },
     "require-dev": {
+        "dompdf/dompdf": "^3.0",
         "inertiajs/inertia-laravel": "^1.0|^2.0|^3.0",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.13",
@@ -44,7 +45,8 @@
     "suggest": {
         "inertiajs/inertia-laravel": "Required for the Inertia/React frontend (ui_driver=inertia)",
         "livewire/livewire": "Required for the Blade/Livewire frontend (ui_driver=blade), ^3.0|^4.0",
-        "laravel/sanctum": "Default guard for the REST API (auth:sanctum)"
+        "laravel/sanctum": "Default guard for the REST API (auth:sanctum)",
+        "dompdf/dompdf": "Typeset PDF reports and vouchers with company header, logo and page numbers (^3.0); without it a built-in renderer is used"
     },
     "autoload": {
         "psr-4": {

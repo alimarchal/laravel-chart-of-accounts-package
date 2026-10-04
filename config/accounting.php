@@ -92,6 +92,27 @@ return [
         ],
     ],
 
+    // PDF reports and printed vouchers. engine: auto (dompdf when installed, else the built-in renderer),
+    // dompdf or builtin. The company logo is read from logo_disk (Company::logo_path) or from logo (a file path).
+    // number_system: international (million) or south_asian (lakh, crore) for amounts in words.
+    'pdf' => [
+        'engine' => env('ACCOUNTING_PDF_ENGINE', 'auto'),
+        'paper' => env('ACCOUNTING_PDF_PAPER', 'a4'),
+        'logo_disk' => env('ACCOUNTING_PDF_LOGO_DISK', 'public'),
+        'logo' => env('ACCOUNTING_PDF_LOGO'),
+        'number_system' => env('ACCOUNTING_NUMBER_SYSTEM', 'international'),
+        // Above this many rows a PDF uses the built-in renderer (typesetting large tables is slow).
+        'dompdf_max_rows' => (int) env('ACCOUNTING_PDF_DOMPDF_MAX_ROWS', 3000),
+    ],
+
+    // Exports above export_max_rows are generated in the background (queue) and listed under Exports.
+    'exports' => [
+        'queue_large' => (bool) env('ACCOUNTING_QUEUE_LARGE_EXPORTS', true),
+        'disk' => env('ACCOUNTING_EXPORTS_DISK', 'local'),
+        'max_rows' => ['xlsx' => 500000, 'pdf' => 50000],
+        'keep_days' => (int) env('ACCOUNTING_EXPORTS_KEEP_DAYS', 7),
+    ],
+
     // Supporting documents (scanned bills, receipts, contracts) attached to journal entries. Files are stored on
     // a private disk and only downloaded through the package's authorised route. Attachments of posted entries
     // cannot be removed. required_above: entries whose total (base currency) is at or above this amount need at

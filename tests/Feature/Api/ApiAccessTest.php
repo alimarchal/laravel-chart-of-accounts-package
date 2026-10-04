@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
+use Alimarchal\LaravelChartOfAccounts\Models\ReportExport;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
@@ -52,6 +53,10 @@ function concreteUri(Route $route): string
             return 'trial-balance';
         }
 
+        if ($resource === 'reports') {
+            return $match[1] === 'format' ? 'pdf' : 'trial-balance';
+        }
+
         $model = match ($resource) {
             'companies' => Company::class,
             'account-types' => AccountType::class,
@@ -68,6 +73,7 @@ function concreteUri(Route $route): string
             'attachments' => Attachment::class,
             'users' => User::class,
             'roles' => Role::class,
+            'exports' => ReportExport::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
         };
@@ -112,7 +118,8 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     foreach (apiRoutes() as $route) {
         $method = collect($route->methods())->reject(fn ($m) => $m === 'HEAD')->first();
 
-        if ($method === 'GET') {
+        // Queuing or deleting your own report export reads the books, it does not write to them.
+        if ($method === 'GET' || in_array($route->uri(), ['api/v1/accounting/reports/{report}/exports/{format}', 'api/v1/accounting/exports/{export}'], true)) {
             continue;
         }
 

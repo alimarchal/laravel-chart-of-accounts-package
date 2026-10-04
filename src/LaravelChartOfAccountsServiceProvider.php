@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCreateCompanyCo
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingHealthCheckCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingInstallCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingPruneExportsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRebuildSnapshotsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRolesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
@@ -74,6 +75,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingSeedCommand::class,
                 AccountingSyncDatabaseObjectsCommand::class,
                 AccountingVerifyCommand::class,
+                AccountingPruneExportsCommand::class,
                 AccountingCreateCompanyCommand::class,
                 AccountingHealthCheckCommand::class,
                 AccountingRebuildSnapshotsCommand::class,

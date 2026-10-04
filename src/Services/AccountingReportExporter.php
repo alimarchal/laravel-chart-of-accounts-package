@@ -18,8 +18,9 @@ class AccountingReportExporter
      * built in memory and refused above accounting.export_max_rows.
      *
      * @param  Builder|iterable<int, array<string, mixed>|object>  $rows
+     * @param  array{title?: string, filters?: array<string, string>}  $context  shown in the PDF header
      */
-    public function download(Builder|iterable $rows, string $filename, string $format): Response|StreamedResponse
+    public function download(Builder|iterable $rows, string $filename, string $format, array $context = []): Response|StreamedResponse
     {
         if ($format === 'csv') {
             return $this->csv($rows, "{$filename}.csv");
@@ -34,11 +35,136 @@ class AccountingReportExporter
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'Content-Disposition' => "attachment; filename=\"{$filename}.xlsx\"",
             ]),
-            'pdf' => response($this->pdf($rows, $filename), 200, [
+            'pdf' => response($this->pdfDocument($rows, $filename, $context), 200, [
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => "attachment; filename=\"{$filename}.pdf\"",
             ]),
         };
+    }
+
+    /**
+     * The file contents of an export (used by queued exports, which write to storage).
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @param  array{title?: string, filters?: array<string, string>}  $context
+     */
+    public function contents(Collection $rows, string $filename, string $format, array $context = []): string
+    {
+        return match ($format) {
+            'xlsx' => $this->xlsx($rows),
+            'pdf' => $this->pdfDocument($rows, $filename, $context),
+            default => $this->csvString($rows),
+        };
+    }
+
+    /**
+     * A typeset PDF (dompdf, company letterhead, page X of Y) when available, else the built-in renderer.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @param  array{title?: string, subtitle?: string, filters?: array<string, string>}  $context
+     */
+    private function pdfDocument(Collection $rows, string $filename, array $context): string
+    {
+        $title = $context['title'] ?? (string) str($filename)->headline();
+        $filters = array_filter($context['filters'] ?? [], fn ($value) => $value !== '');
+        $renderer = app(PdfRenderer::class);
+
+        if (! $renderer->available($rows->count())) {
+            $company = $renderer->company()['name'];
+            $subtitle = collect($filters)->map(fn ($value, $label) => "{$label}: {$value}")->implode('  ');
+
+            return $this->pdf($rows, trim("{$company}  -  {$title}  {$subtitle}"));
+        }
+
+        [$keys, $rows] = $this->printableColumns($rows);
+        $columns = collect($keys)->map(fn (string $key) => [
+            'key' => $key,
+            'label' => (string) str($key)->replace('_', ' ')->title(),
+            'numeric' => $this->isAmountColumn($key, $rows),
+        ])->all();
+        $totals = collect($columns)
+            ->filter(fn (array $column) => $column['numeric'] && preg_match('/(debit|credit)s?$/', $column['key']))
+            ->mapWithKeys(fn (array $column) => [$column['key'] => $rows->sum(fn (array $row) => (float) ($row[$column['key']] ?? 0))])
+            ->all();
+
+        return $renderer->render('accounting::pdf.report', [
+            'title' => $title,
+            'subtitle' => $context['subtitle'] ?? null,
+            'filters' => $filters,
+            'columns' => $columns,
+            'rows' => $rows,
+            'totals' => $totals,
+            'rowCount' => $rows->count(),
+            'generatedAt' => now()->format('d M Y H:i'),
+            'generatedBy' => auth()->user()?->getAttribute('name'),
+        ], count($columns) > 6 ? 'landscape' : 'portrait');
+    }
+
+    /**
+     * The columns worth printing: internal ids, the FX rate, empty columns and base amounts that equal the
+     * transaction amounts are left out (they stay in CSV and Excel); the voucher number leads; midnight
+     * timestamps print as dates.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return array{0: list<string>, 1: Collection<int, array<string, mixed>>}
+     */
+    private function printableColumns(Collection $rows): array
+    {
+        $keys = array_keys($rows->first() ?? []);
+        $same = fn (string $a, string $b) => in_array($b, $keys, true)
+            && $rows->every(fn (array $row) => (float) ($row[$a] ?? 0) === (float) ($row[$b] ?? 0));
+
+        $keys = array_values(array_filter($keys, fn (string $key) => ! preg_match('/(^id$|_id$|^fx_rate)/', $key)
+            && $rows->contains(fn (array $row) => ($row[$key] ?? null) !== null && $row[$key] !== '')
+            && ! (str_starts_with($key, 'base_') && $same($key, substr($key, 5)))));
+
+        if (in_array('voucher_number', $keys, true)) {
+            $keys = ['voucher_number', ...array_values(array_diff($keys, ['voucher_number']))];
+        }
+
+        $rows = $rows->map(fn (array $row) => array_map(
+            fn ($value) => is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}[ T]00:00:00(\.0+)?(Z|[+-]\d{2}:?\d{2})?$/', $value) ? substr($value, 0, 10) : $value,
+            $row,
+        ));
+
+        return [$keys, $rows];
+    }
+
+    /**
+     * Money columns (debit, credit, balance, amounts …) are right-aligned and formatted; ids and codes are not.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     */
+    private function isAmountColumn(string $key, Collection $rows): bool
+    {
+        if (preg_match('/(^id$|_id$|code|number|line_no|days)/', $key)) {
+            return false;
+        }
+
+        return $rows->take(50)->every(fn (array $row) => ($row[$key] ?? null) === null || is_numeric($row[$key]))
+            && $rows->take(50)->contains(fn (array $row) => is_numeric($row[$key] ?? null));
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $rows
+     */
+    private function csvString(Collection $rows): string
+    {
+        $handle = fopen('php://temp', 'r+');
+
+        if ($rows->isNotEmpty()) {
+            fputcsv($handle, array_keys($rows->first()));
+        }
+
+        foreach ($rows as $row) {
+            fputcsv($handle, array_map(fn ($value): string => (string) $value, array_values($row)));
+        }
+
+        rewind($handle);
+        $csv = (string) stream_get_contents($handle);
+        fclose($handle);
+
+        return $csv;
     }
 
     /**
@@ -210,7 +336,7 @@ class AccountingReportExporter
         $kids = [];
 
         foreach ($pages as $number => $lines) {
-            $stream = 'BT /F2 11 Tf 30 565 Td ('.$this->pdfText(str($title)->headline().'  -  page '.($number + 1)." of {$pageCount}  -  {$generated}").') Tj ET'."\n";
+            $stream = 'BT /F2 11 Tf 30 565 Td ('.$this->pdfText($title.'  -  page '.($number + 1)." of {$pageCount}  -  {$generated}").') Tj ET'."\n";
             $stream .= 'BT /F2 7 Tf 9 TL 30 545 Td ('.$this->pdfText($headerLine).') Tj T* ('.$this->pdfText(str_repeat('-', mb_strlen($headerLine))).') Tj /F1 7 Tf';
 
             foreach ($lines as $line) {
