@@ -2,9 +2,9 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
-use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 
 class SimpleJournalService

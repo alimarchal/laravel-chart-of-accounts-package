@@ -2,23 +2,44 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use Alimarchal\LaravelChartOfAccounts\Database\Factories\JournalEntryFactory;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
-use Alimarchal\LaravelChartOfAccounts\Database\Factories\JournalEntryFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property int $id
+ * @property Carbon $entry_date
+ * @property int|null $accounting_period_id
+ * @property int $currency_id
+ * @property string $fx_rate_to_base
+ * @property string|null $reference
+ * @property string|null $description
+ * @property string $status draft|posted|void
+ * @property Carbon|null $posted_at
+ * @property int|null $posted_by
+ * @property int|null $reverses_entry_id
+ * @property int|null $reversed_by_entry_id
+ * @property Carbon|null $reversed_at
+ * @property bool $is_closing_entry
+ * @property int|null $closes_period_id
+ * @property-read Collection<int, JournalEntryLine> $lines
+ * @property-read AccountingPeriod|null $accountingPeriod
+ * @property-read Currency $currency
+ */
 class JournalEntry extends AccountingModel
 {
     /** @use HasFactory<JournalEntryFactory> */
     use HasFactory;
 
     use SoftDeletes;
-
 
     protected $fillable = [
         'entry_date',

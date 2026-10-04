@@ -1,6 +1,5 @@
 <?php
 
-use Alimarchal\LaravelChartOfAccounts\Actions\PostJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Actions\ReverseJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Actions\VoidJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;

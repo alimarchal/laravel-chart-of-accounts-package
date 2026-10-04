@@ -25,10 +25,6 @@ class VoidJournalEntryAction
                 throw new AccountingException('Journal entry is already voided.');
             }
 
-            if ($entry->status !== 'draft') {
-                throw new AccountingException('Only draft journal entries can be voided.');
-            }
-
             $entry->forceFill(['status' => 'void'])->save();
 
             AccountingAuditLog::record($entry, 'JOURNAL_VOIDED', ['status' => 'draft'], ['status' => 'void']);

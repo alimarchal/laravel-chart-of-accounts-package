@@ -47,7 +47,7 @@ class CreateAccountBalanceSnapshotsAction
     }
 
     /**
-     * @return Collection<int, object{debits: string, credits: string}>
+     * @return Collection<array-key, \stdClass>
      */
     private function totals(callable $scope): Collection
     {

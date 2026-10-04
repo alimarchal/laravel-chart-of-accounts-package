@@ -6,7 +6,22 @@ use Alimarchal\LaravelChartOfAccounts\Database\Factories\AccountingPeriodFactory
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property Carbon $start_date
+ * @property Carbon $end_date
+ * @property string $status open|closed|archived
+ * @property Carbon|null $closed_at
+ * @property int|null $closed_by
+ * @property int|null $closing_journal_entry_id
+ * @property string|null $closing_total_debits
+ * @property string|null $closing_total_credits
+ * @property string|null $closing_net_income
+ * @property-read JournalEntry|null $closingJournalEntry
+ */
 class AccountingPeriod extends AccountingModel
 {
     /** @use HasFactory<AccountingPeriodFactory> */
@@ -50,7 +65,7 @@ class AccountingPeriod extends AccountingModel
 
     public function closer(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', 'App\Models\User'), 'closed_by');
+        return $this->belongsTo(config('auth.providers.users.model'), 'closed_by');
     }
 
     public function closingJournalEntry(): BelongsTo

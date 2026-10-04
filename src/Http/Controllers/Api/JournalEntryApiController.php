@@ -8,9 +8,9 @@ use Alimarchal\LaravelChartOfAccounts\Http\Requests\UpdateJournalEntryRequest;
 use Alimarchal\LaravelChartOfAccounts\Http\Resources\JournalEntryResource;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Routing\Controller;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 

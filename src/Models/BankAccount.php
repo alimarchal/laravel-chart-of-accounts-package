@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int|null $chart_of_account_id
+ * @property bool $is_active
+ */
 class BankAccount extends AccountingModel
 {
     /** @use HasFactory<BankAccountFactory> */

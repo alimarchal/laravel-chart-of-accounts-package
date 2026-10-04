@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
+use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,6 +16,7 @@ class BankReconciliationMatcher
      */
     public function candidates(Reconciliation $reconciliation, float|int|string $tolerance = 0.01): Collection
     {
+        /** @var BankAccount $bankAccount */
         $bankAccount = $reconciliation->bankAccount()->with('chartOfAccount')->firstOrFail();
         $statementBalance = (float) $reconciliation->statement_balance;
         $bookBalance = (float) $reconciliation->book_balance;

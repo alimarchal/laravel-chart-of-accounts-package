@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -173,7 +174,7 @@ class UserBladeController extends Controller
         $user = $userModel::with(['roles', 'permissions'])->findOrFail($user);
         $this->guard->assertCanManageUser($request->user(), $user);
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, Permission> $allPermissions */
+        /** @var Collection<int, Permission> $allPermissions */
         $allPermissions = Permission::orderBy('name')->get();
 
         // Group permissions by prefix (e.g., "currencies" from "currencies.view")

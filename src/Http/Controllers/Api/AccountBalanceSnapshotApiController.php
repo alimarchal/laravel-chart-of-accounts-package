@@ -3,9 +3,9 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountBalanceSnapshot;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Routing\Controller;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 

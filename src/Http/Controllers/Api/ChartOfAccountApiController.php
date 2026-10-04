@@ -5,10 +5,10 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api;
 use Alimarchal\LaravelChartOfAccounts\Http\Resources\AccountResource;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Routing\Controller;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 

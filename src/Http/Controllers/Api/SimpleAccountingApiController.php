@@ -3,13 +3,13 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api;
 
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
-use Illuminate\Database\QueryException;
-use Illuminate\Routing\Controller;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Routing\Controller;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -91,7 +91,7 @@ abstract class SimpleAccountingApiController extends Controller
     {
         try {
             $record->delete();
-        } catch (QueryException $exception) {
+        } catch (QueryException $exception) { // @phpstan-ignore catch.neverThrown (delete() can violate a foreign key)
             // Foreign-key violation (SQLSTATE 23000 / 23503): the record is still referenced.
             if (in_array((string) $exception->getCode(), ['23000', '23503'], true)) {
                 throw new AccountingException('This record is in use by other accounting records and cannot be deleted.');

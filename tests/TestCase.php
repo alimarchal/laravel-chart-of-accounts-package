@@ -5,7 +5,12 @@ namespace Alimarchal\LaravelChartOfAccounts\Tests;
 use Alimarchal\LaravelChartOfAccounts\LaravelChartOfAccountsServiceProvider;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\ServiceProvider;
+use Laravel\Sanctum\SanctumServiceProvider;
+use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\Activitylog\ActivitylogServiceProvider;
+use Spatie\Permission\PermissionServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -14,14 +19,14 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         $providers = [
-            \Spatie\Permission\PermissionServiceProvider::class,
-            \Spatie\Activitylog\ActivitylogServiceProvider::class,
-            \Laravel\Sanctum\SanctumServiceProvider::class,
-            \Inertia\ServiceProvider::class,
+            PermissionServiceProvider::class,
+            ActivitylogServiceProvider::class,
+            SanctumServiceProvider::class,
+            ServiceProvider::class,
         ];
 
-        if (class_exists(\Livewire\LivewireServiceProvider::class)) {
-            $providers[] = \Livewire\LivewireServiceProvider::class;
+        if (class_exists(LivewireServiceProvider::class)) {
+            $providers[] = LivewireServiceProvider::class;
         }
 
         $providers[] = LaravelChartOfAccountsServiceProvider::class;

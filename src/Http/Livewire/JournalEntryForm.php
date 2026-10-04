@@ -29,7 +29,7 @@ class JournalEntryForm extends Component
 
     public string $description = '';
 
-    /** @var array<int, array{chart_of_account_id: int|null, cost_center_id: int|null, debit: string, credit: string, description: string}> */
+    /** @var array<int, array{chart_of_account_id: int|null, cost_center_id: int|null, debit?: string, credit?: string, description?: string}> */
     public array $lines = [];
 
     public function mount(?JournalEntry $entry = null): void

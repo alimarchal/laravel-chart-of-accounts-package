@@ -130,12 +130,18 @@ class ChartOfAccountService
      */
     public function tree(): Collection
     {
+        /** @var Collection<int, ChartOfAccount> $accounts */
         $accounts = ChartOfAccount::query()->with('accountType')->orderBy('account_code')->get();
         $byParent = $accounts->groupBy(fn (ChartOfAccount $account) => $account->parent_id ?? 0);
 
         $attach = function (ChartOfAccount $account) use (&$attach, $byParent): ChartOfAccount {
             $children = new Collection($byParent->get($account->id, collect())->all());
-            $children->each($attach);
+
+            foreach ($children as $child) {
+                /** @var ChartOfAccount $child */
+                $attach($child);
+            }
+
             $account->setRelation('childrenRecursive', $children);
 
             return $account;

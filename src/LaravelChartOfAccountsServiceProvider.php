@@ -28,6 +28,7 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class LaravelChartOfAccountsServiceProvider extends ServiceProvider
 {
@@ -90,17 +91,17 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
 
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/accounting/components', 'accounting');
 
-        if (class_exists(\Livewire\Livewire::class)) {
-            \Livewire\Livewire::component('accounting::journal-entry-form', JournalEntryForm::class);
-            \Livewire\Livewire::component('accounting::reports.general-ledger', GeneralLedgerLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.trial-balance', TrialBalanceLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.balance-sheet', BalanceSheetLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.income-statement', IncomeStatementLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.cash-flow', CashFlowLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.aged-payables', AgedPayablesLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.aged-receivables', AgedReceivablesLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.bank-book', BankBookLivewire::class);
-            \Livewire\Livewire::component('accounting::reports.cash-book', CashBookLivewire::class);
+        if (class_exists(Livewire::class)) {
+            Livewire::component('accounting::journal-entry-form', JournalEntryForm::class);
+            Livewire::component('accounting::reports.general-ledger', GeneralLedgerLivewire::class);
+            Livewire::component('accounting::reports.trial-balance', TrialBalanceLivewire::class);
+            Livewire::component('accounting::reports.balance-sheet', BalanceSheetLivewire::class);
+            Livewire::component('accounting::reports.income-statement', IncomeStatementLivewire::class);
+            Livewire::component('accounting::reports.cash-flow', CashFlowLivewire::class);
+            Livewire::component('accounting::reports.aged-payables', AgedPayablesLivewire::class);
+            Livewire::component('accounting::reports.aged-receivables', AgedReceivablesLivewire::class);
+            Livewire::component('accounting::reports.bank-book', BankBookLivewire::class);
+            Livewire::component('accounting::reports.cash-book', CashBookLivewire::class);
         }
     }
 
@@ -112,7 +113,9 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
     {
         $handler = $this->app->make(ExceptionHandler::class);
 
-        if (! method_exists($handler, 'renderable')) {
+        // Foundation's handler (and app handlers extending it) support renderable(); some console
+        // adapters do not, in which case HTTP rendering is irrelevant anyway.
+        if (! method_exists($handler, 'renderable')) { // @phpstan-ignore function.alreadyNarrowedType
             return;
         }
 

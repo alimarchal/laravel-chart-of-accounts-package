@@ -7,6 +7,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $journal_entry_id
+ * @property int $line_no
+ * @property int $chart_of_account_id
+ * @property int|null $cost_center_id
+ * @property string $debit
+ * @property string $credit
+ * @property string|null $description
+ * @property string|null $reconciliation_status
+ * @property-read JournalEntry $journalEntry
+ * @property-read ChartOfAccount $account
+ * @property-read CostCenter|null $costCenter
+ */
 class JournalEntryLine extends Model
 {
     /** @use HasFactory<JournalEntryLineFactory> */

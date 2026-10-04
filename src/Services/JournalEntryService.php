@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class JournalEntryService
 {
     /**
-     * @param  array{entry_date: string, currency_id?: int, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
+     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
      */
     public function create(array $data): JournalEntry
     {
@@ -51,7 +51,7 @@ class JournalEntryService
     }
 
     /**
-     * @param  array{entry_date: string, currency_id?: int, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
+     * @param  array{entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
      */
     public function updateDraft(JournalEntry $journalEntry, array $data): JournalEntry
     {

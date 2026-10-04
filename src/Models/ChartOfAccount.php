@@ -3,10 +3,28 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\ChartOfAccountFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int|null $parent_id
+ * @property int $account_type_id
+ * @property int $currency_id
+ * @property string $account_code
+ * @property string $account_name
+ * @property string $normal_balance debit|credit
+ * @property string|null $description
+ * @property bool $is_group
+ * @property bool $is_active
+ * @property bool $is_system
+ * @property-read ChartOfAccount|null $parent
+ * @property-read Collection<int, ChartOfAccount> $children
+ * @property-read Collection<int, ChartOfAccount> $childrenRecursive
+ * @property-read AccountType $accountType
+ */
 class ChartOfAccount extends AccountingModel
 {
     /** @use HasFactory<ChartOfAccountFactory> */

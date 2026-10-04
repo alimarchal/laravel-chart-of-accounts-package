@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Actions\VoidJournalEntryAction;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\JournalEntryNotEditableException;
 use Alimarchal\LaravelChartOfAccounts\Http\Requests\StoreJournalEntryRequest;
 use Alimarchal\LaravelChartOfAccounts\Http\Requests\UpdateJournalEntryRequest;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
@@ -10,9 +11,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -117,7 +118,7 @@ class JournalEntryController extends Controller
     {
         try {
             $entry = $service->updateDraft($journalEntry, $request->validated());
-        } catch (\Alimarchal\LaravelChartOfAccounts\Exceptions\JournalEntryNotEditableException $exception) {
+        } catch (JournalEntryNotEditableException $exception) {
             return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $journalEntry)->with('error', $exception->getMessage());
         }
 

@@ -72,7 +72,7 @@ class PostJournalEntryAction
 
             $accountCurrency = $line->account->currency_id;
 
-            if ($accountCurrency !== null && $accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id) {
+            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id) {
                 throw new AccountingException(
                     "Account {$line->account->account_code} is denominated in a different currency than this journal entry."
                 );

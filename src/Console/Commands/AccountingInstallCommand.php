@@ -8,7 +8,7 @@ use Spatie\Permission\Models\Role;
 
 class AccountingInstallCommand extends Command
 {
-    protected $signature = 'accounting:install';
+    protected $signature = 'accounting:install {--admin-email= : Email of the user to receive the super-admin role (defaults to the first user)}';
 
     protected $description = 'Full setup: publish assets, run migrations (including Spatie), seed master data, and verify.';
 
@@ -38,7 +38,7 @@ class AccountingInstallCommand extends Command
             $this->info('Publishing spatie/laravel-activitylog migrations...');
             Artisan::call('vendor:publish', [
                 '--provider' => 'Spatie\Activitylog\ActivitylogServiceProvider',
-                '--tag'      => 'activitylog-migrations',
+                '--tag' => 'activitylog-migrations',
                 '--no-interaction' => true,
             ], $this->output);
         }
@@ -77,18 +77,27 @@ class AccountingInstallCommand extends Command
 
     private function assignSuperAdminToFirstUser(): void
     {
-        $userModel = config('auth.providers.users.model', \App\Models\User::class);
+        $userModel = config('auth.providers.users.model');
 
-        if (! class_exists($userModel)) {
+        if (! is_string($userModel) || ! class_exists($userModel)) {
             return;
         }
 
-        $user = $userModel::query()->first();
+        $email = $this->option('admin-email');
+        $user = $email
+            ? $userModel::query()->where('email', $email)->first()
+            : $userModel::query()->orderBy((new $userModel)->getKeyName())->first();
 
         if (! $user) {
-            $this->warn('No users found. Please create a user and assign the "super-admin" role manually.');
+            $this->warn($email
+                ? "No user with email {$email} found. Assign the \"super-admin\" role manually."
+                : 'No users found. Please create a user and assign the "super-admin" role manually.');
 
             return;
+        }
+
+        if (! $email) {
+            $this->warn('No --admin-email given: the super-admin role goes to the first user. Verify this is intended.');
         }
 
         $role = Role::findByName('super-admin', 'web');

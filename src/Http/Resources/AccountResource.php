@@ -2,9 +2,13 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Resources;
 
+use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin ChartOfAccount
+ */
 class AccountResource extends JsonResource
 {
     /**

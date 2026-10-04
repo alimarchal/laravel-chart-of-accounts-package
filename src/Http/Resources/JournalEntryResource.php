@@ -2,9 +2,13 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Resources;
 
+use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin JournalEntry
+ */
 class JournalEntryResource extends JsonResource
 {
     /**
@@ -14,7 +18,7 @@ class JournalEntryResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'entry_date' => $this->entry_date?->toDateString(),
+            'entry_date' => $this->entry_date->toDateString(),
             'reference' => $this->reference,
             'description' => $this->description,
             'status' => $this->status,

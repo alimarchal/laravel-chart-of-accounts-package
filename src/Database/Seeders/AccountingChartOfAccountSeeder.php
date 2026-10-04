@@ -68,7 +68,7 @@ class AccountingChartOfAccountSeeder extends Seeder
     /**
      * Industry-neutral names for the codes whose school-preset names are education-specific.
      *
-     * @return array<string, string>
+     * @return array<int|string, string>
      */
     private function generalNames(): array
     {

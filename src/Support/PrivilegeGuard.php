@@ -41,7 +41,9 @@ class PrivilegeGuard
             return;
         }
 
-        abort_if(in_array(self::SUPER_ADMIN_ROLE, $roles, true), 403, 'Only a super-admin can assign the super-admin role.');
+        if (in_array(self::SUPER_ADMIN_ROLE, $roles, true)) {
+            abort(403, 'Only a super-admin can assign the super-admin role.');
+        }
 
         $permissions = Role::query()
             ->whereIn('name', $roles)
