@@ -23,6 +23,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement('ALTER TABLE accounting_journal_entry_lines ADD CONSTRAINT acct_lines_debit_credit_chk CHECK ((debit > 0 AND credit = 0) OR (credit > 0 AND debit = 0))');
 
         $this->createAuditTriggers();
+        $this->createImmutabilityTriggers();
         $this->createViews();
     }
 
@@ -36,7 +37,67 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_trigger ON {$table}");
         }
         DB::statement('DROP FUNCTION IF EXISTS accounting_audit_trigger()');
+        DB::statement('DROP TRIGGER IF EXISTS acct_journals_posted_guard ON accounting_journal_entries');
+        DB::statement('DROP TRIGGER IF EXISTS acct_lines_posted_guard ON accounting_journal_entry_lines');
+        DB::statement('DROP FUNCTION IF EXISTS accounting_journal_posted_guard()');
+        DB::statement('DROP FUNCTION IF EXISTS accounting_line_posted_guard()');
         DB::statement('DROP INDEX IF EXISTS acct_currencies_single_base_idx');
+    }
+
+    /**
+     * Posted journal entries (and their lines) are immutable at the database layer. Only the
+     * reversal / closing / reconciliation bookkeeping columns may still change.
+     */
+    private function createImmutabilityTriggers(): void
+    {
+        DB::statement(<<<'SQL'
+            CREATE OR REPLACE FUNCTION accounting_journal_posted_guard()
+            RETURNS trigger AS $$
+            BEGIN
+                IF OLD.status = 'posted' AND (
+                    TG_OP = 'DELETE'
+                    OR NEW.status <> 'posted'
+                    OR NEW.entry_date IS DISTINCT FROM OLD.entry_date
+                    OR NEW.currency_id IS DISTINCT FROM OLD.currency_id
+                    OR NEW.fx_rate_to_base IS DISTINCT FROM OLD.fx_rate_to_base
+                    OR NEW.deleted_at IS DISTINCT FROM OLD.deleted_at
+                ) THEN
+                    RAISE EXCEPTION 'Posted journal entries are immutable; reverse them instead.';
+                END IF;
+
+                RETURN COALESCE(NEW, OLD);
+            END;
+            $$ LANGUAGE plpgsql;
+        SQL);
+
+        DB::statement(<<<'SQL'
+            CREATE OR REPLACE FUNCTION accounting_line_posted_guard()
+            RETURNS trigger AS $$
+            DECLARE
+                parent_status text;
+            BEGIN
+                SELECT status INTO parent_status FROM accounting_journal_entries
+                WHERE id = CASE WHEN TG_OP = 'INSERT' THEN NEW.journal_entry_id ELSE OLD.journal_entry_id END;
+
+                IF parent_status = 'posted' AND (
+                    TG_OP IN ('INSERT', 'DELETE')
+                    OR NEW.debit IS DISTINCT FROM OLD.debit
+                    OR NEW.credit IS DISTINCT FROM OLD.credit
+                    OR NEW.chart_of_account_id IS DISTINCT FROM OLD.chart_of_account_id
+                    OR NEW.journal_entry_id IS DISTINCT FROM OLD.journal_entry_id
+                ) THEN
+                    RAISE EXCEPTION 'Posted journal entries are immutable; reverse them instead.';
+                END IF;
+
+                RETURN COALESCE(NEW, OLD);
+            END;
+            $$ LANGUAGE plpgsql;
+        SQL);
+
+        DB::statement('DROP TRIGGER IF EXISTS acct_journals_posted_guard ON accounting_journal_entries');
+        DB::statement('CREATE TRIGGER acct_journals_posted_guard BEFORE UPDATE OR DELETE ON accounting_journal_entries FOR EACH ROW EXECUTE FUNCTION accounting_journal_posted_guard()');
+        DB::statement('DROP TRIGGER IF EXISTS acct_lines_posted_guard ON accounting_journal_entry_lines');
+        DB::statement('CREATE TRIGGER acct_lines_posted_guard BEFORE INSERT OR UPDATE OR DELETE ON accounting_journal_entry_lines FOR EACH ROW EXECUTE FUNCTION accounting_line_posted_guard()');
     }
 
     private function createAuditTriggers(): void

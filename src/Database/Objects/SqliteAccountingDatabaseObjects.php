@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Database\Objects;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
 {
@@ -10,6 +11,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
     {
         $this->drop();
         $this->createAuditTriggers();
+        $this->createImmutabilityTriggers();
 
         DB::statement(<<<'SQL'
             CREATE VIEW IF NOT EXISTS vw_accounting_general_ledger AS
@@ -71,16 +73,73 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement('DROP VIEW IF EXISTS vw_accounting_trial_balance');
         DB::statement('DROP VIEW IF EXISTS vw_accounting_general_ledger');
         foreach ($this->auditedTables() as $table) {
+            DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_insert");
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_update");
+            DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_delete");
         }
+        foreach ($this->immutabilityTriggers() as $trigger) {
+            DB::statement("DROP TRIGGER IF EXISTS {$trigger}");
+        }
+    }
+
+    private function jsonRow(string $table, string $row): string
+    {
+        $pairs = collect(Schema::getColumnListing($table))
+            ->map(fn (string $column) => "'{$column}', {$row}.\"{$column}\"")
+            ->implode(', ');
+
+        return "json_object({$pairs})";
     }
 
     private function createAuditTriggers(): void
     {
         foreach ($this->auditedTables() as $table) {
-            DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_update");
-            DB::statement("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} BEGIN INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'update', json_object('id', OLD.id), json_object('id', NEW.id), json_object('source', 'database_trigger'), datetime('now')); END");
+            $new = $this->jsonRow($table, 'NEW');
+            $old = $this->jsonRow($table, 'OLD');
+
+            DB::statement("CREATE TRIGGER {$table}_audit_insert AFTER INSERT ON {$table} BEGIN INSERT INTO accounting_audit_logs (table_name, record_id, action, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'insert', {$new}, json_object('source', 'database_trigger'), datetime('now')); END");
+            DB::statement("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} BEGIN INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'update', {$old}, {$new}, json_object('source', 'database_trigger'), datetime('now')); END");
+            DB::statement("CREATE TRIGGER {$table}_audit_delete AFTER DELETE ON {$table} BEGIN INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, metadata, created_at) VALUES ('{$table}', OLD.id, 'delete', {$old}, json_object('source', 'database_trigger'), datetime('now')); END");
         }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function immutabilityTriggers(): array
+    {
+        return [
+            'acct_journals_posted_guard_update',
+            'acct_journals_posted_guard_delete',
+            'acct_lines_posted_guard_insert',
+            'acct_lines_posted_guard_update',
+            'acct_lines_posted_guard_delete',
+        ];
+    }
+
+    /**
+     * Posted journal entries (and their lines) are immutable at the database layer. Only the
+     * reversal / closing / reconciliation bookkeeping columns may still change.
+     */
+    private function createImmutabilityTriggers(): void
+    {
+        $abort = "SELECT RAISE(ABORT, 'Posted journal entries are immutable; reverse them instead.')";
+        $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
+
+        DB::statement("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries
+            WHEN OLD.status = 'posted' AND (NEW.status <> 'posted' OR NEW.entry_date IS NOT OLD.entry_date OR NEW.currency_id IS NOT OLD.currency_id
+                OR NEW.fx_rate_to_base IS NOT OLD.fx_rate_to_base OR NEW.deleted_at IS NOT OLD.deleted_at)
+            BEGIN {$abort}; END");
+        DB::statement("CREATE TRIGGER acct_journals_posted_guard_delete BEFORE DELETE ON accounting_journal_entries
+            WHEN OLD.status = 'posted' BEGIN {$abort}; END");
+        DB::statement("CREATE TRIGGER acct_lines_posted_guard_insert BEFORE INSERT ON accounting_journal_entry_lines
+            WHEN {$parentPosted('NEW')} BEGIN {$abort}; END");
+        DB::statement("CREATE TRIGGER acct_lines_posted_guard_update BEFORE UPDATE ON accounting_journal_entry_lines
+            WHEN {$parentPosted('OLD')} AND (NEW.debit IS NOT OLD.debit OR NEW.credit IS NOT OLD.credit
+                OR NEW.chart_of_account_id IS NOT OLD.chart_of_account_id OR NEW.journal_entry_id IS NOT OLD.journal_entry_id)
+            BEGIN {$abort}; END");
+        DB::statement("CREATE TRIGGER acct_lines_posted_guard_delete BEFORE DELETE ON accounting_journal_entry_lines
+            WHEN {$parentPosted('OLD')} BEGIN {$abort}; END");
     }
 
     /**

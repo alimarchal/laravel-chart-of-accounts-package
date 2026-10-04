@@ -3,12 +3,14 @@
 namespace Alimarchal\LaravelChartOfAccounts\Database\Objects;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
 {
     public function sync(): void
     {
         $this->createAuditTriggers();
+        $this->createImmutabilityTriggers();
         $this->createViews();
     }
 
@@ -23,6 +25,68 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_update");
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_delete");
         }
+        foreach ($this->immutabilityTriggers() as $trigger) {
+            DB::statement("DROP TRIGGER IF EXISTS {$trigger}");
+        }
+    }
+
+    /**
+     * JSON_OBJECT('col', ROW.col, ...) over every column of the table, so the audit trail
+     * records the full before/after state, not just the id.
+     */
+    protected function jsonRow(string $table, string $row): string
+    {
+        $pairs = collect(Schema::getColumnListing($table))
+            ->map(fn (string $column) => "'{$column}', {$row}.`{$column}`")
+            ->implode(', ');
+
+        return "JSON_OBJECT({$pairs})";
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function immutabilityTriggers(): array
+    {
+        return [
+            'acct_journals_posted_guard_update',
+            'acct_journals_posted_guard_delete',
+            'acct_lines_posted_guard_insert',
+            'acct_lines_posted_guard_update',
+            'acct_lines_posted_guard_delete',
+        ];
+    }
+
+    /**
+     * Posted journal entries (and their lines) are immutable at the database layer. Only the
+     * reversal / closing / reconciliation bookkeeping columns may still change.
+     */
+    protected function createImmutabilityTriggers(): void
+    {
+        foreach ($this->immutabilityTriggers() as $trigger) {
+            DB::statement("DROP TRIGGER IF EXISTS {$trigger}");
+        }
+
+        $message = "SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Posted journal entries are immutable; reverse them instead.'";
+        $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
+
+        DB::unprepared("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries FOR EACH ROW BEGIN
+            IF OLD.status = 'posted' AND (NEW.status <> 'posted' OR NEW.entry_date <> OLD.entry_date OR NEW.currency_id <> OLD.currency_id
+                OR NEW.fx_rate_to_base <> OLD.fx_rate_to_base OR NOT (NEW.deleted_at <=> OLD.deleted_at)) THEN {$message}; END IF;
+        END");
+        DB::unprepared("CREATE TRIGGER acct_journals_posted_guard_delete BEFORE DELETE ON accounting_journal_entries FOR EACH ROW BEGIN
+            IF OLD.status = 'posted' THEN {$message}; END IF;
+        END");
+        DB::unprepared("CREATE TRIGGER acct_lines_posted_guard_insert BEFORE INSERT ON accounting_journal_entry_lines FOR EACH ROW BEGIN
+            IF {$parentPosted('NEW')} THEN {$message}; END IF;
+        END");
+        DB::unprepared("CREATE TRIGGER acct_lines_posted_guard_update BEFORE UPDATE ON accounting_journal_entry_lines FOR EACH ROW BEGIN
+            IF {$parentPosted('OLD')} AND (NEW.debit <> OLD.debit OR NEW.credit <> OLD.credit
+                OR NEW.chart_of_account_id <> OLD.chart_of_account_id OR NEW.journal_entry_id <> OLD.journal_entry_id) THEN {$message}; END IF;
+        END");
+        DB::unprepared("CREATE TRIGGER acct_lines_posted_guard_delete BEFORE DELETE ON accounting_journal_entry_lines FOR EACH ROW BEGIN
+            IF {$parentPosted('OLD')} THEN {$message}; END IF;
+        END");
     }
 
     protected function createAuditTriggers(): void
@@ -32,9 +96,12 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_update");
             DB::statement("DROP TRIGGER IF EXISTS {$table}_audit_delete");
 
-            DB::unprepared("CREATE TRIGGER {$table}_audit_insert AFTER INSERT ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'insert', JSON_OBJECT('id', NEW.id), JSON_OBJECT('source', 'database_trigger'), NOW())");
-            DB::unprepared("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'update', JSON_OBJECT('id', OLD.id), JSON_OBJECT('id', NEW.id), JSON_OBJECT('source', 'database_trigger'), NOW())");
-            DB::unprepared("CREATE TRIGGER {$table}_audit_delete AFTER DELETE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, metadata, created_at) VALUES ('{$table}', OLD.id, 'delete', JSON_OBJECT('id', OLD.id), JSON_OBJECT('source', 'database_trigger'), NOW())");
+            $new = $this->jsonRow($table, 'NEW');
+            $old = $this->jsonRow($table, 'OLD');
+
+            DB::unprepared("CREATE TRIGGER {$table}_audit_insert AFTER INSERT ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'insert', {$new}, JSON_OBJECT('source', 'database_trigger'), NOW())");
+            DB::unprepared("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'update', {$old}, {$new}, JSON_OBJECT('source', 'database_trigger'), NOW())");
+            DB::unprepared("CREATE TRIGGER {$table}_audit_delete AFTER DELETE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, metadata, created_at) VALUES ('{$table}', OLD.id, 'delete', {$old}, JSON_OBJECT('source', 'database_trigger'), NOW())");
         }
     }
 

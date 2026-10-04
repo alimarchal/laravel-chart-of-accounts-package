@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -12,6 +13,13 @@ class IncomeStatementBladeController extends Controller
 {
     public function __invoke(Request $request): View
     {
+        // Dates are interpolated into raw SQL below, so they must be strictly validated and normalised.
+        $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d'],
+            'accounting_period_id' => ['nullable', 'integer'],
+        ]);
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $periodId = $request->input('accounting_period_id');
@@ -42,6 +50,9 @@ class IncomeStatementBladeController extends Controller
             }
         }
 
+        $startDate = Carbon::parse($startDate)->toDateString();
+        $endDate = Carbon::parse($endDate)->toDateString();
+
         $accounts = DB::table('accounting_chart_of_accounts as a')
             ->select([
                 'a.id as account_id',
@@ -66,6 +77,7 @@ class IncomeStatementBladeController extends Controller
                 FROM accounting_journal_entry_lines jel
                 JOIN accounting_journal_entries je ON je.id = jel.journal_entry_id
                 WHERE je.status = 'posted'
+                AND je.is_closing_entry = false
                 AND je.entry_date >= '{$startDate}'
                 AND je.entry_date <= '{$endDate}'
             ) as d"), 'd.chart_of_account_id', '=', 'a.id')

@@ -29,7 +29,8 @@ export default function IncomeStatement({ rows }: { rows: StatementRow[] }) {
 
         return carry;
     }, {});
-    const net = rows.reduce((sum, row) => sum + Number(row.balance ?? 0), 0);
+    // Revenue (credit-normal) adds to net income, expenses (debit-normal) subtract from it.
+    const net = rows.reduce((sum, row) => sum + (row.normal_balance === 'credit' ? 1 : -1) * Number(row.balance ?? 0), 0);
 
     return (
         <>
