@@ -100,6 +100,32 @@ jobs:
       - name: Run tests
         run: vendor/bin/pest
 
+  laravel-next:
+    # Early warning for the next Laravel major (14.x, expected Q1 2027, PHP 8.4+).
+    # Allowed to fail: dependencies may not support the dev branch yet.
+    name: Laravel 14.x-dev (PHP 8.4, experimental)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, sqlite3, intl, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: |
+          composer config minimum-stability dev
+          # Allow 14.x for this job only (the published constraints stay ^11|^12|^13 until 14.0 ships).
+          sed -i 's/"\^11.0|\^12.0|\^13.0"/"^11.0|^12.0|^13.0|^14.0"/' composer.json
+          composer require "laravel/framework:dev-master as 14.0.0" "orchestra/testbench:12.x-dev" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction --no-progress --with-all-dependencies
+
+      - name: Run tests
+        run: vendor/bin/pest
+
   quality:
     name: Static analysis & code style
     runs-on: ubuntu-latest
