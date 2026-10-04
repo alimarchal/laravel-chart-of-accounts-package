@@ -116,14 +116,23 @@ jobs:
           coverage: none
 
       - name: Install dependencies
+        id: deps
         run: |
           composer config minimum-stability dev
           # Allow 14.x for this job only (the published constraints stay ^11|^12|^13 until 14.0 ships).
           sed -i 's/"\^11.0|\^12.0|\^13.0"/"^11.0|^12.0|^13.0|^14.0"/' composer.json
           composer require "laravel/framework:dev-master as 14.0.0" "orchestra/testbench:12.x-dev" --no-interaction --no-update
-          composer update --prefer-dist --no-interaction --no-progress --with-all-dependencies
+          # Until Pest, Collision and Testbench support Laravel 14 the install cannot resolve: report it
+          # as a notice instead of a red check. Once it resolves, test failures fail this job.
+          if composer update --prefer-dist --no-interaction --no-progress --with-all-dependencies; then
+            echo "resolved=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Laravel 14::Test tooling (Pest/Collision/Testbench) does not support Laravel 14 yet; tests skipped."
+            echo "resolved=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Run tests
+        if: steps.deps.outputs.resolved == 'true'
         run: vendor/bin/pest
 
   quality:
