@@ -27,6 +27,36 @@
 
 ---
 
+## How it works (visual guide)
+
+> Every diagram is generated from the Mermaid sources in [`docs/diagrams/`](docs/diagrams) (SVG + PNG in [`docs/images/`](docs/images)).
+
+### 1. Architecture — who calls what
+
+![Architecture](docs/images/01-architecture.png)
+
+### 2. Installation flow
+
+![Installation flow](docs/images/02-installation.png)
+
+### 3. Journal entry lifecycle
+
+![Journal entry lifecycle](docs/images/03-journal-lifecycle.png)
+
+### 4. What happens when an entry is posted
+
+![Posting checks](docs/images/04-posting-checks.png)
+
+### 5. Month-end and year-end close
+
+![Period close](docs/images/05-period-close.png)
+
+### 6. An API request, step by step
+
+![API request](docs/images/06-api-request.png)
+
+---
+
 ## Requirements
 
 - PHP ^8.2 (Laravel 13 requires PHP ^8.3)
@@ -39,45 +69,93 @@
 
 ## Installation
 
+Tested end-to-end on a fresh **Laravel 13** app: install takes about one second and the first API call works immediately.
+
 ```bash
+# 1. Package
 composer require alimarchal/laravel-chart-of-accounts
+
+# 2. Choose a UI in .env (default: inertia)
+#    ACCOUNTING_UI_DRIVER=inertia   React (Breeze / React starter kit)
+#    ACCOUNTING_UI_DRIVER=blade     Blade + Livewire (composer require livewire/livewire)
+#    ACCOUNTING_UI_DRIVER=api       REST API only — no web routes, views or Livewire (lightest)
+
+# 3. API authentication (Laravel 11+ ships without it)
+php artisan install:api
 ```
-
-> **Blade/Livewire apps** (Jetstream): add `ACCOUNTING_UI_DRIVER=blade` to `.env` **before** installing.
-> **Inertia/React apps** (Breeze): leave default (`inertia`).
-
-```bash
-php artisan accounting:install --admin-email=you@example.com
-```
-
-> Without `--admin-email` the `super-admin` role is given to the **first user** in the users table — verify that is intended.
-
-**`accounting:install` does automatically (11 steps):**
-
-1. Publishes accounting migrations
-2. Publishes accounting config (`config/accounting.php`)
-3. Publishes Blade views (`resources/views/vendor/accounting/`)
-4. Publishes public assets — jQuery 3.7.1 + Select2 4.1.0 → `public/vendor/accounting/`
-5. Publishes `spatie/laravel-permission` migrations (if not present)
-6. Publishes `spatie/laravel-activitylog` migrations (if not present)
-7. Runs `php artisan migrate`
-8. Seeds all master data (account types, currencies, COA, permissions, tax codes, periods)
-9. Syncs database objects (stored procedures, views, triggers)
-10. Assigns the `super-admin` role (to `--admin-email`, or the first user)
-11. Verifies the installation
-
-**After install — add `HasRoles` to your User model:**
 
 ```php
+// 4. app/Models/User.php
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 }
 ```
 
+```bash
+# 5. Install (idempotent — safe to re-run)
+php artisan accounting:install --admin-email=you@example.com
+```
+
+> Without `--admin-email` the `super-admin` role goes to the **first user** in the users table — verify that is intended.
+
+**`accounting:install` does automatically:**
+
+1. Publishes the config (`config/accounting.php`) and migrations
+2. Publishes `spatie/laravel-permission` and `spatie/laravel-activitylog` migrations (if missing)
+3. Publishes the React pages (`inertia`) or the Select2/jQuery assets (`blade`); `--views` also publishes Blade views for customisation
+4. Runs `migrate --force` (works in production)
+5. Seeds account types, currencies, chart of accounts, current period, roles/permissions and tax codes (never overwrites existing data)
+6. Syncs database objects: reporting views, audit triggers and posted-entry immutability triggers
+7. Assigns `super-admin` (to `--admin-email`, or the first user)
+8. Verifies the installation and warns if the Sanctum guard is missing
+
 Available roles: `super-admin` (all), `admin`, `accountant`, `viewer`.
+
+---
+
+## API quick start
+
+```bash
+# A token for an existing user (or issue tokens from your own login endpoint)
+php artisan tinker --execute="echo App\Models\User::first()->createToken('erp')->plainTextToken;"
+```
+
+```bash
+TOKEN=1|xxxxxxxx
+API=http://localhost:8000/api/v1/accounting
+H=(-H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json")
+
+# Is everything installed?
+curl "${H[@]}" $API/health
+
+# Easiest possible entry: debit one account, credit another (posts immediately)
+curl "${H[@]}" -X POST $API/journal-entries/simple \
+  -H "Idempotency-Key: rent-2026-10" \
+  -d '{"debit_account_code":"5102","credit_account_code":"1101","amount":2500,"description":"Office rent"}'
+
+# Multi-line entry using account codes — no ids needed
+curl "${H[@]}" -X POST $API/journal-entries -d '{
+  "entry_date": "2026-10-04", "reference": "INV-1001", "auto_post": true,
+  "lines": [
+    {"account_code": "1103", "debit": 1500, "credit": 0, "cost_center_code": "ADMIN"},
+    {"account_code": "4101", "debit": 0, "credit": 1500}
+  ]}'
+
+# Balances and reports
+curl "${H[@]}" "$API/chart-of-accounts/tree"
+curl "${H[@]}" "$API/reports/trial-balance"
+curl "${H[@]}" "$API/reports/income-statement?date_from=2026-01-01&date_to=2026-12-31"
+curl "${H[@]}" "$API/reports/balance-sheet?as_of_date=2026-12-31"
+```
+
+* **Full reference:** [`docs/openapi.yaml`](docs/openapi.yaml) (OpenAPI 3.1 — open it in Swagger UI, Redoc, Stoplight, or import into Insomnia).
+* **Postman:** import [`docs/postman_collection.json`](docs/postman_collection.json), set the `host` and `token` variables, send.
+* **Retries are safe:** send an `Idempotency-Key` header when creating entries — a retry returns the original entry (`200`, `Idempotent-Replayed: true`) instead of posting twice.
+* **Errors are predictable:** `401` no token · `403` missing permission · `404` not found · `422` validation (`errors`) or accounting rule (`message`) · `429` rate limit.
 
 ---
 
@@ -89,7 +167,9 @@ After `composer update alimarchal/laravel-chart-of-accounts`:
 php artisan accounting:update
 ```
 
-Re-publishes views, assets, config, JS; runs new migrations; syncs DB objects.
+Refreshes package-owned files (React pages / Select2 assets), runs new migrations (`--force`) and re-syncs the
+database views and triggers. It never overwrites your `config/accounting.php` or customised views
+(`--views` re-publishes Blade views explicitly).
 
 ---
 
@@ -250,31 +330,30 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 
 ## Full REST API Reference
 
-Base URL: `/api/v1/accounting` (configurable via `ACCOUNTING_API_PREFIX`; middleware `ACCOUNTING_API_MIDDLEWARE`, default `api,auth:sanctum`)
+Base URL: `/api/v1/accounting` — `ACCOUNTING_API_PREFIX`; middleware `ACCOUNTING_API_MIDDLEWARE` (default `api,auth:sanctum`)
+plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per user). Every endpoint checks a permission.
+Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/account-types` | List / Create |
-| GET/PUT/DELETE | `/account-types/{id}` | Show / Update / Delete |
-| GET/POST | `/chart-of-accounts` | List / Create |
-| GET/PUT/DELETE | `/chart-of-accounts/{id}` | Show / Update / Delete |
-| GET/POST | `/currencies` | List / Create |
-| GET/POST | `/periods` | List / Create (no overlaps) |
-| GET/PUT/DELETE | `/periods/{id}` | Show / Update (status change = close/reopen) / Delete |
-| GET/POST | `/journal-entries` | List / Create |
-| GET | `/journal-entries/{id}` | Show with lines |
-| PUT | `/journal-entries/{id}` | Update draft |
-| POST | `/journal-entries/{id}/post` | Post draft |
-| POST | `/journal-entries/{id}/void` | Void |
-| POST | `/journal-entries/{id}/reverse` | Reverse |
-| GET/POST | `/reconciliations` | List / Create |
-| GET/POST/PUT/DELETE | `/bank-accounts` | CRUD |
-| GET/POST/PUT/DELETE | `/cost-centers` | CRUD |
-| GET/POST/PUT/DELETE | `/tax-codes` | CRUD |
-| GET/POST/PUT/DELETE | `/tax-rates` | CRUD |
-| GET | `/account-balance-snapshots` | Period-end snapshots |
+| Method | Endpoint | Description | Permission |
+|--------|----------|-------------|------------|
+| GET | `/health` | Installation health (503 if unhealthy) | `accounting.view` |
+| GET/POST | `/journal-entries` | List (filters, sort, `include=lines`) / Create (+`auto_post`) | `journal-entries.view` / `.create` |
+| POST | `/journal-entries/simple` | Two-line entry by account codes | `journal-entries.create` (+`.post`) |
+| GET/PUT | `/journal-entries/{id}` | Show with lines / Update draft | `journal-entries.view` / `.update` |
+| POST | `/journal-entries/{id}/post` | Post a draft | `journal-entries.post` |
+| POST | `/journal-entries/{id}/reverse` | Reverse (optional `reversal_date`) | `journal-entries.reverse` |
+| POST | `/journal-entries/{id}/void` | Void a draft | `journal-entries.void` |
+| GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
+| GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
+| GET | `/chart-of-accounts/{id}/balance` | Balance as of a date (groups include children) | `chart-of-accounts.view` |
+| GET/PUT/DELETE | `/chart-of-accounts/{id}` | Show / Update / Delete | `chart-of-accounts.*` |
+| GET/POST, GET/PUT/DELETE | `/periods`, `/periods/{id}` | CRUD (no overlaps) | `periods.*` |
+| POST | `/periods/{id}/close` · `/reopen` · `/close-fiscal-year` | Period workflow | `periods.close` / `periods.reopen` |
+| GET | `/account-balance-snapshots[/{id}]` | Period-end snapshots | `account-balance-snapshots.view` |
+| CRUD | `/account-types`, `/currencies`, `/cost-centers`, `/bank-accounts`, `/reconciliations`, `/tax-codes`, `/tax-rates` | Master data | `<resource>.view/create/update/delete` |
+| GET | `/reports/trial-balance` · `balance-sheet` · `income-statement` · `general-ledger` · `cash-flow` · `bank-book` · `cash-book` · `aged-receivables` · `aged-payables` · `account-statement` | Financial reports (posted entries only) | `reports.<name>.view` |
 
-All list endpoints support `?filter[field]=value`, `?sort=field`, `?page=N`.
+List endpoints support `?filter[field]=value`, `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
 
 ---
 
@@ -287,12 +366,15 @@ php artisan vendor:publish --tag=accounting-config
 ```php
 // config/accounting.php (abridged)
 return [
-    'ui_driver'              => env('ACCOUNTING_UI_DRIVER', 'inertia'),   // 'inertia' or 'blade'
+    'ui_driver'              => env('ACCOUNTING_UI_DRIVER', 'inertia'),   // 'inertia' | 'blade' | 'api'
     'route_prefix'           => env('ACCOUNTING_ROUTE_PREFIX', 'accounting'),
     'route_name_prefix'      => env('ACCOUNTING_ROUTE_NAME_PREFIX', 'accounting'),
     'settings_route_prefix'  => env('SETTINGS_ROUTE_PREFIX', 'settings'),
     'api_prefix'             => env('ACCOUNTING_API_PREFIX', 'api/v1/accounting'),
     'api_middleware'         => env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum'), // comma separated
+    'api_enabled'            => env('ACCOUNTING_API_ENABLED', true),
+    'api_rate_limit'         => env('ACCOUNTING_API_RATE_LIMIT', 120),     // per minute per user; 0 = off
+    'api_max_per_page'       => env('ACCOUNTING_API_MAX_PER_PAGE', 100),
     'users_table'            => env('ACCOUNTING_USERS_TABLE', 'users'),
     'defaults' => [
         'currency_code'                  => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
@@ -494,7 +576,10 @@ A: Posted entries can't be edited or deleted — reverse them and post a correct
 A: Debits and credits must be equal before saving. Enter matching amounts in the debit/credit columns.
 
 **Q: What is `accounting:update`?**
-A: Re-publishes views, assets, config with `--force`, runs new migrations, syncs DB objects. Run after every `composer update`.
+A: Refreshes package assets, runs new migrations and re-syncs DB objects without touching your config. Run after every `composer update`.
+
+**Q: I only need the API — how do I keep it light?**
+A: Set `ACCOUNTING_UI_DRIVER=api`. No web routes, views or Livewire components are loaded; only the 71 API routes.
 
 ---
 

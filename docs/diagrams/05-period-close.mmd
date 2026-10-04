@@ -1,0 +1,29 @@
+flowchart TD
+    A(["Month / year end"]) --> B{"Year end?"}
+    B -->|"no — POST /periods/{id}/close"| C
+    B -->|"yes — POST /periods/{id}/close-fiscal-year"| Y1
+
+    subgraph YE["Fiscal-year close (extra steps)"]
+        direction TB
+        Y1["Sum each income-statement account<br/>for the period (posted only)"] --> Y2["Build a closing entry that brings<br/>every revenue / expense account to 0<br/>(contra balances handled)"]
+        Y2 --> Y3["Net income → Retained earnings<br/>(config: retained_earnings_account_code)"]
+        Y3 --> Y4["Post closing entry<br/>is_closing_entry = true"]
+    end
+
+    Y4 --> C
+    C["Lock the period row"] --> D{"Status = open?"}
+    D -->|no| X1["422 Only open periods<br/>can be closed"]
+    D -->|yes| E{"Any drafts dated<br/>in this period?"}
+    E -->|yes| X2["422 Post or void the<br/>drafts first"]
+    E -->|no| F["Balance snapshots per account:<br/>opening · debits · credits · closing"]
+    F --> G["Store totals and<br/>net income = revenue − expenses"]
+    G --> H["status = closed<br/>audit: PERIOD_CLOSED"]
+    H --> I(["No more postings into this period"])
+    I -.->|"POST /periods/{id}/reopen<br/>(periods.reopen)"| R["status = open<br/>audit: PERIOD_REOPENED"]
+
+    classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    classDef good fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef ye fill:#ede9fe,stroke:#6d28d9,color:#3b0764
+    class X1,X2 bad
+    class H,I good
+    class Y1,Y2,Y3,Y4 ye

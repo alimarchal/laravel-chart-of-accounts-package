@@ -1,0 +1,54 @@
+flowchart TB
+    subgraph Clients["Who uses it"]
+        direction LR
+        UIR["React UI<br/>(Inertia)"]
+        UIB["Blade UI<br/>(Livewire)"]
+        EXT["Any app / mobile / ERP<br/>REST API + Bearer token"]
+        CLI["Artisan commands<br/>accounting:*"]
+    end
+
+    subgraph Gate["Security layer (every request)"]
+        direction LR
+        AUTH["auth / auth:sanctum<br/>who are you?"]
+        PERM["can:permission<br/>Spatie RBAC"]
+        THR["throttle:accounting-api<br/>rate limit"]
+        PG["PrivilegeGuard<br/>no role escalation"]
+    end
+
+    subgraph App["Application layer"]
+        direction LR
+        CTRL["Controllers<br/>API · Inertia · Blade"]
+        REQ["Form requests<br/>validation, account codes → ids"]
+        SVC["Services<br/>JournalEntry · ChartOfAccount<br/>AccountingPeriod · SimpleJournal"]
+        ACT["Actions<br/>Post · Reverse · Void<br/>ClosePeriod · CloseFiscalYear"]
+        REP["Reports<br/>TB · BS · IS · GL · Cash flow<br/>Bank/Cash book · Aging"]
+    end
+
+    subgraph Data["Database layer"]
+        direction LR
+        TBL[("Tables<br/>accounts · entries · lines<br/>periods · currencies · …")]
+        TRG{{"Triggers<br/>posted = immutable<br/>full audit trail"}}
+        VW[("Views<br/>vw_accounting_*")]
+    end
+
+    UIR --> AUTH
+    UIB --> AUTH
+    EXT --> AUTH
+    AUTH --> PERM --> THR --> CTRL
+    PERM -.-> PG
+    CLI --> ACT
+    CTRL --> REQ --> SVC --> ACT
+    CTRL --> REP
+    ACT --> TBL
+    SVC --> TBL
+    REP --> VW --> TBL
+    TBL --- TRG
+
+    classDef client fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+    classDef gate fill:#fef3c7,stroke:#b45309,color:#78350f
+    classDef app fill:#ede9fe,stroke:#6d28d9,color:#3b0764
+    classDef data fill:#dcfce7,stroke:#15803d,color:#14532d
+    class UIR,UIB,EXT,CLI client
+    class AUTH,PERM,THR,PG gate
+    class CTRL,REQ,SVC,ACT,REP app
+    class TBL,TRG,VW data

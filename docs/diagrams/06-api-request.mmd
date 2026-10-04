@@ -1,0 +1,38 @@
+sequenceDiagram
+    autonumber
+    participant C as Client (ERP / app)
+    participant M as Middleware<br/>auth · can · throttle
+    participant R as Form request
+    participant J as JournalEntry API
+    participant S as Service / Actions
+    participant DB as Database
+
+    C->>M: POST /api/v1/accounting/journal-entries<br/>Bearer token · Idempotency-Key: inv-1001
+    alt no / invalid token
+        M-->>C: 401 Unauthenticated
+    else missing permission
+        M-->>C: 403 Forbidden
+    else over rate limit
+        M-->>C: 429 Too Many Requests
+    end
+    M->>R: authorised request
+    R->>R: account_code → chart_of_account_id<br/>currency_code → currency_id
+    alt validation fails
+        R-->>C: 422 { message, errors }
+    end
+    R->>J: validated data
+    J->>DB: Idempotency-Key seen before?
+    alt same key + same body
+        DB-->>J: existing entry
+        J-->>C: 200 + Idempotent-Replayed: true
+    else same key + different body
+        J-->>C: 422 key reused
+    end
+    J->>S: create (+ post when auto_post)
+    S->>DB: BEGIN · insert entry + lines · checks · COMMIT
+    alt accounting rule broken (unbalanced, closed period…)
+        S-->>C: 422 { message }
+    end
+    DB-->>S: entry id
+    S-->>J: entry with lines
+    J-->>C: 201 { data: entry, totals, lines with account codes }

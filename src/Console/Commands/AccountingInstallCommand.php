@@ -82,7 +82,9 @@ class AccountingInstallCommand extends Command
 
         $this->newLine();
         $this->info('Accounting module installed successfully!');
-        $this->info('   Visit /accounting after logging in.');
+        if ($driver !== 'api') {
+            $this->info('   Visit /'.trim((string) config('accounting.route_prefix', 'accounting'), '/').' after logging in.');
+        }
         $this->newLine();
         $this->line('   UI driver: '.$driver.' (ACCOUNTING_UI_DRIVER = inertia | blade | api).');
         $this->line('   REST API: /'.trim((string) config('accounting.api_prefix'), '/').' — see docs/openapi.yaml.');

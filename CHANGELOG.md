@@ -67,7 +67,7 @@ behaviour changes are breaking — read **Upgrading** below.
 - `ChartOfAccountService` and `AccountingPeriodService` hold all integrity rules for API, Inertia and Blade.
 - Config: `chart_preset` (`general` default, `school`), `aging.*_account_codes`, `users_table`.
 - `accounting:install --admin-email=` chooses who receives the super-admin role.
-- Test suite runs inside the package (Orchestra Testbench): **141 tests** covering security, ledger integrity,
+- Test suite runs inside the package (Orchestra Testbench): **170 tests** covering security, ledger integrity,
   reports and seeders; CI matrix for PHP 8.2–8.4 × Laravel 11–13, plus MySQL, MariaDB and PostgreSQL jobs.
 - Larastan (level 5) and Pint in CI.
 
@@ -75,6 +75,27 @@ behaviour changes are breaking — read **Upgrading** below.
 - **Dropped Laravel 10** (end-of-life; models use the `casts()` method, which Laravel 10 ignores, so it never worked correctly).
 - `composer.lock` is no longer committed (library packages should not ship a lock file).
 - jQuery bundled asset upgraded 3.5.1 → 3.7.1.
+
+### Added — API & developer experience
+- Journal lines accept `account_code` / `cost_center_code`; entries accept `currency_code`.
+- `POST /journal-entries/simple` — two-line entry by account codes.
+- `Idempotency-Key` header on journal creation: safe retries, no double posting.
+- Report endpoints (trial balance, balance sheet, income statement, general ledger, cash flow, bank/cash book,
+  aged AR/AP, account statement), `/chart-of-accounts/tree`, `/chart-of-accounts/{id}/balance`,
+  `/periods/{id}/close|reopen|close-fiscal-year`, `/health`.
+- API rate limiting (`ACCOUNTING_API_RATE_LIMIT`) and a `per_page` cap (`ACCOUNTING_API_MAX_PER_PAGE`).
+- `ACCOUNTING_UI_DRIVER=api` — API-only mode that loads no web routes, views or Livewire.
+- `docs/openapi.yaml` (OpenAPI 3.1) and `docs/postman_collection.json`; a test fails if a route is undocumented.
+- Visual guide: architecture, installation, journal lifecycle, posting checks, period close and API request
+  diagrams in `docs/images/` (sources in `docs/diagrams/`), embedded in the README.
+- Bank accounts can be linked to a posting GL account through the API.
+
+### Fixed — installation
+- `accounting:install`, `accounting:update` and `accounting:seed` failed in production (missing `--force`).
+- `accounting:install` did not publish the React pages, so the Inertia UI could not render.
+- `accounting:update` overwrote `config/accounting.php` and customised views; views are no longer published by default.
+- Tax rates: duplicate (tax code, start date) returned a 500; now a validation error.
+- More than one base currency could exist; the base currency can no longer change after entries are posted.
 
 ### Upgrading from 1.x
 1. `composer update alimarchal/laravel-chart-of-accounts` then `php artisan accounting:update`
