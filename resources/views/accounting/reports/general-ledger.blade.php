@@ -247,7 +247,9 @@
                                 <td class="text-left text-xs">
                                     {{ $entry->journal_description ?? '-' }} ::
                                     {{ $entry->line_description ?? '-' }} **
+                                    @if ($entry->voucher_number)<span class="font-mono">{{ $entry->voucher_number }}</span> - @endif
                                     Ref: {{ $entry->reference ?? '-' }} -
+                                    @if ($entry->source_document_number)Doc: {{ $entry->source_document_number }} - @endif
                                     CC: {{ $entry->cost_center_code ?? '-' }}
                                 </td>
                                 <td class="text-right font-mono whitespace-nowrap text-xs">

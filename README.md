@@ -23,6 +23,7 @@
 - **Roles with segregation of duties** — super-admin, admin, accountant (maker), approver (checker), auditor, viewer; `accounting:roles` audits the matrix
 - **Multi-currency** — every line keeps its frozen base-currency amount; all reports are in the base currency
 - **Voucher numbering** — JV, CPV, CRV, BPV, BRV (and your own types) with **gapless** numbers such as `JV-2026-00012`, issued at posting, restarting per fiscal year or month, locked in the database
+- **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
 - **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
 - **12 reports** — trial balance, balance sheet, income statement, cash flow, general ledger, account statement (running balance), bank & cash book, aged AR/AP — export to CSV (streamed, any size), XLSX, PDF
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
@@ -425,6 +426,47 @@ app(VoucherNumberService::class)->preview($type, '2026-11-01');   // next number
 
 ---
 
+## Source documents
+
+An entry can say which document it records — a sales invoice, purchase bill, receipt, payment voucher,
+credit/debit note, expense claim, payroll sheet, bank statement, contract or other (`config('accounting.source_documents.types')`)
+— with its number and date, and can be linked to the application model it came from.
+
+- **No double posting.** A document (type + number, case-insensitive) can be posted only once per company. The second
+  posting is refused: *"Purchase bill BILL-778 is already posted as JV-2026-00012. Reverse that entry first, or correct
+  the document number."* A unique database index backs this up, so two users posting the same bill at the same moment
+  cannot both succeed. Drafts with the same number can still be saved. Turn it off with
+  `ACCOUNTING_PREVENT_DUPLICATE_DOCUMENTS=false`.
+- **Reversal frees the document**: the reversal records the same document (and link) but never holds it, so a
+  corrected entry can be posted for the same bill.
+- **Locked after posting**: the database refuses to change the document type, number, date or link of a posted entry.
+- Shown in the journal form (React and Blade), the entry page, the journal list (filter *Document no.*) and the
+  general ledger (voucher number and document number on every line, exports included).
+- API: `source_document_type`, `source_document_number`, `source_document_date` on `POST /journal-entries` and
+  `/journal-entries/simple`; responses carry `source_document`; filters `filter[source_document_number]`, `filter[source_document_type]`.
+
+Link entries to your own models:
+
+```php
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasJournalEntries;
+
+class Invoice extends Model
+{
+    use HasJournalEntries;
+}
+
+JournalEntry::record("Invoice {$invoice->number}", '1103', '4101', $invoice->total, post: true,
+    source: $invoice, documentType: 'invoice', documentNumber: $invoice->number);
+
+$invoice->journalEntries;          // every entry for the invoice, reversals included
+$invoice->postedJournalEntry();    // the posted entry that currently holds it
+JournalEntry::forSource($invoice)->get();
+```
+
+`JournalEntryService::create()` takes the same `source_document_*` keys and `'source' => $invoice`.
+
+---
+
 ## Multi-company
 
 Run several companies (legal entities) from one installation. Each company has its **own chart of
@@ -611,6 +653,7 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 
 List endpoints support `?filter[field]=value`, `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
 Journal entries also filter by `filter[approval_status]=pending|approved|rejected`, `filter[voucher_number]` (partial),
+`filter[source_document_number]` (partial), `filter[source_document_type]`,
 `filter[voucher_type_id]` and `filter[entry_date_from]` / `filter[entry_date_to]`.
 Ledger-style reports (general ledger, account statement, cash flow, bank & cash book) are paginated and return `totals` for the whole filter, not just the page.
 

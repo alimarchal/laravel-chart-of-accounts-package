@@ -39,6 +39,8 @@ class GeneralLedgerBladeController extends Controller
                 'je.id as journal_entry_id',
                 'je.entry_date',
                 'je.reference',
+                'je.voucher_number',
+                'je.source_document_number',
                 'je.description as journal_description',
                 'je.status',
                 'jel.id',

@@ -9,8 +9,10 @@ use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +27,12 @@ use Illuminate\Support\Facades\DB;
  * @property int $currency_id
  * @property string $fx_rate_to_base
  * @property string|null $reference
+ * @property string|null $source_document_type a key of config('accounting.source_documents.types')
+ * @property string|null $source_document_number
+ * @property Carbon|null $source_document_date
+ * @property string|null $sourceable_type
+ * @property int|null $sourceable_id
+ * @property string|null $active_source_key set while this posted entry holds its document
  * @property string|null $description
  * @property string $status draft|posted|void
  * @property Carbon|null $posted_at
@@ -66,6 +74,9 @@ class JournalEntry extends AccountingModel
         'currency_id',
         'fx_rate_to_base',
         'reference',
+        'source_document_type',
+        'source_document_number',
+        'source_document_date',
         'idempotency_key',
         'idempotency_hash',
         'description',
@@ -85,6 +96,7 @@ class JournalEntry extends AccountingModel
     {
         return [
             'entry_date' => 'date',
+            'source_document_date' => 'date',
             'fx_rate_to_base' => 'decimal:8',
             'posted_at' => 'datetime',
             'reversed_at' => 'datetime',
@@ -93,6 +105,22 @@ class JournalEntry extends AccountingModel
             'rejected_at' => 'datetime',
             'is_closing_entry' => 'boolean',
         ];
+    }
+
+    /**
+     * The application model the entry records (an invoice, a bill, a payroll run, …).
+     */
+    public function sourceable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
+     * Entries that record the given application model.
+     */
+    public function scopeForSource(Builder $query, Model $source): Builder
+    {
+        return $query->where('sourceable_type', $source->getMorphClass())->where('sourceable_id', $source->getKey());
     }
 
     public function voucherType(): BelongsTo
@@ -241,6 +269,9 @@ class JournalEntry extends AccountingModel
         float|int|string $amount,
         bool $post = false,
         ?string $reference = null,
+        ?Model $source = null,
+        ?string $documentType = null,
+        ?string $documentNumber = null,
     ): static {
         $amount = Money::fromCents(Money::toCents($amount));
         $debitAccount = ChartOfAccount::where('account_code', $debitAccountCode)->firstOrFail();
@@ -251,7 +282,7 @@ class JournalEntry extends AccountingModel
             ->where('end_date', '>=', now())
             ->firstOrFail();
 
-        return DB::transaction(function () use ($description, $debitAccount, $creditAccount, $amount, $post, $reference, $currency, $period) {
+        return DB::transaction(function () use ($description, $debitAccount, $creditAccount, $amount, $post, $reference, $currency, $period, $source, $documentType, $documentNumber) {
             /** @var static $entry */
             $entry = static::create([
                 'entry_date' => now()->toDateString(),
@@ -259,10 +290,16 @@ class JournalEntry extends AccountingModel
                 'currency_id' => $currency->id,
                 'fx_rate_to_base' => 1,
                 'reference' => $reference,
+                'source_document_type' => $documentType,
+                'source_document_number' => $documentNumber,
                 'description' => $description,
                 'status' => 'draft',
                 'created_by' => auth()->id(),
             ]);
+
+            if ($source) {
+                $entry->forceFill(['sourceable_type' => $source->getMorphClass(), 'sourceable_id' => $source->getKey()])->save();
+            }
 
             $entry->lines()->createMany([
                 ['line_no' => 1, 'chart_of_account_id' => $debitAccount->id, 'debit' => $amount, 'credit' => 0],

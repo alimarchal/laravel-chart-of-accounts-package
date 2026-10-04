@@ -18,6 +18,8 @@ export type LedgerLine = {
     journal_entry_id: number;
     entry_date: string;
     reference: string | null;
+    voucher_number?: string | null;
+    source_document_number?: string | null;
     journal_description: string | null;
     line_description: string | null;
     account_code: string;

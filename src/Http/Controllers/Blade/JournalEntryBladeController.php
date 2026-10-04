@@ -23,6 +23,8 @@ class JournalEntryBladeController extends Controller
             ->allowedFilters(
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('voucher_number'),
+                AllowedFilter::partial('source_document_number'),
+                AllowedFilter::exact('source_document_type'),
                 AllowedFilter::exact('voucher_type_id'),
                 AllowedFilter::partial('description'),
                 AllowedFilter::exact('status'),

@@ -66,6 +66,9 @@ type Props = {
         currency_id: number | null;
         fx_rate_to_base: string | number;
         reference: string | null;
+        source_document_type: string | null;
+        source_document_number: string | null;
+        source_document_date: string | null;
         description: string | null;
         lines: Array<{
             chart_of_account_id: number;
@@ -79,6 +82,7 @@ type Props = {
     currencies: Currency[];
     costCenters: CostCenter[];
     voucherTypes: VoucherType[];
+    documentTypes: Record<string, string>;
 };
 
 const emptyLine = (): JournalLine => ({
@@ -98,6 +102,7 @@ export default function JournalEntryForm({
     currencies,
     costCenters,
     voucherTypes,
+    documentTypes,
 }: Props) {
     const baseCurrency =
         currencies.find((currency) => currency.is_base) ?? currencies[0];
@@ -131,6 +136,9 @@ export default function JournalEntryForm({
             ? String(entry.fx_rate_to_base)
             : '1',
         reference: entry?.reference ?? '',
+        source_document_type: entry?.source_document_type ?? 'none',
+        source_document_number: entry?.source_document_number ?? '',
+        source_document_date: entry?.source_document_date?.slice(0, 10) ?? '',
         description: entry?.description ?? '',
         auto_post: false as boolean,
         lines: entry?.lines.map((line) => ({
@@ -180,6 +188,10 @@ export default function JournalEntryForm({
 
         form.transform((data) => ({
             ...data,
+            source_document_type:
+                data.source_document_type === 'none'
+                    ? ''
+                    : data.source_document_type,
             lines: data.lines.map((line) => ({
                 ...line,
                 cost_center_id:
@@ -339,6 +351,92 @@ export default function JournalEntryForm({
                                         message={form.errors.reference}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 rounded-md border border-dashed p-3 md:grid-cols-3">
+                                <div className="flex flex-col gap-2">
+                                    <Label>Source document</Label>
+                                    <Select
+                                        value={form.data.source_document_type}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'source_document_type',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="None" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">
+                                                None
+                                            </SelectItem>
+                                            {Object.entries(documentTypes).map(
+                                                ([key, label]) => (
+                                                    <SelectItem
+                                                        key={key}
+                                                        value={key}
+                                                    >
+                                                        {label}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError
+                                        message={
+                                            form.errors.source_document_type
+                                        }
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="source_document_number">
+                                        Document number
+                                    </Label>
+                                    <Input
+                                        id="source_document_number"
+                                        placeholder="INV-1001"
+                                        value={form.data.source_document_number}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'source_document_number',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={
+                                            form.errors.source_document_number
+                                        }
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="source_document_date">
+                                        Document date
+                                    </Label>
+                                    <Input
+                                        id="source_document_date"
+                                        type="date"
+                                        value={form.data.source_document_date}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'source_document_date',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={
+                                            form.errors.source_document_date
+                                        }
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground md:col-span-3">
+                                    The invoice, bill or receipt this entry
+                                    records. A document can be posted only once;
+                                    reverse the entry to post it again.
+                                </p>
                             </div>
 
                             <div className="flex flex-col gap-2">

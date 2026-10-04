@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.5.0
+  version: 2.6.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -2044,6 +2044,15 @@ paths:
         schema:
           type: string
         description: Partial match, e.g. JV-2026-
+      - name: filter[source_document_number]
+        in: query
+        schema:
+          type: string
+        description: Partial match
+      - name: filter[source_document_type]
+        in: query
+        schema:
+          type: string
       - name: filter[voucher_type_id]
         in: query
         schema:
@@ -3987,6 +3996,39 @@ components:
           type:
           - string
           - 'null'
+        source_document:
+          type:
+          - object
+          - 'null'
+          description: The document the entry records; null when none.
+          properties:
+            type:
+              type:
+              - string
+              - 'null'
+            type_label:
+              type:
+              - string
+              - 'null'
+              example: Purchase bill
+            number:
+              type:
+              - string
+              - 'null'
+            date:
+              type:
+              - string
+              - 'null'
+              format: date
+            sourceable_type:
+              type:
+              - string
+              - 'null'
+              description: Application model the entry was recorded for (set from PHP code).
+            sourceable_id:
+              type:
+              - integer
+              - 'null'
         status:
           type: string
           enum:
@@ -4142,6 +4184,37 @@ components:
           - 'null'
           example: CPV
           description: Alternative to voucher_type_id.
+        source_document_type:
+          type:
+          - string
+          - 'null'
+          enum:
+          - invoice
+          - credit_note
+          - bill
+          - debit_note
+          - receipt
+          - payment
+          - expense_claim
+          - payroll
+          - bank_statement
+          - contract
+          - other
+          - null
+          description: Keys of config('accounting.source_documents.types'); required with source_document_number.
+        source_document_number:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+          example: BILL-778
+          description: A document (type + number, case-insensitive) can be posted only once per company until its entry is
+            reversed (422 otherwise).
+        source_document_date:
+          type:
+          - string
+          - 'null'
+          format: date
         entry_date:
           type: string
           format: date
@@ -4223,6 +4296,37 @@ components:
           type:
           - string
           - 'null'
+        source_document_type:
+          type:
+          - string
+          - 'null'
+          enum:
+          - invoice
+          - credit_note
+          - bill
+          - debit_note
+          - receipt
+          - payment
+          - expense_claim
+          - payroll
+          - bank_statement
+          - contract
+          - other
+          - null
+          description: Keys of config('accounting.source_documents.types'); required with source_document_number.
+        source_document_number:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+          example: BILL-778
+          description: A document (type + number, case-insensitive) can be posted only once per company until its entry is
+            reversed (422 otherwise).
+        source_document_date:
+          type:
+          - string
+          - 'null'
+          format: date
         post:
           type: boolean
           default: true

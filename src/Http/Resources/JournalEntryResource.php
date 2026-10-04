@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Resources;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,6 +26,14 @@ class JournalEntryResource extends JsonResource
             'voucher_type' => $this->whenLoaded('voucherType', fn () => $this->voucherType?->only(['id', 'code', 'name'])),
             'entry_date' => $this->entry_date->toDateString(),
             'reference' => $this->reference,
+            'source_document' => $this->source_document_number === null && $this->sourceable_type === null ? null : [
+                'type' => $this->source_document_type,
+                'type_label' => SourceDocuments::label($this->source_document_type),
+                'number' => $this->source_document_number,
+                'date' => $this->source_document_date?->toDateString(),
+                'sourceable_type' => $this->sourceable_type,
+                'sourceable_id' => $this->sourceable_id,
+            ],
             'description' => $this->description,
             'status' => $this->status,
             'currency_id' => $this->currency_id,

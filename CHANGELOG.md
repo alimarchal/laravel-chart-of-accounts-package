@@ -2,6 +2,30 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.6.0] - 2026-10-08
+
+Source documents release.
+
+### Added
+- **Source documents** on journal entries: type (sales invoice, purchase bill, receipt, payment voucher,
+  credit/debit note, expense claim, payroll sheet, bank statement, contract, other — configurable), number and
+  date, plus an optional link to the application model the entry records (`sourceable` morph).
+- **A document can be posted only once** per company (type + number, case-insensitive): the second posting gets
+  a 422 naming the voucher that holds it. A unique database index makes this hold under concurrent postings.
+  Reversing an entry frees its document. `ACCOUNTING_PREVENT_DUPLICATE_DOCUMENTS=false` switches it off.
+- The document fields of posted entries are immutable at the database level (MySQL/MariaDB, PostgreSQL, SQLite).
+- `HasJournalEntries` trait for application models (`journalEntries()`, `postedJournalEntry()`),
+  `JournalEntry::forSource($model)`, and `source` / `documentType` / `documentNumber` on `JournalEntry::record()`.
+- Journal form (React and Blade) captures the document; entry page shows it; journal list filters by document
+  number; the general ledger (screens, API and exports) shows the voucher number and document number per line.
+- API: `source_document_type/number/date` on `POST /journal-entries` and `/journal-entries/simple`,
+  `source_document` in responses, `filter[source_document_number]` and `filter[source_document_type]`.
+
+### Fixed
+- Saving a journal entry from the Blade (Livewire) form failed validation for every account since 2.4.0: the
+  posting-account rule compared `is_group` with an empty string. Rules now use query closures (also for the
+  active voucher type check).
+
 ## [2.5.0] - 2026-10-07
 
 Voucher numbering release.

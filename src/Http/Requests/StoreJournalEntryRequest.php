@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -85,12 +86,13 @@ class StoreJournalEntryRequest extends FormRequest
     {
         return [
             'entry_date' => ['required', 'date'],
-            'voucher_type_id' => ['nullable', 'integer', CompanyRule::exists('accounting_voucher_types', 'id')->where('is_active', true)],
+            'voucher_type_id' => ['nullable', 'integer', CompanyRule::exists('accounting_voucher_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'voucher_type_code' => ['nullable', 'string', 'max:20'],
             'currency_id' => ['nullable', Rule::exists('accounting_currencies', 'id')],
             'currency_code' => ['nullable', 'string', 'size:3'],
             'fx_rate_to_base' => ['nullable', 'numeric', 'gt:0'],
             'reference' => ['nullable', 'string', 'max:255'],
+            ...SourceDocuments::rules(),
             'description' => ['nullable', 'string', 'max:5000'],
             'auto_post' => ['sometimes', 'boolean'],
             'lines' => ['required', 'array', 'min:2', 'max:500'],

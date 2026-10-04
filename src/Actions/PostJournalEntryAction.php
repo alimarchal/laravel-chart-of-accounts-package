@@ -13,6 +13,8 @@ use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherNumberService;
 use Alimarchal\LaravelChartOfAccounts\Support\BaseAmounts;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -41,11 +43,26 @@ class PostJournalEntryAction
 
             $entry->forceFill([
                 ...app(VoucherNumberService::class)->assign($entry),
+                // A reversal records the same document as its original but never holds it.
+                'active_source_key' => SourceDocuments::preventsDuplicates() && $entry->reverses_entry_id === null
+                    ? SourceDocuments::key($entry->source_document_type, $entry->source_document_number)
+                    : null,
                 'accounting_period_id' => $period->id,
                 'status' => 'posted',
                 'posted_at' => now(),
                 'posted_by' => Auth::id(),
-            ])->save();
+            ]);
+
+            try {
+                $entry->save();
+            } catch (UniqueConstraintViolationException $exception) {
+                // A concurrent posting of the same document won the race (the database names the index or its column).
+                if (str_contains($exception->getMessage(), 'active_source')) {
+                    throw new AccountingException(SourceDocuments::label($entry->source_document_type).' '.$entry->source_document_number.' was just posted by another entry.', previous: $exception);
+                }
+
+                throw $exception;
+            }
 
             AccountingAuditLog::record($entry, 'JOURNAL_POSTED', ['status' => 'draft'], ['status' => 'posted', 'voucher_number' => $entry->voucher_number]);
 
@@ -66,6 +83,10 @@ class PostJournalEntryAction
     {
         $entry->loadMissing('lines.account');
         $this->validateLines($entry);
+
+        if ($entry->reverses_entry_id === null) {
+            SourceDocuments::assertNotPosted($entry);
+        }
 
         // A shared lock on the period row: closing/reopening takes an exclusive lock, so a close cannot
         // interleave with this posting, while concurrent postings into the same period do not block each other.

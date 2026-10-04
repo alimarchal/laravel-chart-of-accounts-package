@@ -49,6 +49,25 @@ return [
         'allow_self_approval' => (bool) env('ACCOUNTING_ALLOW_SELF_APPROVAL', false),
     ],
 
+    // Source documents a journal entry can refer to (type key => label). With prevent_duplicates, a document
+    // (type + number) can be posted only once per company until that entry is reversed.
+    'source_documents' => [
+        'prevent_duplicates' => (bool) env('ACCOUNTING_PREVENT_DUPLICATE_DOCUMENTS', true),
+        'types' => [
+            'invoice' => 'Sales invoice',
+            'credit_note' => 'Credit note',
+            'bill' => 'Purchase bill',
+            'debit_note' => 'Debit note',
+            'receipt' => 'Receipt',
+            'payment' => 'Payment voucher',
+            'expense_claim' => 'Expense claim',
+            'payroll' => 'Payroll sheet',
+            'bank_statement' => 'Bank statement',
+            'contract' => 'Contract / agreement',
+            'other' => 'Other document',
+        ],
+    ],
+
     // Signed webhooks for accounting events (queued when a queue is configured). Empty = disabled.
     'webhooks' => [
         'urls' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_WEBHOOK_URLS', '')))),
