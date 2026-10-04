@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountTypeApiControl
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\BankAccountApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ChartOfAccountApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CompanyApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ControlAccountApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CostCenterApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CurrencyApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\JournalEntryApiController;
@@ -99,6 +100,10 @@ Route::middleware($apiMiddleware)
         $apiResourceRoutes('reconciliations', ReconciliationApiController::class, 'reconciliations', 'reconciliations');
         $apiResourceRoutes('tax-codes', TaxCodeApiController::class, 'tax-codes', 'tax-codes');
         $apiResourceRoutes('tax-rates', TaxRateApiController::class, 'tax-rates', 'tax-rates');
+        Route::get('control-accounts', [ControlAccountApiController::class, 'index'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
+        Route::post('control-accounts/recommended', [ControlAccountApiController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
+        Route::get('control-accounts/{chartOfAccount}/manual-postings', [ControlAccountApiController::class, 'manualPostings'])->name('control-accounts.manual-postings')->middleware('can:chart-of-accounts.view');
+        Route::put('chart-of-accounts/{chartOfAccount}/control-type', [ControlAccountApiController::class, 'setType'])->name('chart-of-accounts.control-type')->middleware('can:control-accounts.manage');
         $apiResourceRoutes('voucher-types', VoucherTypeApiController::class, 'voucher-types', 'voucher-types');
         Route::get('voucher-types/{record}/next-number', [VoucherTypeApiController::class, 'nextNumber'])
             ->name('voucher-types.next-number')

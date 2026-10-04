@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.7.0] - 2026-10-09
+
+Control accounts release.
+
+### Added
+- **Control accounts**: an account can control a sub-ledger (receivables, payables, inventory, fixed assets, payroll,
+  tax). Only entries of that module (`origin_module`) post to it; a manual entry (UI or API) is refused unless the
+  posting user has `control-accounts.post-manual`. Checked at posting and at submission for approval. Reversals and
+  closing entries follow their source entry.
+- **Recommended setup** (one click, confirmed) marks the seeded sub-ledger accounts; nothing is marked on upgrade.
+- **Control Accounts** screen (React and Blade): balances, the number of manual postings per account with the list
+  of those entries, mark / remove control accounts. API: `GET /control-accounts`, `POST /control-accounts/recommended`,
+  `GET /control-accounts/{id}/manual-postings`, `PUT /chart-of-accounts/{id}/control-type`; accounts return
+  `control_type`.
+- `origin_module` on journal entries (`JournalEntryService::create`, `JournalEntry::record(..., module:)`), immutable
+  in the database once posted.
+- Permissions `control-accounts.manage` (super-admin, admin) and `control-accounts.post-manual` (super-admin).
+
 ## [2.6.0] - 2026-10-08
 
 Source documents release.

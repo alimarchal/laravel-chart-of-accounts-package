@@ -76,6 +76,10 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
         if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
             $voucher .= ' OR NOT (NEW.source_document_type <=> OLD.source_document_type) OR NOT (NEW.source_document_number <=> OLD.source_document_number) OR NOT (NEW.source_document_date <=> OLD.source_document_date) OR NOT (NEW.sourceable_type <=> OLD.sourceable_type) OR NOT (NEW.sourceable_id <=> OLD.sourceable_id)';
         }
+
+        if (Schema::hasColumn('accounting_journal_entries', 'origin_module')) {
+            $voucher .= ' OR NOT (NEW.origin_module <=> OLD.origin_module)';
+        }
         $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
 
         DB::unprepared("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries FOR EACH ROW BEGIN

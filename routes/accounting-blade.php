@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountTypeBladeCon
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AuditLogBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\BankAccountBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ChartOfAccountBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ControlAccountBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CostCenterBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CurrencyBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\JournalEntryBladeController;
@@ -106,6 +107,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         $resourceRoutes('bank-accounts', BankAccountBladeController::class, 'bank-accounts', 'bank-accounts');
         $resourceRoutes('reconciliations', ReconciliationBladeController::class, 'reconciliations', 'reconciliations');
         $resourceRoutes('tax-codes', TaxCodeBladeController::class, 'tax-codes', 'tax-codes');
+        Route::get('control-accounts', [ControlAccountBladeController::class, 'page'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
+        Route::post('control-accounts/recommended', [ControlAccountBladeController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
+        Route::put('chart-of-accounts/{chartOfAccount}/control-type', [ControlAccountBladeController::class, 'setType'])->name('chart-of-accounts.control-type')->middleware('can:control-accounts.manage');
         Route::get('voucher-types', [VoucherTypeBladeController::class, 'index'])->name('voucher-types.index')->middleware('can:voucher-types.view');
         Route::post('voucher-types', [VoucherTypeBladeController::class, 'store'])->name('voucher-types.store')->middleware('can:voucher-types.create');
         Route::match(['put', 'patch'], 'voucher-types/{record}', [VoucherTypeBladeController::class, 'update'])->name('voucher-types.update')->middleware('can:voucher-types.update');

@@ -9,6 +9,7 @@ import {
     Landmark,
     Percent,
     ReceiptText,
+    ShieldCheck,
     Scale,
     WalletCards,
 } from 'lucide-react';
@@ -64,6 +65,11 @@ export default function AccountingDashboard({ summary }: Props) {
         },
         { title: 'Tax Codes', href: '/accounting/tax-codes', icon: Percent },
         { title: 'Tax Rates', href: '/accounting/tax-rates', icon: Percent },
+        {
+            title: 'Control Accounts',
+            href: '/accounting/control-accounts',
+            icon: ShieldCheck,
+        },
         {
             title: 'Voucher Types',
             href: '/accounting/voucher-types',

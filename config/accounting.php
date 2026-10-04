@@ -68,6 +68,30 @@ return [
         ],
     ],
 
+    // Control accounts summarise a sub-ledger (customers, suppliers, stock, …). Only entries of that module may
+    // post to them; a manual entry needs the control-accounts.post-manual permission. "recommended" maps the
+    // seeded chart (account code => type) for the Recommended setup action.
+    'control_accounts' => [
+        'types' => [
+            'receivables' => 'Accounts receivable (customers)',
+            'payables' => 'Accounts payable (suppliers)',
+            'inventory' => 'Inventory (stock)',
+            'fixed_assets' => 'Fixed assets',
+            'payroll' => 'Payroll',
+            'tax' => 'Tax',
+        ],
+        'recommended' => [
+            '1103' => 'receivables',
+            '2101' => 'payables',
+            '1151' => 'inventory',
+            '1152' => 'inventory',
+            '1153' => 'inventory',
+            '2103' => 'payroll',
+            '1107' => 'tax',
+            '2104' => 'tax',
+        ],
+    ],
+
     // Signed webhooks for accounting events (queued when a queue is configured). Empty = disabled.
     'webhooks' => [
         'urls' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_WEBHOOK_URLS', '')))),
@@ -147,6 +171,8 @@ return [
         'voucher-types.create',
         'voucher-types.update',
         'voucher-types.delete',
+        'control-accounts.manage',
+        'control-accounts.post-manual',
         'account-balance-snapshots.view',
         'reports.general-ledger.view',
         'reports.trial-balance.view',
@@ -190,6 +216,7 @@ return [
             'voucher-types.create',
             'voucher-types.update',
             'voucher-types.delete',
+            'control-accounts.manage',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
         ],

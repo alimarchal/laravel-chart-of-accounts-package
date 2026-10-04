@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 class JournalEntryService
 {
     /**
-     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
+     * @param  array{voucher_type_id?: int|null, origin_module?: string|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
      */
     public function create(array $data): JournalEntry
     {
@@ -28,6 +28,7 @@ class JournalEntryService
 
             $journalEntry = JournalEntry::query()->create([
                 'voucher_type_id' => $data['voucher_type_id'] ?? null,
+                'origin_module' => $data['origin_module'] ?? null,
                 'entry_date' => $data['entry_date'],
                 'currency_id' => $currencyId,
                 'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,
