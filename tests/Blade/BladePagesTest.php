@@ -1,6 +1,7 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Actions\CloseAccountingPeriodAction;
+use Alimarchal\LaravelChartOfAccounts\Actions\VoidJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountBalanceSnapshot;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
@@ -76,4 +77,43 @@ it('shows a flash error instead of a 500 when deleting an account type that is i
         ->assertSessionHas('error', 'This record is in use by other accounting records and cannot be deleted or changed.');
 
     expect($type->fresh())->not->toBeNull();
+});
+
+it('runs maker-checker through the Blade screens', function (): void {
+    config(['accounting.approvals.enabled' => true, 'accounting.approvals.threshold' => '0']);
+    $maker = User::factory()->create();
+    $maker->assignRole('accountant');
+    $checker = User::factory()->create();
+    $checker->assignRole('approver');
+
+    $this->actingAs($maker);
+    $entry = journal(['5104' => 10, '1101' => -10], post: false);
+
+    $this->get("/accounting/journal-entries/{$entry->id}")->assertSuccessful()->assertSee('Submit for approval')->assertDontSee('>Post<', false);
+    $this->post("/accounting/journal-entries/{$entry->id}/submit")->assertRedirect()->assertSessionHas('success');
+
+    $this->actingAs($checker);
+    $this->get('/accounting/journal-entries?filter[approval_status]=pending')->assertSuccessful()->assertSee('Awaiting approval');
+    $this->get("/accounting/journal-entries/{$entry->id}")->assertSee('Approve &amp; post', false);
+    $this->post("/accounting/journal-entries/{$entry->id}/approve")->assertRedirect()->assertSessionHas('success');
+
+    expect($entry->fresh()->status)->toBe('posted');
+});
+
+it('filters the Blade journal list by status, void and date', function (): void {
+    journal(['5104' => 10, '1101' => -10], date: now()->startOfYear()->addDays(3)->toDateString(), reference: 'EARLY');
+    $void = journal(['5104' => 1, '1101' => -1], reference: 'GONE', post: false);
+    app(VoidJournalEntryAction::class)->execute($void);
+
+    $this->get('/accounting/journal-entries?filter[status]=void')->assertSee('GONE')->assertDontSee('EARLY');
+    $this->get('/accounting/journal-entries?filter[entry_date_to]='.now()->startOfYear()->addDays(5)->toDateString())->assertSee('EARLY')->assertDontSee('GONE');
+});
+
+it('filters the audit log by action and date', function (): void {
+    journal(['5104' => 10, '1101' => -10]);
+
+    $this->get('/accounting/audit-logs?filter[action]=JOURNAL_POSTED&filter[date_from]='.now()->subDay()->toDateString())
+        ->assertSuccessful()
+        ->assertSee('JOURNAL_POSTED');
+    $this->get('/accounting/audit-logs?filter[action]=INSERT')->assertSuccessful();
 });

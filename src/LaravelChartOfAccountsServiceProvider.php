@@ -117,16 +117,33 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/accounting/components', 'accounting');
 
         if ($driver === 'blade' && class_exists(Livewire::class)) {
-            Livewire::component('accounting::journal-entry-form', JournalEntryForm::class);
-            Livewire::component('accounting::reports.general-ledger', GeneralLedgerLivewire::class);
-            Livewire::component('accounting::reports.trial-balance', TrialBalanceLivewire::class);
-            Livewire::component('accounting::reports.balance-sheet', BalanceSheetLivewire::class);
-            Livewire::component('accounting::reports.income-statement', IncomeStatementLivewire::class);
-            Livewire::component('accounting::reports.cash-flow', CashFlowLivewire::class);
-            Livewire::component('accounting::reports.aged-payables', AgedPayablesLivewire::class);
-            Livewire::component('accounting::reports.aged-receivables', AgedReceivablesLivewire::class);
-            Livewire::component('accounting::reports.bank-book', BankBookLivewire::class);
-            Livewire::component('accounting::reports.cash-book', CashBookLivewire::class);
+            $this->registerLivewireComponents();
+        }
+    }
+
+    /**
+     * Livewire 4 treats "name::component" as a namespace lookup, so components are registered as
+     * "accounting.<name>" (works on Livewire 3 and 4). The old "accounting::<name>" aliases stay
+     * registered for views published from earlier versions (Livewire 3 only).
+     */
+    private function registerLivewireComponents(): void
+    {
+        $components = [
+            'journal-entry-form' => JournalEntryForm::class,
+            'reports.general-ledger' => GeneralLedgerLivewire::class,
+            'reports.trial-balance' => TrialBalanceLivewire::class,
+            'reports.balance-sheet' => BalanceSheetLivewire::class,
+            'reports.income-statement' => IncomeStatementLivewire::class,
+            'reports.cash-flow' => CashFlowLivewire::class,
+            'reports.aged-payables' => AgedPayablesLivewire::class,
+            'reports.aged-receivables' => AgedReceivablesLivewire::class,
+            'reports.bank-book' => BankBookLivewire::class,
+            'reports.cash-book' => CashBookLivewire::class,
+        ];
+
+        foreach ($components as $name => $class) {
+            Livewire::component("accounting.{$name}", $class);
+            Livewire::component("accounting::{$name}", $class);
         }
     }
 

@@ -44,11 +44,13 @@ class JournalEntryApiController extends Controller
                     AllowedFilter::exact('currency_id'),
                     AllowedFilter::exact('accounting_period_id'),
                     AllowedFilter::exact('approval_status'),
+                    AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
+                    AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
+                    AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
+                    AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
                 ])
                 ->allowedSorts(['entry_date', 'id', 'reference', 'created_at'])
                 ->when($request->input('include') === 'lines', fn ($query) => $query->with(['lines.account', 'lines.costCenter']))
-                ->when(request('filter.entry_date_from'), fn ($query, $date) => $query->whereDate('entry_date', '>=', $date))
-                ->when(request('filter.entry_date_to'), fn ($query, $date) => $query->whereDate('entry_date', '<=', $date))
                 ->when(! $request->filled('sort'), fn ($query) => $query->latest('entry_date')->latest('id'))
                 ->paginate($this->perPage())
                 ->withQueryString()

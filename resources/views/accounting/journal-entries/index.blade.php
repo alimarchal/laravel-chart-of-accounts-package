@@ -10,11 +10,19 @@
                     <option value="">All</option>
                     <option value="draft" {{ request('filter.status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="posted" {{ request('filter.status') === 'posted' ? 'selected' : '' }}>Posted</option>
-                    <option value="voided" {{ request('filter.status') === 'voided' ? 'selected' : '' }}>Voided</option>
+                    <option value="void" {{ request('filter.status') === 'void' ? 'selected' : '' }}>Void</option>
                 </select>
             </div>
-            <div><x-accounting::label for="filter_date_from" value="Date From" /><x-accounting::input id="filter_date_from" name="filter[date_from]" type="date" class="mt-1 block w-full" :value="request('filter.date_from')" /></div>
-            <div><x-accounting::label for="filter_date_to" value="Date To" /><x-accounting::input id="filter_date_to" name="filter[date_to]" type="date" class="mt-1 block w-full" :value="request('filter.date_to')" /></div>
+            <div><x-accounting::label for="filter_approval_status" value="Approval" />
+                <select id="filter_approval_status" name="filter[approval_status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    <option value="pending" {{ request('filter.approval_status') === 'pending' ? 'selected' : '' }}>Awaiting approval</option>
+                    <option value="approved" {{ request('filter.approval_status') === 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ request('filter.approval_status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </div>
+            <div><x-accounting::label for="filter_date_from" value="Date From" /><x-accounting::input id="filter_date_from" name="filter[entry_date_from]" type="date" class="mt-1 block w-full" :value="request('filter.entry_date_from')" /></div>
+            <div><x-accounting::label for="filter_date_to" value="Date To" /><x-accounting::input id="filter_date_to" name="filter[entry_date_to]" type="date" class="mt-1 block w-full" :value="request('filter.entry_date_to')" /></div>
         </div>
     </x-accounting::filter-section>
     <x-accounting::data-table :items="$journalEntries"
@@ -27,9 +35,12 @@
             <td class="py-1 px-2 font-mono">{{ $je->reference }}</td>
             <td class="py-1 px-2">{{ Str::limit($je->description, 50) }}</td>
             <td class="py-1 px-2 text-center">
-                <span @class(['px-2 py-0.5 rounded text-xs font-medium', 'bg-yellow-100 text-yellow-800' => $je->status === 'draft', 'bg-green-100 text-green-800' => $je->status === 'posted', 'bg-red-100 text-red-700' => $je->status === 'voided'])>{{ ucfirst($je->status) }}</span>
+                <span @class(['px-2 py-0.5 rounded text-xs font-medium', 'bg-yellow-100 text-yellow-800' => $je->status === 'draft', 'bg-green-100 text-green-800' => $je->status === 'posted', 'bg-red-100 text-red-700' => $je->status === 'void'])>{{ ucfirst($je->status) }}</span>
+                @if ($je->approval_status)
+                    <span @class(['ml-1 px-2 py-0.5 rounded text-xs font-medium', 'bg-indigo-100 text-indigo-800' => $je->approval_status === 'pending', 'bg-emerald-100 text-emerald-800' => $je->approval_status === 'approved', 'bg-rose-100 text-rose-800' => $je->approval_status === 'rejected'])>{{ $je->approval_status === 'pending' ? 'Awaiting approval' : ucfirst($je->approval_status) }}</span>
+                @endif
             </td>
-            <td class="py-1 px-2 text-center">{{ $je->lines_count ?? $je->lines->count() }}</td>
+            <td class="py-1 px-2 text-center">{{ $je->lines_count }}</td>
             <td class="py-1 px-2 text-center">
                 <a href="{{ route('accounting.journal-entries.show', $je) }}" class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:bg-blue-100 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></a>
             </td>

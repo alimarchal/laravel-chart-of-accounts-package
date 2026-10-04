@@ -24,6 +24,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\TrialBalanceController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxCodeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxRateController;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\ShareAccountingInertiaData;
 use Illuminate\Support\Facades\Route;
 
 $resourceRoutes = function (string $uri, string $controller, string $routeName, string $permissionPrefix): void {
@@ -50,7 +51,7 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
         ->middleware("can:{$permissionPrefix}.delete");
 };
 
-Route::middleware(['web', 'auth', 'verified'])
+Route::middleware(['web', 'auth', 'verified', ShareAccountingInertiaData::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name('accounting.')
     ->group(function () use ($resourceRoutes): void {
@@ -126,6 +127,15 @@ Route::middleware(['web', 'auth', 'verified'])
         Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryController::class, 'reverse'])
             ->name('journal-entries.reverse')
             ->middleware('can:journal-entries.reverse');
+        Route::post('journal-entries/{journalEntry}/submit', [JournalEntryController::class, 'submit'])
+            ->name('journal-entries.submit')
+            ->middleware('can:journal-entries.create');
+        Route::post('journal-entries/{journalEntry}/approve', [JournalEntryController::class, 'approve'])
+            ->name('journal-entries.approve')
+            ->middleware('can:journal-entries.approve');
+        Route::post('journal-entries/{journalEntry}/reject', [JournalEntryController::class, 'reject'])
+            ->name('journal-entries.reject')
+            ->middleware('can:journal-entries.approve');
         Route::post('journal-entries/{journalEntry}/void', [JournalEntryController::class, 'void'])
             ->name('journal-entries.void')
             ->middleware('can:journal-entries.void');
