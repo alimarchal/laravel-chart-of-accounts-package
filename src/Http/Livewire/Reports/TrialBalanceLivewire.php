@@ -11,8 +11,8 @@ class TrialBalanceLivewire extends Component
     public function render(TrialBalanceReport $report): View
     {
         return view('accounting::livewire.reports.trial-balance', [
-            'rows' => $report->rows(),
-            'totals' => $report->totals(),
+            'rows' => $rows = $report->rows(),
+            'totals' => $report->totals($rows),
         ]);
     }
 }

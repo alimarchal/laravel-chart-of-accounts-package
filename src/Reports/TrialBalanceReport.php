@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -15,10 +16,24 @@ class TrialBalanceReport
     }
 
     /**
+     * Pass the rows you already loaded to avoid aggregating the ledger a second time.
+     *
+     * @param  Collection<int, object>|null  $rows
      * @return array<string, float>
      */
-    public function totals(): array
+    public function totals(?Collection $rows = null): array
     {
+        if ($rows !== null) {
+            $debit = $rows->sum(fn (object $row): int => Money::toCents($row->total_debits));
+            $credit = $rows->sum(fn (object $row): int => Money::toCents($row->total_credits));
+
+            return [
+                'total_debit' => $debit / 100,
+                'total_credit' => $credit / 100,
+                'difference' => ($debit - $credit) / 100,
+            ];
+        }
+
         $row = DB::table('vw_accounting_trial_balance')
             ->selectRaw('COALESCE(SUM(total_debits), 0) as debit, COALESCE(SUM(total_credits), 0) as credit')
             ->first();

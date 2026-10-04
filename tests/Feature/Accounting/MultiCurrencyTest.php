@@ -78,7 +78,10 @@ it('reports in the base currency', function (): void {
     $bs = app(BalanceSheetReport::class)->totals();
     expect($bs['assets'])->toBe(25000.0)->and($bs['difference'])->toBe(0.0);
 
-    expect(app(TrialBalanceReport::class)->totals()['difference'])->toBe(0.0);
+    $report = app(TrialBalanceReport::class);
+    expect($report->totals()['difference'])->toBe(0.0)
+        ->and($report->totals($report->rows()))->toEqual($report->totals())
+        ->and($report->totals()['total_debit'])->toEqual(31000.0);
 });
 
 it('applies the approval threshold in base currency', function (): void {

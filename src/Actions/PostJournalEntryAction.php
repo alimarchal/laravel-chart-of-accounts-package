@@ -65,11 +65,12 @@ class PostJournalEntryAction
         $entry->loadMissing('lines.account');
         $this->validateLines($entry);
 
-        // Locking the period row means a concurrent period close cannot interleave with this posting.
+        // A shared lock on the period row: closing/reopening takes an exclusive lock, so a close cannot
+        // interleave with this posting, while concurrent postings into the same period do not block each other.
         $period = AccountingPeriod::query()
             ->whereDate('start_date', '<=', $entry->entry_date)
             ->whereDate('end_date', '>=', $entry->entry_date)
-            ->when($lockPeriod, fn ($query) => $query->lockForUpdate())
+            ->when($lockPeriod, fn ($query) => $query->sharedLock())
             ->first();
 
         if (! $period || $period->status !== 'open') {

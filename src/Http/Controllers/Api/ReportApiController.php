@@ -28,7 +28,9 @@ class ReportApiController extends Controller
 
     public function trialBalance(TrialBalanceReport $report): JsonResponse
     {
-        return response()->json(['data' => $report->rows(), 'totals' => $report->totals()]);
+        $rows = $report->rows();
+
+        return response()->json(['data' => $rows, 'totals' => $report->totals($rows)]);
     }
 
     public function balanceSheet(Request $request, BalanceSheetReport $report): JsonResponse
