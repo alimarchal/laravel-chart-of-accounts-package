@@ -85,6 +85,7 @@ class CloseFiscalYearAction
                     'reference' => "YEAR-END-{$period->id}",
                     'description' => "Year-end close for {$period->name}",
                     'auto_post' => true,
+                    'system_generated' => true,
                     'lines' => $lines,
                 ]);
 

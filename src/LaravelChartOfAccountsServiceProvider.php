@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSyncDatabaseObjectsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingUpdateCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingVerifyCommand;
+use Alimarchal\LaravelChartOfAccounts\Events\AccountingEvent;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingRuleViolation;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\JournalEntryForm;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedPayablesLivewire;
@@ -23,6 +24,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\CashFlowLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\GeneralLedgerLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\IncomeStatementLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\TrialBalanceLivewire;
+use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -30,6 +32,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -98,6 +101,10 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->registerExceptionRendering();
+
+        if ((array) config('accounting.webhooks.urls', []) !== []) {
+            Event::listen(AccountingEvent::class, SendAccountingWebhook::class);
+        }
 
         if ($driver === 'api') {
             return;

@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Events\AccountingPeriodReopened;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
@@ -26,7 +27,10 @@ class ReopenAccountingPeriodAction
 
             AccountingAuditLog::record($period, 'PERIOD_REOPENED', ['status' => 'closed'], ['status' => 'open']);
 
-            return $period->refresh();
+            $period = $period->refresh();
+            event(new AccountingPeriodReopened($period));
+
+            return $period;
         });
     }
 }

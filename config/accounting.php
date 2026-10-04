@@ -25,6 +25,22 @@ return [
         'rounding_account_code' => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
     ],
 
+    // Maker-checker. When enabled, entries whose total (in base currency) is at or above the threshold
+    // must be submitted by the maker and approved by a different user (the checker) before they post.
+    'approvals' => [
+        'enabled' => (bool) env('ACCOUNTING_APPROVALS_ENABLED', false),
+        'threshold' => env('ACCOUNTING_APPROVAL_THRESHOLD', '0'), // 0 = every entry needs approval
+        'allow_self_approval' => (bool) env('ACCOUNTING_ALLOW_SELF_APPROVAL', false),
+    ],
+
+    // Signed webhooks for accounting events (queued when a queue is configured). Empty = disabled.
+    'webhooks' => [
+        'urls' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_WEBHOOK_URLS', '')))),
+        'secret' => env('ACCOUNTING_WEBHOOK_SECRET'),
+        'timeout' => (int) env('ACCOUNTING_WEBHOOK_TIMEOUT', 10),
+        'tries' => (int) env('ACCOUNTING_WEBHOOK_TRIES', 5),
+    ],
+
     // Accounts (and their child accounts) included in the aged receivables / payables reports.
     'aging' => [
         'receivable_account_codes' => ['1103', '1104'],
@@ -73,6 +89,7 @@ return [
         'journal-entries.post',
         'journal-entries.reverse',
         'journal-entries.void',
+        'journal-entries.approve',
         'bank-accounts.view',
         'bank-accounts.create',
         'bank-accounts.update',
@@ -155,6 +172,20 @@ return [
             'reports.trial-balance.view',
             'reports.balance-sheet.view',
             'reports.income-statement.view',
+            'reports.account-balances.view',
+        ],
+        // Checker in the maker-checker workflow: reviews and approves, cannot create or edit entries.
+        'approver' => [
+            'accounting.view',
+            'chart-of-accounts.view',
+            'journal-entries.view',
+            'journal-entries.approve',
+            'account-balance-snapshots.view',
+            'reports.general-ledger.view',
+            'reports.trial-balance.view',
+            'reports.balance-sheet.view',
+            'reports.income-statement.view',
+            'reports.account-statement.view',
             'reports.account-balances.view',
         ],
         'viewer' => [

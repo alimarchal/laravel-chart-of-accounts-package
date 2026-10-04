@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Events\AccountingPeriodClosed;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
@@ -54,7 +55,10 @@ class CloseAccountingPeriodAction
 
             AccountingAuditLog::record($period, 'PERIOD_CLOSED', ['status' => 'open'], ['status' => 'closed']);
 
-            return $period->refresh();
+            $period = $period->refresh();
+            event(new AccountingPeriodClosed($period));
+
+            return $period;
         });
     }
 

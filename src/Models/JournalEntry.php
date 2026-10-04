@@ -28,6 +28,15 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $reverses_entry_id
  * @property int|null $reversed_by_entry_id
  * @property Carbon|null $reversed_at
+ * @property string|null $approval_status pending|approved|rejected
+ * @property Carbon|null $submitted_at
+ * @property int|null $submitted_by
+ * @property Carbon|null $approved_at
+ * @property int|null $approved_by
+ * @property Carbon|null $rejected_at
+ * @property int|null $rejected_by
+ * @property string|null $rejection_reason
+ * @property int|null $created_by
  * @property bool $is_closing_entry
  * @property int|null $closes_period_id
  * @property-read Collection<int, JournalEntryLine> $lines
@@ -71,6 +80,9 @@ class JournalEntry extends AccountingModel
             'fx_rate_to_base' => 'decimal:8',
             'posted_at' => 'datetime',
             'reversed_at' => 'datetime',
+            'submitted_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'is_closing_entry' => 'boolean',
         ];
     }
@@ -119,6 +131,27 @@ class JournalEntry extends AccountingModel
     public function scopePosted(Builder $query): Builder
     {
         return $query->where('status', 'posted');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'approved_by');
+    }
+
+    public function submitter(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'submitted_by');
+    }
+
+    /**
+     * Drafts waiting for a checker.
+     *
+     * @param  Builder<JournalEntry>  $query
+     * @return Builder<JournalEntry>
+     */
+    public function scopePendingApproval(Builder $query): Builder
+    {
+        return $query->where('status', 'draft')->where('approval_status', 'pending');
     }
 
     public function reversesEntry(): BelongsTo

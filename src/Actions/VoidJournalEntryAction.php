@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryVoided;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
@@ -29,7 +30,10 @@ class VoidJournalEntryAction
 
             AccountingAuditLog::record($entry, 'JOURNAL_VOIDED', ['status' => 'draft'], ['status' => 'void']);
 
-            return $entry->refresh();
+            $entry = $entry->refresh();
+            event(new JournalEntryVoided($entry));
+
+            return $entry;
         });
     }
 }

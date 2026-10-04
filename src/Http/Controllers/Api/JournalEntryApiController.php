@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Requests\StoreJournalEntryRequest;
 use Alimarchal\LaravelChartOfAccounts\Http\Requests\UpdateJournalEntryRequest;
 use Alimarchal\LaravelChartOfAccounts\Http\Resources\JournalEntryResource;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Services\SimpleJournalService;
 use Closure;
@@ -42,6 +43,7 @@ class JournalEntryApiController extends Controller
                     AllowedFilter::exact('status'),
                     AllowedFilter::exact('currency_id'),
                     AllowedFilter::exact('accounting_period_id'),
+                    AllowedFilter::exact('approval_status'),
                 ])
                 ->allowedSorts(['entry_date', 'id', 'reference', 'created_at'])
                 ->when($request->input('include') === 'lines', fn ($query) => $query->with(['lines.account', 'lines.costCenter']))
@@ -111,6 +113,32 @@ class JournalEntryApiController extends Controller
             $service->reverse($journalEntry, $validated['description'] ?? null, $validated['reversal_date'] ?? null)
                 ->load(self::RELATIONS)
         );
+    }
+
+    /**
+     * Maker: send a draft to a checker.
+     */
+    public function submit(JournalEntry $journalEntry, JournalApprovalService $approvals): JournalEntryResource
+    {
+        return JournalEntryResource::make($approvals->submit($journalEntry)->load(self::RELATIONS));
+    }
+
+    /**
+     * Checker: approve a pending draft — it is posted in the same transaction.
+     */
+    public function approve(JournalEntry $journalEntry, JournalApprovalService $approvals): JournalEntryResource
+    {
+        return JournalEntryResource::make($approvals->approve($journalEntry)->load(self::RELATIONS));
+    }
+
+    /**
+     * Checker: send a pending draft back to its maker with a reason.
+     */
+    public function reject(Request $request, JournalEntry $journalEntry, JournalApprovalService $approvals): JournalEntryResource
+    {
+        $reason = $request->validate(['reason' => ['required', 'string', 'max:2000']])['reason'];
+
+        return JournalEntryResource::make($approvals->reject($journalEntry, $reason)->load(self::RELATIONS));
     }
 
     public function void(JournalEntry $journalEntry, VoidJournalEntryAction $action): JournalEntryResource
