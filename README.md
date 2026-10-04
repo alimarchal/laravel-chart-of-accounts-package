@@ -915,6 +915,15 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `tax-rates.create` | ✔ |  | ✔ |  |  |  |
 | `tax-rates.update` | ✔ |  | ✔ |  |  |  |
 | `tax-rates.delete` | ✔ |  |  |  |  |  |
+| `voucher-types.view` | ✔ | ✔ | ✔ |  | ✔ | ✔ |
+| `voucher-types.create` | ✔ | ✔ |  |  |  |  |
+| `voucher-types.update` | ✔ | ✔ |  |  |  |  |
+| `voucher-types.delete` | ✔ | ✔ |  |  |  |  |
+| `control-accounts.manage` | ✔ | ✔ |  |  |  |  |
+| `control-accounts.post-manual` | ✔ |  |  |  |  |  |
+| `attachments.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `attachments.create` | ✔ |  | ✔ |  |  |  |
+| `attachments.delete` | ✔ |  | ✔ |  |  |  |
 | `account-balance-snapshots.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `reports.general-ledger.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `reports.trial-balance.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |

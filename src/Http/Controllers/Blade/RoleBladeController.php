@@ -2,28 +2,21 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
+use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleBladeController extends Controller
 {
-    public function __construct(private readonly PrivilegeGuard $guard) {}
-
-    private function rolesTable(): string
-    {
-        return config('permission.table_names.roles', 'roles');
-    }
-
-    private function permissionsTable(): string
-    {
-        return config('permission.table_names.permissions', 'permissions');
-    }
+    public function __construct(
+        private readonly PrivilegeGuard $guard,
+        private readonly UserManagementService $users,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -45,19 +38,8 @@ class RoleBladeController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique($this->rolesTable(), 'name')],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => [Rule::exists($this->permissionsTable(), 'name')],
-        ]);
-
-        $this->guard->assertCanGrantPermissions($request->user(), $validated['permissions'] ?? []);
-
-        $role = Role::create(['name' => $validated['name']]);
-
-        if (! empty($validated['permissions'])) {
-            $role->syncPermissions($validated['permissions']);
-        }
+        $validated = $request->validate($this->users->roleRules());
+        $this->users->createRole($request->user(), $validated);
 
         return redirect()->route('settings.roles.index')->with('success', 'Role created successfully.');
     }
@@ -79,32 +61,18 @@ class RoleBladeController extends Controller
 
     public function update(Request $request, Role $role): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique($this->rolesTable(), 'name')->ignore($role->id)],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => [Rule::exists($this->permissionsTable(), 'name')],
-        ]);
-
         $this->guard->assertCanManageRole($request->user(), $role);
-        $this->guard->assertCanGrantPermissions($request->user(), $validated['permissions'] ?? []);
-        abort_if(
-            $role->name === PrivilegeGuard::SUPER_ADMIN_ROLE && $validated['name'] !== PrivilegeGuard::SUPER_ADMIN_ROLE,
-            422,
-            'The super-admin role cannot be renamed.'
-        );
-
-        $role->update(['name' => $validated['name']]);
-        $role->syncPermissions($validated['permissions'] ?? []);
+        $validated = $request->validate($this->users->roleRules($role));
+        // The form always carries the full permission list: none ticked means no permissions.
+        $validated['permissions'] = $validated['permissions'] ?? [];
+        $this->users->updateRole($request->user(), $role, $validated);
 
         return redirect()->route('settings.roles.index')->with('success', 'Role updated successfully.');
     }
 
     public function destroy(Request $request, Role $role): RedirectResponse
     {
-        abort_if($role->name === PrivilegeGuard::SUPER_ADMIN_ROLE, 422, 'The super-admin role cannot be deleted.');
-        $this->guard->assertCanManageRole($request->user(), $role);
-
-        $role->delete();
+        $this->users->deleteRole($request->user(), $role);
 
         return redirect()->route('settings.roles.index')->with('success', 'Role deleted.');
     }

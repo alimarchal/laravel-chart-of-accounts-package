@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.8.0
+  version: 2.9.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -58,6 +58,8 @@ tags:
   description: Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series.
 - name: Companies
   description: Companies (multi-company), access and consolidation.
+- name: Users & roles
+  description: Users, roles and permissions — privilege-checked and audited.
 - name: System
   description: Installation health.
 paths:
@@ -2797,6 +2799,535 @@ paths:
           format: date
         description: Default today.
       - $ref: '#/components/parameters/Company'
+  /users:
+    get:
+      tags:
+      - Users & roles
+      summary: List users
+      operationId: list_users
+      description: 'Permission: `user.view`.'
+      responses:
+        '200':
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  meta:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: filter[name]
+        in: query
+        schema:
+          type: string
+      - name: filter[email]
+        in: query
+        schema:
+          type: string
+      - name: filter[role]
+        in: query
+        schema:
+          type: string
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Users & roles
+      summary: Create a user
+      operationId: create_user
+      description: 'Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin)
+        and audited (who, old and new values).
+
+
+        Permission: `user.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                password_confirmation:
+                  type: string
+                roles:
+                  type: array
+                  items:
+                    type: string
+                  description: Requires `user.assign-role`; only roles whose permissions you hold.
+              required:
+              - name
+              - email
+              - password
+              - password_confirmation
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /users/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Users & roles
+      summary: Show a user with all effective permissions
+      operationId: show_user
+      description: 'Permission: `user.view`.'
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/User'
+                    - type: object
+                      properties:
+                        all_permissions:
+                          type: array
+                          items:
+                            type: string
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Users & roles
+      summary: Update a user (PATCH also accepted)
+      operationId: update_user
+      description: 'Send only what changes; `roles` replaces the roles. Privilege-checked (you grant, revoke and manage only
+        what you hold; only a super-admin touches super-admin) and audited (who, old and new values).
+
+
+        Permission: `user.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                password_confirmation:
+                  type: string
+                roles:
+                  type: array
+                  items:
+                    type: string
+                  description: Requires `user.assign-role`; only roles whose permissions you hold.
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Users & roles
+      summary: Delete a user
+      operationId: delete_user
+      description: 'Not yourself. Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches
+        super-admin) and audited (who, old and new values).
+
+
+        Permission: `user.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /users/{id}/roles:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    put:
+      tags:
+      - Users & roles
+      summary: Replace a user's roles
+      operationId: sync_user_roles
+      description: 'Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin)
+        and audited (who, old and new values). The audit row lists added and removed roles.
+
+
+        Permission: `user.assign-role`.'
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - roles
+              properties:
+                roles:
+                  type: array
+                  items:
+                    type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /users/{id}/permissions:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    put:
+      tags:
+      - Users & roles
+      summary: Replace a user's direct permissions
+      operationId: sync_user_permissions
+      description: 'On top of the roles. Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin
+        touches super-admin) and audited (who, old and new values).
+
+
+        Permission: `user.assign-permission`.'
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - permissions
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /roles:
+    get:
+      tags:
+      - Users & roles
+      summary: List roles with permission and user counts
+      operationId: list_roles
+      description: 'Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Users & roles
+      summary: Create a role
+      operationId: create_role
+      description: 'Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin)
+        and audited (who, old and new values).
+
+
+        Permission: `accounting.manage-settings`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              properties:
+                name:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /roles/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Users & roles
+      summary: Show a role
+      operationId: show_role
+      description: 'Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Role
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Users & roles
+      summary: Update a role (PATCH also accepted)
+      operationId: update_role
+      description: 'super-admin cannot be renamed (422). Privilege-checked (you grant, revoke and manage only what you hold;
+        only a super-admin touches super-admin) and audited (who, old and new values).
+
+
+        Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Users & roles
+      summary: Delete a role
+      operationId: delete_role
+      description: 'super-admin cannot be deleted (422). Privilege-checked (you grant, revoke and manage only what you hold;
+        only a super-admin touches super-admin) and audited (who, old and new values).
+
+
+        Permission: `accounting.manage-settings`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /permissions:
+    get:
+      tags:
+      - Users & roles
+      summary: All permissions grouped by area
+      operationId: list_permissions
+      description: 'Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries/{id}/attachments:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -5137,6 +5668,54 @@ components:
           description: What the next posting today would get (not reserved).
         entries_count:
           type: integer
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        roles:
+          type: array
+          items:
+            type: string
+        direct_permissions:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+        created_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        permissions:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+        permissions_count:
+          type:
+          - integer
+          - 'null'
+        users_count:
+          type:
+          - integer
+          - 'null'
+        is_super_admin:
+          type: boolean
     Attachment:
       type: object
       properties:

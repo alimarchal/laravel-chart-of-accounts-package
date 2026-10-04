@@ -224,6 +224,37 @@ paths["/voucher-types/{id}"] = {"parameters": [ID],
  "delete": op("Voucher types", "Delete an unused voucher type", "voucher-types.delete", {"204": resp("Deleted"), **E404_422}, desc="422 for the default type and for types used by entries (deactivate them instead).", opid="delete_voucher_type")}
 paths["/voucher-types/{id}/next-number"] = {"parameters": [ID], "get": op("Voucher types", "Preview the next number", "voucher-types.view", {"200": resp("Next number", data({"type": "object", "properties": {"voucher_type": {"type": "string"}, "date": {"type": "string", "format": "date"}, "next_number": {"type": "string"}}})), **E404_422}, params=[{"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Default today."}], opid="next_voucher_number")}
 
+user_schema = {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}, "email": {"type": "string", "format": "email"},
+    "roles": {"type": "array", "items": {"type": "string"}}, "direct_permissions": {"type": ["array", "null"], "items": {"type": "string"}}, "created_at": {"type": ["string", "null"], "format": "date-time"}}}
+schemas["User"] = user_schema
+schemas["Role"] = {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}, "permissions": {"type": ["array", "null"], "items": {"type": "string"}},
+    "permissions_count": {"type": ["integer", "null"]}, "users_count": {"type": ["integer", "null"]}, "is_super_admin": {"type": "boolean"}}}
+user_input = {"type": "object", "properties": {"name": {"type": "string"}, "email": {"type": "string", "format": "email"}, "password": {"type": "string", "minLength": 8},
+    "password_confirmation": {"type": "string"}, "roles": {"type": "array", "items": {"type": "string"}, "description": "Requires `user.assign-role`; only roles whose permissions you hold."}}}
+guard_note = "Privilege-checked (you grant, revoke and manage only what you hold; only a super-admin touches super-admin) and audited (who, old and new values)."
+paths["/users"] = {
+ "get": op("Users & roles", "List users", "user.view", {"200": resp("Users", {"type": "object", "properties": {"data": {"type": "array", "items": ref("User")}, "meta": {"type": "object"}}}), **E},
+    params=PAGE + [{"name": f"filter[{f}]", "in": "query", "schema": {"type": "string"}} for f in ["name", "email", "role"]], opid="list_users"),
+ "post": op("Users & roles", "Create a user", "user.create", {"201": resp("Created", data(ref("User"))), **E422}, body={**user_input, "required": ["name", "email", "password", "password_confirmation"]}, desc=guard_note, opid="create_user")}
+paths["/users/{id}"] = {"parameters": [ID],
+ "get": op("Users & roles", "Show a user with all effective permissions", "user.view", {"200": resp("User", data({"allOf": [ref("User"), {"type": "object", "properties": {"all_permissions": {"type": "array", "items": {"type": "string"}}}}]})), **E404}, opid="show_user"),
+ "put": op("Users & roles", "Update a user (PATCH also accepted)", "user.update", {"200": resp("Updated", data(ref("User"))), **E404_422}, body=user_input, desc="Send only what changes; `roles` replaces the roles. "+guard_note, opid="update_user"),
+ "delete": op("Users & roles", "Delete a user", "user.delete", {"204": resp("Deleted"), **E404}, desc="Not yourself. "+guard_note, opid="delete_user")}
+paths["/users/{id}/roles"] = {"parameters": [ID], "put": op("Users & roles", "Replace a user's roles", "user.assign-role", {"200": resp("User", data(ref("User"))), **E404_422},
+    body={"type": "object", "required": ["roles"], "properties": {"roles": {"type": "array", "items": {"type": "string"}}}}, desc=guard_note+" The audit row lists added and removed roles.", opid="sync_user_roles")}
+paths["/users/{id}/permissions"] = {"parameters": [ID], "put": op("Users & roles", "Replace a user's direct permissions", "user.assign-permission", {"200": resp("User", data(ref("User"))), **E404_422},
+    body={"type": "object", "required": ["permissions"], "properties": {"permissions": {"type": "array", "items": {"type": "string"}}}}, desc="On top of the roles. "+guard_note, opid="sync_user_permissions")}
+paths["/roles"] = {
+ "get": op("Users & roles", "List roles with permission and user counts", "accounting.manage-settings", {"200": resp("Roles", data({"type": "array", "items": ref("Role")})), **E}, opid="list_roles"),
+ "post": op("Users & roles", "Create a role", "accounting.manage-settings", {"201": resp("Created", data(ref("Role"))), **E422},
+    body={"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "permissions": {"type": "array", "items": {"type": "string"}}}}, desc=guard_note, opid="create_role")}
+paths["/roles/{id}"] = {"parameters": [ID],
+ "get": op("Users & roles", "Show a role", "accounting.manage-settings", {"200": resp("Role", data(ref("Role"))), **E404}, opid="show_role"),
+ "put": op("Users & roles", "Update a role (PATCH also accepted)", "accounting.manage-settings", {"200": resp("Updated", data(ref("Role"))), **E404_422},
+    body={"type": "object", "properties": {"name": {"type": "string"}, "permissions": {"type": "array", "items": {"type": "string"}}}}, desc="super-admin cannot be renamed (422). "+guard_note, opid="update_role"),
+ "delete": op("Users & roles", "Delete a role", "accounting.manage-settings", {"204": resp("Deleted"), **E404_422}, desc="super-admin cannot be deleted (422). "+guard_note, opid="delete_role")}
+paths["/permissions"] = {"get": op("Users & roles", "All permissions grouped by area", "accounting.manage-settings", {"200": resp("Permissions", data({"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}})), **E}, opid="list_permissions")}
+
 schemas["Attachment"] = {"type": "object", "properties": {"id": {"type": "integer"}, "original_name": {"type": "string", "example": "bill-778.pdf"},
     "mime_type": {"type": ["string", "null"]}, "size": {"type": "integer", "description": "Bytes"}, "sha256": {"type": "string"},
     "description": {"type": ["string", "null"]}, "uploaded_by": {"type": ["string", "null"]}, "uploaded_at": {"type": ["string", "null"], "format": "date-time"}}}
@@ -323,7 +354,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.8.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.9.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
@@ -350,6 +381,7 @@ spec = {
    ("Tax", "Tax codes and dated tax rates."),
    ("Voucher types", "Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series."),
    ("Companies", "Companies (multi-company), access and consolidation."),
+   ("Users & roles", "Users, roles and permissions — privilege-checked and audited."),
    ("System", "Installation health.")]],
  "paths": paths,
  "components": {

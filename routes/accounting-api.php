@@ -14,8 +14,10 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CurrencyApiController
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\JournalEntryApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReconciliationApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReportApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\RoleApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxCodeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxRateApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\UserApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\VoucherTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
@@ -101,6 +103,21 @@ Route::middleware($apiMiddleware)
         $apiResourceRoutes('reconciliations', ReconciliationApiController::class, 'reconciliations', 'reconciliations');
         $apiResourceRoutes('tax-codes', TaxCodeApiController::class, 'tax-codes', 'tax-codes');
         $apiResourceRoutes('tax-rates', TaxRateApiController::class, 'tax-rates', 'tax-rates');
+        Route::get('users', [UserApiController::class, 'index'])->name('users.index')->middleware('can:user.view');
+        Route::post('users', [UserApiController::class, 'store'])->name('users.store')->middleware('can:user.create');
+        Route::get('users/{user}', [UserApiController::class, 'show'])->name('users.show')->middleware('can:user.view');
+        Route::match(['put', 'patch'], 'users/{user}', [UserApiController::class, 'update'])->name('users.update')->middleware('can:user.update');
+        Route::delete('users/{user}', [UserApiController::class, 'destroy'])->name('users.destroy')->middleware('can:user.delete');
+        Route::put('users/{user}/roles', [UserApiController::class, 'syncRoles'])->name('users.roles')->middleware('can:user.assign-role');
+        Route::put('users/{user}/permissions', [UserApiController::class, 'syncPermissions'])->name('users.permissions')->middleware('can:user.assign-permission');
+        Route::middleware('can:accounting.manage-settings')->group(function (): void {
+            Route::get('roles', [RoleApiController::class, 'index'])->name('roles.index');
+            Route::post('roles', [RoleApiController::class, 'store'])->name('roles.store');
+            Route::get('roles/{role}', [RoleApiController::class, 'show'])->name('roles.show');
+            Route::match(['put', 'patch'], 'roles/{role}', [RoleApiController::class, 'update'])->name('roles.update');
+            Route::delete('roles/{role}', [RoleApiController::class, 'destroy'])->name('roles.destroy');
+            Route::get('permissions', [RoleApiController::class, 'permissions'])->name('permissions.index');
+        });
         Route::get('journal-entries/{journalEntry}/attachments', [AttachmentApiController::class, 'index'])->name('journal-entries.attachments.index')->middleware('can:attachments.view');
         Route::post('journal-entries/{journalEntry}/attachments', [AttachmentApiController::class, 'store'])->name('journal-entries.attachments.store')->middleware('can:attachments.create');
         Route::get('attachments/{attachment}/download', [AttachmentApiController::class, 'download'])->name('attachments.download')->middleware('can:attachments.view');

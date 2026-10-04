@@ -28,8 +28,10 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\GeneralLedgerCont
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\IncomeStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\TrialBalanceController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\RoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxCodeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxRateController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\UserController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\ShareAccountingInertiaData;
@@ -127,6 +129,21 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::post('journal-entries/{journalEntry}/attachments', [AttachmentController::class, 'store'])->name('journal-entries.attachments.store')->middleware('can:attachments.create');
         Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download')->middleware('can:attachments.view');
         Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy')->middleware('can:attachments.delete');
+        Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('can:user.view');
+        Route::get('users/create', [UserController::class, 'create'])->name('users.create')->middleware('can:user.create');
+        Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('can:user.create');
+        Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit')->middleware('can:user.update');
+        Route::match(['put', 'patch'], 'users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('can:user.update');
+        Route::put('users/{user}/permissions', [UserController::class, 'permissions'])->name('users.permissions')->middleware('can:user.assign-permission');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('can:user.delete');
+        Route::middleware('can:accounting.manage-settings')->group(function (): void {
+            Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+            Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
+            Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+            Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+            Route::match(['put', 'patch'], 'roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+            Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+        });
         Route::get('control-accounts', [ControlAccountController::class, 'index'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
         Route::post('control-accounts/recommended', [ControlAccountController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
         Route::put('chart-of-accounts/{chartOfAccount}/control-type', [ControlAccountController::class, 'setType'])->name('chart-of-accounts.control-type')->middleware('can:control-accounts.manage');

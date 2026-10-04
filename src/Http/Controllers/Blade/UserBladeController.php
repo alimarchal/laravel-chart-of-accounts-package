@@ -2,13 +2,13 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
+use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
@@ -16,7 +16,10 @@ use Spatie\Permission\Models\Role;
 
 class UserBladeController extends Controller
 {
-    public function __construct(private readonly PrivilegeGuard $guard) {}
+    public function __construct(
+        private readonly PrivilegeGuard $guard,
+        private readonly UserManagementService $users,
+    ) {}
 
     /**
      * @return class-string<Model>
@@ -24,18 +27,6 @@ class UserBladeController extends Controller
     private function getUserModel(): string
     {
         return config('auth.providers.users.model');
-    }
-
-    private function usersTable(): string
-    {
-        $model = $this->getUserModel();
-
-        return (new $model)->getTable();
-    }
-
-    private function rolesTable(): string
-    {
-        return config('permission.table_names.roles', 'roles');
     }
 
     private function permissionsTable(): string
@@ -72,28 +63,8 @@ class UserBladeController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique($this->usersTable(), 'email')],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'roles' => ['nullable', 'array'],
-            'roles.*' => [Rule::exists($this->rolesTable(), 'name')],
-        ]);
-
-        $roles = $validated['roles'] ?? [];
-        abort_if($roles !== [] && ! $request->user()->can('user.assign-role'), 403, 'You are not allowed to assign roles.');
-        $this->guard->assertCanAssignRoles($request->user(), $roles);
-
-        $userModel = $this->getUserModel();
-        $user = $userModel::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        if ($roles !== []) {
-            $user->syncRoles($roles);
-        }
+        $validated = $request->validate($this->users->userRules());
+        $this->users->createUser($request->user(), $validated);
 
         return redirect()->route('settings.users.index')->with('success', 'User created successfully.');
     }
@@ -120,50 +91,20 @@ class UserBladeController extends Controller
 
     public function update(Request $request, $user): RedirectResponse
     {
-        $userModel = $this->getUserModel();
-        $user = $userModel::findOrFail($user);
+        $user = $this->users->findUser($user);
         $this->guard->assertCanManageUser($request->user(), $user);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique($this->usersTable(), 'email')->ignore($user->getKey(), $user->getKeyName())],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'roles' => ['nullable', 'array'],
-            'roles.*' => [Rule::exists($this->rolesTable(), 'name')],
-        ]);
-
-        $roles = $validated['roles'] ?? [];
-        $rolesChanged = collect($roles)->sort()->values()->all() !== $user->getRoleNames()->sort()->values()->all();
-
-        if ($rolesChanged) {
-            abort_unless($request->user()->can('user.assign-role'), 403, 'You are not allowed to change roles.');
-            $this->guard->assertCanAssignRoles($request->user(), $roles);
-            // Removing a role is also privileged: the actor must hold everything the old roles granted.
-            $this->guard->assertCanAssignRoles($request->user(), $user->getRoleNames()->all());
-        }
-
-        $user->update(array_filter([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => ! empty($validated['password']) ? Hash::make($validated['password']) : null,
-        ]));
-
-        if ($rolesChanged) {
-            $user->syncRoles($roles);
-        }
+        $validated = $request->validate($this->users->userRules($user));
+        // The form always carries the full role list: none ticked means no roles.
+        $validated['roles'] = $validated['roles'] ?? [];
+        $this->users->updateUser($request->user(), $user, $validated);
 
         return redirect()->route('settings.users.index')->with('success', 'User updated successfully.');
     }
 
     public function destroy(Request $request, $user): RedirectResponse
     {
-        $userModel = $this->getUserModel();
-        $user = $userModel::findOrFail($user);
-
-        abort_if($request->user()->is($user), 403, 'You cannot delete your own account here.');
-        $this->guard->assertCanManageUser($request->user(), $user);
-
-        $user->delete();
+        $this->users->deleteUser($request->user(), $this->users->findUser($user));
 
         return redirect()->route('settings.users.index')->with('success', 'User deleted.');
     }
@@ -190,22 +131,17 @@ class UserBladeController extends Controller
 
     public function syncPermissions(Request $request, $user): RedirectResponse
     {
-        $userModel = $this->getUserModel();
-        $user = $userModel::findOrFail($user);
-        $this->guard->assertCanManageUser($request->user(), $user);
+        $user = $this->users->findUser($user);
 
         $validated = $request->validate([
             'permissions' => ['nullable', 'array'],
             'permissions.*' => [Rule::exists($this->permissionsTable(), 'name')],
         ]);
 
-        $permissions = $validated['permissions'] ?? [];
-        $this->guard->assertCanGrantPermissions($request->user(), $permissions);
-
-        $user->syncPermissions($permissions);
+        $this->users->syncPermissions($request->user(), $user, $validated['permissions'] ?? []);
 
         return redirect()
-            ->route('settings.users.permissions.edit', $user)
-            ->with('success', 'Permissions updated for '.$user->name.'.');
+            ->route('settings.users.permissions.edit', $user->getKey())
+            ->with('success', 'Permissions updated for '.$user->getAttribute('name').'.');
     }
 }
