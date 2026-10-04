@@ -33,7 +33,8 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
                 cc.code AS cost_center_code,
                 cc.name AS cost_center_name,
                 c.code AS currency_code,
-                je.fx_rate_to_base
+                je.fx_rate_to_base,
+                je.company_id
             FROM accounting_journal_entry_lines jed
             JOIN accounting_journal_entries je ON je.id = jed.journal_entry_id
             JOIN accounting_chart_of_accounts coa ON coa.id = jed.chart_of_account_id
@@ -44,6 +45,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement(<<<'SQL'
             CREATE VIEW IF NOT EXISTS vw_accounting_trial_balance AS
             SELECT
+                coa.company_id,
                 coa.id AS account_id,
                 coa.account_code,
                 coa.account_name,
@@ -61,7 +63,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
             LEFT JOIN accounting_journal_entry_lines jed ON jed.chart_of_account_id = coa.id
             LEFT JOIN accounting_journal_entries je ON je.id = jed.journal_entry_id
             WHERE coa.is_active = 1 OR je.id IS NOT NULL
-            GROUP BY coa.id, coa.account_code, coa.account_name, at.name, at.report_group, coa.normal_balance
+            GROUP BY coa.company_id, coa.id, coa.account_code, coa.account_name, at.name, at.report_group, coa.normal_balance
         SQL);
 
         DB::statement("CREATE VIEW IF NOT EXISTS vw_accounting_balance_sheet AS SELECT * FROM vw_accounting_trial_balance WHERE report_group = 'BalanceSheet'");
@@ -96,12 +98,14 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
     private function createAuditTriggers(): void
     {
         foreach ($this->auditedTables() as $table) {
+            $newCompany = $this->companyOf($table, 'NEW');
+            $oldCompany = $this->companyOf($table, 'OLD');
             $new = $this->jsonRow($table, 'NEW');
             $old = $this->jsonRow($table, 'OLD');
 
-            DB::statement("CREATE TRIGGER {$table}_audit_insert AFTER INSERT ON {$table} BEGIN INSERT INTO accounting_audit_logs (table_name, record_id, action, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'insert', {$new}, json_object('source', 'database_trigger'), datetime('now')); END");
-            DB::statement("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} BEGIN INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'update', {$old}, {$new}, json_object('source', 'database_trigger'), datetime('now')); END");
-            DB::statement("CREATE TRIGGER {$table}_audit_delete AFTER DELETE ON {$table} BEGIN INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, metadata, created_at) VALUES ('{$table}', OLD.id, 'delete', {$old}, json_object('source', 'database_trigger'), datetime('now')); END");
+            DB::statement("CREATE TRIGGER {$table}_audit_insert AFTER INSERT ON {$table} BEGIN INSERT INTO accounting_audit_logs (company_id, table_name, record_id, action, new_values, metadata, created_at) VALUES ({$newCompany}, '{$table}', NEW.id, 'insert', {$new}, json_object('source', 'database_trigger'), datetime('now')); END");
+            DB::statement("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} BEGIN INSERT INTO accounting_audit_logs (company_id, table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ({$newCompany}, '{$table}', NEW.id, 'update', {$old}, {$new}, json_object('source', 'database_trigger'), datetime('now')); END");
+            DB::statement("CREATE TRIGGER {$table}_audit_delete AFTER DELETE ON {$table} BEGIN INSERT INTO accounting_audit_logs (company_id, table_name, record_id, action, old_values, metadata, created_at) VALUES ({$oldCompany}, '{$table}', OLD.id, 'delete', {$old}, json_object('source', 'database_trigger'), datetime('now')); END");
         }
     }
 
@@ -130,6 +134,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
 
         DB::statement("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries
             WHEN OLD.status = 'posted' AND (NEW.status <> 'posted' OR NEW.entry_date IS NOT OLD.entry_date OR NEW.currency_id IS NOT OLD.currency_id
+                OR NEW.company_id IS NOT OLD.company_id
                 OR NEW.fx_rate_to_base IS NOT OLD.fx_rate_to_base OR NEW.deleted_at IS NOT OLD.deleted_at)
             BEGIN {$abort}; END");
         DB::statement("CREATE TRIGGER acct_journals_posted_guard_delete BEFORE DELETE ON accounting_journal_entries
@@ -148,6 +153,19 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
     /**
      * @return array<int, string>
      */
+    /**
+     * SQL for the company an audited row belongs to: its own company_id, its journal entry's for
+     * lines, NULL for shared tables (currencies).
+     */
+    private function companyOf(string $table, string $row): string
+    {
+        return match ($table) {
+            'accounting_currencies' => 'NULL',
+            'accounting_journal_entry_lines' => "(SELECT company_id FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id)",
+            default => "{$row}.company_id",
+        };
+    }
+
     private function auditedTables(): array
     {
         return [

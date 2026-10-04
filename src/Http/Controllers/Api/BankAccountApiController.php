@@ -3,8 +3,8 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api;
 
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Validation\Rule;
 
 class BankAccountApiController extends SimpleAccountingApiController
 {
@@ -17,9 +17,9 @@ class BankAccountApiController extends SimpleAccountingApiController
     {
         return [
             // GL account the bank account posts to (used by the bank book and reconciliation).
-            'chart_of_account_id' => ['nullable', 'integer', Rule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
+            'chart_of_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
             'account_name' => ['required', 'string', 'max:255'],
-            'account_number' => ['required', 'string', 'max:255', Rule::unique('accounting_bank_accounts', 'account_number')->ignore($record?->getKey())],
+            'account_number' => ['required', 'string', 'max:255', CompanyRule::unique('accounting_bank_accounts', 'account_number')->ignore($record?->getKey())],
             'bank_name' => ['nullable', 'string', 'max:255'],
             'branch' => ['nullable', 'string', 'max:255'],
             'iban' => ['nullable', 'string', 'max:255'],

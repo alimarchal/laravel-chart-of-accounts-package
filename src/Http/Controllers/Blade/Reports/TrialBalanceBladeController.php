@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,7 @@ class TrialBalanceBladeController extends Controller
 
         $totals = DB::table('accounting_journal_entry_lines as jel')
             ->join('accounting_journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+            ->whereIn('je.company_id', CurrentCompany::ids())
             ->where('je.status', 'posted')
             ->whereDate('je.entry_date', '<=', $asOfDate)
             ->selectRaw('COALESCE(SUM(jel.base_debit), 0) as total_debits')

@@ -72,6 +72,7 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
 
         DB::unprepared("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries FOR EACH ROW BEGIN
             IF OLD.status = 'posted' AND (NEW.status <> 'posted' OR NEW.entry_date <> OLD.entry_date OR NEW.currency_id <> OLD.currency_id
+                OR NEW.company_id <> OLD.company_id
                 OR NEW.fx_rate_to_base <> OLD.fx_rate_to_base OR NOT (NEW.deleted_at <=> OLD.deleted_at)) THEN {$message}; END IF;
         END");
         DB::unprepared("CREATE TRIGGER acct_journals_posted_guard_delete BEFORE DELETE ON accounting_journal_entries FOR EACH ROW BEGIN
@@ -100,10 +101,26 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
             $new = $this->jsonRow($table, 'NEW');
             $old = $this->jsonRow($table, 'OLD');
 
-            DB::unprepared("CREATE TRIGGER {$table}_audit_insert AFTER INSERT ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'insert', {$new}, JSON_OBJECT('source', 'database_trigger'), NOW())");
-            DB::unprepared("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ('{$table}', NEW.id, 'update', {$old}, {$new}, JSON_OBJECT('source', 'database_trigger'), NOW())");
-            DB::unprepared("CREATE TRIGGER {$table}_audit_delete AFTER DELETE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (table_name, record_id, action, old_values, metadata, created_at) VALUES ('{$table}', OLD.id, 'delete', {$old}, JSON_OBJECT('source', 'database_trigger'), NOW())");
+            $newCompany = $this->companyOf($table, 'NEW');
+            $oldCompany = $this->companyOf($table, 'OLD');
+
+            DB::unprepared("CREATE TRIGGER {$table}_audit_insert AFTER INSERT ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (company_id, table_name, record_id, action, new_values, metadata, created_at) VALUES ({$newCompany}, '{$table}', NEW.id, 'insert', {$new}, JSON_OBJECT('source', 'database_trigger'), NOW())");
+            DB::unprepared("CREATE TRIGGER {$table}_audit_update AFTER UPDATE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (company_id, table_name, record_id, action, old_values, new_values, metadata, created_at) VALUES ({$newCompany}, '{$table}', NEW.id, 'update', {$old}, {$new}, JSON_OBJECT('source', 'database_trigger'), NOW())");
+            DB::unprepared("CREATE TRIGGER {$table}_audit_delete AFTER DELETE ON {$table} FOR EACH ROW INSERT INTO accounting_audit_logs (company_id, table_name, record_id, action, old_values, metadata, created_at) VALUES ({$oldCompany}, '{$table}', OLD.id, 'delete', {$old}, JSON_OBJECT('source', 'database_trigger'), NOW())");
         }
+    }
+
+    /**
+     * SQL for the company an audited row belongs to: its own company_id, its journal entry's for
+     * lines, NULL for shared tables (currencies).
+     */
+    protected function companyOf(string $table, string $row): string
+    {
+        return match ($table) {
+            'accounting_currencies' => 'NULL',
+            'accounting_journal_entry_lines' => "(SELECT company_id FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id)",
+            default => "{$row}.company_id",
+        };
     }
 
     /**
@@ -142,7 +159,8 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
                 cc.code AS cost_center_code,
                 cc.name AS cost_center_name,
                 c.code AS currency_code,
-                je.fx_rate_to_base
+                je.fx_rate_to_base,
+                je.company_id
             FROM accounting_journal_entry_lines jed
             JOIN accounting_journal_entries je ON je.id = jed.journal_entry_id
             JOIN accounting_chart_of_accounts coa ON coa.id = jed.chart_of_account_id
@@ -153,6 +171,7 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement(<<<'SQL'
             CREATE OR REPLACE VIEW vw_accounting_trial_balance AS
             SELECT
+                coa.company_id,
                 coa.id AS account_id,
                 coa.account_code,
                 coa.account_name,
@@ -170,7 +189,7 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
             LEFT JOIN accounting_journal_entry_lines jed ON jed.chart_of_account_id = coa.id
             LEFT JOIN accounting_journal_entries je ON je.id = jed.journal_entry_id
             WHERE coa.is_active = 1 OR je.id IS NOT NULL
-            GROUP BY coa.id, coa.account_code, coa.account_name, at.name, at.report_group, coa.normal_balance
+            GROUP BY coa.company_id, coa.id, coa.account_code, coa.account_name, at.name, at.report_group, coa.normal_balance
         SQL);
 
         DB::statement("CREATE OR REPLACE VIEW vw_accounting_balance_sheet AS SELECT * FROM vw_accounting_trial_balance WHERE report_group = 'BalanceSheet'");

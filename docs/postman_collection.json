@@ -5,7 +5,7 @@
       "description": "Create, post, reverse and void double-entry journal entries.",
       "item": [
         {
-          "id": "7933d5ce-a91c-46a8-9857-0d2ae0135505",
+          "id": "4d9142f8-caef-44b9-8178-a1a75dbbbcb2",
           "name": "List entries",
           "request": {
             "name": "List entries",
@@ -46,7 +46,7 @@
                     "type": "text/plain"
                   },
                   "key": "filter[status]",
-                  "value": "void"
+                  "value": "draft"
                 },
                 {
                   "disabled": false,
@@ -109,7 +109,7 @@
                     "type": "text/plain"
                   },
                   "key": "sort",
-                  "value": "entry_date"
+                  "value": "-id"
                 },
                 {
                   "disabled": false,
@@ -125,6 +125,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -139,7 +148,7 @@
           }
         },
         {
-          "id": "240594b6-5dca-4a19-bc9f-67a99890564b",
+          "id": "daf02830-1084-4cd4-8615-9dd09e522ba4",
           "name": "Create (and optionally post) an entry",
           "request": {
             "name": "Create (and optionally post) an entry",
@@ -165,6 +174,24 @@
                   "type": "text/plain"
                 },
                 "key": "Idempotency-Key",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
                 "value": "<string>"
               },
               {
@@ -195,7 +222,7 @@
           }
         },
         {
-          "id": "4969b535-d2e1-46b9-8d82-26de50276769",
+          "id": "0e1acaa9-356b-4169-a2a8-9dfade7c3929",
           "name": "Two-line entry by account codes",
           "request": {
             "name": "Two-line entry by account codes",
@@ -222,6 +249,24 @@
                   "type": "text/plain"
                 },
                 "key": "Idempotency-Key",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
                 "value": "<string>"
               },
               {
@@ -252,7 +297,7 @@
           }
         },
         {
-          "id": "154b3ec6-50ef-428d-8006-860fe4a1bee6",
+          "id": "62a83819-c026-4fa1-b954-93376c708387",
           "name": "Show an entry with lines",
           "request": {
             "name": "Show an entry with lines",
@@ -284,6 +329,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -298,7 +352,7 @@
           }
         },
         {
-          "id": "d817bcab-967b-431d-a051-951ba649fe7a",
+          "id": "38146cf8-84b0-452c-9715-1aa218eddc56",
           "name": "Update a draft (PATCH also accepted)",
           "request": {
             "name": "Update a draft (PATCH also accepted)",
@@ -330,6 +384,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -357,7 +420,7 @@
           }
         },
         {
-          "id": "cebbd7b2-bc31-4223-a26c-46d396ed6eeb",
+          "id": "1cb23b89-3402-4a37-a155-52d0813133ea",
           "name": "Post a draft",
           "request": {
             "name": "Post a draft",
@@ -390,6 +453,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -404,7 +476,7 @@
           }
         },
         {
-          "id": "20c6099e-315c-43ab-b044-5dd9250c07b6",
+          "id": "2a9a3a6d-99c2-4496-b80d-dba80bb37da6",
           "name": "Reverse a posted entry",
           "request": {
             "name": "Reverse a posted entry",
@@ -437,6 +509,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -464,7 +545,7 @@
           }
         },
         {
-          "id": "08be98f0-3f8b-4231-bd4a-53a63d0ded59",
+          "id": "3b86b9c7-0f89-400a-9535-72c0a57d6d43",
           "name": "Submit a draft for approval (maker)",
           "request": {
             "name": "Submit a draft for approval (maker)",
@@ -497,6 +578,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -511,7 +601,7 @@
           }
         },
         {
-          "id": "185c0db6-0225-4510-98fe-f06cc37ec03a",
+          "id": "fedf784e-3bb6-4e58-866f-a0e5284a636c",
           "name": "Approve and post (checker)",
           "request": {
             "name": "Approve and post (checker)",
@@ -544,6 +634,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -558,7 +657,7 @@
           }
         },
         {
-          "id": "bbb87eff-0cd4-4891-947d-8c4836598050",
+          "id": "29129d5f-49c9-4b1b-9d91-c708e73c0f06",
           "name": "Reject back to the maker (checker)",
           "request": {
             "name": "Reject back to the maker (checker)",
@@ -591,6 +690,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -618,7 +726,7 @@
           }
         },
         {
-          "id": "7710e119-79aa-46f9-baf3-f54a2a55ab72",
+          "id": "a7a95a5d-c833-451e-99b6-c12003ce6282",
           "name": "Void a draft",
           "request": {
             "name": "Void a draft",
@@ -651,6 +759,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -671,7 +788,7 @@
       "description": "Hierarchical accounts, the account tree and account balances.",
       "item": [
         {
-          "id": "5d6bd7c2-d7d7-4a8c-a92a-64307a70a270",
+          "id": "b3054857-e250-4ee4-80fa-15ea5790ea72",
           "name": "List accounts",
           "request": {
             "name": "List accounts",
@@ -764,6 +881,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -778,7 +904,7 @@
           }
         },
         {
-          "id": "e5802b0c-fe69-4277-81ee-db26cdbe68de",
+          "id": "9f139d51-e56d-44c5-ad60-19a49ea9e0bf",
           "name": "Create an account",
           "request": {
             "name": "Create an account",
@@ -798,6 +924,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -809,7 +944,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true\n}",
+              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"debit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -825,7 +960,7 @@
           }
         },
         {
-          "id": "6a8ee797-2c77-4602-8e51-fd72d8f53e08",
+          "id": "c3e63af4-f930-478e-b004-affef3b69754",
           "name": "Whole chart as a nested tree",
           "request": {
             "name": "Whole chart as a nested tree",
@@ -846,6 +981,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -860,7 +1004,7 @@
           }
         },
         {
-          "id": "aca31841-ccd6-4d29-b67e-ffa40ffc7391",
+          "id": "91516e84-3bb1-45d1-8c8b-e02758e58966",
           "name": "Account balance",
           "request": {
             "name": "Account balance",
@@ -903,6 +1047,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -917,7 +1070,7 @@
           }
         },
         {
-          "id": "b6c85ac5-b68e-4ea3-be4a-d8e616a5ffa6",
+          "id": "24797b1e-1df1-4695-9ab9-e443d1c61cbb",
           "name": "Show an account",
           "request": {
             "name": "Show an account",
@@ -949,6 +1102,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -963,7 +1125,7 @@
           }
         },
         {
-          "id": "997a8967-0289-405f-82f0-c7033376ed8a",
+          "id": "047d14c4-913d-4cd5-9874-15043f3a268d",
           "name": "Update an account (PATCH also accepted)",
           "request": {
             "name": "Update an account (PATCH also accepted)",
@@ -995,6 +1157,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -1006,7 +1177,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true\n}",
+              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"debit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -1022,7 +1193,7 @@
           }
         },
         {
-          "id": "c9dde213-5446-4fd1-96b9-feb155550f03",
+          "id": "5b3053fa-5f96-431e-aeb8-1fa0e15135d2",
           "name": "Delete an account",
           "request": {
             "name": "Delete an account",
@@ -1054,6 +1225,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1074,7 +1254,7 @@
       "description": "Financial statements and ledgers (posted entries only).",
       "item": [
         {
-          "id": "7b9eac8e-7e9c-4fa9-bcfc-b1a23906141c",
+          "id": "4990e5b3-d9e5-45f9-bacb-77869930edff",
           "name": "Trial balance",
           "request": {
             "name": "Trial balance",
@@ -1095,6 +1275,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1109,7 +1298,7 @@
           }
         },
         {
-          "id": "dd989ab9-01fb-4757-8270-4dcfd0fc2d3b",
+          "id": "b5f3f800-c10f-44db-a944-e40649c580b3",
           "name": "Balance sheet",
           "request": {
             "name": "Balance sheet",
@@ -1140,6 +1329,33 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1154,7 +1370,7 @@
           }
         },
         {
-          "id": "403a81d6-4a4e-4339-a8b1-8eff2a0d0344",
+          "id": "76374ded-37d0-494d-88dd-646f01cffffe",
           "name": "Income statement",
           "request": {
             "name": "Income statement",
@@ -1194,6 +1410,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1208,7 +1433,7 @@
           }
         },
         {
-          "id": "7bbb7bcf-8123-4c9d-90a1-0d74267804f2",
+          "id": "b88566ff-97a9-493f-8306-0476892021fc",
           "name": "General ledger",
           "request": {
             "name": "General ledger",
@@ -1284,6 +1509,24 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1298,7 +1541,7 @@
           }
         },
         {
-          "id": "c419a0a8-9675-4d20-a688-c73c0277330c",
+          "id": "7003e280-ebe1-460c-b950-ed745dc6a1f3",
           "name": "Cash flow",
           "request": {
             "name": "Cash flow",
@@ -1356,6 +1599,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1370,7 +1622,7 @@
           }
         },
         {
-          "id": "f818b323-18d4-4132-bb3c-4d6a3380968a",
+          "id": "a928d6fa-fc2a-4ee5-864f-7c4111597d6f",
           "name": "Bank book",
           "request": {
             "name": "Bank book",
@@ -1455,6 +1707,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1469,7 +1730,7 @@
           }
         },
         {
-          "id": "c0378acf-6216-4df8-919c-0f6e8ac84d78",
+          "id": "e4bd645d-919e-4696-8742-2a409716d94b",
           "name": "Cash book",
           "request": {
             "name": "Cash book",
@@ -1545,6 +1806,24 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1559,7 +1838,7 @@
           }
         },
         {
-          "id": "7e7f49f7-37b6-4619-a790-7dbad99d9499",
+          "id": "173f1c2c-168e-4db7-83a6-33d0c78f7237",
           "name": "Aged receivables",
           "request": {
             "name": "Aged receivables",
@@ -1590,6 +1869,33 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1604,7 +1910,7 @@
           }
         },
         {
-          "id": "e97953d0-40e3-4693-b716-a37b56cf3b40",
+          "id": "56c8632d-d30a-4c5a-aba8-8690214358d4",
           "name": "Aged payables",
           "request": {
             "name": "Aged payables",
@@ -1635,6 +1941,33 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1649,7 +1982,7 @@
           }
         },
         {
-          "id": "b47c9197-8963-4618-b385-635c00b1c803",
+          "id": "475019c3-c69d-4750-8610-8527eb9e695f",
           "name": "Account statement",
           "request": {
             "name": "Account statement",
@@ -1725,6 +2058,108 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "892b34ca-0d66-4b4f-8ee3-c2cf82a44acd",
+          "name": "Consolidated report",
+          "request": {
+            "name": "Consolidated report",
+            "description": {
+              "content": "Companies share the base currency, so amounts add up directly. Intercompany balances are not eliminated.\n\nPermission: `reports.consolidated.view`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "reports",
+                "consolidated",
+                ":report"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "Codes or ids; default: every company you can access.",
+                    "type": "text/plain"
+                  },
+                  "key": "companies",
+                  "value": "<string>"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "date_from",
+                  "value": "<date>"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "date_to",
+                  "value": "<date>"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "as_of_date",
+                  "value": "<date>"
+                }
+              ],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "income-statement",
+                  "key": "report",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required)  (This can only be one of trial-balance,balance-sheet,income-statement)",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1745,7 +2180,7 @@
       "description": "Accounting periods, closing and balance snapshots.",
       "item": [
         {
-          "id": "ef8b2266-475a-402b-8412-9c6f9aa9c16d",
+          "id": "85c30410-054a-4629-aebf-0dc44e126a01",
           "name": "List periods",
           "request": {
             "name": "List periods",
@@ -1793,6 +2228,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1807,7 +2251,7 @@
           }
         },
         {
-          "id": "6e49c343-04d6-496e-a56e-f288b1d8e5e6",
+          "id": "944121be-a931-4861-b026-2af211fd431b",
           "name": "Create periods",
           "request": {
             "name": "Create periods",
@@ -1827,6 +2271,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -1838,7 +2291,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"archived\"\n}",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -1854,7 +2307,7 @@
           }
         },
         {
-          "id": "b66e12ca-30c3-4958-8f55-ff4475c44613",
+          "id": "a35c596b-809f-47ac-bc4a-775cb9a299f3",
           "name": "Show periods",
           "request": {
             "name": "Show periods",
@@ -1886,6 +2339,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -1900,7 +2362,7 @@
           }
         },
         {
-          "id": "f30967eb-3053-4634-b27a-5581c8b1c7bf",
+          "id": "1aa6a1db-2b36-4ef3-9fac-6757251075ce",
           "name": "Update periods (PATCH also accepted)",
           "request": {
             "name": "Update periods (PATCH also accepted)",
@@ -1932,6 +2394,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -1943,7 +2414,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"archived\"\n}",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -1959,7 +2430,7 @@
           }
         },
         {
-          "id": "3e56bc91-5b72-4ff1-bac0-18331cdeb30d",
+          "id": "9117c456-c1a8-4ace-aa8a-8a732b333263",
           "name": "Delete periods",
           "request": {
             "name": "Delete periods",
@@ -1991,6 +2462,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2005,7 +2485,7 @@
           }
         },
         {
-          "id": "9933b476-7ab1-49e9-95c0-c7578258266a",
+          "id": "05ba5583-6301-41c1-a792-9dc695a7af25",
           "name": "Close a period",
           "request": {
             "name": "Close a period",
@@ -2038,6 +2518,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2052,7 +2541,7 @@
           }
         },
         {
-          "id": "030aa8ff-5808-48a1-a509-05f4e9c4badf",
+          "id": "b9b4466c-2b55-464b-9b8c-ca7507ce5923",
           "name": "Reopen a closed period",
           "request": {
             "name": "Reopen a closed period",
@@ -2085,6 +2574,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2099,7 +2597,7 @@
           }
         },
         {
-          "id": "08729d01-a46d-4f73-985d-2a1f641d94b1",
+          "id": "c6bd7b0d-8659-4fe8-aacf-3464aa6f11b9",
           "name": "Year-end close",
           "request": {
             "name": "Year-end close",
@@ -2132,6 +2630,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2146,7 +2653,7 @@
           }
         },
         {
-          "id": "34a2962d-81ae-442a-9c25-2e48b1d331ea",
+          "id": "2e4daa9c-f751-4079-9129-c736f5222aea",
           "name": "List balance snapshots",
           "request": {
             "name": "List balance snapshots",
@@ -2203,6 +2710,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2217,7 +2733,7 @@
           }
         },
         {
-          "id": "abd5e50c-7e9f-4dc1-b02e-ce14ae6edb05",
+          "id": "65ca5751-96c0-4c85-9d57-f8725bfa1eea",
           "name": "Show a balance snapshot",
           "request": {
             "name": "Show a balance snapshot",
@@ -2249,6 +2765,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2269,7 +2794,7 @@
       "description": "Asset, liability, equity, income and expense types.",
       "item": [
         {
-          "id": "504b4c36-990e-422d-b1fd-f22100411a50",
+          "id": "b984f4cc-c262-463f-b9f7-ff69fa1413f9",
           "name": "List account-types",
           "request": {
             "name": "List account-types",
@@ -2317,6 +2842,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2331,7 +2865,7 @@
           }
         },
         {
-          "id": "89a53aef-f02f-49d9-92f0-0f28a7aea79c",
+          "id": "a17244f8-d7d0-4053-83db-fd0d19fd71a6",
           "name": "Create account-types",
           "request": {
             "name": "Create account-types",
@@ -2351,6 +2885,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -2362,7 +2905,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"credit\",\n  \"report_group\": \"BalanceSheet\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"debit\",\n  \"report_group\": \"BalanceSheet\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -2378,7 +2921,7 @@
           }
         },
         {
-          "id": "ca415994-cfbc-4c37-9910-2ed621666e9b",
+          "id": "9f4114d6-4f11-489e-b8c2-a51f9097db91",
           "name": "Show account-types",
           "request": {
             "name": "Show account-types",
@@ -2410,6 +2953,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2424,7 +2976,7 @@
           }
         },
         {
-          "id": "f91c289e-2158-4890-931d-9b50de869c55",
+          "id": "06912f95-1ee0-455a-9bc6-ab6f3131a77f",
           "name": "Update account-types (PATCH also accepted)",
           "request": {
             "name": "Update account-types (PATCH also accepted)",
@@ -2456,6 +3008,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -2467,7 +3028,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"credit\",\n  \"report_group\": \"BalanceSheet\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"normal_balance\": \"debit\",\n  \"report_group\": \"BalanceSheet\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -2483,7 +3044,7 @@
           }
         },
         {
-          "id": "128e50d4-9d9d-4a55-896d-3ce9326129df",
+          "id": "15ada36c-e9be-48bf-9c58-94c01c0647b4",
           "name": "Delete account-types",
           "request": {
             "name": "Delete account-types",
@@ -2515,6 +3076,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2535,7 +3105,7 @@
       "description": "Currencies and exchange rates (exactly one base currency).",
       "item": [
         {
-          "id": "90cf9f37-7d00-49e4-9989-774b62432990",
+          "id": "7d2311e2-afdc-4b8f-bb28-52f61b0e9006",
           "name": "List currencies",
           "request": {
             "name": "List currencies",
@@ -2583,6 +3153,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2597,7 +3176,7 @@
           }
         },
         {
-          "id": "e8316a50-d8c6-4cb1-86d3-2a9ca82a6a7c",
+          "id": "caa00393-ca50-4b8c-87d9-600e9d39a8c1",
           "name": "Create currencies",
           "request": {
             "name": "Create currencies",
@@ -2616,6 +3195,15 @@
               "variable": []
             },
             "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -2644,7 +3232,7 @@
           }
         },
         {
-          "id": "a1e69a66-a614-4abe-a751-9e6763d33a14",
+          "id": "477a14cb-02df-49ec-942a-8f3a7a513860",
           "name": "Show currencies",
           "request": {
             "name": "Show currencies",
@@ -2676,6 +3264,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2690,7 +3287,7 @@
           }
         },
         {
-          "id": "b6d3665e-bba7-4059-8bee-f821b9587191",
+          "id": "6f9d4b2f-60e5-4791-be3b-8812b538dd30",
           "name": "Update currencies (PATCH also accepted)",
           "request": {
             "name": "Update currencies (PATCH also accepted)",
@@ -2722,6 +3319,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -2749,7 +3355,7 @@
           }
         },
         {
-          "id": "bde70233-2e1f-4c9e-9a12-3780315e730f",
+          "id": "d091924d-9e72-42ea-b349-89bd9f3d932a",
           "name": "Delete currencies",
           "request": {
             "name": "Delete currencies",
@@ -2781,6 +3387,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2801,7 +3416,7 @@
       "description": "Cost centers and projects for line-level analysis.",
       "item": [
         {
-          "id": "eb4d5d41-02a0-4037-b46d-fd1b3e7e74b2",
+          "id": "d35febd6-1d99-4d70-81e9-0ade225e1e63",
           "name": "List cost-centers",
           "request": {
             "name": "List cost-centers",
@@ -2849,6 +3464,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2863,7 +3487,7 @@
           }
         },
         {
-          "id": "2d4924e2-fe29-4926-8328-fbc897240075",
+          "id": "e54489c0-f2f8-4dc9-b4d0-ca4ae1562f77",
           "name": "Create cost-centers",
           "request": {
             "name": "Create cost-centers",
@@ -2883,6 +3507,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -2894,7 +3527,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"cost_center\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -2910,7 +3543,7 @@
           }
         },
         {
-          "id": "0619a0cd-50c4-42ee-a18a-07e1a1f7e533",
+          "id": "5f0c912e-1ba1-4ecb-a78a-ba5f7de13601",
           "name": "Show cost-centers",
           "request": {
             "name": "Show cost-centers",
@@ -2942,6 +3575,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -2956,7 +3598,7 @@
           }
         },
         {
-          "id": "1c989cec-cc28-428e-b128-ca5fb69e07ad",
+          "id": "3c94a1bc-1b71-420b-83db-7a003597b6fa",
           "name": "Update cost-centers (PATCH also accepted)",
           "request": {
             "name": "Update cost-centers (PATCH also accepted)",
@@ -2988,6 +3630,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -2999,7 +3650,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"cost_center\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -3015,7 +3666,7 @@
           }
         },
         {
-          "id": "03157d85-2d21-486c-921f-ab3857f2a0d5",
+          "id": "e04f925d-8157-4a5a-9624-5e0ef8fbac07",
           "name": "Delete cost-centers",
           "request": {
             "name": "Delete cost-centers",
@@ -3047,6 +3698,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3067,7 +3727,7 @@
       "description": "Bank accounts linked to GL accounts.",
       "item": [
         {
-          "id": "92b6b503-518f-461b-901c-39fecde470f3",
+          "id": "d89b7447-d7dc-4b38-82c3-98354ffb0e7a",
           "name": "List bank-accounts",
           "request": {
             "name": "List bank-accounts",
@@ -3115,6 +3775,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3129,7 +3798,7 @@
           }
         },
         {
-          "id": "b5b40004-eef8-4eb4-b2f9-4c36c2a08137",
+          "id": "a9910ec4-766f-40a6-bcea-19cd825bec8f",
           "name": "Create bank-accounts",
           "request": {
             "name": "Create bank-accounts",
@@ -3148,6 +3817,15 @@
               "variable": []
             },
             "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -3176,7 +3854,7 @@
           }
         },
         {
-          "id": "b562b9b4-65cc-448e-8944-1a231ae480cb",
+          "id": "5eb3f6d2-5503-4581-b61a-30a2822e683c",
           "name": "Show bank-accounts",
           "request": {
             "name": "Show bank-accounts",
@@ -3208,6 +3886,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3222,7 +3909,7 @@
           }
         },
         {
-          "id": "0481bf9d-32d4-45fb-ae68-7c8b3725630e",
+          "id": "72d22e8f-1718-427d-a4e7-ee47666a981e",
           "name": "Update bank-accounts (PATCH also accepted)",
           "request": {
             "name": "Update bank-accounts (PATCH also accepted)",
@@ -3254,6 +3941,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -3281,7 +3977,7 @@
           }
         },
         {
-          "id": "c049b797-fbe0-43b8-ba57-f91c4f0ddc0d",
+          "id": "3862f447-f459-4e83-887b-ba5da50fd9fa",
           "name": "Delete bank-accounts",
           "request": {
             "name": "Delete bank-accounts",
@@ -3313,6 +4009,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3333,7 +4038,7 @@
       "description": "Bank statement reconciliations.",
       "item": [
         {
-          "id": "7ff63f0e-4b4c-40bc-bc0a-7d1269352aed",
+          "id": "87d112f8-8050-4561-9702-7068a44177e1",
           "name": "List reconciliations",
           "request": {
             "name": "List reconciliations",
@@ -3381,6 +4086,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3395,7 +4109,7 @@
           }
         },
         {
-          "id": "5c97d093-a886-4c56-8766-1e6e0e38ebae",
+          "id": "63852d5b-47ca-404c-935a-b25302c80290",
           "name": "Create reconciliations",
           "request": {
             "name": "Create reconciliations",
@@ -3415,6 +4129,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -3426,7 +4149,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"draft\"\n}",
+              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"completed\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -3442,7 +4165,7 @@
           }
         },
         {
-          "id": "6b179945-71ec-4b8d-8d92-d11c520e4396",
+          "id": "48c4142b-0f45-4fed-bf29-24b3f9516122",
           "name": "Show reconciliations",
           "request": {
             "name": "Show reconciliations",
@@ -3474,6 +4197,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3488,7 +4220,7 @@
           }
         },
         {
-          "id": "0120beff-91dd-488b-8677-231ef41aa1df",
+          "id": "8fa1a2a6-0de9-48e0-8481-733aa7353b65",
           "name": "Update reconciliations (PATCH also accepted)",
           "request": {
             "name": "Update reconciliations (PATCH also accepted)",
@@ -3520,6 +4252,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -3531,7 +4272,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"draft\"\n}",
+              "raw": "{\n  \"bank_account_id\": \"<integer>\",\n  \"statement_date\": \"<date>\",\n  \"statement_balance\": \"<number>\",\n  \"book_balance\": \"<number>\",\n  \"status\": \"completed\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -3547,7 +4288,7 @@
           }
         },
         {
-          "id": "59e3dba1-cf65-46e1-9339-cbf70c3118ca",
+          "id": "241d6bbd-b51f-429a-92bf-0336b05609b4",
           "name": "Delete reconciliations",
           "request": {
             "name": "Delete reconciliations",
@@ -3579,6 +4320,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3599,7 +4349,7 @@
       "description": "Tax codes and dated tax rates.",
       "item": [
         {
-          "id": "23280a24-debd-472d-a782-dd66384eb755",
+          "id": "1f24d4b4-e9e4-435f-8429-c39217f399ce",
           "name": "List tax-codes",
           "request": {
             "name": "List tax-codes",
@@ -3647,6 +4397,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3661,7 +4420,7 @@
           }
         },
         {
-          "id": "7da0db52-4402-41dd-9f1d-0150392b1fb2",
+          "id": "3389eb5e-ff6c-47fa-8e29-f002bb4a6a47",
           "name": "Create tax-codes",
           "request": {
             "name": "Create tax-codes",
@@ -3680,6 +4439,15 @@
               "variable": []
             },
             "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -3708,7 +4476,7 @@
           }
         },
         {
-          "id": "16408ed8-a29a-4635-a788-2265b6a56d83",
+          "id": "58542c8e-82b9-450a-8bfc-3696710bcd9e",
           "name": "Show tax-codes",
           "request": {
             "name": "Show tax-codes",
@@ -3740,6 +4508,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3754,7 +4531,7 @@
           }
         },
         {
-          "id": "84280ead-2527-481f-a87e-2515df6c8e31",
+          "id": "563a02b2-8baf-4111-9214-6f1cb85caa02",
           "name": "Update tax-codes (PATCH also accepted)",
           "request": {
             "name": "Update tax-codes (PATCH also accepted)",
@@ -3786,6 +4563,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -3813,7 +4599,7 @@
           }
         },
         {
-          "id": "79f8e5a8-75ad-496c-8dcb-8973a5f546c5",
+          "id": "792b5697-c801-4b0f-8e44-3ace6a7e92f2",
           "name": "Delete tax-codes",
           "request": {
             "name": "Delete tax-codes",
@@ -3845,6 +4631,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3859,7 +4654,7 @@
           }
         },
         {
-          "id": "5e885f4a-74b2-42df-92a8-1ecc9886df3f",
+          "id": "470b194d-820c-4be4-aa05-9a1fe8ce6361",
           "name": "List tax-rates",
           "request": {
             "name": "List tax-rates",
@@ -3907,6 +4702,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -3921,7 +4725,7 @@
           }
         },
         {
-          "id": "180702dc-5482-437f-9441-3082098055f8",
+          "id": "a8907500-1d51-4937-b075-cda265d48b35",
           "name": "Create tax-rates",
           "request": {
             "name": "Create tax-rates",
@@ -3940,6 +4744,15 @@
               "variable": []
             },
             "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -3968,7 +4781,7 @@
           }
         },
         {
-          "id": "e889f66d-65e1-4948-946d-bad31a393adc",
+          "id": "d6b6b9f1-cb17-40e5-81bc-01dcf471f4c3",
           "name": "Show tax-rates",
           "request": {
             "name": "Show tax-rates",
@@ -4000,6 +4813,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -4014,7 +4836,7 @@
           }
         },
         {
-          "id": "5d46a0be-9afc-49b1-9899-159a6366f664",
+          "id": "8b3ab090-723f-4024-bcce-884303d08f09",
           "name": "Update tax-rates (PATCH also accepted)",
           "request": {
             "name": "Update tax-rates (PATCH also accepted)",
@@ -4046,6 +4868,15 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               },
@@ -4073,7 +4904,7 @@
           }
         },
         {
-          "id": "d667e7a6-8670-4ea5-8881-61716d190953",
+          "id": "8905f386-cfe4-40d3-a8d7-1d7cd9a49a7f",
           "name": "Delete tax-rates",
           "request": {
             "name": "Delete tax-rates",
@@ -4105,6 +4936,379 @@
             },
             "header": [
               {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "Companies",
+      "description": "Companies (multi-company), access and consolidation.",
+      "item": [
+        {
+          "id": "9a13fea2-1476-4b4a-ab20-73ff69b6e51f",
+          "name": "Companies you can work in",
+          "request": {
+            "name": "Companies you can work in",
+            "description": {
+              "content": "Permission: `accounting.view`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "companies"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "24a9790f-1d2a-4614-bc91-a7c85524ef00",
+          "name": "Create a company",
+          "request": {
+            "name": "Create a company",
+            "description": {
+              "content": "The creator gets access to the new company.\n\nPermission: `companies.manage`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "companies"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"v_yCRI4lg\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "42bdc208-70af-48d7-bdef-99d4cf88792e",
+          "name": "Show a company with its members",
+          "request": {
+            "name": "Show a company with its members",
+            "description": {
+              "content": "Permission: `companies.manage`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "companies",
+                ":company"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "company",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "1ba92687-ac09-4f8e-b2a3-4f540ebbb7d0",
+          "name": "Update a company",
+          "request": {
+            "name": "Update a company",
+            "description": {
+              "content": "Permission: `companies.manage`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "companies",
+                ":company"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "company",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"gpTacmo\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "59e2b180-0231-4dd1-a325-07fb60a4b505",
+          "name": "Give a user access",
+          "request": {
+            "name": "Give a user access",
+            "description": {
+              "content": "You can only grant access to companies you can access yourself. Recorded in the audit log.\n\nPermission: `companies.manage`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "companies",
+                ":company",
+                "users"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "company",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"<integer>\",\n  \"is_default\": \"<boolean>\"\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "d4500d92-6d28-4b87-a43e-960bf85b7967",
+          "name": "Remove a user's access",
+          "request": {
+            "name": "Remove a user's access",
+            "description": {
+              "content": "Permission: `companies.manage`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "companies",
+                ":company",
+                "users",
+                ":user"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "company",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                },
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "user",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
                 "key": "Accept",
                 "value": "application/json"
               }
@@ -4125,7 +5329,7 @@
       "description": "Installation health.",
       "item": [
         {
-          "id": "90c9a1f0-d495-4ee3-a3a7-1a56f48e1249",
+          "id": "a445516d-6e9b-48c8-a08a-c4d2561db974",
           "name": "Installation health",
           "request": {
             "name": "Installation health",
@@ -4144,6 +5348,15 @@
               "variable": []
             },
             "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
               {
                 "key": "Accept",
                 "value": "application/json"

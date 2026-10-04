@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
@@ -50,6 +51,7 @@ class CashFlowReport
         )));
 
         return DB::table('vw_accounting_general_ledger')
+            ->whereIn('company_id', CurrentCompany::ids())
             ->whereIn('account_id', $accountIds)
             ->where('status', 'posted')
             ->when($filters['date_from'] ?? null, fn ($query, string $date) => $query->whereDate('entry_date', '>=', $date))

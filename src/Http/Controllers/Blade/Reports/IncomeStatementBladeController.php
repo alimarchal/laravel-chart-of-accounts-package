@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
@@ -53,7 +54,7 @@ class IncomeStatementBladeController extends Controller
         $startDate = Carbon::parse($startDate)->toDateString();
         $endDate = Carbon::parse($endDate)->toDateString();
 
-        $accounts = DB::table('accounting_chart_of_accounts as a')
+        $accounts = DB::table('accounting_chart_of_accounts as a')->where('a.company_id', CurrentCompany::currentId())
             ->select([
                 'a.id as account_id',
                 'a.account_code',
@@ -88,6 +89,7 @@ class IncomeStatementBladeController extends Controller
                         $sub->select(DB::raw(1))
                             ->from('accounting_journal_entry_lines as jel2')
                             ->join('accounting_journal_entries as je2', 'je2.id', '=', 'jel2.journal_entry_id')
+                            ->whereIn('je2.company_id', CurrentCompany::ids())
                             ->whereColumn('jel2.chart_of_account_id', 'a.id')
                             ->where('je2.status', '=', 'posted');
                     });

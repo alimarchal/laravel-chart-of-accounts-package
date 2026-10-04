@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -37,6 +38,7 @@ class CloseFiscalYearAction
                 ->join('accounting_account_types as type', 'type.id', '=', 'coa.account_type_id')
                 ->join('accounting_journal_entry_lines as line', 'line.chart_of_account_id', '=', 'coa.id')
                 ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
+                ->whereIn('entry.company_id', [CurrentCompany::currentId()])
                 ->where('entry.status', 'posted')
                 ->whereDate('entry.entry_date', '>=', $period->start_date)
                 ->whereDate('entry.entry_date', '<=', $period->end_date)

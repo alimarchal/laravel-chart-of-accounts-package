@@ -59,6 +59,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                     OR NEW.status <> 'posted'
                     OR NEW.entry_date IS DISTINCT FROM OLD.entry_date
                     OR NEW.currency_id IS DISTINCT FROM OLD.currency_id
+                    OR NEW.company_id IS DISTINCT FROM OLD.company_id
                     OR NEW.fx_rate_to_base IS DISTINCT FROM OLD.fx_rate_to_base
                     OR NEW.deleted_at IS DISTINCT FROM OLD.deleted_at
                 ) THEN
@@ -108,14 +109,21 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             CREATE OR REPLACE FUNCTION accounting_audit_trigger()
             RETURNS trigger AS $$
             DECLARE
+                row_data jsonb;
                 row_id bigint;
+                row_company bigint;
             BEGIN
-                row_id := CASE
-                    WHEN TG_OP = 'DELETE' THEN (to_jsonb(OLD)->>'id')::bigint
-                    ELSE (to_jsonb(NEW)->>'id')::bigint
+                row_data := CASE WHEN TG_OP = 'DELETE' THEN to_jsonb(OLD) ELSE to_jsonb(NEW) END;
+                row_id := (row_data->>'id')::bigint;
+                -- Lines take their journal entry's company; shared tables (currencies) have none.
+                row_company := CASE
+                    WHEN TG_TABLE_NAME = 'accounting_journal_entry_lines'
+                        THEN (SELECT company_id FROM accounting_journal_entries WHERE id = (row_data->>'journal_entry_id')::bigint)
+                    ELSE (row_data->>'company_id')::bigint
                 END;
 
                 INSERT INTO accounting_audit_logs (
+                    company_id,
                     table_name,
                     record_id,
                     action,
@@ -125,6 +133,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                     metadata,
                     created_at
                 ) VALUES (
+                    row_company,
                     TG_TABLE_NAME,
                     row_id,
                     LOWER(TG_OP),
@@ -182,7 +191,8 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                 cc.code AS cost_center_code,
                 cc.name AS cost_center_name,
                 c.code AS currency_code,
-                je.fx_rate_to_base
+                je.fx_rate_to_base,
+                je.company_id
             FROM accounting_journal_entry_lines jed
             JOIN accounting_journal_entries je ON je.id = jed.journal_entry_id
             JOIN accounting_chart_of_accounts coa ON coa.id = jed.chart_of_account_id
@@ -193,6 +203,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement(<<<'SQL'
             CREATE OR REPLACE VIEW vw_accounting_trial_balance AS
             SELECT
+                coa.company_id,
                 coa.id AS account_id,
                 coa.account_code,
                 coa.account_name,
@@ -210,7 +221,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             LEFT JOIN accounting_journal_entry_lines jed ON jed.chart_of_account_id = coa.id
             LEFT JOIN accounting_journal_entries je ON je.id = jed.journal_entry_id
             WHERE coa.is_active = true OR je.id IS NOT NULL
-            GROUP BY coa.id, coa.account_code, coa.account_name, at.name, at.report_group, coa.normal_balance
+            GROUP BY coa.company_id, coa.id, coa.account_code, coa.account_name, at.name, at.report_group, coa.normal_balance
         SQL);
 
         DB::statement("CREATE OR REPLACE VIEW vw_accounting_balance_sheet AS SELECT * FROM vw_accounting_trial_balance WHERE report_group = 'BalanceSheet'");

@@ -26,6 +26,8 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\RoleBladeController
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxCodeBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxRateBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\UserBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Illuminate\Support\Facades\Route;
 
 $resourceRoutes = function (string $uri, string $controller, string $routeName, string $permissionPrefix, string $paramName = 'record'): void {
@@ -53,12 +55,15 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
 };
 
 // ── Accounting routes ─────────────────────────────────────────────────────────
-Route::middleware(['web', 'auth', 'verified'])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name(config('accounting.route_name_prefix', 'accounting').'.')
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardBladeController::class)
             ->name('dashboard')
+            ->middleware('can:accounting.view');
+        Route::post('company/switch', CompanySwitchController::class)
+            ->name('company.switch')
             ->middleware('can:accounting.view');
 
         $resourceRoutes('account-types', AccountTypeBladeController::class, 'account-types', 'account-types');

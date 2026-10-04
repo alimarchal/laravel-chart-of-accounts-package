@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.1.0
+  version: 2.2.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -18,6 +18,9 @@ info:
     * **Money:** amounts are returned as decimal strings with two decimals.
 
     * **Retries:** send `Idempotency-Key` when creating journal entries.
+
+    * **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible
+    (404).
 
     * **Maker-checker:** with approvals enabled, entries at/above the threshold go submit → approve (a different user) → posted.'
   license:
@@ -51,6 +54,8 @@ tags:
   description: Bank statement reconciliations.
 - name: Tax
   description: Tax codes and dated tax rates.
+- name: Companies
+  description: Companies (multi-company), access and consolidation.
 - name: System
   description: Installation health.
 paths:
@@ -94,6 +99,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Account types
@@ -131,6 +137,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AccountType'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /account-types/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -165,6 +173,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Account types
@@ -204,6 +214,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AccountType'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Account types
@@ -226,6 +238,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /currencies:
     get:
       tags:
@@ -266,6 +280,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Currencies
@@ -303,6 +318,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Currency'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /currencies/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -337,6 +354,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Currencies
@@ -376,6 +395,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Currency'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Currencies
@@ -398,6 +419,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /periods:
     get:
       tags:
@@ -438,6 +461,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Periods
@@ -475,6 +499,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PeriodInput'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /periods/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -509,6 +535,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Periods
@@ -548,6 +576,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PeriodInput'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Periods
@@ -570,6 +600,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /cost-centers:
     get:
       tags:
@@ -610,6 +642,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Cost centers
@@ -647,6 +680,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CostCenter'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /cost-centers/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -681,6 +716,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Cost centers
@@ -720,6 +757,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CostCenter'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Cost centers
@@ -742,6 +781,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /bank-accounts:
     get:
       tags:
@@ -782,6 +823,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Bank accounts
@@ -819,6 +861,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BankAccount'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /bank-accounts/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -853,6 +897,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Bank accounts
@@ -892,6 +938,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BankAccount'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Bank accounts
@@ -914,6 +962,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /reconciliations:
     get:
       tags:
@@ -954,6 +1004,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Reconciliations
@@ -991,6 +1042,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Reconciliation'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /reconciliations/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1025,6 +1078,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Reconciliations
@@ -1064,6 +1119,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Reconciliation'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Reconciliations
@@ -1086,6 +1143,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /tax-codes:
     get:
       tags:
@@ -1126,6 +1185,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Tax
@@ -1163,6 +1223,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaxCode'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /tax-codes/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1197,6 +1259,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Tax
@@ -1236,6 +1300,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaxCode'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Tax
@@ -1258,6 +1324,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /tax-rates:
     get:
       tags:
@@ -1298,6 +1366,7 @@ paths:
         schema:
           type: string
         description: Partial match on code/name where available
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Tax
@@ -1335,6 +1404,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaxRate'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /tax-rates/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1369,6 +1440,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Tax
@@ -1408,6 +1481,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaxRate'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Tax
@@ -1430,6 +1505,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /periods/{id}/close:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1464,6 +1541,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /periods/{id}/reopen:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1495,6 +1574,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /periods/{id}/close-fiscal-year:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1529,6 +1610,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /health:
     get:
       tags:
@@ -1555,6 +1638,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /chart-of-accounts:
     get:
       tags:
@@ -1609,6 +1694,7 @@ paths:
         in: query
         schema:
           type: string
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Chart of accounts
@@ -1641,6 +1727,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AccountInput'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /chart-of-accounts/tree:
     get:
       tags:
@@ -1668,6 +1756,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /chart-of-accounts/{id}/balance:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1708,6 +1798,7 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Company'
   /chart-of-accounts/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -1737,6 +1828,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Chart of accounts
@@ -1771,6 +1864,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AccountInput'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     delete:
       tags:
       - Chart of accounts
@@ -1793,6 +1888,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries:
     get:
       tags:
@@ -1876,6 +1973,7 @@ paths:
           type: string
           enum:
           - lines
+      - $ref: '#/components/parameters/Company'
     post:
       tags:
       - Journal entries
@@ -1925,6 +2023,8 @@ paths:
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
       requestBody:
         required: true
         content:
@@ -1980,6 +2080,8 @@ paths:
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
       requestBody:
         required: true
         content:
@@ -2015,6 +2117,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
     put:
       tags:
       - Journal entries
@@ -2052,6 +2156,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/JournalEntryInput'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries/{id}/post:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2083,6 +2189,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries/{id}/reverse:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2131,6 +2239,8 @@ paths:
                   - 'null'
                   format: date
                   description: Default today; not before the original date.
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries/{id}/submit:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2166,6 +2276,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries/{id}/approve:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2200,6 +2312,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries/{id}/reject:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2243,6 +2357,8 @@ paths:
                 reason:
                   type: string
                   maxLength: 2000
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /journal-entries/{id}/void:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2277,6 +2393,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /account-balance-snapshots:
     get:
       tags:
@@ -2315,6 +2433,7 @@ paths:
         in: query
         schema:
           type: integer
+      - $ref: '#/components/parameters/Company'
   /account-balance-snapshots/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -2344,6 +2463,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '404':
           $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /reports/trial-balance:
     get:
       tags:
@@ -2369,6 +2490,8 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /reports/balance-sheet:
     get:
       tags:
@@ -2400,6 +2523,9 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
   /reports/income-statement:
     get:
       tags:
@@ -2436,6 +2562,7 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Company'
   /reports/general-ledger:
     get:
       tags:
@@ -2485,6 +2612,8 @@ paths:
           - void
           - all
           default: posted
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
   /reports/cash-flow:
     get:
       tags:
@@ -2524,6 +2653,7 @@ paths:
           format: date
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/PerPage'
+      - $ref: '#/components/parameters/Company'
   /reports/bank-book:
     get:
       tags:
@@ -2577,6 +2707,7 @@ paths:
         in: query
         schema:
           type: integer
+      - $ref: '#/components/parameters/Company'
   /reports/cash-book:
     get:
       tags:
@@ -2626,6 +2757,8 @@ paths:
           - void
           - all
           default: posted
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
   /reports/aged-receivables:
     get:
       tags:
@@ -2657,6 +2790,9 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
   /reports/aged-payables:
     get:
       tags:
@@ -2688,6 +2824,9 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
   /reports/account-statement:
     get:
       tags:
@@ -2737,6 +2876,407 @@ paths:
           format: date
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/PerPage'
+      - $ref: '#/components/parameters/Company'
+  /companies:
+    get:
+      tags:
+      - Companies
+      summary: Companies you can work in
+      operationId: list_companies
+      description: 'Permission: `accounting.view`.'
+      responses:
+        '200':
+          description: Companies; current marks the one this request runs in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '#/components/schemas/Company'
+                      - type: object
+                        properties:
+                          current:
+                            type: boolean
+                  multi_company:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Companies
+      summary: Create a company
+      operationId: create_company
+      description: 'The creator gets access to the new company.
+
+
+        Permission: `companies.manage`.'
+      responses:
+        '201':
+          description: Created company
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Company'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              properties:
+                code:
+                  type: string
+                  maxLength: 30
+                  pattern: ^[A-Za-z0-9_-]+$
+                  description: Stored upper-case; unique.
+                name:
+                  type: string
+                legal_name:
+                  type: string
+                tax_number:
+                  type: string
+                registration_number:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                address:
+                  type: string
+                fiscal_year_start_month:
+                  type: integer
+                  minimum: 1
+                  maximum: 12
+                  default: 1
+                seed:
+                  type: boolean
+                  default: true
+                  description: Create with the standard chart of accounts, current fiscal year, cost centers and tax codes
+                    (create only).
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /companies/{company}:
+    parameters:
+    - name: company
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Companies
+      summary: Show a company with its members
+      operationId: show_company
+      description: 'Permission: `companies.manage`.'
+      responses:
+        '200':
+          description: Company
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/Company'
+                    - type: object
+                      properties:
+                        members:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              name:
+                                type: string
+                              email:
+                                type: string
+                              is_default:
+                                type: boolean
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Companies
+      summary: Update a company
+      operationId: update_company
+      description: 'Permission: `companies.manage`.'
+      responses:
+        '200':
+          description: Updated company
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Company'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                code:
+                  type: string
+                  maxLength: 30
+                  pattern: ^[A-Za-z0-9_-]+$
+                  description: Stored upper-case; unique.
+                name:
+                  type: string
+                legal_name:
+                  type: string
+                tax_number:
+                  type: string
+                registration_number:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                address:
+                  type: string
+                fiscal_year_start_month:
+                  type: integer
+                  minimum: 1
+                  maximum: 12
+                  default: 1
+                seed:
+                  type: boolean
+                  default: true
+                  description: Create with the standard chart of accounts, current fiscal year, cost centers and tax codes
+                    (create only).
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /companies/{company}/users:
+    parameters:
+    - name: company
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Companies
+      summary: Give a user access
+      operationId: grant_company_access
+      description: 'You can only grant access to companies you can access yourself. Recorded in the audit log.
+
+
+        Permission: `companies.manage`.'
+      responses:
+        '200':
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        email:
+                          type: string
+                        is_default:
+                          type: boolean
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - user_id
+              properties:
+                user_id:
+                  type: integer
+                is_default:
+                  type: boolean
+                  description: Make it the user's default company.
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /companies/{company}/users/{user}:
+    parameters:
+    - name: company
+      in: path
+      required: true
+      schema:
+        type: integer
+    - name: user
+      in: path
+      required: true
+      schema:
+        type: integer
+    delete:
+      tags:
+      - Companies
+      summary: Remove a user's access
+      operationId: revoke_company_access
+      description: 'Permission: `companies.manage`.'
+      responses:
+        '200':
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        email:
+                          type: string
+                        is_default:
+                          type: boolean
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /reports/consolidated/{report}:
+    parameters:
+    - name: report
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - trial-balance
+        - balance-sheet
+        - income-statement
+    get:
+      tags:
+      - Reports
+      summary: Consolidated report
+      operationId: consolidated_report
+      description: 'Companies share the base currency, so amounts add up directly. Intercompany balances are not eliminated.
+
+
+        Permission: `reports.consolidated.view`.'
+      responses:
+        '200':
+          description: Each company side by side plus the group total
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidatedReport'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: companies
+        in: query
+        schema:
+          type: string
+          example: MAIN,SUB
+        description: 'Codes or ids; default: every company you can access.'
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: as_of_date
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -2765,6 +3305,12 @@ components:
         minimum: 1
         maximum: 100
         default: 15
+    Company:
+      name: X-Company
+      in: header
+      schema:
+        type: string
+      description: 'Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.'
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -3622,3 +4168,84 @@ components:
           format: date
         is_active:
           type: boolean
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: SUB
+        name:
+          type: string
+          example: Subsidiary Ltd
+        legal_name:
+          type:
+          - string
+          - 'null'
+        tax_number:
+          type:
+          - string
+          - 'null'
+          description: e.g. NTN
+        registration_number:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        fiscal_year_start_month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        is_active:
+          type: boolean
+    ConsolidatedReport:
+      type: object
+      properties:
+        report:
+          type: string
+        companies:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              code:
+                type: string
+              name:
+                type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              account_code:
+                type: string
+              account_name:
+                type: string
+              companies:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Money'
+                description: Balance per company code
+              balance:
+                $ref: '#/components/schemas/Money'
+        totals:
+          type: object
+          properties:
+            companies:
+              type: object
+            group:
+              type: object

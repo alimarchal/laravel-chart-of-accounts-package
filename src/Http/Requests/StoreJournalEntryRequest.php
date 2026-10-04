@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Concerns\HasAccountingValidationRules;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -87,10 +88,10 @@ class StoreJournalEntryRequest extends FormRequest
             'auto_post' => ['sometimes', 'boolean'],
             'lines' => ['required', 'array', 'min:2', 'max:500'],
             'lines.*.id' => ['nullable', 'integer'],
-            'lines.*.chart_of_account_id' => ['required_without:lines.*.account_code', 'nullable', 'integer', Rule::exists('accounting_chart_of_accounts', 'id')],
-            'lines.*.account_code' => ['nullable', 'string', Rule::exists('accounting_chart_of_accounts', 'account_code')],
-            'lines.*.cost_center_id' => ['nullable', 'integer', Rule::exists('accounting_cost_centers', 'id')],
-            'lines.*.cost_center_code' => ['nullable', 'string', Rule::exists('accounting_cost_centers', 'code')],
+            'lines.*.chart_of_account_id' => ['required_without:lines.*.account_code', 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')],
+            'lines.*.account_code' => ['nullable', 'string', CompanyRule::exists('accounting_chart_of_accounts', 'account_code')],
+            'lines.*.cost_center_id' => ['nullable', 'integer', CompanyRule::exists('accounting_cost_centers', 'id')],
+            'lines.*.cost_center_code' => ['nullable', 'string', CompanyRule::exists('accounting_cost_centers', 'code')],
             'lines.*.debit' => $this->moneyRules(),
             'lines.*.credit' => $this->moneyRules(),
             'lines.*.description' => ['nullable', 'string', 'max:255'],

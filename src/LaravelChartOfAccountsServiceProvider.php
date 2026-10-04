@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts;
 
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCloseFiscalYearCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingClosePeriodCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCreateCompanyCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingHealthCheckCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingInstallCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodCommand;
@@ -20,6 +21,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedPayablesLivewire
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedReceivablesLivewire;
 use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\QueryException;
@@ -39,6 +41,8 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/accounting.php', 'accounting');
 
         $this->app->singleton(AccountingDatabaseObjectSynchronizer::class);
+        // One per request/job (scoped instances are reset between Octane requests and queue jobs).
+        $this->app->scoped(CurrentCompany::class);
     }
 
     public function boot(): void
@@ -70,6 +74,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingSeedCommand::class,
                 AccountingSyncDatabaseObjectsCommand::class,
                 AccountingVerifyCommand::class,
+                AccountingCreateCompanyCommand::class,
                 AccountingHealthCheckCommand::class,
                 AccountingRebuildSnapshotsCommand::class,
                 AccountingCloseFiscalYearCommand::class,

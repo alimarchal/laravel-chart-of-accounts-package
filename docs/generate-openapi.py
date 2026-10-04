@@ -195,9 +195,60 @@ for uri, (summary, params, schema, desc) in reports.items():
     errors = {**E404_422} if uri == "account-statement" else E422
     paths[f"/reports/{uri}"] = {"get": op("Reports", summary, f"reports.{uri}.view", {"200": resp(summary, schema), **errors}, params=params or None, desc=desc, opid=f"report_{uri.replace('-', '_')}")}
 
+
+# ── Companies (multi-company) ────────────────────────────────────────────────
+schemas["Company"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "code": {"type": "string", "example": "SUB"}, "name": {"type": "string", "example": "Subsidiary Ltd"},
+    "legal_name": {"type": ["string", "null"]}, "tax_number": {"type": ["string", "null"], "description": "e.g. NTN"},
+    "registration_number": {"type": ["string", "null"]}, "email": {"type": ["string", "null"]}, "phone": {"type": ["string", "null"]},
+    "address": {"type": ["string", "null"]}, "fiscal_year_start_month": {"type": "integer", "minimum": 1, "maximum": 12}, "is_active": {"type": "boolean"}}}
+company_input = {"type": "object", "required": ["code", "name"], "properties": {
+    "code": {"type": "string", "maxLength": 30, "pattern": "^[A-Za-z0-9_-]+$", "description": "Stored upper-case; unique."},
+    "name": {"type": "string"}, "legal_name": {"type": "string"}, "tax_number": {"type": "string"}, "registration_number": {"type": "string"},
+    "email": {"type": "string", "format": "email"}, "phone": {"type": "string"}, "address": {"type": "string"},
+    "fiscal_year_start_month": {"type": "integer", "minimum": 1, "maximum": 12, "default": 1},
+    "seed": {"type": "boolean", "default": True, "description": "Create with the standard chart of accounts, current fiscal year, cost centers and tax codes (create only)."}}}
+members = {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}, "email": {"type": "string"}, "is_default": {"type": "boolean"}}}}
+company_id = {"name": "company", "in": "path", "required": True, "schema": {"type": "integer"}}
+paths["/companies"] = {
+    "get": op("Companies", "Companies you can work in", "accounting.view", {"200": resp("Companies; current marks the one this request runs in", {"type": "object", "properties": {
+        "data": {"type": "array", "items": {"allOf": [ref("Company"), {"type": "object", "properties": {"current": {"type": "boolean"}}}]}},
+        "multi_company": {"type": "boolean"}}}), **E}, opid="list_companies"),
+    "post": op("Companies", "Create a company", "companies.manage", {"201": resp("Created company", data(ref("Company"))), **E422}, body=company_input,
+               desc="The creator gets access to the new company.", opid="create_company"),
+}
+paths["/companies/{company}"] = {"parameters": [company_id],
+    "get": op("Companies", "Show a company with its members", "companies.manage", {"200": resp("Company", data({"allOf": [ref("Company"), {"type": "object", "properties": {"members": members}}]})), **E404}, opid="show_company"),
+    "put": op("Companies", "Update a company", "companies.manage", {"200": resp("Updated company", data(ref("Company"))), **E404_422}, body={**company_input, "required": []}, opid="update_company"),
+}
+paths["/companies/{company}/users"] = {"parameters": [company_id],
+    "post": op("Companies", "Give a user access", "companies.manage", {"200": resp("Members", data(members)), **E404_422},
+               body={"type": "object", "required": ["user_id"], "properties": {"user_id": {"type": "integer"}, "is_default": {"type": "boolean", "description": "Make it the user's default company."}}},
+               desc="You can only grant access to companies you can access yourself. Recorded in the audit log.", opid="grant_company_access")}
+paths["/companies/{company}/users/{user}"] = {"parameters": [company_id, {"name": "user", "in": "path", "required": True, "schema": {"type": "integer"}}],
+    "delete": op("Companies", "Remove a user's access", "companies.manage", {"200": resp("Members", data(members)), **E404}, opid="revoke_company_access")}
+schemas["ConsolidatedReport"] = {"type": "object", "properties": {
+    "report": {"type": "string"},
+    "companies": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "integer"}, "code": {"type": "string"}, "name": {"type": "string"}}}},
+    "data": {"type": "array", "items": {"type": "object", "properties": {
+        "account_code": {"type": "string"}, "account_name": {"type": "string"},
+        "companies": {"type": "object", "additionalProperties": ref("Money"), "description": "Balance per company code"},
+        "balance": ref("Money")}}},
+    "totals": {"type": "object", "properties": {"companies": {"type": "object"}, "group": {"type": "object"}}}}}
+paths["/reports/consolidated/{report}"] = {"parameters": [{"name": "report", "in": "path", "required": True, "schema": {"type": "string", "enum": ["trial-balance", "balance-sheet", "income-statement"]}}],
+    "get": op("Reports", "Consolidated report", "reports.consolidated.view", {"200": resp("Each company side by side plus the group total", ref("ConsolidatedReport")), **E404_422},
+              params=[{"name": "companies", "in": "query", "schema": {"type": "string", "example": "MAIN,SUB"}, "description": "Codes or ids; default: every company you can access."}] + date_q + asof_q,
+              desc="Companies share the base currency, so amounts add up directly. Intercompany balances are not eliminated.", opid="consolidated_report")}
+
+# Every operation can name its company.
+for path_item in paths.values():
+    for method, operation in path_item.items():
+        if method in ("get", "post", "put", "patch", "delete"):
+            operation.setdefault("parameters", []).append({"$ref": "#/components/parameters/Company"})
+
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.1.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.2.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
@@ -206,6 +257,7 @@ spec = {
    "* **Errors:** 422 with `message` (accounting rules) and `errors` (validation).\n"
    "* **Money:** amounts are returned as decimal strings with two decimals.\n"
    "* **Retries:** send `Idempotency-Key` when creating journal entries.\n"
+   "* **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible (404).\n"
    "* **Maker-checker:** with approvals enabled, entries at/above the threshold go submit → approve (a different user) → posted.",
   "license": {"name": "MIT", "identifier": "MIT"}},
  "servers": [{"url": "{host}/api/v1/accounting", "variables": {"host": {"default": "http://localhost:8000"}}}],
@@ -221,6 +273,7 @@ spec = {
    ("Bank accounts", "Bank accounts linked to GL accounts."),
    ("Reconciliations", "Bank statement reconciliations."),
    ("Tax", "Tax codes and dated tax rates."),
+   ("Companies", "Companies (multi-company), access and consolidation."),
    ("System", "Installation health.")]],
  "paths": paths,
  "components": {
@@ -229,6 +282,7 @@ spec = {
    "Id": {"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}},
    "Page": {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 1, "default": 1}},
    "PerPage": {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 15}},
+   "Company": {"name": "X-Company", "in": "header", "schema": {"type": "string"}, "description": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown."},
    "IdempotencyKey": {"name": "Idempotency-Key", "in": "header", "schema": {"type": "string", "maxLength": 100}, "description": "Same key + same body → original entry is returned (200). Same key + different body → 422."}},
   "responses": {
    "Unauthenticated": resp("Missing or invalid token", ref("Error")),

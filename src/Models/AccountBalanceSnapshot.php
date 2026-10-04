@@ -2,11 +2,14 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AccountBalanceSnapshot extends Model
 {
+    use BelongsToCompany;
+
     protected $table = 'accounting_account_balance_snapshots';
 
     protected $fillable = [

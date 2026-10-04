@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,7 @@ abstract class AgingReport
         $accountIds = app(ChartOfAccountService::class)->idsWithDescendants($this->accountCodes());
 
         return DB::table('vw_accounting_general_ledger')
+            ->whereIn('company_id', CurrentCompany::ids())
             ->where('status', 'posted')
             ->whereIn('account_id', $accountIds)
             ->whereDate('entry_date', '<=', $asOfStr)

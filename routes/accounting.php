@@ -7,6 +7,8 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AuditLogController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanyController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CostCenterController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CurrencyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\JournalEntryController;
@@ -18,12 +20,14 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\BalanceSheetContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\BankBookController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\CashBookController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\CashFlowController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ConsolidatedReportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\GeneralLedgerController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\IncomeStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\TrialBalanceController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxCodeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxRateController;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\ShareAccountingInertiaData;
 use Illuminate\Support\Facades\Route;
 
@@ -51,13 +55,26 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
         ->middleware("can:{$permissionPrefix}.delete");
 };
 
-Route::middleware(['web', 'auth', 'verified', ShareAccountingInertiaData::class])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, ShareAccountingInertiaData::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name('accounting.')
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardController::class)
             ->name('dashboard')
             ->middleware('can:accounting.view');
+        Route::post('company/switch', CompanySwitchController::class)
+            ->name('company.switch')
+            ->middleware('can:accounting.view');
+        Route::middleware('can:companies.manage')->group(function (): void {
+            Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+            Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+            Route::match(['put', 'patch'], 'companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
+            Route::post('companies/{company}/users', [CompanyController::class, 'grant'])->name('companies.users.grant');
+            Route::delete('companies/{company}/users/{user}', [CompanyController::class, 'revoke'])->name('companies.users.revoke')->whereNumber('user');
+        });
+        Route::get('reports/consolidated', ConsolidatedReportController::class)
+            ->name('reports.consolidated')
+            ->middleware('can:reports.consolidated.view');
 
         $resourceRoutes('account-types', AccountTypeController::class, 'account-types', 'account-types');
         $resourceRoutes('currencies', CurrencyController::class, 'currencies', 'currencies');

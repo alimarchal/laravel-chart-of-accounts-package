@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\JournalEntryFactory;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
@@ -45,6 +46,8 @@ use Illuminate\Support\Facades\DB;
  */
 class JournalEntry extends AccountingModel
 {
+    use BelongsToCompany;
+
     /** @use HasFactory<JournalEntryFactory> */
     use HasFactory;
 
