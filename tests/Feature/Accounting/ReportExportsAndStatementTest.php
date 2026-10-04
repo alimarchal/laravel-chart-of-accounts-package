@@ -157,3 +157,21 @@ it('names spreadsheet columns past Z correctly and keeps codes as text', functio
         ->toContain('<c r="A2" t="inlineStr"><is><t>0012</t></is></c>')
         ->toContain('<c r="B2"><v>1250.50</v></c>');
 })->skip(! class_exists(ZipArchive::class), 'ext-zip is not installed');
+
+it('paginates the cash flow while totals cover the whole period', function (): void {
+    foreach (range(1, 5) as $i) {
+        journal(['1101' => 100, '4101' => -100], ($this->day)($i));
+    }
+    journal(['5104' => 30, '1101' => -30], ($this->day)(6));
+
+    $this->getJson('/api/v1/accounting/reports/cash-flow?per_page=2')
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('total', 6)
+        ->assertJsonPath('totals', ['cash_in' => '500.00', 'cash_out' => '30.00', 'net_cash_flow' => '470.00']);
+
+    $this->get('/accounting/reports/cash-flow')
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('rows.data', 6)
+            ->where('totals.net_cash_flow', '470.00'));
+});

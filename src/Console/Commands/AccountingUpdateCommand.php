@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
+use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingPermissionSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 
@@ -42,6 +43,10 @@ class AccountingUpdateCommand extends Command
 
         $this->info('Syncing database objects...');
         Artisan::call('accounting:sync-db-objects', [], $this->output);
+
+        // Adds roles and permissions introduced by the new version; never removes your customisations.
+        $this->info('Adding new roles and permissions...');
+        Artisan::call('db:seed', ['--class' => AccountingPermissionSeeder::class, '--force' => true, '--no-interaction' => true], $this->output);
 
         $this->newLine();
         $this->info('Accounting module updated successfully!');

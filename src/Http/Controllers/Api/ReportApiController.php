@@ -90,16 +90,9 @@ class ReportApiController extends Controller
 
     public function cashFlow(Request $request, CashFlowReport $report): JsonResponse
     {
-        $rows = $report->rows($this->dateRange($request));
+        $filters = $this->dateRange($request);
 
-        return response()->json([
-            'data' => $rows,
-            'totals' => [
-                'cash_in' => Money::fromCents($rows->sum(fn ($row) => Money::toCents((string) $row->cash_in))),
-                'cash_out' => Money::fromCents($rows->sum(fn ($row) => Money::toCents((string) $row->cash_out))),
-                'net_cash_flow' => Money::fromCents($rows->sum(fn ($row) => Money::toCents((string) $row->net_cash_flow))),
-            ],
-        ]);
+        return $this->ledger($report->query($filters)->paginate($this->perPage(100))->withQueryString(), $report->totals($filters));
     }
 
     public function agedReceivables(Request $request, AgedReceivablesReport $report): JsonResponse

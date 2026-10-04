@@ -2491,7 +2491,8 @@ paths:
       - Reports
       summary: Cash flow
       operationId: report_cash_flow
-      description: 'Movements on cash and bank accounts (and their child accounts).
+      description: 'Direct method: movements on cash and bank accounts (and their child accounts), paginated; totals cover
+        the whole period.
 
 
         Permission: `reports.cash-flow.view`.'
@@ -2501,7 +2502,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReportRows'
+                $ref: '#/components/schemas/CashFlowPage'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -2521,6 +2522,8 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
   /reports/bank-book:
     get:
       tags:
@@ -2691,7 +2694,8 @@ paths:
       - Reports
       summary: Account statement
       operationId: report_account_statement
-      description: 'account_id or account_code is required.
+      description: 'account_id or account_code is required (404 if it does not exist). Opening balance, paginated lines with
+        running balance, closing balance.
 
 
         Permission: `reports.account-statement.view`.'
@@ -2701,13 +2705,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReportRows'
+                $ref: '#/components/schemas/StatementPage'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
@@ -2729,6 +2735,8 @@ paths:
         schema:
           type: string
           format: date
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
 components:
   securitySchemes:
     bearerAuth:
@@ -3319,6 +3327,83 @@ components:
               type: number
             closing_balance:
               type: number
+    CashFlowPage:
+      type: object
+      description: Laravel paginator of cash/bank lines (cash_in, cash_out, net_cash_flow) plus totals for the whole period.
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        totals:
+          type: object
+          properties:
+            cash_in:
+              type: string
+            cash_out:
+              type: string
+            net_cash_flow:
+              type: string
+    StatementPage:
+      type: object
+      description: Laravel paginator of posted lines, each with running_balance (base currency, on the account's normal side),
+        plus opening balance and totals.
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              entry_date:
+                type: string
+              journal_entry_id:
+                type: integer
+              reference:
+                type:
+                - string
+                - 'null'
+              base_debit:
+                type: string
+              base_credit:
+                type: string
+              running_balance:
+                type: string
+                example: '1250.00'
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+            account_code:
+              type: string
+            account_name:
+              type: string
+            normal_balance:
+              type: string
+        opening_balance:
+          type: string
+          example: '1000.00'
+        totals:
+          type: object
+          properties:
+            debit:
+              type: string
+            credit:
+              type: string
+            closing_balance:
+              type: string
     Health:
       type: object
       properties:

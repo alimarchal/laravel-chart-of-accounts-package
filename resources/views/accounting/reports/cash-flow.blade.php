@@ -49,9 +49,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php $totalIn = 0; $totalOut = 0; @endphp
                             @foreach($rows as $row)
-                            @php $totalIn += $row->cash_in; $totalOut += $row->cash_out; @endphp
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <td class="py-1 px-3">{{ \Carbon\Carbon::parse($row->entry_date)->format('Y-m-d') }}</td>
                                 <td class="py-1 px-3 font-mono">{{ $row->reference }}</td>
@@ -65,14 +63,15 @@
                         </tbody>
                         <tfoot class="bg-gray-100 border-t-2 border-gray-400 font-bold">
                             <tr>
-                                <td colspan="4" class="py-2 px-3 text-right">Totals</td>
-                                <td class="py-2 px-3 text-right font-mono text-green-700">{{ number_format($totalIn, 2) }}</td>
-                                <td class="py-2 px-3 text-right font-mono text-red-700">{{ number_format($totalOut, 2) }}</td>
-                                <td class="py-2 px-3 text-right font-mono {{ ($totalIn - $totalOut) >= 0 ? 'text-green-700' : 'text-red-700' }}">{{ number_format($totalIn - $totalOut, 2) }}</td>
+                                <td colspan="4" class="py-2 px-3 text-right">Period totals</td>
+                                <td class="py-2 px-3 text-right font-mono text-green-700">{{ number_format((float) $totals['cash_in'], 2) }}</td>
+                                <td class="py-2 px-3 text-right font-mono text-red-700">{{ number_format((float) $totals['cash_out'], 2) }}</td>
+                                <td class="py-2 px-3 text-right font-mono {{ (float) $totals['net_cash_flow'] >= 0 ? 'text-green-700' : 'text-red-700' }}">{{ number_format((float) $totals['net_cash_flow'], 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
+                <div class="mt-4">{{ $rows->links() }}</div>
                 @endif
             </div>
         </div>

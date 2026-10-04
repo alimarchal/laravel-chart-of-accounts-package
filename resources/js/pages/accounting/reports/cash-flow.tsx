@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { Download, Filter } from 'lucide-react';
 import { useState } from 'react';
+import { type Paginated, Pagination } from '@/components/accounting/ledger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,18 +32,22 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function CashFlow({
-    rows,
+    rows: page,
+    totals,
     filters,
 }: {
-    rows: CashFlowRow[];
+    rows: Paginated<CashFlowRow>;
+    totals: { cash_in: string; cash_out: string; net_cash_flow: string };
     filters: Record<string, string>;
 }) {
+    const rows = page.data;
     const [dateFrom, setDateFrom] = useState(filters.date_from ?? '');
     const [dateTo, setDateTo] = useState(filters.date_to ?? '');
 
-    const totalIn = rows.reduce((acc, r) => acc + Number(r.cash_in ?? 0), 0);
-    const totalOut = rows.reduce((acc, r) => acc + Number(r.cash_out ?? 0), 0);
-    const netFlow = totalIn - totalOut;
+    // Period totals come from the server: the table shows one page of lines.
+    const totalIn = Number(totals.cash_in);
+    const totalOut = Number(totals.cash_out);
+    const netFlow = Number(totals.net_cash_flow);
 
     function applyFilters() {
         router.get(
@@ -209,6 +214,8 @@ export default function CashFlow({
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination page={page} />
             </div>
         </>
     );

@@ -1,0 +1,28 @@
+sequenceDiagram
+    autonumber
+    actor M as Maker (accountant)
+    participant A as Accounting
+    actor C as Checker (approver)
+    participant W as Webhooks / listeners
+
+    M->>A: Create draft entry (5,000,000)
+    A-->>M: Saved as draft
+    M->>A: Submit for approval
+    A->>A: Check every posting rule now<br/>(balance, accounts, open period)
+    A-->>M: Pending approval
+    A-)W: journal_entry.submitted
+
+    alt Approve
+        C->>A: Approve & post
+        A->>A: Checker ≠ maker / submitter?
+        A->>A: Post (immutable, base amounts frozen)
+        A-->>C: Posted
+        A-)W: journal_entry.approved + journal_entry.posted
+    else Reject
+        C->>A: Reject with reason
+        A-->>C: Rejected
+        A-)W: journal_entry.rejected
+        M->>A: Edit (back to draft) and resubmit
+    end
+
+    Note over M,C: Below the threshold the maker posts directly.<br/>Who did what and when is shown as the entry's audit trail.

@@ -32,7 +32,7 @@ class ReportExportController extends Controller
             'trial-balance' => ['reports.trial-balance.view', fn () => app(TrialBalanceReport::class)->rows()],
             'balance-sheet' => ['reports.balance-sheet.view', fn () => app(BalanceSheetReport::class)->rows()],
             'income-statement' => ['reports.income-statement.view', fn () => app(IncomeStatementReport::class)->rows()],
-            'cash-flow' => ['reports.cash-flow.view', fn () => app(CashFlowReport::class)->rows($request->only(['date_from', 'date_to']))],
+            'cash-flow' => ['reports.cash-flow.view', fn () => app(CashFlowReport::class)->query($request->only(['date_from', 'date_to']))],
             'aged-receivables' => ['reports.aged-receivables.view', fn () => app(AgedReceivablesReport::class)->rows()],
             'aged-payables' => ['reports.aged-payables.view', fn () => app(AgedPayablesReport::class)->rows()],
             'bank-book' => ['reports.bank-book.view', fn () => app(BankBookReport::class)->query($request->only(['date_from', 'date_to', 'account_id', 'bank_account_id', 'status']))],

@@ -100,6 +100,15 @@ schemas = {
  "LedgerPage": {"type": "object", "description": "Laravel paginator (data, current_page, per_page, total, …) plus totals.", "properties": {
      "data": {"type": "array", "items": {"type": "object"}}, "current_page": {"type": "integer"}, "per_page": {"type": "integer"}, "total": {"type": "integer"},
      "totals": {"type": "object", "properties": {"total_debit": {"type": "number"}, "total_credit": {"type": "number"}, "closing_balance": {"type": "number"}}}}},
+ "CashFlowPage": {"type": "object", "description": "Laravel paginator of cash/bank lines (cash_in, cash_out, net_cash_flow) plus totals for the whole period.", "properties": {
+     "data": {"type": "array", "items": {"type": "object"}}, "current_page": {"type": "integer"}, "per_page": {"type": "integer"}, "total": {"type": "integer"},
+     "totals": {"type": "object", "properties": {"cash_in": {"type": "string"}, "cash_out": {"type": "string"}, "net_cash_flow": {"type": "string"}}}}},
+ "StatementPage": {"type": "object", "description": "Laravel paginator of posted lines, each with running_balance (base currency, on the account's normal side), plus opening balance and totals.", "properties": {
+     "data": {"type": "array", "items": {"type": "object", "properties": {"entry_date": {"type": "string"}, "journal_entry_id": {"type": "integer"}, "reference": {"type": ["string", "null"]}, "base_debit": {"type": "string"}, "base_credit": {"type": "string"}, "running_balance": {"type": "string", "example": "1250.00"}}}},
+     "current_page": {"type": "integer"}, "per_page": {"type": "integer"}, "total": {"type": "integer"},
+     "account": {"type": "object", "properties": {"id": {"type": "integer"}, "account_code": {"type": "string"}, "account_name": {"type": "string"}, "normal_balance": {"type": "string"}}},
+     "opening_balance": {"type": "string", "example": "1000.00"},
+     "totals": {"type": "object", "properties": {"debit": {"type": "string"}, "credit": {"type": "string"}, "closing_balance": {"type": "string"}}}}},
  "Health": {"type": "object", "properties": {"ok": {"type": "boolean"}, "missing_tables": {"type": "array", "items": {"type": "string"}}, "base_currency_count": {"type": "integer"}, "account_type_count": {"type": "integer"}, "chart_of_account_count": {"type": "integer"}}},
 }
 
@@ -175,15 +184,16 @@ reports = {
  "balance-sheet": ("Balance sheet", asof_q, ref("ReportRows"), "Includes a 'Current Earnings (unclosed)' row; totals: assets, liabilities_and_equity, difference."),
  "income-statement": ("Income statement", date_q, ref("ReportRows"), "Defaults to the period containing today; closing entries excluded. totals: revenue, expenses, net_income."),
  "general-ledger": ("General ledger", ledger_q, ref("LedgerPage"), None),
- "cash-flow": ("Cash flow", date_q, ref("ReportRows"), "Movements on cash and bank accounts (and their child accounts)."),
+ "cash-flow": ("Cash flow", date_q + PAGE, ref("CashFlowPage"), "Direct method: movements on cash and bank accounts (and their child accounts), paginated; totals cover the whole period."),
  "bank-book": ("Bank book", ledger_q + [{"name": "bank_account_id", "in": "query", "schema": {"type": "integer"}}], ref("LedgerPage"), None),
  "cash-book": ("Cash book", ledger_q, ref("LedgerPage"), None),
  "aged-receivables": ("Aged receivables", asof_q, ref("ReportRows"), "Buckets: current, 1-30, 31-60, 61-90, over 90 days."),
  "aged-payables": ("Aged payables", asof_q, ref("ReportRows"), "Buckets: current, 1-30, 31-60, 61-90, over 90 days."),
- "account-statement": ("Account statement", [{"name": "account_code", "in": "query", "schema": {"type": "string"}}, {"name": "account_id", "in": "query", "schema": {"type": "integer"}}] + date_q, ref("ReportRows"), "account_id or account_code is required."),
+ "account-statement": ("Account statement", [{"name": "account_code", "in": "query", "schema": {"type": "string"}}, {"name": "account_id", "in": "query", "schema": {"type": "integer"}}] + date_q + PAGE, ref("StatementPage"), "account_id or account_code is required (404 if it does not exist). Opening balance, paginated lines with running balance, closing balance."),
 }
 for uri, (summary, params, schema, desc) in reports.items():
-    paths[f"/reports/{uri}"] = {"get": op("Reports", summary, f"reports.{uri}.view", {"200": resp(summary, schema), **E422}, params=params or None, desc=desc, opid=f"report_{uri.replace('-', '_')}")}
+    errors = {**E404_422} if uri == "account-statement" else E422
+    paths[f"/reports/{uri}"] = {"get": op("Reports", summary, f"reports.{uri}.view", {"200": resp(summary, schema), **errors}, params=params or None, desc=desc, opid=f"report_{uri.replace('-', '_')}")}
 
 spec = {
  "openapi": "3.1.0",

@@ -18,13 +18,6 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingRuleViolation;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\JournalEntryForm;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedPayablesLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedReceivablesLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\BalanceSheetLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\BankBookLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\CashBookLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\CashFlowLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\GeneralLedgerLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\IncomeStatementLivewire;
-use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\TrialBalanceLivewire;
 use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -130,15 +123,8 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
     {
         $components = [
             'journal-entry-form' => JournalEntryForm::class,
-            'reports.general-ledger' => GeneralLedgerLivewire::class,
-            'reports.trial-balance' => TrialBalanceLivewire::class,
-            'reports.balance-sheet' => BalanceSheetLivewire::class,
-            'reports.income-statement' => IncomeStatementLivewire::class,
-            'reports.cash-flow' => CashFlowLivewire::class,
             'reports.aged-payables' => AgedPayablesLivewire::class,
             'reports.aged-receivables' => AgedReceivablesLivewire::class,
-            'reports.bank-book' => BankBookLivewire::class,
-            'reports.cash-book' => CashBookLivewire::class,
         ];
 
         foreach ($components as $name => $class) {
