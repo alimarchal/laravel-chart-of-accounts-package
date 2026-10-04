@@ -5,11 +5,23 @@ import { SearchableSelect } from '@/components/accounting/searchable-select';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Account = {
     id: number;
@@ -69,8 +81,17 @@ const emptyLine = (): JournalLine => ({
     description: '',
 });
 
-export default function JournalEntryForm({ action, method = 'post', title = 'Create Journal Entry', entry, accounts, currencies, costCenters }: Props) {
-    const baseCurrency = currencies.find((currency) => currency.is_base) ?? currencies[0];
+export default function JournalEntryForm({
+    action,
+    method = 'post',
+    title = 'Create Journal Entry',
+    entry,
+    accounts,
+    currencies,
+    costCenters,
+}: Props) {
+    const baseCurrency =
+        currencies.find((currency) => currency.is_base) ?? currencies[0];
     const today = new Date().toISOString().slice(0, 10);
     const accountOptions = accounts.map((account) => ({
         value: String(account.id),
@@ -86,25 +107,41 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
 
     const form = useForm({
         entry_date: entry?.entry_date?.slice(0, 10) ?? today,
-        currency_id: entry?.currency_id ? String(entry.currency_id) : baseCurrency ? String(baseCurrency.id) : '',
-        fx_rate_to_base: entry?.fx_rate_to_base ? String(entry.fx_rate_to_base) : '1',
+        currency_id: entry?.currency_id
+            ? String(entry.currency_id)
+            : baseCurrency
+              ? String(baseCurrency.id)
+              : '',
+        fx_rate_to_base: entry?.fx_rate_to_base
+            ? String(entry.fx_rate_to_base)
+            : '1',
         reference: entry?.reference ?? '',
         description: entry?.description ?? '',
-        auto_post: false,
-        lines:
-            entry?.lines.map((line) => ({
-                chart_of_account_id: String(line.chart_of_account_id),
-                cost_center_id: line.cost_center_id ? String(line.cost_center_id) : 'none',
-                debit: String(line.debit ?? '0'),
-                credit: String(line.credit ?? '0'),
-                description: line.description ?? '',
-            })) ?? [emptyLine(), emptyLine()],
+        auto_post: false as boolean,
+        lines: entry?.lines.map((line) => ({
+            chart_of_account_id: String(line.chart_of_account_id),
+            cost_center_id: line.cost_center_id
+                ? String(line.cost_center_id)
+                : 'none',
+            debit: String(line.debit ?? '0'),
+            credit: String(line.credit ?? '0'),
+            description: line.description ?? '',
+        })) ?? [emptyLine(), emptyLine()],
     });
 
-    const setLine = (index: number, field: keyof JournalLine, value: string) => {
+    // Laravel returns array validation errors with dotted keys (lines.0.debit), which useForm's error type does not model.
+    const errors = form.errors as Record<string, string | undefined>;
+
+    const setLine = (
+        index: number,
+        field: keyof JournalLine,
+        value: string,
+    ) => {
         form.setData(
             'lines',
-            form.data.lines.map((line, lineIndex) => (lineIndex === index ? { ...line, [field]: value } : line)),
+            form.data.lines.map((line, lineIndex) =>
+                lineIndex === index ? { ...line, [field]: value } : line,
+            ),
         );
     };
 
@@ -130,7 +167,8 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
             ...data,
             lines: data.lines.map((line) => ({
                 ...line,
-                cost_center_id: line.cost_center_id === 'none' ? '' : line.cost_center_id,
+                cost_center_id:
+                    line.cost_center_id === 'none' ? '' : line.cost_center_id,
                 debit: line.debit === '' ? '0' : line.debit,
                 credit: line.credit === '' ? '0' : line.credit,
             })),
@@ -150,7 +188,10 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
             <Head title={title} />
             <div className="space-y-6 p-4">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-                    <Heading title={title} description="Build a balanced journal entry before posting it to the ledger." />
+                    <Heading
+                        title={title}
+                        description="Build a balanced journal entry before posting it to the ledger."
+                    />
                     <Button asChild variant="outline">
                         <Link href="/accounting/journal-entries">Back</Link>
                     </Button>
@@ -160,43 +201,97 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
                     <Card className="rounded-lg">
                         <CardHeader>
                             <CardTitle>Journal header</CardTitle>
-                            <CardDescription>Date, currency, reference, and summary for this transaction.</CardDescription>
+                            <CardDescription>
+                                Date, currency, reference, and summary for this
+                                transaction.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 <div className="flex flex-col gap-2">
-                                    <Label htmlFor="entry_date">Entry Date</Label>
-                                    <Input id="entry_date" type="date" value={form.data.entry_date} onChange={(event) => form.setData('entry_date', event.target.value)} />
-                                    <InputError message={form.errors.entry_date} />
+                                    <Label htmlFor="entry_date">
+                                        Entry Date
+                                    </Label>
+                                    <Input
+                                        id="entry_date"
+                                        type="date"
+                                        value={form.data.entry_date}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'entry_date',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={form.errors.entry_date}
+                                    />
                                 </div>
 
                                 <div className="flex flex-col gap-2">
                                     <Label>Currency</Label>
-                                    <Select value={form.data.currency_id} onValueChange={(value) => form.setData('currency_id', value)}>
+                                    <Select
+                                        value={form.data.currency_id}
+                                        onValueChange={(value) =>
+                                            form.setData('currency_id', value)
+                                        }
+                                    >
                                         <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Select currency" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {currencies.map((currency) => (
-                                                <SelectItem key={currency.id} value={String(currency.id)}>
-                                                    {currency.code} - {currency.name}
+                                                <SelectItem
+                                                    key={currency.id}
+                                                    value={String(currency.id)}
+                                                >
+                                                    {currency.code} -{' '}
+                                                    {currency.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError message={form.errors.currency_id} />
+                                    <InputError
+                                        message={form.errors.currency_id}
+                                    />
                                 </div>
 
                                 <div className="flex flex-col gap-2">
-                                    <Label htmlFor="fx_rate_to_base">FX Rate</Label>
-                                    <Input id="fx_rate_to_base" type="number" step="0.00000001" value={form.data.fx_rate_to_base} onChange={(event) => form.setData('fx_rate_to_base', event.target.value)} />
-                                    <InputError message={form.errors.fx_rate_to_base} />
+                                    <Label htmlFor="fx_rate_to_base">
+                                        FX Rate
+                                    </Label>
+                                    <Input
+                                        id="fx_rate_to_base"
+                                        type="number"
+                                        step="0.00000001"
+                                        value={form.data.fx_rate_to_base}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'fx_rate_to_base',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={form.errors.fx_rate_to_base}
+                                    />
                                 </div>
 
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="reference">Reference</Label>
-                                    <Input id="reference" value={form.data.reference} onChange={(event) => form.setData('reference', event.target.value)} />
-                                    <InputError message={form.errors.reference} />
+                                    <Input
+                                        id="reference"
+                                        value={form.data.reference}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'reference',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={form.errors.reference}
+                                    />
                                 </div>
                             </div>
 
@@ -205,8 +300,13 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
                                 <textarea
                                     id="description"
                                     value={form.data.description}
-                                    onChange={(event) => form.setData('description', event.target.value)}
-                                    className="border-input bg-background min-h-24 rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'description',
+                                            event.target.value,
+                                        )
+                                    }
+                                    className="min-h-24 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 />
                                 <InputError message={form.errors.description} />
                             </div>
@@ -216,7 +316,10 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
                     <Card className="rounded-lg">
                         <CardHeader>
                             <CardTitle>Lines</CardTitle>
-                            <CardDescription>Every journal must balance: total debit must equal total credit.</CardDescription>
+                            <CardDescription>
+                                Every journal must balance: total debit must
+                                equal total credit.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="overflow-hidden rounded-lg border">
@@ -233,29 +336,135 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
                                     </thead>
                                     <tbody>
                                         {form.data.lines.map((line, index) => (
-                                            <tr key={index} className="border-t">
+                                            <tr
+                                                key={index}
+                                                className="border-t"
+                                            >
                                                 <td className="p-3">
-                                                    <SearchableSelect value={line.chart_of_account_id} options={accountOptions} placeholder="Search account" onChange={(value) => setLine(index, 'chart_of_account_id', value)} />
-                                                    <InputError message={form.errors[`lines.${index}.chart_of_account_id`]} />
+                                                    <SearchableSelect
+                                                        value={
+                                                            line.chart_of_account_id
+                                                        }
+                                                        options={accountOptions}
+                                                        placeholder="Search account"
+                                                        onChange={(value) =>
+                                                            setLine(
+                                                                index,
+                                                                'chart_of_account_id',
+                                                                value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors[
+                                                                `lines.${index}.chart_of_account_id`
+                                                            ]
+                                                        }
+                                                    />
                                                 </td>
                                                 <td className="p-3">
-                                                    <SearchableSelect value={line.cost_center_id} options={costCenterOptions} placeholder="Search cost center" onChange={(value) => setLine(index, 'cost_center_id', value)} />
-                                                    <InputError message={form.errors[`lines.${index}.cost_center_id`]} />
+                                                    <SearchableSelect
+                                                        value={
+                                                            line.cost_center_id
+                                                        }
+                                                        options={
+                                                            costCenterOptions
+                                                        }
+                                                        placeholder="Search cost center"
+                                                        onChange={(value) =>
+                                                            setLine(
+                                                                index,
+                                                                'cost_center_id',
+                                                                value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors[
+                                                                `lines.${index}.cost_center_id`
+                                                            ]
+                                                        }
+                                                    />
                                                 </td>
                                                 <td className="p-3">
-                                                    <Input type="number" step="0.01" value={line.debit} onChange={(event) => setLine(index, 'debit', event.target.value)} />
-                                                    <InputError message={form.errors[`lines.${index}.debit`]} />
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={line.debit}
+                                                        onChange={(event) =>
+                                                            setLine(
+                                                                index,
+                                                                'debit',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors[
+                                                                `lines.${index}.debit`
+                                                            ]
+                                                        }
+                                                    />
                                                 </td>
                                                 <td className="p-3">
-                                                    <Input type="number" step="0.01" value={line.credit} onChange={(event) => setLine(index, 'credit', event.target.value)} />
-                                                    <InputError message={form.errors[`lines.${index}.credit`]} />
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={line.credit}
+                                                        onChange={(event) =>
+                                                            setLine(
+                                                                index,
+                                                                'credit',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors[
+                                                                `lines.${index}.credit`
+                                                            ]
+                                                        }
+                                                    />
                                                 </td>
                                                 <td className="p-3">
-                                                    <Input value={line.description} onChange={(event) => setLine(index, 'description', event.target.value)} />
-                                                    <InputError message={form.errors[`lines.${index}.description`]} />
+                                                    <Input
+                                                        value={line.description}
+                                                        onChange={(event) =>
+                                                            setLine(
+                                                                index,
+                                                                'description',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors[
+                                                                `lines.${index}.description`
+                                                            ]
+                                                        }
+                                                    />
                                                 </td>
                                                 <td className="p-3">
-                                                    <Button type="button" size="icon" variant="ghost" onClick={() => removeLine(index)} disabled={form.data.lines.length <= 2}>
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() =>
+                                                            removeLine(index)
+                                                        }
+                                                        disabled={
+                                                            form.data.lines
+                                                                .length <= 2
+                                                        }
+                                                    >
                                                         <Trash2 className="size-4" />
                                                     </Button>
                                                 </td>
@@ -266,13 +475,28 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
                             </div>
 
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <Button type="button" variant="outline" onClick={addLine}>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={addLine}
+                                >
                                     <Plus className="size-4" />
                                     Add line
                                 </Button>
                                 <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-                                    <Checkbox id="auto_post" checked={form.data.auto_post} onCheckedChange={(checked) => form.setData('auto_post', checked === true)} />
-                                    <Label htmlFor="auto_post">Post after saving</Label>
+                                    <Checkbox
+                                        id="auto_post"
+                                        checked={form.data.auto_post}
+                                        onCheckedChange={(checked) =>
+                                            form.setData(
+                                                'auto_post',
+                                                checked === true,
+                                            )
+                                        }
+                                    />
+                                    <Label htmlFor="auto_post">
+                                        Post after saving
+                                    </Label>
                                 </div>
                             </div>
                         </CardContent>
@@ -281,9 +505,17 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
                     <div className="flex gap-2">
                         <Button type="submit" disabled={form.processing}>
                             <Save className="size-4" />
-                            {method === 'put' ? 'Update journal' : 'Save journal'}
+                            {method === 'put'
+                                ? 'Update journal'
+                                : 'Save journal'}
                         </Button>
-                        <Button type="button" variant="outline" onClick={() => form.reset()}>Reset</Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => form.reset()}
+                        >
+                            Reset
+                        </Button>
                     </div>
                 </form>
             </div>
@@ -292,5 +524,7 @@ export default function JournalEntryForm({ action, method = 'post', title = 'Cre
 }
 
 JournalEntryForm.layout = {
-    breadcrumbs: [{ title: 'Journal Entries', href: '/accounting/journal-entries' }],
+    breadcrumbs: [
+        { title: 'Journal Entries', href: '/accounting/journal-entries' },
+    ],
 };

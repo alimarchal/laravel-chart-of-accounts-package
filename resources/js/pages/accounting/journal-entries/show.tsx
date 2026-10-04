@@ -1,10 +1,27 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Ban, CheckCircle2, Edit, RotateCcw, Send, XCircle } from 'lucide-react';
+import {
+    Ban,
+    CheckCircle2,
+    Edit,
+    RotateCcw,
+    Send,
+    XCircle,
+} from 'lucide-react';
 import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useAccounting, playErrorSound, playSuccessSound } from '@/lib/accounting';
+import { money } from '@/components/accounting/ledger';
+import {
+    useAccounting,
+    playErrorSound,
+    playSuccessSound,
+} from '@/lib/accounting';
+
+type TrailStep = { step: string; by: string | null; at: string };
+
+const dateTime = (value: string | null | undefined): string =>
+    value ? new Date(value).toLocaleString() : '—';
 
 type JournalLine = {
     id: number;
@@ -37,21 +54,47 @@ type JournalEntry = {
     };
 };
 
-export default function JournalEntryShow({ entry, requiresApproval = false }: { entry: JournalEntry; requiresApproval?: boolean }) {
+export default function JournalEntryShow({
+    entry,
+    requiresApproval = false,
+    trail = [],
+}: {
+    entry: JournalEntry;
+    requiresApproval?: boolean;
+    trail?: TrailStep[];
+}) {
     const { permissions, flash } = useAccounting();
     const isDraft = entry.status === 'draft';
     const canEdit = permissions['journal-entries.update'] === true && isDraft;
     // Under maker-checker an entry that needs approval is submitted, never posted directly.
-    const canPost = permissions['journal-entries.post'] === true && isDraft && !requiresApproval;
-    const canSubmit = permissions['journal-entries.create'] === true && isDraft && requiresApproval && entry.approval_status !== 'pending';
-    const canReview = permissions['journal-entries.approve'] === true && isDraft && entry.approval_status === 'pending';
-    const canReverse = permissions['journal-entries.reverse'] === true && entry.status === 'posted';
-    const canVoid = permissions['journal-entries.void'] === true && entry.status === 'draft';
+    const canPost =
+        permissions['journal-entries.post'] === true &&
+        isDraft &&
+        !requiresApproval;
+    const canSubmit =
+        permissions['journal-entries.create'] === true &&
+        isDraft &&
+        requiresApproval &&
+        entry.approval_status !== 'pending';
+    const canReview =
+        permissions['journal-entries.approve'] === true &&
+        isDraft &&
+        entry.approval_status === 'pending';
+    const canReverse =
+        permissions['journal-entries.reverse'] === true &&
+        entry.status === 'posted';
+    const canVoid =
+        permissions['journal-entries.void'] === true &&
+        entry.status === 'draft';
 
-    const post = () => router.post(`/accounting/journal-entries/${entry.id}/post`);
-    const reverse = () => router.post(`/accounting/journal-entries/${entry.id}/reverse`);
-    const voidEntry = () => router.post(`/accounting/journal-entries/${entry.id}/void`);
-    const submit = () => router.post(`/accounting/journal-entries/${entry.id}/submit`);
+    const post = () =>
+        router.post(`/accounting/journal-entries/${entry.id}/post`);
+    const reverse = () =>
+        router.post(`/accounting/journal-entries/${entry.id}/reverse`);
+    const voidEntry = () =>
+        router.post(`/accounting/journal-entries/${entry.id}/void`);
+    const submit = () =>
+        router.post(`/accounting/journal-entries/${entry.id}/submit`);
     const approve = () => {
         if (window.confirm('Approve and post this entry?')) {
             router.post(`/accounting/journal-entries/${entry.id}/approve`);
@@ -61,7 +104,9 @@ export default function JournalEntryShow({ entry, requiresApproval = false }: { 
         const reason = window.prompt('Reason for rejection');
 
         if (reason) {
-            router.post(`/accounting/journal-entries/${entry.id}/reject`, { reason });
+            router.post(`/accounting/journal-entries/${entry.id}/reject`, {
+                reason,
+            });
         }
     };
 
@@ -84,7 +129,7 @@ export default function JournalEntryShow({ entry, requiresApproval = false }: { 
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <Heading
                         title={`Journal Entry #${entry.id}`}
-                        description={`${entry.entry_date} · ${entry.reference ?? 'No reference'} · ${entry.currency?.code ?? 'Base currency'}`}
+                        description={`${entry.entry_date.slice(0, 10)} · ${entry.reference ?? 'No reference'} · ${entry.currency?.code ?? 'Base currency'}`}
                     />
                     <div className="flex flex-wrap gap-2">
                         <Button asChild variant="outline">
@@ -92,7 +137,9 @@ export default function JournalEntryShow({ entry, requiresApproval = false }: { 
                         </Button>
                         {canEdit && (
                             <Button asChild variant="outline">
-                                <Link href={`/accounting/journal-entries/${entry.id}/edit`}>
+                                <Link
+                                    href={`/accounting/journal-entries/${entry.id}/edit`}
+                                >
                                     <Edit className="size-4" />
                                     Edit
                                 </Link>
@@ -138,14 +185,27 @@ export default function JournalEntryShow({ entry, requiresApproval = false }: { 
                 </div>
 
                 {requiresApproval || entry.approval_status ? (
-                    <Alert className={entry.approval_status === 'rejected' ? 'border-red-500/30 bg-red-500/5' : 'border-indigo-500/30 bg-indigo-500/5'}>
+                    <Alert
+                        className={
+                            entry.approval_status === 'rejected'
+                                ? 'border-red-500/30 bg-red-500/5'
+                                : 'border-indigo-500/30 bg-indigo-500/5'
+                        }
+                    >
                         <AlertTitle>
-                            {entry.approval_status === 'pending' && 'Awaiting approval'}
+                            {entry.approval_status === 'pending' &&
+                                'Awaiting approval'}
                             {entry.approval_status === 'approved' && 'Approved'}
-                            {entry.approval_status === 'rejected' && 'Rejected — edit and resubmit'}
-                            {!entry.approval_status && 'Approval required before posting'}
+                            {entry.approval_status === 'rejected' &&
+                                'Rejected — edit and resubmit'}
+                            {!entry.approval_status &&
+                                'Approval required before posting'}
                         </AlertTitle>
-                        {entry.rejection_reason ? <AlertDescription>{entry.rejection_reason}</AlertDescription> : null}
+                        {entry.rejection_reason ? (
+                            <AlertDescription>
+                                {entry.rejection_reason}
+                            </AlertDescription>
+                        ) : null}
                     </Alert>
                 ) : null}
 
@@ -164,16 +224,28 @@ export default function JournalEntryShow({ entry, requiresApproval = false }: { 
 
                 <div className="grid gap-3 md:grid-cols-4">
                     <div className="rounded-lg border p-3">
-                        <div className="text-sm text-muted-foreground">Status</div>
-                        <div className="mt-1 font-semibold capitalize">{entry.status}</div>
+                        <div className="text-sm text-muted-foreground">
+                            Status
+                        </div>
+                        <div className="mt-1 font-semibold capitalize">
+                            {entry.status}
+                        </div>
                     </div>
                     <div className="rounded-lg border p-3">
-                        <div className="text-sm text-muted-foreground">Posted At</div>
-                        <div className="mt-1 font-semibold">{entry.posted_at ?? '-'}</div>
+                        <div className="text-sm text-muted-foreground">
+                            Posted At
+                        </div>
+                        <div className="mt-1 font-semibold">
+                            {dateTime(entry.posted_at)}
+                        </div>
                     </div>
                     <div className="rounded-lg border p-3 md:col-span-2">
-                        <div className="text-sm text-muted-foreground">Description</div>
-                        <div className="mt-1 font-semibold">{entry.description ?? '-'}</div>
+                        <div className="text-sm text-muted-foreground">
+                            Description
+                        </div>
+                        <div className="mt-1 font-semibold">
+                            {entry.description ?? '-'}
+                        </div>
                     </div>
                 </div>
 
@@ -194,22 +266,89 @@ export default function JournalEntryShow({ entry, requiresApproval = false }: { 
                                 <tr key={line.id} className="border-t">
                                     <td className="p-3">{line.line_no}</td>
                                     <td className="p-3">
-                                        {line.account?.account_code} - {line.account?.account_name}
+                                        {line.account?.account_code} -{' '}
+                                        {line.account?.account_name}
                                     </td>
-                                    <td className="p-3">{line.cost_center ? `${line.cost_center.code} - ${line.cost_center.name}` : '-'}</td>
-                                    <td className="p-3 text-right font-mono">{line.debit}</td>
-                                    <td className="p-3 text-right font-mono">{line.credit}</td>
-                                    <td className="p-3">{line.description ?? '-'}</td>
+                                    <td className="p-3">
+                                        {line.cost_center
+                                            ? `${line.cost_center.code} - ${line.cost_center.name}`
+                                            : '-'}
+                                    </td>
+                                    <td className="p-3 text-right tabular-nums">
+                                        {Number(line.debit) > 0
+                                            ? money(line.debit)
+                                            : '—'}
+                                    </td>
+                                    <td className="p-3 text-right tabular-nums">
+                                        {Number(line.credit) > 0
+                                            ? money(line.credit)
+                                            : '—'}
+                                    </td>
+                                    <td className="p-3">
+                                        {line.description ?? '-'}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
+                        <tfoot>
+                            <tr className="border-t bg-muted/30 font-semibold">
+                                <td className="p-3" colSpan={3}>
+                                    Total
+                                </td>
+                                <td className="p-3 text-right tabular-nums">
+                                    {money(
+                                        entry.lines.reduce(
+                                            (sum, line) =>
+                                                sum + Number(line.debit),
+                                            0,
+                                        ),
+                                    )}
+                                </td>
+                                <td className="p-3 text-right tabular-nums">
+                                    {money(
+                                        entry.lines.reduce(
+                                            (sum, line) =>
+                                                sum + Number(line.credit),
+                                            0,
+                                        ),
+                                    )}
+                                </td>
+                                <td className="p-3" />
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
+
+                {trail.length ? (
+                    <div className="rounded-lg border p-4">
+                        <div className="mb-3 text-sm font-medium">
+                            Audit trail
+                        </div>
+                        <ol className="space-y-2 text-sm">
+                            {trail.map((step, index) => (
+                                <li
+                                    key={index}
+                                    className="flex flex-wrap items-baseline gap-x-2"
+                                >
+                                    <span className="font-medium">
+                                        {step.step}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                        {step.by ? `by ${step.by} · ` : ''}
+                                        {dateTime(step.at)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                ) : null}
             </div>
         </>
     );
 }
 
 JournalEntryShow.layout = {
-    breadcrumbs: [{ title: 'Journal Entry', href: '/accounting/journal-entries' }],
+    breadcrumbs: [
+        { title: 'Journal Entry', href: '/accounting/journal-entries' },
+    ],
 };

@@ -108,6 +108,7 @@ class JournalEntryController extends Controller
 
         return Inertia::render('accounting/journal-entries/show', [
             'entry' => $journalEntry,
+            'trail' => $journalEntry->trail(),
             'requiresApproval' => $journalEntry->status === 'draft' && app(JournalApprovalService::class)->requiresApproval($journalEntry),
         ]);
     }

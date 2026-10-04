@@ -55,6 +55,7 @@ class JournalEntryBladeController extends Controller
 
         return view('accounting::journal-entries.show', [
             'journalEntry' => $journalEntry,
+            'trail' => $journalEntry->trail(),
             'requiresApproval' => $journalEntry->status === 'draft' && app(JournalApprovalService::class)->requiresApproval($journalEntry),
         ]);
     }

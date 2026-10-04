@@ -3,40 +3,21 @@
 namespace Alimarchal\LaravelChartOfAccounts\Listeners;
 
 use Alimarchal\LaravelChartOfAccounts\Events\AccountingEvent;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Http;
+use Alimarchal\LaravelChartOfAccounts\Jobs\DeliverAccountingWebhook;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
- * Delivers accounting events to config('accounting.webhooks.urls').
+ * Fans an accounting event out to config('accounting.webhooks.urls'): the payload is built once,
+ * when the event happens, and every endpoint gets its own queued DeliverAccountingWebhook job.
  *
- * Each request carries:
- *   X-Accounting-Event:     e.g. journal_entry.posted
- *   X-Accounting-Delivery:  unique id (use it to de-duplicate retries)
- *   X-Accounting-Signature: t=<unix time>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the shared secret>
- *
- * Queued when the app has a queue; failed deliveries are retried with exponential backoff.
+ * Body: {"id": "<event id, same for every endpoint and retry>", "event": "...", "occurred_at": "...", "data": {...}}
  */
-class SendAccountingWebhook implements ShouldQueue
+class SendAccountingWebhook
 {
-    public int $tries;
-
-    public function __construct()
-    {
-        $this->tries = max(1, (int) config('accounting.webhooks.tries', 5));
-    }
-
-    /**
-     * @return array<int, int>
-     */
-    public function backoff(): array
-    {
-        return [10, 60, 300, 900, 3600];
-    }
-
     public function handle(AccountingEvent $event): void
     {
-        $urls = (array) config('accounting.webhooks.urls', []);
+        $urls = array_values(array_filter((array) config('accounting.webhooks.urls', [])));
 
         if ($urls === []) {
             return;
@@ -45,25 +26,18 @@ class SendAccountingWebhook implements ShouldQueue
         $body = (string) json_encode([
             'id' => (string) Str::uuid(),
             'event' => $event->name(),
-            'occurred_at' => now()->toISOString(),
+            'occurred_at' => now()->toIso8601ZuluString(),
             'data' => $event->payload(),
         ], JSON_UNESCAPED_SLASHES);
 
-        $timestamp = (string) time();
-        $secret = (string) config('accounting.webhooks.secret', '');
-        $delivery = (string) Str::uuid();
-
         foreach ($urls as $url) {
-            Http::timeout((int) config('accounting.webhooks.timeout', 10))
-                ->withHeaders([
-                    'Content-Type' => 'application/json',
-                    'X-Accounting-Event' => $event->name(),
-                    'X-Accounting-Delivery' => $delivery,
-                    'X-Accounting-Signature' => 't='.$timestamp.',v1='.hash_hmac('sha256', $timestamp.'.'.$body, $secret),
-                ])
-                ->withBody($body, 'application/json')
-                ->post($url)
-                ->throw();
+            try {
+                DeliverAccountingWebhook::dispatch((string) $url, $event->name(), (string) Str::uuid(), $body);
+            } catch (Throwable $exception) {
+                // Only reachable with the "sync" queue driver: a receiver being down must never fail
+                // the request that already committed the ledger change. Use a real queue for retries.
+                report($exception);
+            }
         }
     }
 }

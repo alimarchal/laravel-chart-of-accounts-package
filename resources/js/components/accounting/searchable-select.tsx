@@ -14,19 +14,31 @@ type Props = {
  * Dependency-free searchable select (combobox): type to filter, arrow keys + Enter to pick,
  * Escape to close. Styled with Tailwind to match the starter kits' inputs.
  */
-export function SearchableSelect({ value, options, onChange, placeholder = 'Search…', disabled = false }: Props) {
+export function SearchableSelect({
+    value,
+    options,
+    onChange,
+    placeholder = 'Search…',
+    disabled = false,
+}: Props) {
     const listId = useId();
     const containerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [highlighted, setHighlighted] = useState(0);
 
-    const selected = options.find((option) => option.value === String(value ?? ''));
+    const selected = options.find(
+        (option) => option.value === String(value ?? ''),
+    );
 
     const filtered = useMemo(() => {
         const needle = query.trim().toLowerCase();
 
-        return needle === '' ? options : options.filter((option) => option.label.toLowerCase().includes(needle));
+        return needle === ''
+            ? options
+            : options.filter((option) =>
+                  option.label.toLowerCase().includes(needle),
+              );
     }, [options, query]);
 
     useEffect(() => {
@@ -87,15 +99,23 @@ export function SearchableSelect({ value, options, onChange, placeholder = 'Sear
                 onKeyDown={onKeyDown}
             />
             {open && (
-                <ul id={listId} role="listbox" className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 text-sm text-popover-foreground shadow-md">
+                <ul
+                    id={listId}
+                    role="listbox"
+                    className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 text-sm text-popover-foreground shadow-md"
+                >
                     {filtered.length === 0 ? (
-                        <li className="px-2 py-1.5 text-muted-foreground">No results</li>
+                        <li className="px-2 py-1.5 text-muted-foreground">
+                            No results
+                        </li>
                     ) : (
                         filtered.map((option, index) => (
                             <li
                                 key={option.value}
                                 role="option"
-                                aria-selected={option.value === String(value ?? '')}
+                                aria-selected={
+                                    option.value === String(value ?? '')
+                                }
                                 className={`cursor-pointer rounded-sm px-2 py-1.5 ${index === highlighted ? 'bg-accent text-accent-foreground' : ''}`}
                                 onMouseEnter={() => setHighlighted(index)}
                                 onMouseDown={(event) => {

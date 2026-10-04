@@ -16,7 +16,10 @@ export function useAccounting(): AccountingShared {
     return {
         permissions: props.accounting?.permissions ?? {},
         flash: props.accounting?.flash ?? {},
-        approvals: props.accounting?.approvals ?? { enabled: false, threshold: '0' },
+        approvals: props.accounting?.approvals ?? {
+            enabled: false,
+            threshold: '0',
+        },
     };
 }
 
@@ -29,7 +32,10 @@ function tone(frequencies: number[], duration = 0.09): void {
         return;
     }
 
-    const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const AudioContextClass =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+            .webkitAudioContext;
 
     if (!AudioContextClass) {
         return;

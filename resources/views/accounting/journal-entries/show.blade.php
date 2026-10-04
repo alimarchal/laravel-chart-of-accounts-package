@@ -115,5 +115,16 @@
                 </tfoot>
             </table>
         </div>
+
+        @if (isset($trail) && $trail->isNotEmpty())
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mt-4">
+            <h3 class="font-semibold text-gray-700 mb-2">Audit trail</h3>
+            <ol class="space-y-1 text-sm">
+                @foreach ($trail as $step)
+                <li><span class="font-medium">{{ $step['step'] }}</span> <span class="text-gray-500">@if ($step['by']) by {{ $step['by'] }} · @endif{{ $step['at']->format('Y-m-d H:i') }}</span></li>
+                @endforeach
+            </ol>
+        </div>
+        @endif
     </div></div>
 </x-accounting::app-layout>

@@ -138,6 +138,45 @@ class JournalEntry extends AccountingModel
         return $this->belongsTo(config('auth.providers.users.model'), 'approved_by');
     }
 
+    /**
+     * Who did what and when (created, submitted, rejected, approved, posted), oldest first.
+     * Only a display name is exposed for each user.
+     *
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>> each item: step, by (display name or null), at
+     */
+    public function trail(): \Illuminate\Support\Collection
+    {
+        $this->loadMissing(['creator', 'submitter', 'rejecter', 'approver', 'poster']);
+
+        $person = fn ($user): ?string => $user ? (string) ($user->name ?? $user->email ?? '#'.$user->getKey()) : null;
+
+        /** @var \Illuminate\Support\Collection<int, array<string, mixed>> $trail */
+        $trail = collect([
+            ['step' => 'Created', 'by' => $person($this->creator), 'at' => $this->created_at],
+            ['step' => 'Submitted for approval', 'by' => $person($this->submitter), 'at' => $this->submitted_at],
+            ['step' => 'Rejected', 'by' => $person($this->rejecter), 'at' => $this->rejected_at],
+            ['step' => 'Approved', 'by' => $person($this->approver), 'at' => $this->approved_at],
+            ['step' => 'Posted', 'by' => $person($this->poster), 'at' => $this->posted_at],
+        ])->filter(fn (array $step): bool => $step['at'] !== null)->sortBy('at')->values();
+
+        // Keep the user records themselves out of serialized responses.
+        foreach (['creator', 'submitter', 'rejecter', 'approver', 'poster'] as $relation) {
+            $this->unsetRelation($relation);
+        }
+
+        return $trail;
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'created_by');
+    }
+
+    public function rejecter(): BelongsTo
+    {
+        return $this->belongsTo(config('auth.providers.users.model'), 'rejected_by');
+    }
+
     public function submitter(): BelongsTo
     {
         return $this->belongsTo(config('auth.providers.users.model'), 'submitted_by');

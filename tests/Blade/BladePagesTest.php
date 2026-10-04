@@ -98,6 +98,7 @@ it('runs maker-checker through the Blade screens', function (): void {
     $this->post("/accounting/journal-entries/{$entry->id}/approve")->assertRedirect()->assertSessionHas('success');
 
     expect($entry->fresh()->status)->toBe('posted');
+    $this->get("/accounting/journal-entries/{$entry->id}")->assertSeeInOrder(['Audit trail', 'Created', 'Submitted for approval', 'Approved', 'Posted']);
 });
 
 it('filters the Blade journal list by status, void and date', function (): void {

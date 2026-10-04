@@ -16,6 +16,12 @@ return [
     'api_enabled' => (bool) env('ACCOUNTING_API_ENABLED', true),
     'api_rate_limit' => (int) env('ACCOUNTING_API_RATE_LIMIT', 120), // requests per minute per user/IP; 0 disables
     'api_max_per_page' => (int) env('ACCOUNTING_API_MAX_PER_PAGE', 100),
+    // Report exports: CSV is streamed with constant memory at any size; XLSX and PDF are built in
+    // memory, so they are refused (HTTP 422, "use CSV or narrow the filters") above these row counts.
+    'export_max_rows' => [
+        'xlsx' => (int) env('ACCOUNTING_EXPORT_MAX_XLSX_ROWS', 50000),
+        'pdf' => (int) env('ACCOUNTING_EXPORT_MAX_PDF_ROWS', 2000),
+    ],
 
     'defaults' => [
         'currency_code' => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),

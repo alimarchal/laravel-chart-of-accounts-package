@@ -4,7 +4,11 @@ import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useAccounting, playErrorSound, playSuccessSound } from '@/lib/accounting';
+import {
+    useAccounting,
+    playErrorSound,
+    playSuccessSound,
+} from '@/lib/accounting';
 
 type Field = {
     name: string;
@@ -31,7 +35,12 @@ function displayValue(value: RecordValue): string {
     return value === null ? '' : String(value);
 }
 
-export default function AccountingResourceShow({ title, routeName, fields, record }: Props) {
+export default function AccountingResourceShow({
+    title,
+    routeName,
+    fields,
+    record,
+}: Props) {
     const { permissions, flash } = useAccounting();
 
     useEffect(() => {
@@ -51,18 +60,23 @@ export default function AccountingResourceShow({ title, routeName, fields, recor
             <Head title={`${title} #${record.id}`} />
             <div className="space-y-6 p-4">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-                    <Heading title={`${title} #${record.id}`} description="Review this accounting setup record." />
+                    <Heading
+                        title={`${title} #${record.id}`}
+                        description="Review this accounting setup record."
+                    />
                     <div className="flex gap-2">
                         <Button asChild variant="outline">
                             <Link href={`/accounting/${routeName}`}>Back</Link>
                         </Button>
                         {permissions[`${routeName}.update`] === true ? (
                             <Button asChild>
-                            <Link href={`/accounting/${routeName}/${record.id}/edit`}>
-                                <Edit className="size-4" />
-                                Edit
-                            </Link>
-                        </Button>
+                                <Link
+                                    href={`/accounting/${routeName}/${record.id}/edit`}
+                                >
+                                    <Edit className="size-4" />
+                                    Edit
+                                </Link>
+                            </Button>
                         ) : null}
                     </div>
                 </div>
@@ -81,13 +95,21 @@ export default function AccountingResourceShow({ title, routeName, fields, recor
                 ) : null}
 
                 <div className="grid max-w-4xl grid-cols-1 overflow-hidden rounded-lg border md:grid-cols-2">
-                    <div className="border-b bg-muted/40 p-3 font-medium md:col-span-2">Details</div>
-                    <div className="border-b p-3 text-sm text-muted-foreground">ID</div>
+                    <div className="border-b bg-muted/40 p-3 font-medium md:col-span-2">
+                        Details
+                    </div>
+                    <div className="border-b p-3 text-sm text-muted-foreground">
+                        ID
+                    </div>
                     <div className="border-b p-3 text-sm">{record.id}</div>
                     {fields.map((field) => (
                         <div key={field.name} className="contents">
-                            <div className="border-b p-3 text-sm text-muted-foreground">{field.label}</div>
-                            <div className="border-b p-3 text-sm">{displayValue(record[field.name])}</div>
+                            <div className="border-b p-3 text-sm text-muted-foreground">
+                                {field.label}
+                            </div>
+                            <div className="border-b p-3 text-sm">
+                                {displayValue(record[field.name])}
+                            </div>
                         </div>
                     ))}
                 </div>

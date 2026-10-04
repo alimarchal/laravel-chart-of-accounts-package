@@ -15,15 +15,27 @@ type Candidate = {
 };
 
 type Props = {
-    reconciliation: { id: number; statement_balance: string; book_balance: string };
+    reconciliation: {
+        id: number;
+        statement_balance: string;
+        book_balance: string;
+    };
     candidates: Candidate[];
 };
 
-export default function ReconciliationMatch({ reconciliation, candidates }: Props) {
+export default function ReconciliationMatch({
+    reconciliation,
+    candidates,
+}: Props) {
     const form = useForm<{ line_ids: number[] }>({ line_ids: [] });
 
     const toggle = (id: number, checked: boolean) => {
-        form.setData('line_ids', checked ? [...form.data.line_ids, id] : form.data.line_ids.filter((lineId) => lineId !== id));
+        form.setData(
+            'line_ids',
+            checked
+                ? [...form.data.line_ids, id]
+                : form.data.line_ids.filter((lineId) => lineId !== id),
+        );
     };
 
     return (
@@ -31,7 +43,9 @@ export default function ReconciliationMatch({ reconciliation, candidates }: Prop
             <Head title="Match Reconciliation" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-semibold">Match Reconciliation #{reconciliation.id}</h1>
+                    <h1 className="text-2xl font-semibold">
+                        Match Reconciliation #{reconciliation.id}
+                    </h1>
                     <Button asChild variant="outline">
                         <Link href="/accounting/reconciliations">Back</Link>
                     </Button>
@@ -39,7 +53,9 @@ export default function ReconciliationMatch({ reconciliation, candidates }: Prop
                 <form
                     onSubmit={(event) => {
                         event.preventDefault();
-                        form.post(`/accounting/reconciliations/${reconciliation.id}/reconcile`);
+                        form.post(
+                            `/accounting/reconciliations/${reconciliation.id}/reconcile`,
+                        );
                     }}
                     className="flex flex-col gap-4"
                 >
@@ -59,20 +75,50 @@ export default function ReconciliationMatch({ reconciliation, candidates }: Prop
                                 {candidates.map((candidate) => (
                                     <tr key={candidate.id} className="border-t">
                                         <td className="p-3">
-                                            <Checkbox checked={form.data.line_ids.includes(candidate.id)} onCheckedChange={(checked) => toggle(candidate.id, checked === true)} />
+                                            <Checkbox
+                                                checked={form.data.line_ids.includes(
+                                                    candidate.id,
+                                                )}
+                                                onCheckedChange={(checked) =>
+                                                    toggle(
+                                                        candidate.id,
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
                                         </td>
-                                        <td className="p-3">{candidate.journal_entry?.entry_date}</td>
-                                        <td className="p-3">{candidate.journal_entry?.reference ?? '-'}</td>
-                                        <td className="p-3 text-right font-mono">{candidate.debit}</td>
-                                        <td className="p-3 text-right font-mono">{candidate.credit}</td>
-                                        <td className="p-3">{candidate.description ?? '-'}</td>
+                                        <td className="p-3">
+                                            {
+                                                candidate.journal_entry
+                                                    ?.entry_date
+                                            }
+                                        </td>
+                                        <td className="p-3">
+                                            {candidate.journal_entry
+                                                ?.reference ?? '-'}
+                                        </td>
+                                        <td className="p-3 text-right font-mono">
+                                            {candidate.debit}
+                                        </td>
+                                        <td className="p-3 text-right font-mono">
+                                            {candidate.credit}
+                                        </td>
+                                        <td className="p-3">
+                                            {candidate.description ?? '-'}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                     <div className="flex justify-end">
-                        <Button type="submit" disabled={form.processing || form.data.line_ids.length === 0}>
+                        <Button
+                            type="submit"
+                            disabled={
+                                form.processing ||
+                                form.data.line_ids.length === 0
+                            }
+                        >
                             <Check className="size-4" />
                             Reconcile selected
                         </Button>
@@ -84,5 +130,7 @@ export default function ReconciliationMatch({ reconciliation, candidates }: Prop
 }
 
 ReconciliationMatch.layout = {
-    breadcrumbs: [{ title: 'Reconciliation Match', href: '/accounting/reconciliations' }],
+    breadcrumbs: [
+        { title: 'Reconciliation Match', href: '/accounting/reconciliations' },
+    ],
 };

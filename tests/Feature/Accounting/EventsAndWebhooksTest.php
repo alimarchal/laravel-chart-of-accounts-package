@@ -11,6 +11,7 @@ use Alimarchal\LaravelChartOfAccounts\Events\AccountingPeriodReopened;
 use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryPosted;
 use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryReversed;
 use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryVoided;
+use Alimarchal\LaravelChartOfAccounts\Jobs\DeliverAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,6 +20,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
@@ -94,17 +96,53 @@ it('delivers signed webhooks that receivers can verify', function (): void {
     });
 });
 
-it('fails the delivery (so the queue retries) when the receiver errors', function (): void {
-    config(['accounting.webhooks.urls' => ['https://erp.example.com/hooks'], 'accounting.webhooks.secret' => 'x']);
+it('fails the delivery job (so the queue retries) when the receiver errors', function (): void {
+    config(['accounting.webhooks.secret' => 'x']);
     Http::fake(['*' => Http::response('down', 503)]);
 
-    app(SendAccountingWebhook::class)->handle(new JournalEntryPosted(journal(['5104' => 10, '1101' => -10])));
+    (new DeliverAccountingWebhook('https://erp.example.com/hooks', 'journal_entry.posted', 'd-1', '{}'))->handle();
 })->throws(RequestException::class);
 
-it('queues webhook deliveries with retries and backoff', function (): void {
-    $listener = new SendAccountingWebhook;
+it('queues one delivery job per endpoint with retries and backoff', function (): void {
+    config(['accounting.webhooks.urls' => ['https://a.example.com/h', 'https://b.example.com/h']]);
+    Queue::fake();
 
-    expect($listener)->toBeInstanceOf(ShouldQueue::class)
-        ->and($listener->tries)->toBe(5)
-        ->and($listener->backoff())->toBe([10, 60, 300, 900, 3600]);
+    app(SendAccountingWebhook::class)->handle(new JournalEntryPosted(journal(['5104' => 10, '1101' => -10])));
+
+    Queue::assertPushed(DeliverAccountingWebhook::class, 2);
+    $jobs = Queue::pushed(DeliverAccountingWebhook::class);
+    $ids = $jobs->map(fn ($job) => json_decode($job->body, true)['id'])->unique();
+
+    expect($jobs->pluck('url')->all())->toBe(['https://a.example.com/h', 'https://b.example.com/h'])
+        ->and($ids)->toHaveCount(1)                                  // one event id for every endpoint
+        ->and($jobs->pluck('deliveryId')->unique())->toHaveCount(2)  // one delivery id per endpoint
+        ->and($jobs->first())->toBeInstanceOf(ShouldQueue::class)
+        ->and($jobs->first()->tries)->toBe(5)
+        ->and($jobs->first()->backoff())->toBe([10, 60, 300, 900, 3600]);
+});
+
+it('keeps the body and delivery id stable across retries, with a fresh signature', function (): void {
+    config(['accounting.webhooks.secret' => 's3cret']);
+    Http::fake(['*' => Http::response(null, 204)]);
+    $job = new DeliverAccountingWebhook('https://erp.example.com/h', 'journal_entry.posted', 'delivery-1', '{"id":"evt-1"}');
+
+    $job->handle();
+    $this->travel(5)->minutes();
+    $job->handle();
+
+    $sent = Http::recorded()->map(fn ($pair) => $pair[0]);
+    expect($sent->map(fn (Request $r) => $r->body())->unique()->all())->toBe(['{"id":"evt-1"}'])
+        ->and($sent->map(fn (Request $r) => $r->header('X-Accounting-Delivery')[0])->unique()->all())->toBe(['delivery-1'])
+        ->and($sent->map(fn (Request $r) => $r->header('X-Accounting-Signature')[0])->unique())->toHaveCount(2);
+});
+
+it('never fails the request when a webhook cannot be delivered on the sync queue', function (): void {
+    config(['accounting.webhooks.urls' => ['https://down.example.com/h'], 'queue.default' => 'sync']);
+    Http::fake(['*' => Http::response('down', 503)]);
+    $this->app['events']->listen(AccountingEvent::class, SendAccountingWebhook::class);
+
+    $entry = journal(['5104' => 10, '1101' => -10]);
+
+    expect($entry->fresh()->status)->toBe('posted');
+    Http::assertSentCount(1);
 });

@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api;
 
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\Concerns\ResolvesPerPage;
+use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Reports\AccountStatementReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\AgedPayablesReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\AgedReceivablesReport;
@@ -124,7 +125,17 @@ class ReportApiController extends Controller
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
 
-        return response()->json(['data' => $report->rows($filters)]);
+        $account = ChartOfAccount::query()
+            ->when($filters['account_id'] ?? null, fn ($query, $id) => $query->whereKey($id), fn ($query) => $query->where('account_code', $filters['account_code']))
+            ->firstOrFail();
+
+        $statement = $report->statement($account, $filters['date_from'] ?? null, $filters['date_to'] ?? null, $this->perPage(100));
+
+        return response()->json(array_merge($statement['entries']->toArray(), [
+            'account' => $account->only(['id', 'account_code', 'account_name', 'normal_balance']),
+            'opening_balance' => $statement['opening_balance'],
+            'totals' => $statement['totals'],
+        ]));
     }
 
     /**
