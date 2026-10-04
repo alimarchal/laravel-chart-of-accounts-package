@@ -10,7 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Alimarchal\LaravelChartOfAccounts\Services\BankReconciliationMatcher;
 use Alimarchal\LaravelChartOfAccounts\Services\SimpleJournalService;
-use App\Models\User;
+use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 
 beforeEach(function (): void {
     $this->withoutVite();

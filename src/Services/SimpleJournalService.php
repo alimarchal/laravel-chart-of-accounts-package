@@ -4,7 +4,8 @@ namespace Alimarchal\LaravelChartOfAccounts\Services;
 
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
-use InvalidArgumentException;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+use Alimarchal\LaravelChartOfAccounts\Support\Money;
 
 class SimpleJournalService
 {
@@ -39,11 +40,13 @@ class SimpleJournalService
         bool $post = false,
         ?string $entryDate = null,
     ): JournalEntry {
-        $amount = round((float) $amount, 2);
+        $cents = Money::toCents($amount);
 
-        if ($amount <= 0) {
-            throw new InvalidArgumentException('Journal amount must be greater than zero.');
+        if ($cents <= 0) {
+            throw new AccountingException('Journal amount must be greater than zero.');
         }
+
+        $amount = Money::fromCents($cents);
 
         $debitAccount = $this->postingAccount($debitAccountCode);
         $creditAccount = $this->postingAccount($creditAccountCode);
@@ -77,7 +80,7 @@ class SimpleJournalService
             ->firstOrFail();
 
         if ($account->is_group || ! $account->is_active) {
-            throw new InvalidArgumentException("Account {$accountCode} must be an active posting account.");
+            throw new AccountingException("Account {$accountCode} must be an active posting account.");
         }
 
         return $account;

@@ -9,10 +9,12 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class JournalEntryForm extends Component
 {
+    #[Locked]
     public ?int $entryId = null;
 
     public string $entry_date = '';
@@ -84,6 +86,8 @@ class JournalEntryForm extends Component
 
     public function save(JournalEntryService $service): void
     {
+        abort_unless(auth()->user()?->can($this->entryId ? 'journal-entries.update' : 'journal-entries.create'), 403);
+
         $this->validate([
             'entry_date' => ['required', 'date'],
             'accounting_period_id' => ['required', 'exists:accounting_periods,id'],
@@ -126,7 +130,7 @@ class JournalEntryForm extends Component
             session()->flash('success', 'Journal entry created.');
         }
 
-        $this->redirect(route('accounting.journal-entries.show', $entry));
+        $this->redirect(route(config('accounting.route_name_prefix', 'accounting').'.journal-entries.show', $entry));
     }
 
     public function render(): View

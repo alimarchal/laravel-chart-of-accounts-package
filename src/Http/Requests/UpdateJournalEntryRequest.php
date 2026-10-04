@@ -6,6 +6,6 @@ class UpdateJournalEntryRequest extends StoreJournalEntryRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('journal-entries.update') ?? false;
+        return ($this->user()?->can('journal-entries.update') ?? false) && $this->canAutoPost();
     }
 }

@@ -3,7 +3,8 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
-use Illuminate\Foundation\Auth\User;
+use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\JournalEntryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,7 +67,33 @@ class JournalEntry extends AccountingModel
 
     public function poster(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'posted_by');
+        return $this->belongsTo(config('auth.providers.users.model'), 'posted_by');
+    }
+
+    /**
+     * A reversed entry stays "posted" (GAAP) and points at its reversal.
+     */
+    public function isReversed(): bool
+    {
+        return $this->reversed_by_entry_id !== null;
+    }
+
+    /**
+     * @param  Builder<JournalEntry>  $query
+     * @return Builder<JournalEntry>
+     */
+    public function scopeReversed(Builder $query): Builder
+    {
+        return $query->whereNotNull('reversed_by_entry_id');
+    }
+
+    /**
+     * @param  Builder<JournalEntry>  $query
+     * @return Builder<JournalEntry>
+     */
+    public function scopePosted(Builder $query): Builder
+    {
+        return $query->where('status', 'posted');
     }
 
     public function reversesEntry(): BelongsTo
@@ -94,16 +121,18 @@ class JournalEntry extends AccountingModel
      *
      * @param  string  $debitAccountCode  Account code for the debit line
      * @param  string  $creditAccountCode  Account code for the credit line
+     * @param  float|int|string  $amount  Amount debited AND credited (strings avoid float rounding)
      * @param  bool  $post  true = post immediately, false = draft
      */
     public static function record(
         string $description,
         string $debitAccountCode,
         string $creditAccountCode,
-        float $amount,
+        float|int|string $amount,
         bool $post = false,
         ?string $reference = null,
     ): static {
+        $amount = Money::fromCents(Money::toCents($amount));
         $debitAccount = ChartOfAccount::where('account_code', $debitAccountCode)->firstOrFail();
         $creditAccount = ChartOfAccount::where('account_code', $creditAccountCode)->firstOrFail();
         $currency = Currency::where('is_base', true)->firstOrFail();

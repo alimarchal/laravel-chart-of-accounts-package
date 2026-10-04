@@ -2,19 +2,44 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
-use App\Models\User;
+use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class UserBladeController extends Controller
 {
+    public function __construct(private readonly PrivilegeGuard $guard) {}
+
+    /**
+     * @return class-string<Model>
+     */
     private function getUserModel(): string
     {
-        return config('auth.providers.users.model', User::class);
+        return config('auth.providers.users.model');
+    }
+
+    private function usersTable(): string
+    {
+        $model = $this->getUserModel();
+
+        return (new $model)->getTable();
+    }
+
+    private function rolesTable(): string
+    {
+        return config('permission.table_names.roles', 'roles');
+    }
+
+    private function permissionsTable(): string
+    {
+        return config('permission.table_names.permissions', 'permissions');
     }
 
     public function index(Request $request): View
@@ -48,21 +73,25 @@ class UserBladeController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255', Rule::unique($this->usersTable(), 'email')],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'roles' => ['nullable', 'array'],
-            'roles.*' => ['exists:roles,name'],
+            'roles.*' => [Rule::exists($this->rolesTable(), 'name')],
         ]);
+
+        $roles = $validated['roles'] ?? [];
+        abort_if($roles !== [] && ! $request->user()->can('user.assign-role'), 403, 'You are not allowed to assign roles.');
+        $this->guard->assertCanAssignRoles($request->user(), $roles);
 
         $userModel = $this->getUserModel();
         $user = $userModel::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
+            'password' => Hash::make($validated['password']),
         ]);
 
-        if (! empty($validated['roles'])) {
-            $user->syncRoles($validated['roles']);
+        if ($roles !== []) {
+            $user->syncRoles($roles);
         }
 
         return redirect()->route('settings.users.index')->with('success', 'User created successfully.');
@@ -76,10 +105,11 @@ class UserBladeController extends Controller
         return view('accounting::users.show', ['user' => $user]);
     }
 
-    public function edit($user): View
+    public function edit(Request $request, $user): View
     {
         $userModel = $this->getUserModel();
         $user = $userModel::with('roles')->findOrFail($user);
+        $this->guard->assertCanManageUser($request->user(), $user);
 
         return view('accounting::users.edit', [
             'user' => $user,
@@ -91,40 +121,59 @@ class UserBladeController extends Controller
     {
         $userModel = $this->getUserModel();
         $user = $userModel::findOrFail($user);
+        $this->guard->assertCanManageUser($request->user(), $user);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'email' => ['required', 'email', 'max:255', Rule::unique($this->usersTable(), 'email')->ignore($user->getKey(), $user->getKeyName())],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'roles' => ['nullable', 'array'],
-            'roles.*' => ['exists:roles,name'],
+            'roles.*' => [Rule::exists($this->rolesTable(), 'name')],
         ]);
+
+        $roles = $validated['roles'] ?? [];
+        $rolesChanged = collect($roles)->sort()->values()->all() !== $user->getRoleNames()->sort()->values()->all();
+
+        if ($rolesChanged) {
+            abort_unless($request->user()->can('user.assign-role'), 403, 'You are not allowed to change roles.');
+            $this->guard->assertCanAssignRoles($request->user(), $roles);
+            // Removing a role is also privileged: the actor must hold everything the old roles granted.
+            $this->guard->assertCanAssignRoles($request->user(), $user->getRoleNames()->all());
+        }
 
         $user->update(array_filter([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => ! empty($validated['password']) ? bcrypt($validated['password']) : null,
+            'password' => ! empty($validated['password']) ? Hash::make($validated['password']) : null,
         ]));
 
-        $user->syncRoles($validated['roles'] ?? []);
+        if ($rolesChanged) {
+            $user->syncRoles($roles);
+        }
 
         return redirect()->route('settings.users.index')->with('success', 'User updated successfully.');
     }
 
-    public function destroy($user): RedirectResponse
+    public function destroy(Request $request, $user): RedirectResponse
     {
         $userModel = $this->getUserModel();
-        $userModel::findOrFail($user)->delete();
+        $user = $userModel::findOrFail($user);
+
+        abort_if($request->user()->is($user), 403, 'You cannot delete your own account here.');
+        $this->guard->assertCanManageUser($request->user(), $user);
+
+        $user->delete();
 
         return redirect()->route('settings.users.index')->with('success', 'User deleted.');
     }
 
-    public function editPermissions($user): View
+    public function editPermissions(Request $request, $user): View
     {
         $userModel = $this->getUserModel();
         $user = $userModel::with(['roles', 'permissions'])->findOrFail($user);
+        $this->guard->assertCanManageUser($request->user(), $user);
 
-        /** @var \Spatie\Permission\Models\Permission[]|\Illuminate\Database\Eloquent\Collection $allPermissions */
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Permission> $allPermissions */
         $allPermissions = Permission::orderBy('name')->get();
 
         // Group permissions by prefix (e.g., "currencies" from "currencies.view")
@@ -142,13 +191,17 @@ class UserBladeController extends Controller
     {
         $userModel = $this->getUserModel();
         $user = $userModel::findOrFail($user);
+        $this->guard->assertCanManageUser($request->user(), $user);
 
         $validated = $request->validate([
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['exists:permissions,name'],
+            'permissions.*' => [Rule::exists($this->permissionsTable(), 'name')],
         ]);
 
-        $user->syncPermissions($validated['permissions'] ?? []);
+        $permissions = $validated['permissions'] ?? [];
+        $this->guard->assertCanGrantPermissions($request->user(), $permissions);
+
+        $user->syncPermissions($permissions);
 
         return redirect()
             ->route('settings.users.permissions.edit', $user)

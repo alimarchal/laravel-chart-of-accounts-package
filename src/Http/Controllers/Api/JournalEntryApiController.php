@@ -63,8 +63,13 @@ class JournalEntryApiController extends Controller
 
     public function reverse(Request $request, JournalEntry $journalEntry, JournalEntryService $service): JournalEntryResource
     {
+        $validated = $request->validate([
+            'description' => ['nullable', 'string', 'max:1000'],
+            'reversal_date' => ['nullable', 'date'],
+        ]);
+
         return JournalEntryResource::make(
-            $service->reverse($journalEntry, $request->string('description')->toString() ?: null)
+            $service->reverse($journalEntry, $validated['description'] ?? null, $validated['reversal_date'] ?? null)
                 ->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod'])
         );
     }

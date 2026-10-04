@@ -2,12 +2,14 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 
 class PostJournalEntryAction
 {
@@ -17,18 +19,20 @@ class PostJournalEntryAction
             $entry = JournalEntry::query()->with(['lines.account'])->lockForUpdate()->findOrFail($journalEntry->id);
 
             if ($entry->status !== 'draft') {
-                throw new InvalidArgumentException('Only draft journal entries can be posted.');
+                throw new AccountingException('Only draft journal entries can be posted.');
             }
 
             $this->validateLines($entry);
 
+            // Lock the period row so a concurrent period close cannot interleave with this posting.
             $period = AccountingPeriod::query()
                 ->whereDate('start_date', '<=', $entry->entry_date)
                 ->whereDate('end_date', '>=', $entry->entry_date)
+                ->lockForUpdate()
                 ->first();
 
             if (! $period || $period->status !== 'open') {
-                throw new InvalidArgumentException('No open accounting period exists for this entry date.');
+                throw new AccountingException('No open accounting period exists for this entry date.');
             }
 
             $entry->forceFill([
@@ -38,16 +42,7 @@ class PostJournalEntryAction
                 'posted_by' => Auth::id(),
             ])->save();
 
-            AccountingAuditLog::query()->create([
-                'table_name' => 'accounting_journal_entries',
-                'record_id' => $entry->id,
-                'action' => 'JOURNAL_POSTED',
-                'new_values' => ['status' => 'posted'],
-                'user_id' => Auth::id(),
-                'ip_address' => request()?->ip(),
-                'user_agent' => request()?->userAgent(),
-                'created_at' => now(),
-            ]);
+            AccountingAuditLog::record($entry, 'JOURNAL_POSTED', ['status' => 'draft'], ['status' => 'posted']);
 
             return $entry->refresh()->load(['lines.account', 'currency', 'accountingPeriod']);
         });
@@ -56,30 +51,39 @@ class PostJournalEntryAction
     private function validateLines(JournalEntry $entry): void
     {
         if ($entry->lines->count() < 2) {
-            throw new InvalidArgumentException('A journal entry requires at least two lines.');
+            throw new AccountingException('A journal entry requires at least two lines.');
         }
 
-        $totalDebit = 0.0;
-        $totalCredit = 0.0;
+        $baseCurrencyId = Currency::query()->where('is_base', true)->value('id');
+        $totalDebit = 0;
+        $totalCredit = 0;
 
         foreach ($entry->lines as $line) {
-            $debit = (float) $line->debit;
-            $credit = (float) $line->credit;
+            $debit = Money::toCents($line->getRawOriginal('debit'));
+            $credit = Money::toCents($line->getRawOriginal('credit'));
 
-            if (($debit > 0 && $credit > 0) || ($debit <= 0 && $credit <= 0)) {
-                throw new InvalidArgumentException('Each line must have either debit or credit.');
+            if ($debit < 0 || $credit < 0 || ($debit > 0 && $credit > 0) || ($debit === 0 && $credit === 0)) {
+                throw new AccountingException('Each line must have either debit or credit.');
             }
 
             if ($line->account->is_group || ! $line->account->is_active) {
-                throw new InvalidArgumentException('Journal lines can only post to active posting accounts.');
+                throw new AccountingException('Journal lines can only post to active posting accounts.');
+            }
+
+            $accountCurrency = $line->account->currency_id;
+
+            if ($accountCurrency !== null && $accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id) {
+                throw new AccountingException(
+                    "Account {$line->account->account_code} is denominated in a different currency than this journal entry."
+                );
             }
 
             $totalDebit += $debit;
             $totalCredit += $credit;
         }
 
-        if (round($totalDebit, 2) !== round($totalCredit, 2)) {
-            throw new InvalidArgumentException('Journal entry is not balanced.');
+        if ($totalDebit !== $totalCredit) {
+            throw new AccountingException('Journal entry is not balanced.');
         }
     }
 }

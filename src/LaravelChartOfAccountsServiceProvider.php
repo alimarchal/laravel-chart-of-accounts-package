@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSyncDatabaseObjectsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingUpdateCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingVerifyCommand;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingRuleViolation;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\JournalEntryForm;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedPayablesLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedReceivablesLivewire;
@@ -23,6 +24,8 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\GeneralLedgerLivewir
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\IncomeStatementLivewire;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\TrialBalanceLivewire;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -81,6 +84,8 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
+        $this->registerExceptionRendering();
+
         $this->loadViewsFrom(__DIR__.'/../resources/views/accounting', 'accounting');
 
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/accounting/components', 'accounting');
@@ -97,5 +102,30 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
             \Livewire\Livewire::component('accounting::reports.bank-book', BankBookLivewire::class);
             \Livewire\Livewire::component('accounting::reports.cash-book', CashBookLivewire::class);
         }
+    }
+
+    /**
+     * Render accounting business-rule violations as 422 (JSON) or redirect-back-with-error (web)
+     * instead of an HTTP 500.
+     */
+    private function registerExceptionRendering(): void
+    {
+        $handler = $this->app->make(ExceptionHandler::class);
+
+        if (! method_exists($handler, 'renderable')) {
+            return;
+        }
+
+        $handler->renderable(function (\Throwable $exception, Request $request) {
+            if (! $exception instanceof AccountingRuleViolation) {
+                return null;
+            }
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $exception->getMessage()], 422);
+            }
+
+            return back()->withInput()->with('error', $exception->getMessage());
+        });
     }
 }

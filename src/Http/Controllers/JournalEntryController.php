@@ -117,7 +117,7 @@ class JournalEntryController extends Controller
     {
         try {
             $entry = $service->updateDraft($journalEntry, $request->validated());
-        } catch (\DomainException $exception) {
+        } catch (\Alimarchal\LaravelChartOfAccounts\Exceptions\JournalEntryNotEditableException $exception) {
             return to_route(config('accounting.route_name_prefix', 'settings').'.journal-entries.show', $journalEntry)->with('error', $exception->getMessage());
         }
 
@@ -133,7 +133,12 @@ class JournalEntryController extends Controller
 
     public function reverse(Request $request, JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse
     {
-        $service->reverse($journalEntry, $request->string('description')->toString() ?: null);
+        $validated = $request->validate([
+            'description' => ['nullable', 'string', 'max:1000'],
+            'reversal_date' => ['nullable', 'date'],
+        ]);
+
+        $service->reverse($journalEntry, $validated['description'] ?? null, $validated['reversal_date'] ?? null);
 
         return back()->with('success', 'Journal entry reversed.');
     }

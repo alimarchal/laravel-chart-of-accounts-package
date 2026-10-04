@@ -46,7 +46,7 @@ it('updates draft lines by upserting without deleting existing IDs', function ()
         ->and($entry->lines->pluck('id')->toArray())->toEqual($originalLineIds);
 
     $debitLine = $entry->lines->firstWhere('chart_of_account_id', $cash->id);
-    expect($debitLine->debit_amount)->toEqual(1000.0);
+    expect((float) $debitLine->debit)->toEqual(1000.0);
 });
 
 it('adds new lines when updating draft', function (): void {

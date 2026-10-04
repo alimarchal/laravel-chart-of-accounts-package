@@ -18,7 +18,16 @@ class StoreJournalEntryRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('journal-entries.create') ?? false;
+        return ($this->user()?->can('journal-entries.create') ?? false) && $this->canAutoPost();
+    }
+
+    /**
+     * Posting immediately (auto_post) requires the separate "post" permission,
+     * so creating/editing drafts and posting them stay segregated duties.
+     */
+    protected function canAutoPost(): bool
+    {
+        return ! $this->boolean('auto_post') || ($this->user()?->can('journal-entries.post') ?? false);
     }
 
     /**
@@ -34,6 +43,7 @@ class StoreJournalEntryRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'auto_post' => ['sometimes', 'boolean'],
             'lines' => ['required', 'array', 'min:2'],
+            'lines.*.id' => ['nullable', 'integer'],
             'lines.*.chart_of_account_id' => ['required', 'exists:accounting_chart_of_accounts,id'],
             'lines.*.cost_center_id' => ['nullable', 'exists:accounting_cost_centers,id'],
             'lines.*.debit' => $this->moneyRules(),

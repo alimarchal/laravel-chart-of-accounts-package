@@ -2,23 +2,31 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Actions;
 
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
-use InvalidArgumentException;
+use Illuminate\Support\Facades\DB;
 
 class ReopenAccountingPeriodAction
 {
     public function execute(AccountingPeriod $period): AccountingPeriod
     {
-        if ($period->status !== 'closed') {
-            throw new InvalidArgumentException('Only closed accounting periods can be reopened.');
-        }
+        return DB::transaction(function () use ($period): AccountingPeriod {
+            $period = AccountingPeriod::query()->lockForUpdate()->findOrFail($period->id);
 
-        $period->forceFill([
-            'status' => 'open',
-            'closed_at' => null,
-            'closed_by' => null,
-        ])->save();
+            if ($period->status !== 'closed') {
+                throw new AccountingException('Only closed accounting periods can be reopened.');
+            }
 
-        return $period->refresh();
+            $period->forceFill([
+                'status' => 'open',
+                'closed_at' => null,
+                'closed_by' => null,
+            ])->save();
+
+            AccountingAuditLog::record($period, 'PERIOD_REOPENED', ['status' => 'closed'], ['status' => 'open']);
+
+            return $period->refresh();
+        });
     }
 }
