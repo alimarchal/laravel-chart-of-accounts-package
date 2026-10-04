@@ -56,6 +56,16 @@
     </x-slot>
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <x-accounting::status-message class="mb-4 mt-4 shadow-md" />
+        @if ($journalEntry->source_document_number || $journalEntry->sourceable_type)
+            <div class="mb-4 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm shadow">
+                <span class="font-semibold text-gray-700">Source document</span>
+                @if ($journalEntry->source_document_number)
+                    <span>{{ \Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments::label($journalEntry->source_document_type) }} <span class="font-mono font-semibold">{{ $journalEntry->source_document_number }}</span></span>
+                @endif
+                @if ($journalEntry->source_document_date)<span class="text-gray-500">dated {{ $journalEntry->source_document_date->format('Y-m-d') }}</span>@endif
+                @if ($journalEntry->sourceable_type)<span class="text-gray-500">linked to {{ class_basename($journalEntry->sourceable_type) }} #{{ $journalEntry->sourceable_id }}</span>@endif
+            </div>
+        @endif
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mb-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div><x-accounting::label value="Date" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="$journalEntry->entry_date->format('Y-m-d')" disabled readonly /></div>

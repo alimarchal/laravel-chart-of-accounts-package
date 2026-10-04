@@ -18,8 +18,10 @@ flowchart TD
     P6 -->|no| X6["422 Journal entry<br/>is not balanced"]
     P6 -->|yes| P7{"Open period covering<br/>the entry date?<br/>(shared lock: blocks a<br/>concurrent close only)"}
     P7 -->|no| X7["422 No open<br/>accounting period"]
-    P7 -->|yes| BA["Freeze base-currency amounts<br/>(cents-exact, still balanced)"]
-    BA --> DB{"Database trigger:<br/>no line on a<br/>group account?"}
+    P7 -->|yes| P8{"Source document<br/>(e.g. BILL-778) not yet<br/>posted in this company?"}
+    P8 -->|no| X8["422 Already posted as<br/>JV-2026-00012 —<br/>reverse that entry first"]
+    P8 -->|yes| BA["Freeze base-currency amounts<br/>(cents-exact, still balanced)"]
+    BA --> DB{"Database:<br/>no line on a group account,<br/>document key unique?"}
     DB -->|no| XD["Rejected by the database<br/>(guards raw SQL and other apps)"]
     DB -->|yes| OK["status = posted<br/>posted_at, posted_by, period set"]
     OK --> AUD["Audit log: JOURNAL_POSTED<br/>+ DB trigger row snapshot"]
@@ -29,6 +31,6 @@ flowchart TD
     classDef bad fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
     classDef good fill:#dcfce7,stroke:#15803d,color:#14532d
     classDef check fill:#fef3c7,stroke:#b45309,color:#78350f
-    class X0,X1,XA,X2,X3,X4,X5,X6,X7,XD bad
+    class X0,X1,XA,X2,X3,X4,X5,X6,X7,X8,XD bad
     class BA,OK,AUD,EV,DONE good
-    class P0,P1,PA,P2,P3,P4,P5,P6,P7,DB check
+    class P0,P1,PA,P2,P3,P4,P5,P6,P7,P8,DB check

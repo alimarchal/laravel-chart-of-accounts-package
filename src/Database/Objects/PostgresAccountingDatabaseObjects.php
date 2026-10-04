@@ -62,6 +62,10 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             ? 'OR NEW.voucher_number IS DISTINCT FROM OLD.voucher_number OR NEW.voucher_type_id IS DISTINCT FROM OLD.voucher_type_id'
             : '';
 
+        if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
+            $voucher .= ' OR NEW.source_document_type IS DISTINCT FROM OLD.source_document_type OR NEW.source_document_number IS DISTINCT FROM OLD.source_document_number OR NEW.source_document_date IS DISTINCT FROM OLD.source_document_date OR NEW.sourceable_type IS DISTINCT FROM OLD.sourceable_type OR NEW.sourceable_id IS DISTINCT FROM OLD.sourceable_id';
+        }
+
         DB::statement(str_replace('__VOUCHER__', $voucher, <<<'SQL'
             CREATE OR REPLACE FUNCTION accounting_journal_posted_guard()
             RETURNS trigger AS $$
@@ -288,7 +292,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
 
     private function createViews(): void
     {
-        DB::statement(<<<'SQL'
+        DB::statement(str_replace('je.company_id', 'je.company_id'.$this->ledgerDocumentColumns(), <<<'SQL'
             CREATE OR REPLACE VIEW vw_accounting_general_ledger AS
             SELECT
                 je.id AS journal_entry_id,
@@ -315,7 +319,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             JOIN accounting_chart_of_accounts coa ON coa.id = jed.chart_of_account_id
             LEFT JOIN accounting_cost_centers cc ON cc.id = jed.cost_center_id
             LEFT JOIN accounting_currencies c ON c.id = je.currency_id
-        SQL);
+        SQL));
 
         DB::statement(<<<'SQL'
             CREATE OR REPLACE VIEW vw_accounting_trial_balance AS
@@ -343,5 +347,23 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
 
         DB::statement("CREATE OR REPLACE VIEW vw_accounting_balance_sheet AS SELECT * FROM vw_accounting_trial_balance WHERE report_group = 'BalanceSheet'");
         DB::statement("CREATE OR REPLACE VIEW vw_accounting_income_statement AS SELECT * FROM vw_accounting_trial_balance WHERE report_group = 'IncomeStatement'");
+    }
+
+    /**
+     * Voucher and source-document columns of the general ledger view, once their migrations have run.
+     */
+    private function ledgerDocumentColumns(): string
+    {
+        $columns = [];
+
+        if (Schema::hasColumn('accounting_journal_entries', 'voucher_number')) {
+            $columns[] = 'je.voucher_number';
+        }
+
+        if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
+            array_push($columns, 'je.source_document_type', 'je.source_document_number', 'je.source_document_date');
+        }
+
+        return $columns === [] ? '' : ', '.implode(', ', $columns);
     }
 }

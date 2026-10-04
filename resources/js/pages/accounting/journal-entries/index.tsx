@@ -26,6 +26,7 @@ import {
 type Entry = {
     id: number;
     voucher_number: string | null;
+    source_document_number: string | null;
     voucher_type: { id: number; code: string; name: string } | null;
     entry_date: string;
     reference: string | null;
@@ -57,6 +58,7 @@ export default function JournalEntriesIndex({
     const [filtersOpen, setFiltersOpen] = useState(hasFilters);
     const filterForm = useForm({
         voucher_number: filters.voucher_number ?? '',
+        source_document_number: filters.source_document_number ?? '',
         reference: filters.reference ?? '',
         description: filters.description ?? '',
         status: filters.status ?? 'all',
@@ -106,6 +108,7 @@ export default function JournalEntriesIndex({
     const resetFilters = () => {
         filterForm.setData({
             voucher_number: '',
+            source_document_number: '',
             reference: '',
             description: '',
             status: 'all',
@@ -210,6 +213,25 @@ export default function JournalEntriesIndex({
                                             onChange={(event) =>
                                                 filterForm.setData(
                                                     'voucher_number',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="source_document_number">
+                                            Document no.
+                                        </Label>
+                                        <Input
+                                            id="source_document_number"
+                                            placeholder="BILL-778"
+                                            value={
+                                                filterForm.data
+                                                    .source_document_number
+                                            }
+                                            onChange={(event) =>
+                                                filterForm.setData(
+                                                    'source_document_number',
                                                     event.target.value,
                                                 )
                                             }
@@ -380,7 +402,14 @@ export default function JournalEntriesIndex({
                                     <td className="p-3 whitespace-nowrap">
                                         {entry.entry_date.slice(0, 10)}
                                     </td>
-                                    <td className="p-3">{entry.reference}</td>
+                                    <td className="p-3">
+                                        {entry.reference}
+                                        {entry.source_document_number ? (
+                                            <div className="font-mono text-xs text-muted-foreground">
+                                                {entry.source_document_number}
+                                            </div>
+                                        ) : null}
+                                    </td>
                                     <td className="p-3">{entry.description}</td>
                                     <td className="p-3">{entry.status}</td>
                                     <td className="p-3">

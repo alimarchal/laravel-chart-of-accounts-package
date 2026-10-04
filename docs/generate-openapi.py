@@ -65,6 +65,9 @@ schemas = {
      "voucher_type_id": {"type": ["integer", "null"]},
      "voucher_type": {"type": ["object", "null"], "properties": {"id": {"type": "integer"}, "code": {"type": "string", "example": "JV"}, "name": {"type": "string"}}},
      "entry_date": {"type": "string", "format": "date"}, "reference": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]},
+     "source_document": {"type": ["object", "null"], "description": "The document the entry records; null when none.", "properties": {
+         "type": {"type": ["string", "null"]}, "type_label": {"type": ["string", "null"], "example": "Purchase bill"}, "number": {"type": ["string", "null"]},
+         "date": {"type": ["string", "null"], "format": "date"}, "sourceable_type": {"type": ["string", "null"], "description": "Application model the entry was recorded for (set from PHP code)."}, "sourceable_id": {"type": ["integer", "null"]}}},
      "status": {"type": "string", "enum": ["draft", "posted", "void"]}, "currency_id": {"type": "integer"}, "fx_rate_to_base": {"type": "string"},
      "accounting_period_id": {"type": ["integer", "null"]}, "posted_at": {"type": ["string", "null"], "format": "date-time"},
      "approval": {"type": "object", "properties": {
@@ -87,6 +90,9 @@ schemas = {
  "JournalEntryInput": {"type": "object", "required": ["entry_date", "lines"], "properties": {
      "voucher_type_id": {"type": ["integer", "null"], "description": "An active voucher type; default JV."},
      "voucher_type_code": {"type": ["string", "null"], "example": "CPV", "description": "Alternative to voucher_type_id."},
+     "source_document_type": {"type": ["string", "null"], "enum": ["invoice", "credit_note", "bill", "debit_note", "receipt", "payment", "expense_claim", "payroll", "bank_statement", "contract", "other", None], "description": "Keys of config('accounting.source_documents.types'); required with source_document_number."},
+     "source_document_number": {"type": ["string", "null"], "maxLength": 100, "example": "BILL-778", "description": "A document (type + number, case-insensitive) can be posted only once per company until its entry is reversed (422 otherwise)."},
+     "source_document_date": {"type": ["string", "null"], "format": "date"},
      "entry_date": {"type": "string", "format": "date"}, "currency_id": {"type": ["integer", "null"]}, "currency_code": {"type": ["string", "null"], "example": "PKR", "description": "Alternative to currency_id. Defaults to the base currency."},
      "fx_rate_to_base": {"type": ["number", "null"], "exclusiveMinimum": 0, "default": 1}, "reference": {"type": ["string", "null"], "maxLength": 255}, "description": {"type": ["string", "null"]},
      "auto_post": {"type": "boolean", "default": False, "description": "Post immediately; requires `journal-entries.post`. Rejected (422) when maker-checker requires approval."},
@@ -97,6 +103,9 @@ schemas = {
      "debit_account_code": {"type": "string", "example": "5102"}, "credit_account_code": {"type": "string", "example": "1101"},
      "amount": {"type": "number", "exclusiveMinimum": 0, "multipleOf": 0.01, "example": 2500}, "entry_date": {"type": ["string", "null"], "format": "date"},
      "description": {"type": ["string", "null"], "example": "Office rent"}, "reference": {"type": ["string", "null"]},
+     "source_document_type": {"type": ["string", "null"], "enum": ["invoice", "credit_note", "bill", "debit_note", "receipt", "payment", "expense_claim", "payroll", "bank_statement", "contract", "other", None], "description": "Keys of config('accounting.source_documents.types'); required with source_document_number."},
+     "source_document_number": {"type": ["string", "null"], "maxLength": 100, "example": "BILL-778", "description": "A document (type + number, case-insensitive) can be posted only once per company until its entry is reversed (422 otherwise)."},
+     "source_document_date": {"type": ["string", "null"], "format": "date"},
      "post": {"type": "boolean", "default": True, "description": "Requires `journal-entries.post` when true."}}},
  "Period": {"type": "object", "properties": {
      "id": {"type": "integer"}, "name": {"type": "string"}, "start_date": {"type": "string", "format": "date"}, "end_date": {"type": "string", "format": "date"},
@@ -179,7 +188,8 @@ paths["/journal-entries"] = {
  "get": op("Journal entries", "List entries", "journal-entries.view", {"200": resp("Paginated entries", paginated(ref("JournalEntry"))), **E}, params=PAGE + [
     {"name": "filter[status]", "in": "query", "schema": {"type": "string", "enum": ["draft", "posted", "void"]}},
     {"name": "filter[reference]", "in": "query", "schema": {"type": "string"}}, {"name": "filter[description]", "in": "query", "schema": {"type": "string"}},
-    {"name": "filter[voucher_number]", "in": "query", "schema": {"type": "string"}, "description": "Partial match, e.g. JV-2026-"}, {"name": "filter[voucher_type_id]", "in": "query", "schema": {"type": "integer"}},
+    {"name": "filter[voucher_number]", "in": "query", "schema": {"type": "string"}, "description": "Partial match, e.g. JV-2026-"},
+    {"name": "filter[source_document_number]", "in": "query", "schema": {"type": "string"}, "description": "Partial match"}, {"name": "filter[source_document_type]", "in": "query", "schema": {"type": "string"}}, {"name": "filter[voucher_type_id]", "in": "query", "schema": {"type": "integer"}},
     {"name": "filter[currency_id]", "in": "query", "schema": {"type": "integer"}}, {"name": "filter[accounting_period_id]", "in": "query", "schema": {"type": "integer"}},
     {"name": "filter[entry_date_from]", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "filter[entry_date_to]", "in": "query", "schema": {"type": "string", "format": "date"}},
     {"name": "sort", "in": "query", "schema": {"type": "string", "enum": ["entry_date", "-entry_date", "id", "-id", "reference", "-reference", "voucher_number", "-voucher_number", "created_at", "-created_at"]}},
@@ -287,7 +297,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.5.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.6.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

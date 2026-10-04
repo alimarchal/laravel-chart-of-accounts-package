@@ -41,6 +41,9 @@ class SimpleJournalService
         ?string $entryDate = null,
         ?string $idempotencyKey = null,
         ?string $idempotencyHash = null,
+        ?string $sourceDocumentType = null,
+        ?string $sourceDocumentNumber = null,
+        ?string $sourceDocumentDate = null,
     ): JournalEntry {
         $cents = Money::toCents($amount);
 
@@ -56,6 +59,9 @@ class SimpleJournalService
         return $this->journalEntryService->create([
             'entry_date' => $entryDate ?? now()->toDateString(),
             'reference' => $reference,
+            'source_document_type' => $sourceDocumentType,
+            'source_document_number' => $sourceDocumentNumber,
+            'source_document_date' => $sourceDocumentDate,
             'description' => $description,
             'auto_post' => $post,
             'idempotency_key' => $idempotencyKey,

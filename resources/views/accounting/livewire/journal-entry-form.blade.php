@@ -44,6 +44,27 @@
             <x-accounting::label for="reference" value="Reference" />
             <x-accounting::input id="reference" type="text" class="mt-1 block w-full" wire:model="reference" />
         </div>
+        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 rounded-md border border-dashed border-gray-300 p-3">
+            <div>
+                <x-accounting::label for="source_document_type" value="Source Document" />
+                <select id="source_document_type" wire:model="source_document_type"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">None</option>
+                    @foreach ($documentTypes as $key => $label)
+                    <option value="{{ $key }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-accounting::label for="source_document_number" value="Document Number" />
+                <x-accounting::input id="source_document_number" type="text" class="mt-1 block w-full" wire:model="source_document_number" placeholder="INV-1001" />
+            </div>
+            <div>
+                <x-accounting::label for="source_document_date" value="Document Date" />
+                <x-accounting::input id="source_document_date" type="date" class="mt-1 block w-full" wire:model="source_document_date" />
+            </div>
+            <p class="md:col-span-3 text-xs text-gray-500">The invoice, bill or receipt this entry records. A document can be posted only once; reverse the entry to post it again.</p>
+        </div>
         <div>
             <x-accounting::label for="description" value="Description" />
             <x-accounting::input id="description" type="text" class="mt-1 block w-full" wire:model="description" />

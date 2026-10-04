@@ -10,12 +10,13 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class JournalEntryService
 {
     /**
-     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
+     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
      */
     public function create(array $data): JournalEntry
     {
@@ -31,11 +32,14 @@ class JournalEntryService
                 'currency_id' => $currencyId,
                 'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,
                 'reference' => $data['reference'] ?? null,
+                ...$this->sourceDocument($data),
                 'description' => $data['description'] ?? null,
                 'status' => 'draft',
                 'idempotency_key' => $data['idempotency_key'] ?? null,
                 'idempotency_hash' => $data['idempotency_hash'] ?? null,
             ]);
+
+            $this->linkSource($journalEntry, $data['source'] ?? null);
 
             foreach (array_values($data['lines']) as $index => $line) {
                 $journalEntry->lines()->create([
@@ -57,7 +61,7 @@ class JournalEntryService
     }
 
     /**
-     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
+     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
      */
     public function updateDraft(JournalEntry $journalEntry, array $data): JournalEntry
     {
@@ -86,8 +90,11 @@ class JournalEntryService
                 'currency_id' => $currencyId,
                 'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,
                 'reference' => $data['reference'] ?? null,
+                ...$this->sourceDocument($data, $journalEntry),
                 'description' => $data['description'] ?? null,
             ]);
+
+            $this->linkSource($journalEntry, $data['source'] ?? null);
 
             $incomingLines = array_values($data['lines']);
             $incomingIds = array_values(array_filter(array_column($incomingLines, 'id')));
@@ -127,6 +134,36 @@ class JournalEntryService
 
             return $journalEntry->refresh()->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType']);
         });
+    }
+
+    /**
+     * Source document fields of the data; on update, fields the data leaves out stay as they are.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function sourceDocument(array $data, ?JournalEntry $existing = null): array
+    {
+        $fields = [];
+
+        foreach (['source_document_type', 'source_document_number', 'source_document_date'] as $field) {
+            if (array_key_exists($field, $data) || ! $existing) {
+                $value = $data[$field] ?? null;
+                $fields[$field] = is_string($value) && trim($value) === '' ? null : (is_string($value) ? trim($value) : $value);
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Link the entry to the application model it records (an invoice, a bill, …).
+     */
+    private function linkSource(JournalEntry $entry, mixed $source): void
+    {
+        if ($source instanceof Model) {
+            $entry->forceFill(['sourceable_type' => $source->getMorphClass(), 'sourceable_id' => $source->getKey()])->save();
+        }
     }
 
     /**

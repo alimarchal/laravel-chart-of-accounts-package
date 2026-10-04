@@ -47,6 +47,8 @@ class JournalEntryApiController extends Controller
                     AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
                     AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
                     AllowedFilter::partial('voucher_number'),
+                    AllowedFilter::partial('source_document_number'),
+                    AllowedFilter::exact('source_document_type'),
                     AllowedFilter::exact('voucher_type_id'),
                 ])
                 ->allowedSorts(['entry_date', 'id', 'reference', 'voucher_number', 'created_at'])
@@ -89,6 +91,9 @@ class JournalEntryApiController extends Controller
             entryDate: $data['entry_date'] ?? null,
             idempotencyKey: $keys['idempotency_key'],
             idempotencyHash: $keys['idempotency_hash'],
+            sourceDocumentType: $data['source_document_type'] ?? null,
+            sourceDocumentNumber: $data['source_document_number'] ?? null,
+            sourceDocumentDate: $data['source_document_date'] ?? null,
         ));
     }
 

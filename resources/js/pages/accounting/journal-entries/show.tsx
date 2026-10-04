@@ -45,6 +45,11 @@ type JournalEntry = {
     voucher_type?: { code: string; name: string } | null;
     entry_date: string;
     reference: string | null;
+    source_document_type: string | null;
+    source_document_number: string | null;
+    source_document_date: string | null;
+    sourceable_type: string | null;
+    sourceable_id: number | null;
     description: string | null;
     status: 'draft' | 'posted' | 'void';
     approval_status: 'pending' | 'approved' | 'rejected' | null;
@@ -60,10 +65,12 @@ export default function JournalEntryShow({
     entry,
     requiresApproval = false,
     trail = [],
+    documentTypes = {},
 }: {
     entry: JournalEntry;
     requiresApproval?: boolean;
     trail?: TrailStep[];
+    documentTypes?: Record<string, string>;
 }) {
     const { permissions, flash } = useAccounting();
     const isDraft = entry.status === 'draft';
@@ -191,6 +198,34 @@ export default function JournalEntryShow({
                         )}
                     </div>
                 </div>
+
+                {entry.source_document_number || entry.sourceable_type ? (
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+                        <span className="font-medium">Source document</span>
+                        {entry.source_document_number ? (
+                            <span>
+                                {documentTypes[
+                                    entry.source_document_type ?? ''
+                                ] ?? entry.source_document_type}{' '}
+                                <span className="font-mono font-semibold">
+                                    {entry.source_document_number}
+                                </span>
+                            </span>
+                        ) : null}
+                        {entry.source_document_date ? (
+                            <span className="text-muted-foreground">
+                                dated {entry.source_document_date.slice(0, 10)}
+                            </span>
+                        ) : null}
+                        {entry.sourceable_type ? (
+                            <span className="text-muted-foreground">
+                                linked to{' '}
+                                {entry.sourceable_type.split('\\').pop()} #
+                                {entry.sourceable_id}
+                            </span>
+                        ) : null}
+                    </div>
+                ) : null}
 
                 {requiresApproval || entry.approval_status ? (
                     <Alert

@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryReversed;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use DateTimeInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,9 @@ class ReverseJournalEntryAction
 
             $reversal = JournalEntry::query()->create([
                 'voucher_type_id' => $entry->voucher_type_id,
+                'source_document_type' => $entry->source_document_type,
+                'source_document_number' => $entry->source_document_number,
+                'source_document_date' => $entry->source_document_date,
                 'entry_date' => $date->toDateString(),
                 'currency_id' => $entry->currency_id,
                 'fx_rate_to_base' => $entry->fx_rate_to_base,
@@ -52,6 +56,8 @@ class ReverseJournalEntryAction
                 'status' => 'draft',
                 'reverses_entry_id' => $entry->id,
             ]);
+
+            $reversal->forceFill(['sourceable_type' => $entry->sourceable_type, 'sourceable_id' => $entry->sourceable_id])->save();
 
             foreach ($entry->lines as $index => $line) {
                 $reversal->lines()->create([
@@ -71,6 +77,9 @@ class ReverseJournalEntryAction
                 'reversed_by_entry_id' => $postedReversal->id,
                 'reversed_at' => now(),
             ])->save();
+
+            // The document is free again: a corrected entry may record it.
+            SourceDocuments::release($entry);
 
             AccountingAuditLog::record($entry, 'JOURNAL_REVERSED', null, ['reversed_by_entry_id' => $postedReversal->id]);
             event(new JournalEntryReversed($entry->refresh(), $postedReversal));

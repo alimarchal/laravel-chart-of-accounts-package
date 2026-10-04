@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -29,6 +30,8 @@ class JournalEntryController extends Controller
             ->allowedFilters(...[
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('voucher_number'),
+                AllowedFilter::partial('source_document_number'),
+                AllowedFilter::exact('source_document_type'),
                 AllowedFilter::exact('voucher_type_id'),
                 AllowedFilter::partial('description'),
                 AllowedFilter::exact('status'),
@@ -50,6 +53,7 @@ class JournalEntryController extends Controller
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'voucherTypes' => VoucherType::query()->orderBy('code')->get(['id', 'code', 'name']),
+            'documentTypes' => SourceDocuments::types(),
         ]);
     }
 
@@ -79,6 +83,7 @@ class JournalEntryController extends Controller
                 ->orderByDesc('is_system')
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
+            'documentTypes' => SourceDocuments::types(),
         ]);
     }
 
@@ -113,6 +118,7 @@ class JournalEntryController extends Controller
                 ->orderByDesc('is_system')
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
+            'documentTypes' => SourceDocuments::types(),
         ]);
     }
 
@@ -123,6 +129,7 @@ class JournalEntryController extends Controller
         return Inertia::render('accounting/journal-entries/show', [
             'entry' => $journalEntry,
             'trail' => $journalEntry->trail(),
+            'documentTypes' => SourceDocuments::types(),
             'requiresApproval' => $journalEntry->status === 'draft' && app(JournalApprovalService::class)->requiresApproval($journalEntry),
         ]);
     }

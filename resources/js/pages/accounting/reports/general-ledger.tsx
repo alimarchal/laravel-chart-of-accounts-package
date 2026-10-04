@@ -206,11 +206,18 @@ export default function GeneralLedger({
                                                 href={`/accounting/journal-entries/${line.journal_entry_id}`}
                                                 className="font-medium underline-offset-4 hover:underline"
                                             >
-                                                #{line.journal_entry_id}
+                                                {line.voucher_number ??
+                                                    `#${line.journal_entry_id}`}
                                             </Link>
-                                            {line.reference ? (
+                                            {line.reference ||
+                                            line.source_document_number ? (
                                                 <div className="text-xs text-muted-foreground">
-                                                    {line.reference}
+                                                    {[
+                                                        line.reference,
+                                                        line.source_document_number,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(' · ')}
                                                 </div>
                                             ) : null}
                                         </td>

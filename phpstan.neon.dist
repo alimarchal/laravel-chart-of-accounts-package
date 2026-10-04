@@ -7,6 +7,8 @@ parameters:
         - src
         - routes
         - database
+        # Uses the HasJournalEntries trait, so PHPStan analyses the trait (it is meant for application models).
+        - tests/Fixtures/Invoice.php
     databaseMigrationsPath:
         - database/migrations
         - tests/Fixtures/database

@@ -14,7 +14,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         $this->createImmutabilityTriggers();
         $this->createChartGuards();
 
-        DB::statement(<<<'SQL'
+        DB::statement(str_replace('je.company_id', 'je.company_id'.$this->ledgerDocumentColumns(), <<<'SQL'
             CREATE VIEW IF NOT EXISTS vw_accounting_general_ledger AS
             SELECT
                 je.id AS journal_entry_id,
@@ -41,7 +41,7 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
             JOIN accounting_chart_of_accounts coa ON coa.id = jed.chart_of_account_id
             LEFT JOIN accounting_cost_centers cc ON cc.id = jed.cost_center_id
             LEFT JOIN accounting_currencies c ON c.id = je.currency_id
-        SQL);
+        SQL));
 
         DB::statement(<<<'SQL'
             CREATE VIEW IF NOT EXISTS vw_accounting_trial_balance AS
@@ -134,6 +134,10 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         $voucher = Schema::hasColumn('accounting_journal_entries', 'voucher_number')
             ? 'OR NEW.voucher_number IS NOT OLD.voucher_number OR NEW.voucher_type_id IS NOT OLD.voucher_type_id'
             : '';
+
+        if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
+            $voucher .= ' OR NEW.source_document_type IS NOT OLD.source_document_type OR NEW.source_document_number IS NOT OLD.source_document_number OR NEW.source_document_date IS NOT OLD.source_document_date OR NEW.sourceable_type IS NOT OLD.sourceable_type OR NEW.sourceable_id IS NOT OLD.sourceable_id';
+        }
         $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
 
         DB::statement("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries
@@ -268,5 +272,23 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
             'accounting_journal_entries',
             'accounting_journal_entry_lines',
         ];
+    }
+
+    /**
+     * Voucher and source-document columns of the general ledger view, once their migrations have run.
+     */
+    private function ledgerDocumentColumns(): string
+    {
+        $columns = [];
+
+        if (Schema::hasColumn('accounting_journal_entries', 'voucher_number')) {
+            $columns[] = 'je.voucher_number';
+        }
+
+        if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
+            array_push($columns, 'je.source_document_type', 'je.source_document_number', 'je.source_document_date');
+        }
+
+        return $columns === [] ? '' : ', '.implode(', ', $columns);
     }
 }

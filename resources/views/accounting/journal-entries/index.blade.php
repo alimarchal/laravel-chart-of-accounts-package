@@ -5,6 +5,7 @@
     <x-accounting::filter-section :action="route('accounting.journal-entries.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_voucher_number" value="Voucher No." /><x-accounting::input id="filter_voucher_number" name="filter[voucher_number]" type="text" class="mt-1 block w-full" placeholder="JV-2026-00012" :value="request('filter.voucher_number')" /></div>
+            <div><x-accounting::label for="filter_source_document_number" value="Document No." /><x-accounting::input id="filter_source_document_number" name="filter[source_document_number]" type="text" class="mt-1 block w-full" placeholder="BILL-778" :value="request('filter.source_document_number')" /></div>
             <div><x-accounting::label for="filter_reference" value="Reference" /><x-accounting::input id="filter_reference" name="filter[reference]" type="text" class="mt-1 block w-full" :value="request('filter.reference')" /></div>
             <div><x-accounting::label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
@@ -34,7 +35,7 @@
             <td class="py-1 px-2 text-center">{{ $journalEntries->firstItem() + $i }}</td>
             <td class="py-1 px-2 whitespace-nowrap">@if ($je->voucher_number)<span class="font-mono">{{ $je->voucher_number }}</span>@else<span class="text-gray-500">{{ $je->voucherType?->code ?? 'JV' }} draft #{{ $je->id }}</span>@endif</td>
             <td class="py-1 px-2">{{ $je->entry_date->format('Y-m-d') }}</td>
-            <td class="py-1 px-2 font-mono">{{ $je->reference }}</td>
+            <td class="py-1 px-2 font-mono">{{ $je->reference }}@if ($je->source_document_number)<div class="text-xs text-gray-500">{{ $je->source_document_number }}</div>@endif</td>
             <td class="py-1 px-2">{{ Str::limit($je->description, 50) }}</td>
             <td class="py-1 px-2 text-center">
                 <span @class(['px-2 py-0.5 rounded text-xs font-medium', 'bg-yellow-100 text-yellow-800' => $je->status === 'draft', 'bg-green-100 text-green-800' => $je->status === 'posted', 'bg-red-100 text-red-700' => $je->status === 'void'])>{{ ucfirst($je->status) }}</span>

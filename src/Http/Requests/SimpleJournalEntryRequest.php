@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Requests;
 
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -30,6 +31,7 @@ class SimpleJournalEntryRequest extends FormRequest
             'entry_date' => ['nullable', 'date'],
             'description' => ['nullable', 'string', 'max:5000'],
             'reference' => ['nullable', 'string', 'max:255'],
+            ...SourceDocuments::rules(),
             'post' => ['sometimes', 'boolean'],
         ];
     }
