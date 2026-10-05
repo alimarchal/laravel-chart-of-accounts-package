@@ -25,6 +25,7 @@
 - **Voucher numbering** — JV, CPV, CRV, BPV, BRV (and your own types) with **gapless** numbers such as `JV-2026-00012`, issued at posting, restarting per fiscal year or month, locked in the database
 - **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
 - **Attachments** — scanned bills, receipts and contracts on every entry, stored privately, never removable once posted, duplicate-file warning, optional "evidence required above" amount
+- **Chart import & export** — bring your existing chart in from Excel or CSV with a line-by-line preview (new / updated / errors) before anything is saved; export it, edit it, import it back
 - **Control accounts** — receivables, payables, inventory, payroll and tax control accounts that only their module may post to, with a manual-postings exception list
 - **Professional PDFs** — reports on your letterhead (logo, filters, totals, page X of Y) and printable vouchers with amount in words, signature boxes and a DRAFT/VOID watermark; big Excel/PDF exports run in the background
 - **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
@@ -32,7 +33,7 @@
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
 - **Events & signed webhooks** for every ledger action (posted, reversed, approved, period closed, …)
 - **Proven at scale** — 400,000 journal lines: trial balance 0.77 s, account statement 0.1 s, 46 concurrent postings/s with zero imbalance ([performance report](docs/performance.md))
-- **Tested** — 330+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+- **Tested** — 340+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
 
 ---
 
@@ -398,6 +399,42 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 
 ---
 
+## Importing and exporting the chart
+
+Bring an existing chart of accounts in from **Excel (.xlsx) or CSV** — Chart of Accounts → **Import**
+(React and Blade), or `POST /api/v1/accounting/chart-of-accounts/import`.
+
+1. Download the **template** (or **export** the current chart — the export is in the same layout).
+2. Fill in or edit the rows and upload the file.
+3. The **preview** lists every line as *new*, *updated* (old → new for each field), *unchanged* or *error*,
+   with the reason. Nothing is saved yet.
+4. **Import** applies the whole file in one transaction. If any row is in error, nothing is imported.
+
+| Column | Required | Notes |
+|---|---|---|
+| `account_code` | always | identifies the account; an existing code is updated (or left alone with "Leave them unchanged") |
+| `account_name` | new accounts | |
+| `parent_code` | no | an existing account or another row — parents may come **after** their children in the file |
+| `account_type` | top-level new accounts | type code or name (`ASSET`, `Expense` …); children default to their parent's type |
+| `normal_balance` | no | `debit` / `credit`; defaults to the type's |
+| `currency` | no | currency code; defaults to the parent's, then the base currency |
+| `is_group`, `is_active` | no | yes / no / 1 / 0 / true / false |
+| `control_type` | no | `receivables`, `payables` … (needs `control-accounts.manage`) |
+| `description` | no | |
+
+Blank cells keep an existing account's value. Common header names are understood (`Code`, `Name`, `Parent`,
+`Type` …), CSVs may use commas, semicolons or tabs, and Excel / Windows-1252 files are read as UTF-8. Every row
+passes the same rules as the screens and the API **and the database guards** — a used account cannot change
+type, a posting account cannot get children, loops are refused. The import is audited (`CHART_IMPORTED`, with
+the codes created and updated), and needs the `chart-of-accounts.import` permission (super-admin by default).
+Limits: `ACCOUNTING_CHART_IMPORT_MAX_KB` (5 MB) and `ACCOUNTING_CHART_IMPORT_MAX_ROWS` (5,000).
+
+```bash
+# Preview over the API, then import
+curl -H "Authorization: Bearer $TOKEN" -F file=@chart.xlsx -F dry_run=1 $APP/api/v1/accounting/chart-of-accounts/import
+curl -H "Authorization: Bearer $TOKEN" -F file=@chart.xlsx $APP/api/v1/accounting/chart-of-accounts/import
+```
+
 ## Voucher numbering
 
 Every journal entry has a **voucher type**; when it is **posted** it gets the next number of that type's series.
@@ -738,6 +775,9 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET | `/reports/consolidated/{report}` | Group trial balance, balance sheet, income statement | `reports.consolidated.view` |
 | GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
 | GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
+| GET | `/chart-of-accounts/export/{csv\|xlsx\|pdf}` | Export the chart (re-importable layout) | `chart-of-accounts.view` |
+| GET | `/chart-of-accounts/import/template/{csv\|xlsx}` | Import template with example rows | `chart-of-accounts.import` |
+| POST | `/chart-of-accounts/import` | Import CSV/Excel (`file`, `mode`, `dry_run`); 422 with the rows if any is wrong | `chart-of-accounts.import` |
 | GET | `/chart-of-accounts/{id}/balance` | Balance as of a date (groups include children) | `chart-of-accounts.view` |
 | GET/PUT/DELETE | `/chart-of-accounts/{id}` | Show / Update / Delete | `chart-of-accounts.*` |
 | GET/POST, GET/PUT/DELETE | `/periods`, `/periods/{id}` | CRUD (no overlaps) | `periods.*` |
@@ -924,6 +964,7 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `chart-of-accounts.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `chart-of-accounts.create` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.update` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.import` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.delete` | ✔ |  |  |  |  |  |
 | `cost-centers.view` | ✔ |  | ✔ |  | ✔ |  |
 | `cost-centers.create` | ✔ |  | ✔ |  |  |  |

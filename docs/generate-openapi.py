@@ -371,6 +371,30 @@ paths["/journal-entries/{id}/pdf"] = {"parameters": [ID], "get": op("Journal ent
     {"200": {"description": "The voucher", "content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}}}, **E404, "501": resp("PDF engine (dompdf) not installed")},
     desc="Letterhead, voucher number, source document, lines, totals, amount in words, signature boxes; DRAFT / VOID watermark when not posted.", opid="voucher_pdf")}
 
+# Chart of accounts import / export.
+COA_FILE = {"description": "The chart in import layout", "content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}, "application/pdf": {"schema": {"type": "string", "format": "binary"}}}}
+schemas["ChartImportResult"] = {"type": "object", "properties": {
+    "committed": {"type": "boolean", "description": "true when the accounts were saved"},
+    "summary": {"type": "object", "properties": {k: {"type": "integer"} for k in ["create", "update", "unchanged", "error"]}},
+    "rows": {"type": "array", "items": {"type": "object", "properties": {
+        "line": {"type": "integer", "description": "Line in the file (the header is line 1)"},
+        "account_code": {"type": "string"}, "account_name": {"type": "string"},
+        "action": {"type": "string", "enum": ["create", "update", "unchanged", "error"]},
+        "changes": {"type": "object", "additionalProperties": {"type": "array", "items": {}, "minItems": 2, "maxItems": 2}, "description": "field → [old, new] for updates"},
+        "errors": {"type": "array", "items": {"type": "string"}}}}}}}
+paths["/chart-of-accounts/export/{format}"] = {"parameters": [{"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}],
+    "get": op("Chart of accounts", "Export the chart (re-importable)", "chart-of-accounts.view", {"200": COA_FILE, **E},
+              desc="Columns: account_code, account_name, parent_code, account_type, normal_balance, currency, is_group, is_active, control_type, description — the import layout, so an export can be edited and imported back.", opid="export_chart")}
+paths["/chart-of-accounts/import/template/{format}"] = {"parameters": [{"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx"]}}],
+    "get": op("Chart of accounts", "Import template with example rows", "chart-of-accounts.import", {"200": COA_FILE, **E}, opid="chart_import_template")}
+paths["/chart-of-accounts/import"] = {
+    "post": op("Chart of accounts", "Import accounts from CSV or Excel (multipart/form-data)", "chart-of-accounts.import",
+               {"200": resp("Preview (dry_run) or nothing to change", data(ref("ChartImportResult"))), "201": resp("Imported", data(ref("ChartImportResult"))), **E422},
+               desc="Fields: `file` (.csv/.xlsx, max `ACCOUNTING_CHART_IMPORT_MAX_KB`), `mode` (`upsert` updates existing codes — default; `create` leaves them unchanged) and `dry_run` (preview, nothing saved). "
+                    "Parents may appear anywhere in the file. Every row passes the same rules as the API and the database guards; if any row is in error nothing is imported (422 with the rows).", opid="import_chart")}
+paths["/chart-of-accounts/import"]["post"]["requestBody"] = {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {
+    "file": {"type": "string", "format": "binary"}, "mode": {"type": "string", "enum": ["upsert", "create"], "default": "upsert"}, "dry_run": {"type": "boolean", "default": False}}}}}}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -379,7 +403,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.10.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.11.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

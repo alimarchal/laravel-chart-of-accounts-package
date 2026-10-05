@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Edit, Filter, Plus, Trash2, X } from 'lucide-react';
+import { Download, Edit, Filter, Plus, Trash2, Upload, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { SearchableSelect } from '@/components/accounting/searchable-select';
@@ -155,6 +155,26 @@ export default function ChartOfAccountsIndex({
                                 <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
                             ) : null}
                         </Button>
+                        <Button asChild variant="outline" className="gap-2">
+                            <a href="/accounting/chart-of-accounts/export/xlsx">
+                                <Download className="size-4" />
+                                <span>Export Excel</span>
+                            </a>
+                        </Button>
+                        <Button asChild variant="outline" className="gap-2">
+                            <a href="/accounting/chart-of-accounts/export/csv">
+                                <Download className="size-4" />
+                                <span>CSV</span>
+                            </a>
+                        </Button>
+                        {permissions['chart-of-accounts.import'] === true ? (
+                            <Button asChild variant="outline" className="gap-2">
+                                <Link href="/accounting/chart-of-accounts/import">
+                                    <Upload className="size-4" />
+                                    <span>Import</span>
+                                </Link>
+                            </Button>
+                        ) : null}
                         {permissions['chart-of-accounts.create'] === true ? (
                             <Button asChild className="gap-2">
                                 <Link href="/accounting/chart-of-accounts/create">

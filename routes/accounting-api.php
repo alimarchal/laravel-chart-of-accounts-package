@@ -19,6 +19,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxCodeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxRateApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\UserApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\VoucherTypeApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
@@ -85,6 +86,9 @@ Route::middleware($apiMiddleware)
         Route::post('chart-of-accounts', [ChartOfAccountApiController::class, 'store'])
             ->name('chart-of-accounts.store')
             ->middleware('can:chart-of-accounts.create');
+        Route::get('chart-of-accounts/export/{format}', [ChartOfAccountImportController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('chart-of-accounts.export')->middleware('can:chart-of-accounts.view');
+        Route::get('chart-of-accounts/import/template/{format}', [ChartOfAccountImportController::class, 'template'])->whereIn('format', ['csv', 'xlsx'])->name('chart-of-accounts.import.template')->middleware('can:chart-of-accounts.import');
+        Route::post('chart-of-accounts/import', [ChartOfAccountImportController::class, 'api'])->name('chart-of-accounts.import')->middleware('can:chart-of-accounts.import');
         Route::get('chart-of-accounts/tree', [AccountingApiController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

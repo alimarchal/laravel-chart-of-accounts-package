@@ -53,6 +53,10 @@ function concreteUri(Route $route): string
             return 'trial-balance';
         }
 
+        if (in_array($resource, ['export', 'template'], true)) {
+            return 'csv';
+        }
+
         if ($resource === 'reports') {
             return $match[1] === 'format' ? 'pdf' : 'trial-balance';
         }
