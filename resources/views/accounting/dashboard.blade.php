@@ -42,7 +42,7 @@
                 @endcanany
 
                 {{-- ─── Financial Reports ─── --}}
-                @canany(['reports.general-ledger.view','reports.trial-balance.view','reports.balance-sheet.view','reports.income-statement.view','reports.cash-flow.view','reports.account-balances.view'])
+                @canany(['reports.general-ledger.view','reports.trial-balance.view','reports.balance-sheet.view','reports.income-statement.view','reports.cash-flow.view','reports.account-balances.view','reports.financial-statements.view','report-mapping.manage'])
                 <div>
                     <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Financial Reports</p>
                     <div class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -73,6 +73,18 @@
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row href="{{ route('accounting.reports.cash-flow') }}" label="Cash Flow" description="Operating, investing &amp; financing" icon-bg="bg-cyan-600">
                             <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        @endcan
+                        @can('reports.financial-statements.view')
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.reports.financial-statements') }}" label="Financial Statements" description="By report lines, comparatives, indirect cash flow" icon-bg="bg-indigo-600">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        @endcan
+                        @can('report-mapping.manage')
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.report-mapping.index') }}" label="Report Mapping" description="Statement lines and cash-flow classes" icon-bg="bg-slate-600">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h6"/></svg></x-slot>
                         </x-accounting::settings-row>
                         @endcan
                         @can('reports.account-balances.view')

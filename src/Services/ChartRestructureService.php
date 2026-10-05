@@ -74,7 +74,7 @@ class ChartRestructureService
             $this->assertNotConfigured($from, 'renumbered');
         }
 
-        $taken = ChartOfAccount::query()->whereIn('account_code', array_values($plan))->whereNotIn('account_code', array_keys($plan))->pluck('account_code');
+        $taken = ChartOfAccount::query()->whereIn('account_code', array_values($plan))->whereNotIn('account_code', array_keys($plan))->orderBy('account_code')->pluck('account_code');
 
         if ($taken->isNotEmpty()) {
             throw new AccountingException('These codes are already used: '.$taken->implode(', ').'.');

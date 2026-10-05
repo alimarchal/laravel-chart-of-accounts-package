@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Services\FinancialStatementService;
 use Closure;
 use Illuminate\Database\Query\Builder;
 
@@ -12,13 +13,20 @@ use Illuminate\Database\Query\Builder;
  */
 class ReportCatalog
 {
+    /** The statements laid out by report lines (FinancialStatementService). */
+    public const STATEMENTS = [
+        'statement-balance-sheet' => 'Statement of Financial Position',
+        'statement-income-statement' => 'Statement of Profit or Loss',
+        'statement-cash-flow' => 'Statement of Cash Flows',
+    ];
+
     /**
      * @return array<int, string>
      */
     public function names(): array
     {
         return ['general-ledger', 'trial-balance', 'balance-sheet', 'income-statement', 'cash-flow', 'aged-receivables',
-            'aged-payables', 'bank-book', 'cash-book', 'account-statement'];
+            'aged-payables', 'bank-book', 'cash-book', 'account-statement', ...array_keys(self::STATEMENTS)];
     }
 
     /**
@@ -41,7 +49,7 @@ class ReportCatalog
             'bank-book' => ['reports.bank-book.view', fn () => app(BankBookReport::class)->query($only(['date_from', 'date_to', 'account_id', 'bank_account_id', 'status']))],
             'cash-book' => ['reports.cash-book.view', fn () => app(CashBookReport::class)->query($ledger)],
             'account-statement' => ['reports.account-statement.view', fn () => app(AccountStatementReport::class)->query($only(['account_id', 'account_code', 'date_from', 'date_to']))],
-            default => null,
+            default => isset(self::STATEMENTS[$report]) ? ['reports.financial-statements.view', fn () => $this->statementRows($report, $input)] : null,
         };
 
         if ($definition === null) {
@@ -51,9 +59,21 @@ class ReportCatalog
         return [
             'permission' => $definition[0],
             'rows' => $definition[1],
-            'title' => (string) str($report)->headline(),
+            'title' => self::STATEMENTS[$report] ?? (string) str($report)->headline(),
             'filters' => $this->filterLabels($input),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return list<array<string, string>>
+     */
+    private function statementRows(string $report, array $input): array
+    {
+        $type = substr($report, strlen('statement-'));
+        $service = app(FinancialStatementService::class);
+
+        return $service->exportRows($type, $service->fromInput($type, $input));
     }
 
     /**
@@ -63,6 +83,10 @@ class ReportCatalog
     private function filterLabels(array $input): array
     {
         $labels = [];
+
+        if (! empty($input['as_of_date']) && is_string($input['as_of_date'])) {
+            $labels['As of'] = $input['as_of_date'].(! empty($input['compare_as_of']) && is_string($input['compare_as_of']) ? ' (compared with '.$input['compare_as_of'].')' : '');
+        }
 
         if (! empty($input['date_from']) || ! empty($input['date_to'])) {
             $labels['Period'] = trim(($input['date_from'] ?? '…').' to '.($input['date_to'] ?? 'today'));

@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Services;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingChartOfAccountSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingCostCenterSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingPeriodSeeder;
+use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingReportLineSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingTaxCodeSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingTaxRateSeeder;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingVoucherTypeSeeder;
@@ -73,10 +74,13 @@ class CompanyService
 
             if ($seed) {
                 $this->companies->runAs($company, function (): void {
-                    foreach ([AccountingPeriodSeeder::class, AccountingChartOfAccountSeeder::class, AccountingCostCenterSeeder::class, AccountingTaxCodeSeeder::class, AccountingTaxRateSeeder::class, AccountingVoucherTypeSeeder::class] as $seeder) {
+                    foreach ([AccountingPeriodSeeder::class, AccountingChartOfAccountSeeder::class, AccountingCostCenterSeeder::class, AccountingTaxCodeSeeder::class, AccountingTaxRateSeeder::class, AccountingVoucherTypeSeeder::class, AccountingReportLineSeeder::class] as $seeder) {
                         app($seeder)->run();
                     }
                 });
+            } else {
+                // Even an empty company has the statement layout.
+                $this->companies->runAs($company, fn () => app(ReportMappingService::class)->seedLines());
             }
 
             if ($creator !== null && ! $this->companies->isUnrestricted($creator)) {
