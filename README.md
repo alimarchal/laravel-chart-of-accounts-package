@@ -26,6 +26,7 @@
 - **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
 - **Attachments** — scanned bills, receipts and contracts on every entry, stored privately, never removable once posted, duplicate-file warning, optional "evidence required above" amount
 - **Chart import & export** — bring your existing chart in from Excel or CSV with a line-by-line preview (new / updated / errors) before anything is saved; export it, edit it, import it back
+- **Renumber & merge accounts** — give an account (and its sub-accounts) new codes, or fold a duplicate into another account with a posted transfer entry — the ledger history is never rewritten
 - **Control accounts** — receivables, payables, inventory, payroll and tax control accounts that only their module may post to, with a manual-postings exception list
 - **Professional PDFs** — reports on your letterhead (logo, filters, totals, page X of Y) and printable vouchers with amount in words, signature boxes and a DRAFT/VOID watermark; big Excel/PDF exports run in the background
 - **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
@@ -33,7 +34,7 @@
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
 - **Events & signed webhooks** for every ledger action (posted, reversed, approved, period closed, …)
 - **Proven at scale** — 400,000 journal lines: trial balance 0.77 s, account statement 0.1 s, 46 concurrent postings/s with zero imbalance ([performance report](docs/performance.md))
-- **Tested** — 340+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+- **Tested** — 350+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
 
 ---
 
@@ -435,6 +436,35 @@ curl -H "Authorization: Bearer $TOKEN" -F file=@chart.xlsx -F dry_run=1 $APP/api
 curl -H "Authorization: Bearer $TOKEN" -F file=@chart.xlsx $APP/api/v1/accounting/chart-of-accounts/import
 ```
 
+## Renumbering and merging accounts
+
+Chart of Accounts → the ⇄ icon on an account (React and Blade), or the API. Needs `chart-of-accounts.restructure`
+(super-admin by default). Both show a preview first and are audited.
+
+**Renumber** — give an account a new code, even if it has journal entries (lines point to the account, not its
+code, so every report follows). A group can take its sub-accounts along: codes sharing the group's prefix
+(the code without trailing zeros) get the new prefix — `5100 → 6100` turns `5101` into `6101` and `5110` into
+`6110`. To take its sub-accounts along, the new code keeps the group's length and trailing zeros (`7000 → 8000`,
+not `7000 → 7700`); otherwise renumber the account alone. Codes already in use are refused, and so are accounts named in `config('accounting.defaults')` (change
+the configured code first).
+
+**Merge** — for duplicates (`Stationery` and `Stationary`). Posted entries are immutable, so nothing is rewritten:
+
+1. The source's balance moves to the target with a **posted transfer entry**, one pair of lines per cost center,
+   through the normal rules (open period, maker-checker approval, control accounts). If the transfer needs
+   approval, the merge is refused: post the transfer through approvals first, then merge (the balance is zero).
+2. Draft lines, sub-accounts and bank accounts that used the source now use the target.
+3. The source is **deactivated** with `metadata.merged_into`; its history stays in every report.
+
+Only accounts of the same type, normal balance, currency and control type merge; entries waiting for approval
+on the source must be decided first; configured and system accounts cannot be merged away.
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -d account_code=6100 $APP/api/v1/accounting/chart-of-accounts/59/renumber
+curl -H "Authorization: Bearer $TOKEN" "$APP/api/v1/accounting/chart-of-accounts/120/merge-preview?target_account_id=67"
+curl -X POST -H "Authorization: Bearer $TOKEN" -d target_code=5104 $APP/api/v1/accounting/chart-of-accounts/120/merge
+```
+
 ## Voucher numbering
 
 Every journal entry has a **voucher type**; when it is **posted** it gets the next number of that type's series.
@@ -777,6 +807,8 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
 | GET | `/chart-of-accounts/export/{csv\|xlsx\|pdf}` | Export the chart (re-importable layout) | `chart-of-accounts.view` |
 | GET | `/chart-of-accounts/import/template/{csv\|xlsx}` | Import template with example rows | `chart-of-accounts.import` |
+| GET · POST | `/chart-of-accounts/{id}/renumber-preview` · `/renumber` | Preview / renumber (`account_code`, `with_children`) | `chart-of-accounts.restructure` |
+| GET · POST | `/chart-of-accounts/{id}/merge-preview` · `/merge` | Preview / merge into another account (`target_account_id` or `target_code`, `date`) | `chart-of-accounts.restructure` |
 | POST | `/chart-of-accounts/import` | Import CSV/Excel (`file`, `mode`, `dry_run`); 422 with the rows if any is wrong | `chart-of-accounts.import` |
 | GET | `/chart-of-accounts/{id}/balance` | Balance as of a date (groups include children) | `chart-of-accounts.view` |
 | GET/PUT/DELETE | `/chart-of-accounts/{id}` | Show / Update / Delete | `chart-of-accounts.*` |
@@ -965,6 +997,7 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `chart-of-accounts.create` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.update` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.import` | ✔ |  |  |  |  |  |
+| `chart-of-accounts.restructure` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.delete` | ✔ |  |  |  |  |  |
 | `cost-centers.view` | ✔ |  | ✔ |  | ✔ |  |
 | `cost-centers.create` | ✔ |  | ✔ |  |  |  |

@@ -18,7 +18,7 @@ class CostCenterFactory extends Factory
             'parent_id' => null,
             'code' => strtoupper(fake()->unique()->lexify('CC-???')),
             'name' => fake()->words(2, true),
-            'type' => fake()->randomElement(['department', 'project', 'branch']),
+            'type' => fake()->randomElement(['cost_center', 'project']),
             'description' => fake()->sentence(),
             'start_date' => now()->startOfYear()->toDateString(),
             'end_date' => null,
@@ -31,9 +31,12 @@ class CostCenterFactory extends Factory
         return $this->state(['is_active' => false]);
     }
 
+    /**
+     * A plain cost center (department, branch …): the column allows cost_center and project.
+     */
     public function department(): static
     {
-        return $this->state(['type' => 'department']);
+        return $this->state(['type' => 'cost_center']);
     }
 
     public function project(): static

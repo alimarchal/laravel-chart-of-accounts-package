@@ -2,6 +2,25 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.12.0] - 2026-10-14
+
+Renumber and merge accounts release.
+
+### Added
+- **Renumber accounts**, including accounts with journal entries: a group can take its sub-accounts along
+  (codes sharing its prefix, `5100 → 6100` gives `6101`, `6110` …; the new code keeps the group's length and
+  trailing zeros so sub-account codes keep their length). Codes are swapped safely within one
+  renumbering; codes in use and accounts named in `config('accounting.defaults')` are refused. Audited
+  (`ACCOUNT_RENUMBERED` with the old → new map).
+- **Merge a duplicate account into another** without rewriting the ledger: the balance moves with a posted
+  transfer entry (one pair of lines per cost center, through the normal posting rules — open period,
+  approvals, control accounts), draft lines, sub-accounts and bank accounts follow, and the source is
+  deactivated with `metadata.merged_into`. Same type, normal balance, currency and control type only; pending
+  approvals on the source must be decided first. Audited (`ACCOUNT_MERGED`).
+- Preview of both on a new page (React and Blade, ⇄ icon in the chart list) and in the API:
+  `GET /chart-of-accounts/{id}/renumber-preview`, `POST …/renumber`, `GET …/merge-preview`, `POST …/merge`.
+- Permission `chart-of-accounts.restructure` (super-admin).
+
 ## [2.11.0] - 2026-10-13
 
 Chart of accounts import and export release.

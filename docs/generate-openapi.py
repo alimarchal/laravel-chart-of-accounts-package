@@ -395,6 +395,30 @@ paths["/chart-of-accounts/import"] = {
 paths["/chart-of-accounts/import"]["post"]["requestBody"] = {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {
     "file": {"type": "string", "format": "binary"}, "mode": {"type": "string", "enum": ["upsert", "create"], "default": "upsert"}, "dry_run": {"type": "boolean", "default": False}}}}}}
 
+# Renumber and merge accounts.
+schemas["MergePlan"] = {"type": "object", "properties": {
+    "source": {"type": "object"}, "target": {"type": "object"},
+    "transfers": {"type": "array", "items": {"type": "object", "properties": {"cost_center": {"type": ["string", "null"]}, "amount": ref("Money"), "side": {"type": "string", "enum": ["debit", "credit"]}}}, "description": "The source's balance per cost center, moved by the transfer entry"},
+    "balance": ref("Money"), "draft_lines": {"type": "integer"},
+    "children": {"type": "array", "items": {"type": "string"}}, "bank_accounts": {"type": "array", "items": {"type": "string"}},
+    "problems": {"type": "array", "items": {"type": "string"}, "description": "Why the merge cannot run (empty when it can)"}}}
+CODE_MAP = data({"type": "object", "properties": {"map": {"type": "object", "additionalProperties": {"type": "string"}, "description": "old code → new code"}}})
+renumber_body = {"type": "object", "required": ["account_code"], "properties": {"account_code": {"type": "string", "maxLength": 30}, "with_children": {"type": "boolean", "default": True, "description": "Also renumber sub-accounts sharing the code prefix (5100 → 6100 turns 5101 into 6101)"}}}
+paths["/chart-of-accounts/{id}/renumber-preview"] = {"parameters": [ID],
+    "get": op("Chart of accounts", "Preview a renumbering", "chart-of-accounts.restructure", {"200": resp("Codes", CODE_MAP), **E404_422},
+              params=[{"name": "account_code", "in": "query", "required": True, "schema": {"type": "string"}}, {"name": "with_children", "in": "query", "schema": {"type": "boolean"}}], opid="renumber_preview")}
+paths["/chart-of-accounts/{id}/renumber"] = {"parameters": [ID],
+    "post": op("Chart of accounts", "Renumber an account (used accounts too)", "chart-of-accounts.restructure", {"200": resp("Renumbered", CODE_MAP), **E404_422}, body=renumber_body,
+               desc="Journal lines point to the account, not its code, so history follows. 422 for a code in use or an account referenced by `config('accounting.defaults')`. Audited (ACCOUNT_RENUMBERED).", opid="renumber_account")}
+paths["/chart-of-accounts/{id}/merge-preview"] = {"parameters": [ID],
+    "get": op("Chart of accounts", "Preview merging this account into another", "chart-of-accounts.restructure", {"200": resp("What the merge would do", data(ref("MergePlan"))), **E404_422},
+              params=[{"name": "target_account_id", "in": "query", "required": True, "schema": {"type": "integer"}}], opid="merge_preview")}
+paths["/chart-of-accounts/{id}/merge"] = {"parameters": [ID],
+    "post": op("Chart of accounts", "Merge this account into another", "chart-of-accounts.restructure",
+               {"200": resp("Merged", data({"type": "object", "properties": {"transfer_entry_id": {"type": ["integer", "null"]}, "voucher_number": {"type": ["string", "null"]}, "moved_draft_lines": {"type": "integer"}, "moved_children": {"type": "integer"}, "moved_bank_accounts": {"type": "integer"}}})), **E404_422},
+               body={"type": "object", "properties": {"target_account_id": {"type": "integer"}, "target_code": {"type": "string"}, "date": {"type": "string", "format": "date", "description": "Transfer date (default today, must be in an open period)"}, "description": {"type": "string"}}},
+               desc="Same type, normal balance, currency and control type only. The balance moves with a posted transfer entry (one pair of lines per cost center) through the normal posting rules — 422 when it needs approval. Draft lines, sub-accounts and bank accounts move to the target; the source is deactivated with `metadata.merged_into`. Audited (ACCOUNT_MERGED).", opid="merge_account")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -403,7 +427,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.11.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.12.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
