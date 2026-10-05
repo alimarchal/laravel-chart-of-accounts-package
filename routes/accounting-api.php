@@ -20,6 +20,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\TaxRateApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\UserApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\VoucherTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
@@ -89,6 +90,10 @@ Route::middleware($apiMiddleware)
         Route::get('chart-of-accounts/export/{format}', [ChartOfAccountImportController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('chart-of-accounts.export')->middleware('can:chart-of-accounts.view');
         Route::get('chart-of-accounts/import/template/{format}', [ChartOfAccountImportController::class, 'template'])->whereIn('format', ['csv', 'xlsx'])->name('chart-of-accounts.import.template')->middleware('can:chart-of-accounts.import');
         Route::post('chart-of-accounts/import', [ChartOfAccountImportController::class, 'api'])->name('chart-of-accounts.import')->middleware('can:chart-of-accounts.import');
+        Route::get('chart-of-accounts/{chartOfAccount}/renumber-preview', [ChartRestructureController::class, 'renumberPreview'])->name('chart-of-accounts.renumber-preview')->middleware('can:chart-of-accounts.restructure');
+        Route::post('chart-of-accounts/{chartOfAccount}/renumber', [ChartRestructureController::class, 'renumber'])->name('chart-of-accounts.renumber')->middleware('can:chart-of-accounts.restructure');
+        Route::get('chart-of-accounts/{chartOfAccount}/merge-preview', [ChartRestructureController::class, 'mergePreview'])->name('chart-of-accounts.merge-preview')->middleware('can:chart-of-accounts.restructure');
+        Route::post('chart-of-accounts/{chartOfAccount}/merge', [ChartRestructureController::class, 'merge'])->name('chart-of-accounts.merge')->middleware('can:chart-of-accounts.restructure');
         Route::get('chart-of-accounts/tree', [AccountingApiController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

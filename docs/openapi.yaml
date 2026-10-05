@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.11.0
+  version: 2.12.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -4966,6 +4966,221 @@ paths:
                   default: false
       parameters:
       - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/{id}/renumber-preview:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Chart of accounts
+      summary: Preview a renumbering
+      operationId: renumber_preview
+      description: 'Permission: `chart-of-accounts.restructure`.'
+      responses:
+        '200':
+          description: Codes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      map:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        description: old code → new code
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: account_code
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: with_children
+        in: query
+        schema:
+          type: boolean
+      - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/{id}/renumber:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Chart of accounts
+      summary: Renumber an account (used accounts too)
+      operationId: renumber_account
+      description: 'Journal lines point to the account, not its code, so history follows. 422 for a code in use or an account
+        referenced by `config(''accounting.defaults'')`. Audited (ACCOUNT_RENUMBERED).
+
+
+        Permission: `chart-of-accounts.restructure`.'
+      responses:
+        '200':
+          description: Renumbered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      map:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        description: old code → new code
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - account_code
+              properties:
+                account_code:
+                  type: string
+                  maxLength: 30
+                with_children:
+                  type: boolean
+                  default: true
+                  description: Also renumber sub-accounts sharing the code prefix (5100 → 6100 turns 5101 into 6101)
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/{id}/merge-preview:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Chart of accounts
+      summary: Preview merging this account into another
+      operationId: merge_preview
+      description: 'Permission: `chart-of-accounts.restructure`.'
+      responses:
+        '200':
+          description: What the merge would do
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MergePlan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: target_account_id
+        in: query
+        required: true
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/{id}/merge:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Chart of accounts
+      summary: Merge this account into another
+      operationId: merge_account
+      description: 'Same type, normal balance, currency and control type only. The balance moves with a posted transfer entry
+        (one pair of lines per cost center) through the normal posting rules — 422 when it needs approval. Draft lines, sub-accounts
+        and bank accounts move to the target; the source is deactivated with `metadata.merged_into`. Audited (ACCOUNT_MERGED).
+
+
+        Permission: `chart-of-accounts.restructure`.'
+      responses:
+        '200':
+          description: Merged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      transfer_entry_id:
+                        type:
+                        - integer
+                        - 'null'
+                      voucher_number:
+                        type:
+                        - string
+                        - 'null'
+                      moved_draft_lines:
+                        type: integer
+                      moved_children:
+                        type: integer
+                      moved_bank_accounts:
+                        type: integer
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_account_id:
+                  type: integer
+                target_code:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                  description: Transfer date (default today, must be in an open period)
+                description:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -6379,3 +6594,44 @@ components:
                 type: array
                 items:
                   type: string
+    MergePlan:
+      type: object
+      properties:
+        source:
+          type: object
+        target:
+          type: object
+        transfers:
+          type: array
+          items:
+            type: object
+            properties:
+              cost_center:
+                type:
+                - string
+                - 'null'
+              amount:
+                $ref: '#/components/schemas/Money'
+              side:
+                type: string
+                enum:
+                - debit
+                - credit
+          description: The source's balance per cost center, moved by the transfer entry
+        balance:
+          $ref: '#/components/schemas/Money'
+        draft_lines:
+          type: integer
+        children:
+          type: array
+          items:
+            type: string
+        bank_accounts:
+          type: array
+          items:
+            type: string
+        problems:
+          type: array
+          items:
+            type: string
+          description: Why the merge cannot run (empty when it can)

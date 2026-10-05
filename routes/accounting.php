@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AuditLogController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ControlAccountController;
@@ -101,6 +102,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::get('chart-of-accounts/import', [ChartOfAccountImportController::class, 'show'])->name('chart-of-accounts.import')->middleware('can:chart-of-accounts.import');
         Route::post('chart-of-accounts/import/preview', [ChartOfAccountImportController::class, 'preview'])->name('chart-of-accounts.import.preview')->middleware('can:chart-of-accounts.import');
         Route::post('chart-of-accounts/import', [ChartOfAccountImportController::class, 'store'])->name('chart-of-accounts.import.store')->middleware('can:chart-of-accounts.import');
+        Route::get('chart-of-accounts/{chartOfAccount}/restructure', [ChartRestructureController::class, 'show'])->name('chart-of-accounts.restructure')->middleware('can:chart-of-accounts.restructure');
+        Route::post('chart-of-accounts/{chartOfAccount}/renumber', [ChartRestructureController::class, 'renumber'])->name('chart-of-accounts.renumber')->middleware('can:chart-of-accounts.restructure');
+        Route::post('chart-of-accounts/{chartOfAccount}/merge', [ChartRestructureController::class, 'merge'])->name('chart-of-accounts.merge')->middleware('can:chart-of-accounts.restructure');
         Route::get('chart-of-accounts/tree', [ChartOfAccountController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

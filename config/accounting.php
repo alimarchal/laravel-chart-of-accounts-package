@@ -177,6 +177,7 @@ return [
         'chart-of-accounts.create',
         'chart-of-accounts.update',
         'chart-of-accounts.import',
+        'chart-of-accounts.restructure',
         'chart-of-accounts.delete',
         'cost-centers.view',
         'cost-centers.create',

@@ -1,5 +1,14 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Download, Edit, Filter, Plus, Trash2, Upload, X } from 'lucide-react';
+import {
+    Download,
+    Edit,
+    Filter,
+    GitMerge,
+    Plus,
+    Trash2,
+    Upload,
+    X,
+} from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { SearchableSelect } from '@/components/accounting/searchable-select';
@@ -420,6 +429,22 @@ export default function ChartOfAccountsIndex({
                                                         href={`/accounting/chart-of-accounts/${account.id}/edit`}
                                                     >
                                                         <Edit className="size-4" />
+                                                    </Link>
+                                                </Button>
+                                            ) : null}
+                                            {permissions[
+                                                'chart-of-accounts.restructure'
+                                            ] === true ? (
+                                                <Button
+                                                    asChild
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    title="Renumber or merge"
+                                                >
+                                                    <Link
+                                                        href={`/accounting/chart-of-accounts/${account.id}/restructure`}
+                                                    >
+                                                        <GitMerge className="size-4" />
                                                     </Link>
                                                 </Button>
                                             ) : null}
