@@ -163,7 +163,7 @@ it('catches up missed occurrences up to the limit, once each', function (): void
     $entry->forceFill(['next_run_date' => now()->addDay()->toDateString()])->save();
     ($this->recurring)()->runDue($entry->fresh(), now()->addDay());
     expect(JournalEntry::query()->count())->toBe($before + 1);
-    expect(fn () => RecurringEntryRun::query()->create(['recurring_entry_id' => $entry->id, 'run_date' => now()->addDay()->toDateString(), 'status' => 'draft']))->toThrow(QueryException::class);
+    expect(fn () => savepoint(fn () => RecurringEntryRun::query()->create(['recurring_entry_id' => $entry->id, 'run_date' => now()->addDay()->toDateString(), 'status' => 'draft'])))->toThrow(QueryException::class);
 });
 
 it('finishes at the end date or the run limit, and can pause and resume skipping missed ones', function (): void {
