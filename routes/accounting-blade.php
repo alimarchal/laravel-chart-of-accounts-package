@@ -35,6 +35,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureControlle
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\RecurringEntryController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportMappingController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
@@ -104,6 +105,16 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::get('reports/financial-statements', [FinancialStatementController::class, 'show'])->name('reports.financial-statements')->middleware('can:reports.financial-statements.view');
         Route::get('chart-templates', [ChartTemplateController::class, 'index'])->name('chart-templates.index')->middleware('can:chart-templates.apply');
         Route::post('chart-templates/{template}/apply', [ChartTemplateController::class, 'apply'])->name('chart-templates.apply')->middleware('can:chart-templates.apply');
+        Route::get('recurring-entries', [RecurringEntryController::class, 'index'])->name('recurring-entries.index')->middleware('can:recurring-entries.view');
+        Route::get('recurring-entries/create', [RecurringEntryController::class, 'create'])->name('recurring-entries.create')->middleware('can:recurring-entries.create');
+        Route::post('recurring-entries', [RecurringEntryController::class, 'store'])->name('recurring-entries.store')->middleware('can:recurring-entries.create');
+        Route::get('recurring-entries/{recurringEntry}', [RecurringEntryController::class, 'show'])->name('recurring-entries.show')->middleware('can:recurring-entries.view');
+        Route::get('recurring-entries/{recurringEntry}/edit', [RecurringEntryController::class, 'edit'])->name('recurring-entries.edit')->middleware('can:recurring-entries.update');
+        Route::match(['put', 'patch'], 'recurring-entries/{recurringEntry}', [RecurringEntryController::class, 'update'])->name('recurring-entries.update')->middleware('can:recurring-entries.update');
+        Route::delete('recurring-entries/{recurringEntry}', [RecurringEntryController::class, 'destroy'])->name('recurring-entries.destroy')->middleware('can:recurring-entries.delete');
+        Route::post('recurring-entries/{recurringEntry}/pause', [RecurringEntryController::class, 'pause'])->name('recurring-entries.pause')->middleware('can:recurring-entries.update');
+        Route::post('recurring-entries/{recurringEntry}/resume', [RecurringEntryController::class, 'resume'])->name('recurring-entries.resume')->middleware('can:recurring-entries.update');
+        Route::post('recurring-entries/{recurringEntry}/run', [RecurringEntryController::class, 'run'])->name('recurring-entries.run')->middleware('can:recurring-entries.run');
         Route::get('chart-of-accounts/tree', [ChartOfAccountBladeController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

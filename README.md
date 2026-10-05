@@ -25,6 +25,7 @@
 - **Voucher numbering** — JV, CPV, CRV, BPV, BRV (and your own types) with **gapless** numbers such as `JV-2026-00012`, issued at posting, restarting per fiscal year or month, locked in the database
 - **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
 - **Attachments** — scanned bills, receipts and contracts on every entry, stored privately, never removable once posted, duplicate-file warning, optional "evidence required above" amount
+- **Recurring entries** — rent, subscriptions, depreciation and accruals on a daily-to-yearly schedule: generated as drafts or posted automatically, with catch-up, pause/resume, run-now and a full history
 - **Industry chart templates** — trading, manufacturing, services, school, NGO and healthcare charts: start a company from one, or add an industry's accounts to the chart you have (existing accounts are never changed); add your own in config
 - **Chart import & export** — bring your existing chart in from Excel or CSV with a line-by-line preview (new / updated / errors) before anything is saved; export it, edit it, import it back
 - **Renumber & merge accounts** — give an account (and its sub-accounts) new codes, or fold a duplicate into another account with a posted transfer entry — the ledger history is never rewritten
@@ -36,7 +37,7 @@
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
 - **Events & signed webhooks** for every ledger action (posted, reversed, approved, period closed, …)
 - **Proven at scale** — 400,000 journal lines: trial balance 0.77 s, account statement 0.1 s, 46 concurrent postings/s with zero imbalance ([performance report](docs/performance.md))
-- **Tested** — 360+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+- **Tested** — 390+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
 
 ---
 
@@ -401,6 +402,34 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 - Live debit/credit totals update as you type
 
 ---
+
+## Recurring entries
+
+Dashboard → **Recurring Entries** (React and Blade) or `/api/v1/accounting/recurring-entries`. A template holds a balanced
+set of lines and a schedule; the scheduler turns it into journal entries.
+
+- **Schedule**: daily, weekly, monthly, quarterly or yearly, every *N* periods, from a first date, optionally until an
+  end date or after *N* entries. Monthly dates keep their day and are clamped in short months (the 31st becomes
+  the 28th in February, then returns to the 31st).
+- **Each entry is** created as a **draft**, or **posted automatically**. Posting runs as the template's creator: if they
+  may post, it posts; under maker-checker it is **submitted for approval**; a closed period, a control account or a
+  creator without posting rights leaves it a **draft with the reason** on the run. The schedule moves on either way.
+- **Runs are logged** (one per scheduled date, enforced by a unique index, so two schedulers cannot duplicate an
+  occurrence). An entry that cannot even be created stops the template at that date and is retried next time.
+- **Catch-up**: if the scheduler was off, the missed occurrences are generated (dated on their scheduled days), up to
+  `ACCOUNTING_RECURRING_MAX_CATCH_UP` (12) per run. A paused template skips what it missed when resumed (or generates it).
+- **Generate now** makes the next occurrence immediately; **pause / resume**; templates that have generated entries are
+  paused, not deleted. Amounts are in the base currency.
+
+```bash
+php artisan accounting:run-recurring              # generate what is due (every company)
+php artisan accounting:run-recurring --dry-run    # list what is due
+php artisan accounting:run-recurring --date=2026-12-31 --company=SUB
+```
+
+The package schedules the command daily at `ACCOUNTING_RECURRING_TIME` (02:00) — your app needs the Laravel scheduler
+(`* * * * * php artisan schedule:run`); `ACCOUNTING_RECURRING_SCHEDULE=false` leaves scheduling to you. Permissions
+`recurring-entries.view / create / update / delete / run` (accountant: all; approver, auditor, viewer: view).
 
 ## Industry chart templates
 
@@ -880,6 +909,9 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET | `/reports/consolidated/{report}` | Group trial balance, balance sheet, income statement | `reports.consolidated.view` |
 | GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
 | GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
+| GET/POST | `/recurring-entries` | Templates / create one (balanced lines + schedule) | `recurring-entries.view` / `.create` |
+| GET/PUT/DELETE | `/recurring-entries/{id}` | Template with runs and upcoming dates / change / delete (only if it has not run) | `recurring-entries.*` |
+| POST | `/recurring-entries/{id}/pause` · `/resume` · `/run` | Pause / resume (`skip_missed`) / generate the next entry now | `recurring-entries.update` / `.run` |
 | GET | `/chart-templates` · `/chart-templates/{key}` | Industry templates / what one would add | `chart-templates.apply` |
 | POST | `/chart-templates/{key}/apply` | Add a template's missing accounts (`dry_run` to preview) | `chart-templates.apply` |
 | GET | `/chart-of-accounts/export/{csv\|xlsx\|pdf}` | Export the chart (re-importable layout) | `chart-of-accounts.view` |
@@ -984,6 +1016,7 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 | `accounting:open-period` | Reopen a closed accounting period |
 | `accounting:roles` | Print the role × permission matrix; fails if a role can both create and approve entries |
 | `accounting:prune-exports` | Delete background exports older than `accounting.exports.keep_days` with their files |
+| `accounting:run-recurring` | Generate the recurring entries that are due (`--date=`, `--company=`, `--dry-run`); scheduled daily |
 | `accounting:chart-templates` | List the industry chart templates, preview (`--dry-run`) or add one to a company (`--company=`) |
 | `accounting:create-company` | Create a company with its own chart, fiscal year, cost centers and tax codes (`--fiscal-start`, `--user`, `--empty`, `--template=`) |
 
@@ -1077,6 +1110,11 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `chart-of-accounts.import` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.restructure` | ✔ |  |  |  |  |  |
 | `chart-templates.apply` | ✔ |  |  |  |  |  |
+| `recurring-entries.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `recurring-entries.create` | ✔ |  | ✔ |  |  |  |
+| `recurring-entries.update` | ✔ |  | ✔ |  |  |  |
+| `recurring-entries.delete` | ✔ |  | ✔ |  |  |  |
+| `recurring-entries.run` | ✔ |  | ✔ |  |  |  |
 | `chart-of-accounts.delete` | ✔ |  |  |  |  |  |
 | `cost-centers.view` | ✔ |  | ✔ |  | ✔ |  |
 | `cost-centers.create` | ✔ |  | ✔ |  |  |  |

@@ -19,6 +19,12 @@
                             <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></x-slot>
                         </x-accounting::settings-row>
                         @endcan
+                        @can('recurring-entries.view')
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.recurring-entries.index') }}" label="Recurring Entries" description="Rent, subscriptions, accruals on a schedule" icon-bg="bg-teal-600">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9A8 8 0 005.6 15"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        @endcan
                         @can('chart-of-accounts.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row href="{{ route('accounting.chart-of-accounts.index') }}" label="Chart of Accounts" description="Hierarchical account tree" :count="$summary['accounts']" icon-bg="bg-indigo-500">

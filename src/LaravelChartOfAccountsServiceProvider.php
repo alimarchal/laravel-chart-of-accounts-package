@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodComma
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingPruneExportsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRebuildSnapshotsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRolesCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRunRecurringCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSyncDatabaseObjectsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingUpdateCommand;
@@ -25,6 +26,7 @@ use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -78,6 +80,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingVerifyCommand::class,
                 AccountingPruneExportsCommand::class,
                 AccountingChartTemplatesCommand::class,
+                AccountingRunRecurringCommand::class,
                 AccountingCreateCompanyCommand::class,
                 AccountingHealthCheckCommand::class,
                 AccountingRebuildSnapshotsCommand::class,
@@ -86,6 +89,13 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingOpenPeriodCommand::class,
                 AccountingRolesCommand::class,
             ]);
+
+            // Daily, once the app's own scheduler runs (php artisan schedule:run): generate the due recurring entries.
+            $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+                if (config('accounting.recurring.schedule', true)) {
+                    $schedule->command('accounting:run-recurring')->dailyAt((string) config('accounting.recurring.time', '02:00'))->withoutOverlapping()->onOneServer();
+                }
+            });
         }
 
         $driver = config('accounting.ui_driver', 'inertia');
