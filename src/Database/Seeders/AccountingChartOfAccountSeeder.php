@@ -44,15 +44,15 @@ class AccountingChartOfAccountSeeder extends Seeder
     }
 
     /**
-     * The seeded chart for the configured preset ('general' or 'school').
+     * The seeded chart for a preset ('general' or 'school'; default: the configured one).
      *
      * @return array<int, array<string, mixed>>
      */
-    public function accounts(): array
+    public function accounts(?string $preset = null): array
     {
         $accounts = $this->schoolChart();
 
-        if (config('accounting.chart_preset', 'general') === 'school') {
+        if (($preset ?? config('accounting.chart_preset', 'general')) === 'school') {
             return $accounts;
         }
 

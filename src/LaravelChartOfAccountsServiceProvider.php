@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts;
 
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingChartTemplatesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCloseFiscalYearCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingClosePeriodCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCreateCompanyCommand;
@@ -76,6 +77,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingSyncDatabaseObjectsCommand::class,
                 AccountingVerifyCommand::class,
                 AccountingPruneExportsCommand::class,
+                AccountingChartTemplatesCommand::class,
                 AccountingCreateCompanyCommand::class,
                 AccountingHealthCheckCommand::class,
                 AccountingRebuildSnapshotsCommand::class,

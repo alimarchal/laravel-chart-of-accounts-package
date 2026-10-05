@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.13.0
+  version: 2.14.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -5540,6 +5540,151 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Company'
+  /chart-templates:
+    get:
+      tags:
+      - Chart of accounts
+      summary: Industry chart templates
+      operationId: list_chart_templates
+      description: 'Permission: `chart-templates.apply`.'
+      responses:
+        '200':
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChartTemplate'
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /chart-templates/{template}:
+    parameters:
+    - name: template
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - general
+        - trading
+        - manufacturing
+        - services
+        - school
+        - ngo
+        - healthcare
+        description: Or a key from `accounting.chart_templates`
+    get:
+      tags:
+      - Chart of accounts
+      summary: What a template would add to this company
+      operationId: show_chart_template
+      description: 'Permission: `chart-templates.apply`.'
+      responses:
+        '200':
+          description: Preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChartTemplatePreview'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /chart-templates/{template}/apply:
+    parameters:
+    - name: template
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - general
+        - trading
+        - manufacturing
+        - services
+        - school
+        - ngo
+        - healthcare
+        description: Or a key from `accounting.chart_templates`
+    post:
+      tags:
+      - Chart of accounts
+      summary: Add a template's accounts to this company
+      operationId: apply_chart_template
+      description: 'Adds the accounts the company lacks, parents first, mapped to statement lines; accounts that exist are
+        never changed, so it is safe on a chart in use and can be repeated. Audited (CHART_TEMPLATE_APPLIED).
+
+
+        Permission: `chart-templates.apply`.'
+      responses:
+        '200':
+          description: Nothing to add, or a preview (dry_run)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '201':
+          description: Accounts added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      created:
+                        type: array
+                        items:
+                          type: string
+                      skipped:
+                        type: integer
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dry_run:
+                  type: boolean
+                  default: false
+      parameters:
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -7083,3 +7228,81 @@ components:
           - 'null'
         inherited:
           type: boolean
+    ChartTemplate:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        base:
+          type: string
+          enum:
+          - general
+          - school
+        accounts:
+          type: integer
+        extras:
+          type: integer
+          description: Accounts specific to the industry (on top of the base chart)
+    ChartTemplatePreview:
+      type: object
+      properties:
+        template:
+          type: object
+          properties:
+            key:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+        summary:
+          type: object
+          properties:
+            new:
+              type: integer
+            exists:
+              type: integer
+            different:
+              type: integer
+            blocked:
+              type: integer
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              account_code:
+                type: string
+              account_name:
+                type: string
+              parent_code:
+                type:
+                - string
+                - 'null'
+              type:
+                type: string
+              is_group:
+                type: boolean
+              extra:
+                type: boolean
+              status:
+                type: string
+                enum:
+                - new
+                - exists
+                - different
+                - blocked
+                description: 'different: the code exists under another name (left as it is); blocked: its parent is missing'
+              existing_name:
+                type:
+                - string
+                - 'null'
+              line:
+                type:
+                - string
+                - 'null'
+                description: Statement line code it is mapped to

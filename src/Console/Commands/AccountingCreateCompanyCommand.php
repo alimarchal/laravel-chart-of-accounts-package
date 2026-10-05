@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
 use Alimarchal\LaravelChartOfAccounts\Services\CompanyService;
+use Alimarchal\LaravelChartOfAccounts\Support\ChartTemplates;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 
@@ -12,6 +13,7 @@ class AccountingCreateCompanyCommand extends Command
         {code : Short unique code, e.g. SUB}
         {name : Company name}
         {--fiscal-start=1 : Month the fiscal year starts in (1-12)}
+        {--template= : Industry chart template (see accounting:chart-templates), instead of the configured preset}
         {--empty : Do not seed the chart of accounts, period, cost centers and tax codes}
         {--user=* : Email of a user to give access to (repeatable)}';
 
@@ -35,7 +37,15 @@ class AccountingCreateCompanyCommand extends Command
             return self::FAILURE;
         }
 
-        $company = $companies->create($validator->validated(), ! $this->option('empty'));
+        $template = $this->option('template') ?: null;
+
+        if ($template !== null && ChartTemplates::find((string) $template) === null) {
+            $this->error("Unknown chart template \"{$template}\": run accounting:chart-templates to list them.");
+
+            return self::FAILURE;
+        }
+
+        $company = $companies->create($validator->validated(), ! $this->option('empty'), null, $template);
         $this->info("Company {$company->name} ({$company->code}) created.");
 
         $userModel = config('auth.providers.users.model');

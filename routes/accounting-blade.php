@@ -32,6 +32,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\UserBladeController
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\VoucherTypeBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
@@ -101,6 +102,8 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::put('report-lines/{reportLine}', [ReportMappingController::class, 'updateLine'])->name('report-lines.update')->middleware('can:report-mapping.manage');
         Route::delete('report-lines/{reportLine}', [ReportMappingController::class, 'destroyLine'])->name('report-lines.destroy')->middleware('can:report-mapping.manage');
         Route::get('reports/financial-statements', [FinancialStatementController::class, 'show'])->name('reports.financial-statements')->middleware('can:reports.financial-statements.view');
+        Route::get('chart-templates', [ChartTemplateController::class, 'index'])->name('chart-templates.index')->middleware('can:chart-templates.apply');
+        Route::post('chart-templates/{template}/apply', [ChartTemplateController::class, 'apply'])->name('chart-templates.apply')->middleware('can:chart-templates.apply');
         Route::get('chart-of-accounts/tree', [ChartOfAccountBladeController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

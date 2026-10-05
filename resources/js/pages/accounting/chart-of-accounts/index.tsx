@@ -4,6 +4,7 @@ import {
     Edit,
     Filter,
     GitMerge,
+    LayoutTemplate,
     Plus,
     Trash2,
     Upload,
@@ -176,6 +177,14 @@ export default function ChartOfAccountsIndex({
                                 <span>CSV</span>
                             </a>
                         </Button>
+                        {permissions['chart-templates.apply'] === true ? (
+                            <Button asChild variant="outline" className="gap-2">
+                                <Link href="/accounting/chart-templates">
+                                    <LayoutTemplate className="size-4" />
+                                    <span>Templates</span>
+                                </Link>
+                            </Button>
+                        ) : null}
                         {permissions['chart-of-accounts.import'] === true ? (
                             <Button asChild variant="outline" className="gap-2">
                                 <Link href="/accounting/chart-of-accounts/import">
