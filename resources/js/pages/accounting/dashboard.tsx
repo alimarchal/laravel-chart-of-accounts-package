@@ -168,6 +168,15 @@ export default function AccountingDashboard({ summary }: Props) {
                   },
               ]
             : []),
+        ...(permissions['bank-statements.view']
+            ? [
+                  {
+                      title: 'Bank Statements',
+                      href: '/accounting/bank-statements',
+                      icon: FileText,
+                  },
+              ]
+            : []),
         { title: 'My Exports', href: '/accounting/exports', icon: FileText },
         ...(permissions['user.view']
             ? [{ title: 'Users', href: '/accounting/users', icon: Users }]
