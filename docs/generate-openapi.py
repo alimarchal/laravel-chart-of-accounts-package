@@ -468,6 +468,34 @@ paths["/chart-templates/{template}/apply"] = {"parameters": [TEMPLATE_KEY], "pos
     body={"type": "object", "properties": {"dry_run": {"type": "boolean", "default": False}}},
     desc="Adds the accounts the company lacks, parents first, mapped to statement lines; accounts that exist are never changed, so it is safe on a chart in use and can be repeated. Audited (CHART_TEMPLATE_APPLIED).", opid="apply_chart_template")}
 
+# Recurring entries.
+FREQ = ["daily", "weekly", "monthly", "quarterly", "yearly"]
+schemas["RecurringEntry"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "name": {"type": "string"}, "status": {"type": "string", "enum": ["active", "paused", "finished"]},
+    "frequency": {"type": "string", "enum": FREQ}, "interval": {"type": "integer", "description": "Every N days / weeks / months …"}, "day_of_month": {"type": ["integer", "null"], "description": "Monthly, quarterly and yearly: the day each entry is dated (31 = month end; short months are clamped)"},
+    "start_date": {"type": "string", "format": "date"}, "end_date": {"type": ["string", "null"], "format": "date"}, "next_run_date": {"type": ["string", "null"], "format": "date", "description": "null once finished"},
+    "max_runs": {"type": ["integer", "null"]}, "runs_count": {"type": "integer"}, "mode": {"type": "string", "enum": ["draft", "post"]}, "is_active": {"type": "boolean"},
+    "voucher_type_id": {"type": ["integer", "null"]}, "reference": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]}, "last_run_at": {"type": ["string", "null"], "format": "date-time"},
+    "amount": ref("Money"), "lines": {"type": "array", "items": {"type": "object", "properties": {"chart_of_account_id": {"type": "integer"}, "account": {"type": ["string", "null"]}, "cost_center_id": {"type": ["integer", "null"]}, "debit": ref("Money"), "credit": ref("Money"), "description": {"type": ["string", "null"]}}}, "description": "In detail responses"}}}
+rec_props = {"name": {"type": "string"}, "frequency": {"type": "string", "enum": FREQ}, "interval": {"type": "integer", "minimum": 1}, "day_of_month": {"type": "integer", "minimum": 1, "maximum": 31},
+    "start_date": {"type": "string", "format": "date", "description": "Not in the past for a new template; locked once it has generated entries"}, "end_date": {"type": "string", "format": "date"}, "max_runs": {"type": "integer"},
+    "mode": {"type": "string", "enum": ["draft", "post"], "description": "post: posted as the template's creator when they may post; otherwise (closed period, approval needed …) it stays a draft or goes for approval"},
+    "voucher_type_id": {"type": "integer"}, "reference": {"type": "string"}, "description": {"type": "string"},
+    "lines": {"type": "array", "minItems": 2, "items": {"type": "object", "required": ["chart_of_account_id"], "properties": {"chart_of_account_id": {"type": "integer"}, "cost_center_id": {"type": "integer"}, "debit": {"type": "number"}, "credit": {"type": "number"}, "description": {"type": "string"}}}}}
+paths["/recurring-entries"] = {
+    "get": op("Recurring entries", "Recurring entry templates", "recurring-entries.view", {"200": resp("Templates, next run first", data({"type": "array", "items": ref("RecurringEntry")}))}, opid="list_recurring_entries"),
+    "post": op("Recurring entries", "Create a template", "recurring-entries.create", {"201": resp("Created", data(ref("RecurringEntry"))), **E422}, body={"type": "object", "required": ["name", "frequency", "start_date", "mode", "lines"], "properties": rec_props}, desc="The lines must balance (debits = credits, one side per line, active posting accounts). Entries are generated daily by `accounting:run-recurring`.", opid="create_recurring_entry")}
+paths["/recurring-entries/{id}"] = {"parameters": [ID],
+    "get": op("Recurring entries", "A template with its generated entries and upcoming dates", "recurring-entries.view", {"200": resp("Template", data({"type": "object", "properties": {"entry": ref("RecurringEntry"), "runs": {"type": "array", "items": {"type": "object"}}, "upcoming": {"type": "array", "items": {"type": "string", "format": "date"}}}})), **E404}, opid="show_recurring_entry"),
+    "put": op("Recurring entries", "Change a template (PATCH also accepted)", "recurring-entries.update", {"200": resp("Updated", data(ref("RecurringEntry"))), **E404_422}, body={"type": "object", "required": ["name", "frequency", "start_date", "mode", "lines"], "properties": rec_props}, opid="update_recurring_entry"),
+    "delete": op("Recurring entries", "Delete a template that has not generated anything", "recurring-entries.delete", {"204": resp("Deleted"), **E404_422}, desc="422 once it has generated entries: pause it instead.", opid="delete_recurring_entry")}
+paths["/recurring-entries/{id}/pause"] = {"parameters": [ID], "post": op("Recurring entries", "Pause a template", "recurring-entries.update", {"200": resp("Paused", data(ref("RecurringEntry"))), **E404}, opid="pause_recurring_entry")}
+paths["/recurring-entries/{id}/resume"] = {"parameters": [ID], "post": op("Recurring entries", "Resume a paused template", "recurring-entries.update", {"200": resp("Resumed", data(ref("RecurringEntry"))), **E404_422},
+    body={"type": "object", "properties": {"skip_missed": {"type": "boolean", "default": True, "description": "Skip the occurrences missed while paused (default) or generate them"}}}, opid="resume_recurring_entry")}
+paths["/recurring-entries/{id}/run"] = {"parameters": [ID], "post": op("Recurring entries", "Generate the next entry now", "recurring-entries.run",
+    {"201": resp("Generated", data({"type": "object", "properties": {"run": {"type": "object", "properties": {"id": {"type": "integer"}, "run_date": {"type": "string", "format": "date"}, "status": {"type": "string", "enum": ["posted", "submitted", "draft", "failed"]}, "journal_entry_id": {"type": ["integer", "null"]}, "error": {"type": ["string", "null"]}}}, "entry": ref("RecurringEntry")}})), **E404_422},
+    desc="Generates the next scheduled occurrence immediately, even if it is not due yet (dated on its scheduled day). 422 when the entry could not be created.", opid="run_recurring_entry")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -476,7 +504,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.14.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.15.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
@@ -501,6 +529,7 @@ spec = {
    ("Bank accounts", "Bank accounts linked to GL accounts."),
    ("Reconciliations", "Bank statement reconciliations."),
    ("Tax", "Tax codes and dated tax rates."),
+   ("Recurring entries", "Journal entries that repeat on a schedule: templates, runs, pause and resume."),
    ("Voucher types", "Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series."),
    ("Companies", "Companies (multi-company), access and consolidation."),
    ("Users & roles", "Users, roles and permissions — privilege-checked and audited."),

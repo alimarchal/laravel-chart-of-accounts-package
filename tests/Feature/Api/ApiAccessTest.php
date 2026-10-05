@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
+use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportExport;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportLine;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
@@ -87,6 +88,7 @@ function concreteUri(Route $route): string
             'users' => User::class,
             'roles' => Role::class,
             'exports' => ReportExport::class,
+            'recurring-entries' => RecurringEntry::class,
             'report-lines' => ReportLine::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
@@ -124,6 +126,7 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
     BankAccount::factory()->create();
     Reconciliation::factory()->create();
+    RecurringEntry::query()->create(['name' => 'Rent', 'frequency' => 'monthly', 'interval' => 1, 'start_date' => now()->toDateString(), 'next_run_date' => now()->toDateString(), 'mode' => 'draft']);
 
     $viewer = User::factory()->create();
     $viewer->assignRole('viewer');

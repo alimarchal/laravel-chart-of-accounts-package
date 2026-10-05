@@ -2,6 +2,25 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.15.0] - 2026-10-17
+
+Recurring entries release.
+
+### Added
+- **Recurring entries**: journal entry templates (balanced lines, voucher type, narration) that repeat daily, weekly,
+  monthly, quarterly or yearly, every N periods, until an end date or after N entries. Month-end dates are clamped in
+  short months and return to the 31st.
+- **Generation** (`accounting:run-recurring`, scheduled daily at `ACCOUNTING_RECURRING_TIME` unless
+  `ACCOUNTING_RECURRING_SCHEDULE=false`): a draft, or posted as the template's creator; under maker-checker it is
+  submitted for approval; a closed period, a control account or a creator who may not post leave a draft with the
+  reason. One run per scheduled date (unique), retries of a failed creation, catch-up of missed occurrences up to
+  `ACCOUNTING_RECURRING_MAX_CATCH_UP`, pause / resume (skipping or generating what was missed), generate now.
+- Screens (React and Blade): list, form with a live balance check, details with upcoming dates and the history of
+  generated entries; API `/recurring-entries` (+ `/pause`, `/resume`, `/run`).
+- Permissions `recurring-entries.view` (accountant, approver, auditor, viewer) and `.create / .update / .delete / .run`
+  (accountant); audited (`RECURRING_ENTRY_*`).
+- Works with applications that use immutable dates (`Date::use(CarbonImmutable::class)`, the starter kits' default).
+
 ## [2.14.0] - 2026-10-16
 
 Industry chart templates release.

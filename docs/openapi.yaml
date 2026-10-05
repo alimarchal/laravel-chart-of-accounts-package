@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.14.0
+  version: 2.15.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -54,6 +54,8 @@ tags:
   description: Bank statement reconciliations.
 - name: Tax
   description: Tax codes and dated tax rates.
+- name: Recurring entries
+  description: 'Journal entries that repeat on a schedule: templates, runs, pause and resume.'
 - name: Voucher types
   description: Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series.
 - name: Companies
@@ -5685,6 +5687,436 @@ paths:
                   default: false
       parameters:
       - $ref: '#/components/parameters/Company'
+  /recurring-entries:
+    get:
+      tags:
+      - Recurring entries
+      summary: Recurring entry templates
+      operationId: list_recurring_entries
+      description: 'Permission: `recurring-entries.view`.'
+      responses:
+        '200':
+          description: Templates, next run first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RecurringEntry'
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Recurring entries
+      summary: Create a template
+      operationId: create_recurring_entry
+      description: 'The lines must balance (debits = credits, one side per line, active posting accounts). Entries are generated
+        daily by `accounting:run-recurring`.
+
+
+        Permission: `recurring-entries.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RecurringEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              - frequency
+              - start_date
+              - mode
+              - lines
+              properties:
+                name:
+                  type: string
+                frequency:
+                  type: string
+                  enum:
+                  - daily
+                  - weekly
+                  - monthly
+                  - quarterly
+                  - yearly
+                interval:
+                  type: integer
+                  minimum: 1
+                day_of_month:
+                  type: integer
+                  minimum: 1
+                  maximum: 31
+                start_date:
+                  type: string
+                  format: date
+                  description: Not in the past for a new template; locked once it has generated entries
+                end_date:
+                  type: string
+                  format: date
+                max_runs:
+                  type: integer
+                mode:
+                  type: string
+                  enum:
+                  - draft
+                  - post
+                  description: 'post: posted as the template''s creator when they may post; otherwise (closed period, approval
+                    needed …) it stays a draft or goes for approval'
+                voucher_type_id:
+                  type: integer
+                reference:
+                  type: string
+                description:
+                  type: string
+                lines:
+                  type: array
+                  minItems: 2
+                  items:
+                    type: object
+                    required:
+                    - chart_of_account_id
+                    properties:
+                      chart_of_account_id:
+                        type: integer
+                      cost_center_id:
+                        type: integer
+                      debit:
+                        type: number
+                      credit:
+                        type: number
+                      description:
+                        type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /recurring-entries/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Recurring entries
+      summary: A template with its generated entries and upcoming dates
+      operationId: show_recurring_entry
+      description: 'Permission: `recurring-entries.view`.'
+      responses:
+        '200':
+          description: Template
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      entry:
+                        $ref: '#/components/schemas/RecurringEntry'
+                      runs:
+                        type: array
+                        items:
+                          type: object
+                      upcoming:
+                        type: array
+                        items:
+                          type: string
+                          format: date
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Recurring entries
+      summary: Change a template (PATCH also accepted)
+      operationId: update_recurring_entry
+      description: 'Permission: `recurring-entries.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RecurringEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              - frequency
+              - start_date
+              - mode
+              - lines
+              properties:
+                name:
+                  type: string
+                frequency:
+                  type: string
+                  enum:
+                  - daily
+                  - weekly
+                  - monthly
+                  - quarterly
+                  - yearly
+                interval:
+                  type: integer
+                  minimum: 1
+                day_of_month:
+                  type: integer
+                  minimum: 1
+                  maximum: 31
+                start_date:
+                  type: string
+                  format: date
+                  description: Not in the past for a new template; locked once it has generated entries
+                end_date:
+                  type: string
+                  format: date
+                max_runs:
+                  type: integer
+                mode:
+                  type: string
+                  enum:
+                  - draft
+                  - post
+                  description: 'post: posted as the template''s creator when they may post; otherwise (closed period, approval
+                    needed …) it stays a draft or goes for approval'
+                voucher_type_id:
+                  type: integer
+                reference:
+                  type: string
+                description:
+                  type: string
+                lines:
+                  type: array
+                  minItems: 2
+                  items:
+                    type: object
+                    required:
+                    - chart_of_account_id
+                    properties:
+                      chart_of_account_id:
+                        type: integer
+                      cost_center_id:
+                        type: integer
+                      debit:
+                        type: number
+                      credit:
+                        type: number
+                      description:
+                        type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Recurring entries
+      summary: Delete a template that has not generated anything
+      operationId: delete_recurring_entry
+      description: '422 once it has generated entries: pause it instead.
+
+
+        Permission: `recurring-entries.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /recurring-entries/{id}/pause:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Recurring entries
+      summary: Pause a template
+      operationId: pause_recurring_entry
+      description: 'Permission: `recurring-entries.update`.'
+      responses:
+        '200':
+          description: Paused
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RecurringEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /recurring-entries/{id}/resume:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Recurring entries
+      summary: Resume a paused template
+      operationId: resume_recurring_entry
+      description: 'Permission: `recurring-entries.update`.'
+      responses:
+        '200':
+          description: Resumed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RecurringEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skip_missed:
+                  type: boolean
+                  default: true
+                  description: Skip the occurrences missed while paused (default) or generate them
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /recurring-entries/{id}/run:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Recurring entries
+      summary: Generate the next entry now
+      operationId: run_recurring_entry
+      description: 'Generates the next scheduled occurrence immediately, even if it is not due yet (dated on its scheduled
+        day). 422 when the entry could not be created.
+
+
+        Permission: `recurring-entries.run`.'
+      responses:
+        '201':
+          description: Generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      run:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          run_date:
+                            type: string
+                            format: date
+                          status:
+                            type: string
+                            enum:
+                            - posted
+                            - submitted
+                            - draft
+                            - failed
+                          journal_entry_id:
+                            type:
+                            - integer
+                            - 'null'
+                          error:
+                            type:
+                            - string
+                            - 'null'
+                      entry:
+                        $ref: '#/components/schemas/RecurringEntry'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -7306,3 +7738,102 @@ components:
                 - string
                 - 'null'
                 description: Statement line code it is mapped to
+    RecurringEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+          - active
+          - paused
+          - finished
+        frequency:
+          type: string
+          enum:
+          - daily
+          - weekly
+          - monthly
+          - quarterly
+          - yearly
+        interval:
+          type: integer
+          description: Every N days / weeks / months …
+        day_of_month:
+          type:
+          - integer
+          - 'null'
+          description: 'Monthly, quarterly and yearly: the day each entry is dated (31 = month end; short months are clamped)'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        next_run_date:
+          type:
+          - string
+          - 'null'
+          format: date
+          description: null once finished
+        max_runs:
+          type:
+          - integer
+          - 'null'
+        runs_count:
+          type: integer
+        mode:
+          type: string
+          enum:
+          - draft
+          - post
+        is_active:
+          type: boolean
+        voucher_type_id:
+          type:
+          - integer
+          - 'null'
+        reference:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        last_run_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        amount:
+          $ref: '#/components/schemas/Money'
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              chart_of_account_id:
+                type: integer
+              account:
+                type:
+                - string
+                - 'null'
+              cost_center_id:
+                type:
+                - integer
+                - 'null'
+              debit:
+                $ref: '#/components/schemas/Money'
+              credit:
+                $ref: '#/components/schemas/Money'
+              description:
+                type:
+                - string
+                - 'null'
+          description: In detail responses
