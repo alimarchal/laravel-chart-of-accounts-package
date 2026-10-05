@@ -58,7 +58,7 @@ final class BaseAmounts
     /**
      * cents × rate, rounded half away from zero, without float error on the rate's decimals.
      */
-    private static function convert(int $cents, string $rate): int
+    public static function convert(int $cents, string $rate): int
     {
         if ($cents === 0) {
             return 0;

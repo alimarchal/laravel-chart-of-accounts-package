@@ -82,7 +82,7 @@ class ChartOfAccountImportService
                 'parent_code' => $parent instanceof ChartOfAccount ? $parent->account_code : '',
                 'account_type' => (string) $account->accountType->code,
                 'normal_balance' => (string) $account->normal_balance,
-                'currency' => $currency instanceof Currency ? $currency->code : '',
+                'currency' => (string) ($currency->code ?? ''),
                 'is_group' => $account->is_group ? 'yes' : 'no',
                 'is_active' => $account->is_active ? 'yes' : 'no',
                 'control_type' => (string) ($account->getAttributes()['control_type'] ?? ''),

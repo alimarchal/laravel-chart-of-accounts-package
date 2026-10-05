@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
+use Alimarchal\LaravelChartOfAccounts\Services\FxRevaluationService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherNumberService;
 use Alimarchal\LaravelChartOfAccounts\Support\BaseAmounts;
@@ -164,7 +165,8 @@ class PostJournalEntryAction
 
             $accountCurrency = $line->account->currency_id;
 
-            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id) {
+            // A revaluation adjusts a foreign-currency account's carrying value with a base-currency entry.
+            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id && $entry->origin_module !== FxRevaluationService::ORIGIN) {
                 throw new AccountingException(
                     "Account {$line->account->account_code} is denominated in a different currency than this journal entry."
                 );

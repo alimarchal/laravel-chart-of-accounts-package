@@ -113,6 +113,12 @@ return [
         'max_catch_up' => (int) env('ACCOUNTING_RECURRING_MAX_CATCH_UP', 12),
     ],
 
+    // Foreign-currency revaluation: gain_loss_account is the account code offered by default for the unrealised
+    // exchange gain/loss (an income or expense account).
+    'fx' => [
+        'gain_loss_account' => env('ACCOUNTING_FX_GAIN_LOSS_ACCOUNT'),
+    ],
+
     // Chart of accounts import (CSV / XLSX): the largest file accepted and the most rows it may hold.
     'chart_import' => [
         'max_size_kb' => (int) env('ACCOUNTING_CHART_IMPORT_MAX_KB', 5120),
@@ -197,6 +203,9 @@ return [
         'recurring-entries.update',
         'recurring-entries.delete',
         'recurring-entries.run',
+        'fx-revaluation.view',
+        'fx-revaluation.run',
+        'fx-revaluation.rates',
         'chart-of-accounts.delete',
         'cost-centers.view',
         'cost-centers.create',
@@ -299,6 +308,9 @@ return [
             'recurring-entries.update',
             'recurring-entries.delete',
             'recurring-entries.run',
+            'fx-revaluation.view',
+            'fx-revaluation.run',
+            'fx-revaluation.rates',
             'attachments.create',
             'attachments.delete',
             'bank-accounts.view',
@@ -345,6 +357,7 @@ return [
             'journal-entries.view',
             'attachments.view',
             'recurring-entries.view',
+            'fx-revaluation.view',
             'journal-entries.approve',
             'account-balance-snapshots.view',
             'reports.general-ledger.view',
@@ -370,6 +383,7 @@ return [
             'journal-entries.view',
             'attachments.view',
             'recurring-entries.view',
+            'fx-revaluation.view',
             'bank-accounts.view',
             'reconciliations.view',
             'tax-codes.view',
@@ -397,6 +411,7 @@ return [
             'journal-entries.view',
             'attachments.view',
             'recurring-entries.view',
+            'fx-revaluation.view',
             'tax-codes.view',
             'tax-rates.view',
             'voucher-types.view',
