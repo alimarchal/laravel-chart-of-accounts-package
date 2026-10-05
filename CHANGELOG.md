@@ -2,6 +2,25 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.16.0] - 2026-10-18
+
+Currency revaluation release.
+
+### Added
+- **Foreign-currency revaluation**: restates asset and liability accounts denominated in a foreign currency to
+  balance × closing rate at a date, with one adjusting entry in the base currency and the net unrealised gain or loss
+  booked to a chosen income/expense account. Preview before posting, per-account detail kept, repeatable (only the
+  difference is adjusted), optional auto-reverse into the next period, reverse later, audited (`FX_REVALUATION_*`).
+- **Dated exchange rates** (`accounting_exchange_rates`): the revaluation uses the latest rate on or before its date,
+  else the currency's own rate.
+- Screens (React and Blade): revaluation with preview, rate history, history of runs, details; API
+  `/fx-revaluation` (+ `/preview`, `/{id}`, `/{id}/reverse`, `/rates`); `accounting.fx.gain_loss_account` /
+  `ACCOUNTING_FX_GAIN_LOSS_ACCOUNT` pre-selects the gain/loss account.
+- Permissions `fx-revaluation.view` (accountant, approver, auditor, viewer), `fx-revaluation.run`,
+  `fx-revaluation.rates` (accountant).
+- Revaluation entries may adjust a foreign-currency account in the base currency (origin `fx-revaluation` only);
+  manual base-currency entries on such accounts are still rejected.
+
 ## [2.15.0] - 2026-10-17
 
 Recurring entries release.

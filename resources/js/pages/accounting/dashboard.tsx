@@ -159,6 +159,15 @@ export default function AccountingDashboard({ summary }: Props) {
                   },
               ]
             : []),
+        ...(permissions['fx-revaluation.view']
+            ? [
+                  {
+                      title: 'Currency Revaluation',
+                      href: '/accounting/fx-revaluation',
+                      icon: FileText,
+                  },
+              ]
+            : []),
         { title: 'My Exports', href: '/accounting/exports', icon: FileText },
         ...(permissions['user.view']
             ? [{ title: 'Users', href: '/accounting/users', icon: Users }]

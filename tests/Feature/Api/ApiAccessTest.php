@@ -10,6 +10,8 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
+use Alimarchal\LaravelChartOfAccounts\Models\FxRevaluation;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
@@ -89,6 +91,8 @@ function concreteUri(Route $route): string
             'roles' => Role::class,
             'exports' => ReportExport::class,
             'recurring-entries' => RecurringEntry::class,
+            'rates' => ExchangeRate::class,
+            'fx-revaluation' => FxRevaluation::class,
             'report-lines' => ReportLine::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
@@ -126,6 +130,8 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
     BankAccount::factory()->create();
     Reconciliation::factory()->create();
+    ExchangeRate::query()->create(['currency_id' => Currency::query()->where('is_base', false)->value('id'), 'rate_date' => now()->toDateString(), 'rate' => 1]);
+    FxRevaluation::query()->create(['as_of_date' => now()->toDateString(), 'gain_loss_account_id' => account('4101')->id, 'journal_entry_id' => $entry->id]);
     RecurringEntry::query()->create(['name' => 'Rent', 'frequency' => 'monthly', 'interval' => 1, 'start_date' => now()->toDateString(), 'next_run_date' => now()->toDateString(), 'mode' => 'draft']);
 
     $viewer = User::factory()->create();

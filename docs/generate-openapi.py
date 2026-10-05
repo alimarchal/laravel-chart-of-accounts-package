@@ -496,6 +496,34 @@ paths["/recurring-entries/{id}/run"] = {"parameters": [ID], "post": op("Recurrin
     {"201": resp("Generated", data({"type": "object", "properties": {"run": {"type": "object", "properties": {"id": {"type": "integer"}, "run_date": {"type": "string", "format": "date"}, "status": {"type": "string", "enum": ["posted", "submitted", "draft", "failed"]}, "journal_entry_id": {"type": ["integer", "null"]}, "error": {"type": ["string", "null"]}}}, "entry": ref("RecurringEntry")}})), **E404_422},
     desc="Generates the next scheduled occurrence immediately, even if it is not due yet (dated on its scheduled day). 422 when the entry could not be created.", opid="run_recurring_entry")}
 
+# Foreign-currency revaluation.
+schemas["FxRevaluationRow"] = {"type": "object", "properties": {
+    "chart_of_account_id": {"type": "integer"}, "account_code": {"type": "string"}, "account_name": {"type": "string"}, "currency_id": {"type": "integer"}, "currency_code": {"type": "string"},
+    "foreign_balance": ref("Money"), "rate": {"type": "string", "description": "Closing rate used (8 decimals)"}, "carrying_base": ref("Money"), "revalued_base": ref("Money"),
+    "adjustment": ref("Money")}}
+schemas["FxRevaluation"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "as_of_date": {"type": "string", "format": "date"}, "total_gain": ref("Money"), "total_loss": ref("Money"),
+    "journal_entry_id": {"type": "integer"}, "voucher_number": {"type": ["string", "null"]}, "reversal_entry_id": {"type": ["integer", "null"]}, "reversal_voucher_number": {"type": ["string", "null"]},
+    "reversal_date": {"type": ["string", "null"], "format": "date"}, "notes": {"type": ["string", "null"]}, "gain_loss_account": {"type": "string", "description": "Only on the single-revaluation response"},
+    "lines": {"type": "array", "items": {"type": "object", "properties": {"account": {"type": "string"}, "currency": {"type": ["string", "null"]}, "foreign_balance": ref("Money"), "rate": {"type": "string"}, "carrying_base": ref("Money"), "revalued_base": ref("Money"), "adjustment": ref("Money")}}}}}
+schemas["ExchangeRate"] = {"type": "object", "properties": {"id": {"type": "integer"}, "currency_id": {"type": "integer"}, "currency": {"type": "string"}, "rate_date": {"type": "string", "format": "date"}, "rate": {"type": "string"}, "source": {"type": ["string", "null"]}}}
+fx_rates_body = {"type": "object", "description": "Closing rate per currency id; omitted currencies use the latest dated rate on or before the date, else the currency's own rate", "additionalProperties": {"type": "number"}}
+paths["/fx-revaluation"] = {
+    "get": op("Currency revaluation", "Past revaluations and the dated exchange rates", "fx-revaluation.view", {"200": resp("Revaluations (newest first) and rates", data({"type": "object", "properties": {"revaluations": {"type": "array", "items": ref("FxRevaluation")}, "rates": {"type": "array", "items": ref("ExchangeRate")}}}))}, opid="list_fx_revaluations"),
+    "post": op("Currency revaluation", "Post a revaluation", "fx-revaluation.run", {"201": resp("Posted", data(ref("FxRevaluation"))), **E422},
+        body={"type": "object", "required": ["as_of_date", "gain_loss_account_id"], "properties": {"as_of_date": {"type": "string", "format": "date"}, "gain_loss_account_id": {"type": "integer", "description": "An active income or expense posting account"}, "rates": fx_rates_body,
+            "auto_reverse": {"type": "boolean", "default": False}, "reversal_date": {"type": "string", "format": "date", "description": "After as_of_date (default: the next day); needs an open period"}, "notes": {"type": "string"}}},
+        desc="Restates every foreign-currency asset and liability account to balance x closing rate with one adjusting entry in the base currency; the difference is an unrealised gain or loss. Running it again at the same rates adjusts nothing (422).", opid="post_fx_revaluation")}
+paths["/fx-revaluation/preview"] = {"get": op("Currency revaluation", "What a revaluation would adjust (nothing is posted)", "fx-revaluation.view",
+    {"200": resp("Plan", data({"type": "object", "properties": {"as_of_date": {"type": "string", "format": "date"}, "rows": {"type": "array", "items": ref("FxRevaluationRow")}, "total_gain": ref("Money"), "total_loss": ref("Money")}})), **E422},
+    params=[{"name": "as_of_date", "in": "query", "required": True, "schema": {"type": "string", "format": "date"}}, {"name": "rates[<currency id>]", "in": "query", "schema": {"type": "number"}, "description": "Closing rate override per currency id"}], opid="preview_fx_revaluation")}
+paths["/fx-revaluation/rates"] = {"post": op("Currency revaluation", "Save a dated exchange rate (replaces the rate of that currency and date)", "fx-revaluation.rates", {"201": resp("Saved", data(ref("ExchangeRate"))), **E422},
+    body={"type": "object", "required": ["currency_id", "rate_date", "rate"], "properties": {"currency_id": {"type": "integer"}, "rate_date": {"type": "string", "format": "date"}, "rate": {"type": "number", "exclusiveMinimum": 0}, "source": {"type": "string"}}}, opid="save_exchange_rate")}
+paths["/fx-revaluation/rates/{id}"] = {"parameters": [ID], "delete": op("Currency revaluation", "Remove a dated rate", "fx-revaluation.rates", {"204": resp("Removed"), **E404}, opid="delete_exchange_rate")}
+paths["/fx-revaluation/{id}"] = {"parameters": [ID], "get": op("Currency revaluation", "One revaluation with its accounts", "fx-revaluation.view", {"200": resp("Revaluation", data(ref("FxRevaluation"))), **E404}, opid="show_fx_revaluation")}
+paths["/fx-revaluation/{id}/reverse"] = {"parameters": [ID], "post": op("Currency revaluation", "Reverse a revaluation", "fx-revaluation.run", {"200": resp("Reversed", data(ref("FxRevaluation"))), **E404_422},
+    body={"type": "object", "properties": {"reversal_date": {"type": "string", "format": "date", "description": "After the revaluation date (default: the next day)"}}}, opid="reverse_fx_revaluation")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -504,7 +532,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.15.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.16.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

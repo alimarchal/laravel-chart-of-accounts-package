@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.15.0
+  version: 2.16.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -6117,6 +6117,299 @@ paths:
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
       - $ref: '#/components/parameters/Company'
+  /fx-revaluation:
+    get:
+      tags:
+      - Currency revaluation
+      summary: Past revaluations and the dated exchange rates
+      operationId: list_fx_revaluations
+      description: 'Permission: `fx-revaluation.view`.'
+      responses:
+        '200':
+          description: Revaluations (newest first) and rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      revaluations:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FxRevaluation'
+                      rates:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ExchangeRate'
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Currency revaluation
+      summary: Post a revaluation
+      operationId: post_fx_revaluation
+      description: 'Restates every foreign-currency asset and liability account to balance x closing rate with one adjusting
+        entry in the base currency; the difference is an unrealised gain or loss. Running it again at the same rates adjusts
+        nothing (422).
+
+
+        Permission: `fx-revaluation.run`.'
+      responses:
+        '201':
+          description: Posted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FxRevaluation'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - as_of_date
+              - gain_loss_account_id
+              properties:
+                as_of_date:
+                  type: string
+                  format: date
+                gain_loss_account_id:
+                  type: integer
+                  description: An active income or expense posting account
+                rates:
+                  type: object
+                  description: Closing rate per currency id; omitted currencies use the latest dated rate on or before the
+                    date, else the currency's own rate
+                  additionalProperties:
+                    type: number
+                auto_reverse:
+                  type: boolean
+                  default: false
+                reversal_date:
+                  type: string
+                  format: date
+                  description: 'After as_of_date (default: the next day); needs an open period'
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fx-revaluation/preview:
+    get:
+      tags:
+      - Currency revaluation
+      summary: What a revaluation would adjust (nothing is posted)
+      operationId: preview_fx_revaluation
+      description: 'Permission: `fx-revaluation.view`.'
+      responses:
+        '200':
+          description: Plan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      as_of_date:
+                        type: string
+                        format: date
+                      rows:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FxRevaluationRow'
+                      total_gain:
+                        $ref: '#/components/schemas/Money'
+                      total_loss:
+                        $ref: '#/components/schemas/Money'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of_date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: rates[<currency id>]
+        in: query
+        schema:
+          type: number
+        description: Closing rate override per currency id
+      - $ref: '#/components/parameters/Company'
+  /fx-revaluation/rates:
+    post:
+      tags:
+      - Currency revaluation
+      summary: Save a dated exchange rate (replaces the rate of that currency and date)
+      operationId: save_exchange_rate
+      description: 'Permission: `fx-revaluation.rates`.'
+      responses:
+        '201':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExchangeRate'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - currency_id
+              - rate_date
+              - rate
+              properties:
+                currency_id:
+                  type: integer
+                rate_date:
+                  type: string
+                  format: date
+                rate:
+                  type: number
+                  exclusiveMinimum: 0
+                source:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fx-revaluation/rates/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    delete:
+      tags:
+      - Currency revaluation
+      summary: Remove a dated rate
+      operationId: delete_exchange_rate
+      description: 'Permission: `fx-revaluation.rates`.'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fx-revaluation/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Currency revaluation
+      summary: One revaluation with its accounts
+      operationId: show_fx_revaluation
+      description: 'Permission: `fx-revaluation.view`.'
+      responses:
+        '200':
+          description: Revaluation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FxRevaluation'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fx-revaluation/{id}/reverse:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Currency revaluation
+      summary: Reverse a revaluation
+      operationId: reverse_fx_revaluation
+      description: 'Permission: `fx-revaluation.run`.'
+      responses:
+        '200':
+          description: Reversed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FxRevaluation'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reversal_date:
+                  type: string
+                  format: date
+                  description: 'After the revaluation date (default: the next day)'
+      parameters:
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -7837,3 +8130,104 @@ components:
                 - string
                 - 'null'
           description: In detail responses
+    FxRevaluationRow:
+      type: object
+      properties:
+        chart_of_account_id:
+          type: integer
+        account_code:
+          type: string
+        account_name:
+          type: string
+        currency_id:
+          type: integer
+        currency_code:
+          type: string
+        foreign_balance:
+          $ref: '#/components/schemas/Money'
+        rate:
+          type: string
+          description: Closing rate used (8 decimals)
+        carrying_base:
+          $ref: '#/components/schemas/Money'
+        revalued_base:
+          $ref: '#/components/schemas/Money'
+        adjustment:
+          $ref: '#/components/schemas/Money'
+    FxRevaluation:
+      type: object
+      properties:
+        id:
+          type: integer
+        as_of_date:
+          type: string
+          format: date
+        total_gain:
+          $ref: '#/components/schemas/Money'
+        total_loss:
+          $ref: '#/components/schemas/Money'
+        journal_entry_id:
+          type: integer
+        voucher_number:
+          type:
+          - string
+          - 'null'
+        reversal_entry_id:
+          type:
+          - integer
+          - 'null'
+        reversal_voucher_number:
+          type:
+          - string
+          - 'null'
+        reversal_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        notes:
+          type:
+          - string
+          - 'null'
+        gain_loss_account:
+          type: string
+          description: Only on the single-revaluation response
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              account:
+                type: string
+              currency:
+                type:
+                - string
+                - 'null'
+              foreign_balance:
+                $ref: '#/components/schemas/Money'
+              rate:
+                type: string
+              carrying_base:
+                $ref: '#/components/schemas/Money'
+              revalued_base:
+                $ref: '#/components/schemas/Money'
+              adjustment:
+                $ref: '#/components/schemas/Money'
+    ExchangeRate:
+      type: object
+      properties:
+        id:
+          type: integer
+        currency_id:
+          type: integer
+        currency:
+          type: string
+        rate_date:
+          type: string
+          format: date
+        rate:
+          type: string
+        source:
+          type:
+          - string
+          - 'null'

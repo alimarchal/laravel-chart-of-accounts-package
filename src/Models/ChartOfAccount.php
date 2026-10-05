@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection<int, ChartOfAccount> $children
  * @property-read Collection<int, ChartOfAccount> $childrenRecursive
  * @property-read AccountType $accountType
+ * @property-read Currency $currency
  */
 class ChartOfAccount extends AccountingModel
 {
@@ -79,11 +80,17 @@ class ChartOfAccount extends AccountingModel
         return $this->children()->with(['childrenRecursive', 'accountType']);
     }
 
+    /**
+     * @return BelongsTo<AccountType, $this>
+     */
     public function accountType(): BelongsTo
     {
         return $this->belongsTo(AccountType::class, 'account_type_id');
     }
 
+    /**
+     * @return BelongsTo<Currency, $this>
+     */
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_id');

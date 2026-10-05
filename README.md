@@ -431,6 +431,30 @@ The package schedules the command daily at `ACCOUNTING_RECURRING_TIME` (02:00) �
 (`* * * * * php artisan schedule:run`); `ACCOUNTING_RECURRING_SCHEDULE=false` leaves scheduling to you. Permissions
 `recurring-entries.view / create / update / delete / run` (accountant: all; approver, auditor, viewer: view).
 
+## Currency revaluation
+
+Dashboard → **Currency Revaluation** (React and Blade) or `/api/v1/accounting/fx-revaluation`. An asset or liability
+account whose currency is not the base currency (a USD bank account, a EUR payable, …) holds a **foreign balance**
+(what its lines say in that currency) and a **carrying value** in the base currency (what the ledger booked at the
+rates of the day). At period end the carrying value is restated to *foreign balance × closing rate*; the difference
+is an **unrealised exchange gain or loss**.
+
+- **Closing rates**: type them in, or keep a dated **rate history** (`/fx-revaluation/rates`): the latest rate on or before
+  the date is used, else the currency's own rate. Calculate first — the preview lists every account with its foreign
+  balance, rate, carrying value, revalued amount and adjustment; nothing is posted until you confirm.
+- **One adjusting entry** in the base currency (voucher type JV, origin `fx-revaluation`): each account is debited or
+  credited by its adjustment and the net goes to the **gain/loss account** you pick (any active income or expense account;
+  `ACCOUNTING_FX_GAIN_LOSS_ACCOUNT` pre-selects one by code). Only posted entries up to the date count, and only lines
+  in the account's own currency make up its foreign balance, so earlier adjustments never distort it.
+- **Safe to repeat**: the carrying value already includes earlier adjustments, so running again at the same rates
+  adjusts nothing ("Nothing to revalue"); a new rate adjusts only the difference.
+- **Auto-reverse** (optional): a reversal dated after the revaluation (default: the next day, needs an open period) puts
+  the books back on the original rates for the next period — the usual month-end routine. A revaluation can also be
+  reversed later from its page. Each run keeps its per-account detail and is audited (`FX_REVALUATION_*`).
+
+Permissions `fx-revaluation.view` (accountant, approver, auditor, viewer), `fx-revaluation.run` and
+`fx-revaluation.rates` (accountant).
+
 ## Industry chart templates
 
 Chart of Accounts → **Templates** (React and Blade), `GET /chart-templates`, or `php artisan accounting:chart-templates`.
@@ -912,6 +936,11 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET/POST | `/recurring-entries` | Templates / create one (balanced lines + schedule) | `recurring-entries.view` / `.create` |
 | GET/PUT/DELETE | `/recurring-entries/{id}` | Template with runs and upcoming dates / change / delete (only if it has not run) | `recurring-entries.*` |
 | POST | `/recurring-entries/{id}/pause` · `/resume` · `/run` | Pause / resume (`skip_missed`) / generate the next entry now | `recurring-entries.update` / `.run` |
+| GET/POST | `/fx-revaluation` | Revaluations and dated rates / post a revaluation (`as_of_date`, `gain_loss_account_id`, `rates`, `auto_reverse`) | `fx-revaluation.view` / `.run` |
+| GET | `/fx-revaluation/preview` | What a revaluation at `as_of_date` (and optional `rates[currency]`) would adjust | `fx-revaluation.view` |
+| GET | `/fx-revaluation/{id}` | A revaluation with its accounts | `fx-revaluation.view` |
+| POST | `/fx-revaluation/{id}/reverse` | Reverse it (`reversal_date`, default the next day) | `fx-revaluation.run` |
+| POST · DELETE | `/fx-revaluation/rates` · `/fx-revaluation/rates/{id}` | Save (per currency and date) / remove a dated exchange rate | `fx-revaluation.rates` |
 | GET | `/chart-templates` · `/chart-templates/{key}` | Industry templates / what one would add | `chart-templates.apply` |
 | POST | `/chart-templates/{key}/apply` | Add a template's missing accounts (`dry_run` to preview) | `chart-templates.apply` |
 | GET | `/chart-of-accounts/export/{csv\|xlsx\|pdf}` | Export the chart (re-importable layout) | `chart-of-accounts.view` |
@@ -1115,6 +1144,9 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `recurring-entries.update` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.delete` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.run` | ✔ |  | ✔ |  |  |  |
+| `fx-revaluation.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `fx-revaluation.run` | ✔ |  | ✔ |  |  |  |
+| `fx-revaluation.rates` | ✔ |  | ✔ |  |  |  |
 | `chart-of-accounts.delete` | ✔ |  |  |  |  |  |
 | `cost-centers.view` | ✔ |  | ✔ |  | ✔ |  |
 | `cost-centers.create` | ✔ |  | ✔ |  |  |  |
