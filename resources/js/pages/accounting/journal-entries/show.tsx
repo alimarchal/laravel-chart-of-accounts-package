@@ -3,6 +3,8 @@ import {
     Ban,
     CheckCircle2,
     Edit,
+    FileDown,
+    Printer,
     RotateCcw,
     Send,
     XCircle,
@@ -157,6 +159,26 @@ export default function JournalEntryShow({
                     <div className="flex flex-wrap gap-2">
                         <Button asChild variant="outline">
                             <Link href="/accounting/journal-entries">Back</Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <a
+                                href={`/accounting/journal-entries/${entry.id}/print`}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <Printer className="size-4" />
+                                Print
+                            </a>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <a
+                                href={`/accounting/journal-entries/${entry.id}/pdf`}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <FileDown className="size-4" />
+                                PDF
+                            </a>
                         </Button>
                         {canEdit && (
                             <Button asChild variant="outline">

@@ -31,6 +31,9 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxRateBladeControl
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\UserBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\VoucherTypeBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -111,6 +114,12 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::post('journal-entries/{journalEntry}/attachments', [AttachmentController::class, 'store'])->name('journal-entries.attachments.store')->middleware('can:attachments.create');
         Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download')->middleware('can:attachments.view');
         Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy')->middleware('can:attachments.delete');
+        Route::get('exports', [ReportExportListController::class, 'index'])->name('exports.index')->middleware('can:accounting.view');
+        Route::get('exports/{export}/download', [ReportExportListController::class, 'download'])->name('exports.download')->middleware('can:accounting.view');
+        Route::delete('exports/{export}', [ReportExportListController::class, 'destroy'])->name('exports.destroy')->middleware('can:accounting.view');
+        Route::get('journal-entries/{journalEntry}/print', [VoucherPrintController::class, 'show'])->name('journal-entries.print')->middleware('can:journal-entries.view');
+        Route::get('journal-entries/{journalEntry}/pdf', [VoucherPrintController::class, 'pdf'])->name('journal-entries.pdf')->middleware('can:journal-entries.view');
+        Route::get('reports/{report}/export/{format}', ReportExportController::class)->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('reports.export')->middleware('can:accounting.view');
         Route::get('control-accounts', [ControlAccountBladeController::class, 'page'])->name('control-accounts.index')->middleware('can:chart-of-accounts.view');
         Route::post('control-accounts/recommended', [ControlAccountBladeController::class, 'recommended'])->name('control-accounts.recommended')->middleware('can:control-accounts.manage');
         Route::put('chart-of-accounts/{chartOfAccount}/control-type', [ControlAccountBladeController::class, 'setType'])->name('chart-of-accounts.control-type')->middleware('can:control-accounts.manage');

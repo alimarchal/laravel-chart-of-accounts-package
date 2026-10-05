@@ -3,6 +3,8 @@
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">@if ($journalEntry->voucher_number){{ $journalEntry->voucherType?->name ?? 'Voucher' }} {{ $journalEntry->voucher_number }}@else{{ $journalEntry->voucherType?->name ?? 'Journal entry' }} (draft #{{ $journalEntry->id }})@endif{{ $journalEntry->reference ? ' — '.$journalEntry->reference : '' }}</h2>
             <div class="flex gap-2">
+                <a href="{{ route('accounting.journal-entries.print', $journalEntry) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Print</a>
+                <a href="{{ route('accounting.journal-entries.pdf', $journalEntry) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">PDF</a>
                 @if ($journalEntry->status === 'draft' && $requiresApproval)
                     @if (in_array($journalEntry->approval_status, [null, 'rejected'], true))
                         @can('journal-entries.create')

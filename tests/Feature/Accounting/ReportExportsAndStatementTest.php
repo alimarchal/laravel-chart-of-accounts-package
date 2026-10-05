@@ -113,8 +113,8 @@ it('streams csv exports, including the bank and cash books', function (string $r
     expect($response->streamedContent())->toBeString();
 })->with(['general-ledger', 'account-statement', 'bank-book', 'cash-book']);
 
-it('refuses xlsx and pdf exports above the row limit', function (): void {
-    config(['accounting.export_max_rows.xlsx' => 3, 'accounting.export_max_rows.pdf' => 3]);
+it('refuses xlsx and pdf exports above the row limit when background exports are off', function (): void {
+    config(['accounting.export_max_rows.xlsx' => 3, 'accounting.export_max_rows.pdf' => 3, 'accounting.exports.queue_large' => false]);
     journal(['1101' => 10, '4101' => -10], ($this->day)(1));
     journal(['1101' => 10, '4101' => -10], ($this->day)(2));
 
@@ -126,7 +126,8 @@ it('refuses xlsx and pdf exports above the row limit', function (): void {
     $this->get('/accounting/reports/general-ledger/export/xlsx')->assertOk();
 });
 
-it('writes a readable multi-page pdf', function (): void {
+it('writes a readable multi-page pdf with the built-in renderer', function (): void {
+    config(['accounting.pdf.engine' => 'builtin']);
     foreach (range(1, 30) as $i) {
         journal(['1101' => $i, '4101' => -$i], ($this->day)(1), reference: "REF-{$i}");
     }

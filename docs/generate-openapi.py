@@ -346,6 +346,31 @@ paths["/reports/consolidated/{report}"] = {"parameters": [{"name": "report", "in
               params=[{"name": "companies", "in": "query", "schema": {"type": "string", "example": "MAIN,SUB"}, "description": "Codes or ids; default: every company you can access."}] + date_q + asof_q,
               desc="Companies share the base currency, so amounts add up directly. Intercompany balances are not eliminated.", opid="consolidated_report")}
 
+# Exports (CSV / Excel / PDF), background exports and voucher PDFs.
+REPORT_NAMES = ["general-ledger", "trial-balance", "balance-sheet", "income-statement", "cash-flow", "aged-receivables", "aged-payables", "bank-book", "cash-book", "account-statement"]
+REPORT_P = {"name": "report", "in": "path", "required": True, "schema": {"type": "string", "enum": REPORT_NAMES}}
+FORMAT_P = {"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}
+FILE_200 = {"description": "The file", "content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}, "application/pdf": {"schema": {"type": "string", "format": "binary"}}}}
+schemas["ReportExport"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "report": {"type": "string", "enum": REPORT_NAMES}, "title": {"type": "string"},
+    "format": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}, "filters": {"type": "object", "description": "The report filters the export was asked with"},
+    "status": {"type": "string", "enum": ["queued", "running", "ready", "failed"]}, "rows": {"type": ["integer", "null"]}, "size": {"type": ["integer", "null"], "description": "Bytes"},
+    "error": {"type": ["string", "null"]}, "created_at": {"type": "string", "format": "date-time"}, "finished_at": {"type": ["string", "null"], "format": "date-time"}}}
+report_filters_q = [{"name": n, "in": "query", "schema": {"type": "string"}} for n in ["date_from", "date_to", "as_of", "account_id", "status"]]
+paths["/reports/{report}/export/{format}"] = {"parameters": [REPORT_P, FORMAT_P],
+    "get": op("Reports", "Download a report as CSV, Excel or a typeset PDF", "reports.<report>.view", {"200": FILE_200, "202": resp("Too large to build now: queued as a background export", data(ref("ReportExport"))), **E404_422}, params=report_filters_q,
+              desc="Takes the same filters as the report. PDFs carry the company letterhead, the filters, totals and page numbers (dompdf; built-in fallback without it). "
+                   "Excel and PDF exports above `accounting.exports.max_rows` are queued instead (202) when `accounting.exports.queue_large` is on.", opid="export_report")}
+paths["/reports/{report}/exports/{format}"] = {"parameters": [REPORT_P, FORMAT_P],
+    "post": op("Reports", "Queue a background export", "reports.<report>.view", {"202": resp("Queued", data(ref("ReportExport"))), **E404_422}, params=report_filters_q,
+               desc="The job re-checks your permission when it runs. Poll `GET /exports` for the status, then download it.", opid="queue_report_export")}
+paths["/exports"] = {"get": op("Reports", "Your background exports", "accounting.view", {"200": resp("Exports, newest first", data({"type": "array", "items": ref("ReportExport")}))}, opid="list_exports")}
+paths["/exports/{id}/download"] = {"parameters": [ID], "get": op("Reports", "Download a finished export", "accounting.view", {"200": FILE_200, **E404}, desc="Only the user who asked for the export can download it (404 for anyone else).", opid="download_export")}
+paths["/exports/{id}"] = {"parameters": [ID], "delete": op("Reports", "Delete one of your exports and its file", "accounting.view", {"204": resp("Deleted"), **E404}, opid="delete_export")}
+paths["/journal-entries/{id}/pdf"] = {"parameters": [ID], "get": op("Journal entries", "Printable voucher PDF", "journal-entries.view",
+    {"200": {"description": "The voucher", "content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}}}, **E404, "501": resp("PDF engine (dompdf) not installed")},
+    desc="Letterhead, voucher number, source document, lines, totals, amount in words, signature boxes; DRAFT / VOID watermark when not posted.", opid="voucher_pdf")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -354,7 +379,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.9.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.10.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

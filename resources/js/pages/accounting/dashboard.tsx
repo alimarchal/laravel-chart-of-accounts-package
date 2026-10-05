@@ -132,6 +132,7 @@ export default function AccountingDashboard({ summary }: Props) {
                   },
               ]
             : []),
+        { title: 'My Exports', href: '/accounting/exports', icon: FileText },
         ...(permissions['user.view']
             ? [{ title: 'Users', href: '/accounting/users', icon: Users }]
             : []),

@@ -10,6 +10,7 @@
         />
     </x-slot>
 
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4"><x-accounting::export-buttons report="income-statement" /></div>
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <x-accounting::status-message />
