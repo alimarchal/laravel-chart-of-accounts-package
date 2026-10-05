@@ -347,7 +347,7 @@ paths["/reports/consolidated/{report}"] = {"parameters": [{"name": "report", "in
               desc="Companies share the base currency, so amounts add up directly. Intercompany balances are not eliminated.", opid="consolidated_report")}
 
 # Exports (CSV / Excel / PDF), background exports and voucher PDFs.
-REPORT_NAMES = ["general-ledger", "trial-balance", "balance-sheet", "income-statement", "cash-flow", "aged-receivables", "aged-payables", "bank-book", "cash-book", "account-statement"]
+REPORT_NAMES = ["general-ledger", "trial-balance", "balance-sheet", "income-statement", "cash-flow", "aged-receivables", "aged-payables", "bank-book", "cash-book", "account-statement", "statement-balance-sheet", "statement-income-statement", "statement-cash-flow"]
 REPORT_P = {"name": "report", "in": "path", "required": True, "schema": {"type": "string", "enum": REPORT_NAMES}}
 FORMAT_P = {"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}
 FILE_200 = {"description": "The file", "content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}, "application/pdf": {"schema": {"type": "string", "format": "binary"}}}}
@@ -419,6 +419,38 @@ paths["/chart-of-accounts/{id}/merge"] = {"parameters": [ID],
                body={"type": "object", "properties": {"target_account_id": {"type": "integer"}, "target_code": {"type": "string"}, "date": {"type": "string", "format": "date", "description": "Transfer date (default today, must be in an open period)"}, "description": {"type": "string"}}},
                desc="Same type, normal balance, currency and control type only. The balance moves with a posted transfer entry (one pair of lines per cost center) through the normal posting rules — 422 when it needs approval. Draft lines, sub-accounts and bank accounts move to the target; the source is deactivated with `metadata.merged_into`. Audited (ACCOUNT_MERGED).", opid="merge_account")}
 
+# Report mapping and financial statements.
+SECTIONS_BS = ["current_assets", "non_current_assets", "current_liabilities", "non_current_liabilities", "equity"]
+SECTIONS_IS = ["revenue", "cost_of_sales", "other_income", "operating_expenses", "finance_costs", "income_tax"]
+CF = ["cash", "operating", "non_cash", "investing", "financing"]
+schemas["ReportLine"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "statement": {"type": "string", "enum": ["balance_sheet", "income_statement"]}, "code": {"type": "string"}, "name": {"type": "string"},
+    "section": {"type": "string", "enum": SECTIONS_BS + SECTIONS_IS}, "cash_flow_category": {"type": ["string", "null"], "enum": CF + [None], "description": "Balance sheet lines only: where the line's movements go in the indirect cash flow"},
+    "sort_order": {"type": "integer"}, "is_system": {"type": "boolean", "description": "Standard lines can be renamed but not deleted"}, "accounts_count": {"type": "integer"}}}
+schemas["AccountMapping"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "account_code": {"type": "string"}, "account_name": {"type": "string"}, "parent_id": {"type": ["integer", "null"]}, "is_group": {"type": "boolean"},
+    "statement": {"type": "string", "enum": ["balance_sheet", "income_statement"]},
+    "report_line_id": {"type": ["integer", "null"], "description": "Own mapping (null: inherits from the parent)"}, "cash_flow_category": {"type": ["string", "null"]},
+    "resolved_line_id": {"type": ["integer", "null"]}, "resolved_cash_flow_category": {"type": ["string", "null"]}, "inherited": {"type": "boolean"}}}
+line_body = {"type": "object", "properties": {"statement": {"type": "string", "enum": ["balance_sheet", "income_statement"], "description": "Create only"}, "code": {"type": "string"}, "name": {"type": "string"}, "section": {"type": "string"}, "cash_flow_category": {"type": ["string", "null"], "enum": CF + [None]}, "sort_order": {"type": "integer"}}}
+paths["/report-mapping"] = {"get": op("Reports", "Report lines and the mapping of every account", "report-mapping.manage",
+    {"200": resp("Lines and accounts", data({"type": "object", "properties": {"lines": {"type": "array", "items": ref("ReportLine")}, "accounts": {"type": "array", "items": ref("AccountMapping")}, "unmapped": {"type": "integer", "description": "Posting accounts without a line"}}}))}, opid="report_mapping")}
+paths["/report-mapping/recommended"] = {"post": op("Reports", "Map the seeded accounts to their standard lines", "report-mapping.manage", {"200": resp("Accounts mapped", data({"type": "array", "items": {"type": "object"}}))}, desc="Accounts that already have a line are left alone. Audited.", opid="report_mapping_recommended")}
+paths["/chart-of-accounts/{id}/report-mapping"] = {"parameters": [ID], "put": op("Reports", "Map an account (and its sub-accounts) to a line", "report-mapping.manage",
+    {"200": resp("Mapped", data(ref("AccountMapping"))), **E404_422}, body={"type": "object", "properties": {"report_line_id": {"type": ["integer", "null"], "description": "null: inherit from the parent"}, "cash_flow_category": {"type": ["string", "null"], "enum": CF + [None], "description": "Balance sheet accounts only; null: the line's"}}},
+    desc="The line must belong to the account's statement. Audited (REPORT_MAPPING_CHANGED).", opid="map_account")}
+paths["/report-lines"] = {"post": op("Reports", "Add a statement line", "report-mapping.manage", {"201": resp("Created", data(ref("ReportLine"))), **E422}, body={**line_body, "required": ["statement", "code", "name", "section"]}, opid="create_report_line")}
+paths["/report-lines/{id}"] = {"parameters": [ID],
+    "put": op("Reports", "Rename, move or reclassify a line", "report-mapping.manage", {"200": resp("Updated", data(ref("ReportLine"))), **E404_422}, body=line_body, desc="The code of a standard line cannot change.", opid="update_report_line"),
+    "delete": op("Reports", "Delete a custom line", "report-mapping.manage", {"204": resp("Deleted"), **E404_422}, desc="422 for standard lines and for lines with accounts mapped.", opid="delete_report_line")}
+paths["/reports/statements/{type}"] = {"parameters": [{"name": "type", "in": "path", "required": True, "schema": {"type": "string", "enum": ["balance-sheet", "income-statement", "cash-flow"]}}],
+    "get": op("Reports", "Financial statement by report lines", "reports.financial-statements.view", {"200": resp("Statement", data({"type": "object"})), **E404},
+              params=[{"name": n, "in": "query", "schema": {"type": "string", "format": "date"}} for n in ["as_of_date", "compare_as_of", "date_from", "date_to", "compare_from", "compare_to"]],
+              desc="balance-sheet: sections → lines → accounts with `totals` (assets, liabilities, equity, difference) as of `as_of_date`, optional `compare_as_of` column. "
+                   "income-statement: sections with `subtotals` (gross_profit, operating_profit, profit_before_tax, net_profit), optional comparative period. "
+                   "cash-flow: indirect method — profit, non-cash adjustments, working capital, investing, financing, opening/closing cash and `difference` (0 when it reconciles). "
+                   "Unmapped accounts appear on 'unmapped' lines / as unclassified. Export with `/reports/statement-{type}/export/{format}`.", opid="financial_statement")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -427,7 +459,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.12.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.13.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

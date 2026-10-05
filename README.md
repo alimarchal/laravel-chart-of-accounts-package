@@ -30,11 +30,12 @@
 - **Control accounts** — receivables, payables, inventory, payroll and tax control accounts that only their module may post to, with a manual-postings exception list
 - **Professional PDFs** — reports on your letterhead (logo, filters, totals, page X of Y) and printable vouchers with amount in words, signature boxes and a DRAFT/VOID watermark; big Excel/PDF exports run in the background
 - **Month-end & year-end close** — a close workspace with a checklist (drafts, approvals, trial balance, bank reconciliation, earlier periods), a closing-entry preview, monthly periods, and audited reopening
+- **Financial statements by report lines** — map accounts to statement lines (Revenue, Cost of sales, Trade receivables, PPE …); balance sheet and income statement with gross / operating / net profit and comparatives; **indirect-method cash flow** that always reconciles to cash
 - **12 reports** — trial balance, balance sheet, income statement, cash flow, general ledger, account statement (running balance), bank & cash book, aged AR/AP — export to CSV (streamed, any size), XLSX, PDF
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
 - **Events & signed webhooks** for every ledger action (posted, reversed, approved, period closed, …)
 - **Proven at scale** — 400,000 journal lines: trial balance 0.77 s, account statement 0.1 s, 46 concurrent postings/s with zero imbalance ([performance report](docs/performance.md))
-- **Tested** — 350+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+- **Tested** — 360+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
 
 ---
 
@@ -714,6 +715,38 @@ approval threshold use these base amounts, so a later change of the exchange rat
 
 ---
 
+## Financial statements and report mapping
+
+**Report Mapping** (dashboard → Report Mapping, `report-mapping.manage`) decides which statement line each account
+reports under. Every company starts with a standard (IFRS-style) layout:
+
+| Statement | Sections and standard lines |
+|---|---|
+| Balance sheet | **Current assets**: Cash and cash equivalents, Trade and other receivables, Inventories, Tax receivable · **Non-current assets**: Property, plant and equipment, Accumulated depreciation, Long-term investments · **Current liabilities**: Trade and other payables, Tax payable, Deferred income, Short-term borrowings · **Non-current liabilities**: Long-term borrowings · **Equity**: Share capital, Reserves, Retained earnings |
+| Income statement | Revenue · Cost of sales · Other income · Operating expenses (Administrative, Depreciation, Other) · Finance costs · Income tax |
+
+- **Map a group and everything under it follows**; an account can override its parent. Lines can be renamed,
+  reordered and added (custom lines can be deleted once unused).
+- **Apply recommended mapping** maps the seeded chart in one click (new installs and new companies are mapped
+  automatically; existing accounts are never re-mapped).
+- Each balance sheet line has a **cash-flow class** — cash, operating (working capital), non-cash adjustment,
+  investing or financing — which an account can override.
+- Accounts without a line are reported on an "unmapped" line of their section (and as unclassified cash flow),
+  so the statements always add up; the screens say how many are left.
+
+**Financial Statements** (`reports.financial-statements.view`): one screen with three tabs (React and Blade),
+`GET /reports/statements/{balance-sheet|income-statement|cash-flow}`, and CSV / Excel / PDF exports
+(`/reports/statement-balance-sheet/export/pdf` …).
+
+- **Balance sheet** as of a date, optional comparative date; profit not yet closed shows in equity; totals and a
+  difference check. Every line expands to its accounts.
+- **Income statement** for a period, optional comparative period, with gross profit, operating profit, profit
+  before tax and net profit.
+- **Cash flow — indirect method**: profit for the period, non-cash adjustments (depreciation …), changes in
+  working capital, investing and financing activities, then opening and closing cash. Year-end closing entries
+  are left out, and because every entry balances, **opening cash + net change = closing cash** — any
+  `difference` would point at a data problem.
+
 ## Reports & exports
 
 | Report | Web | API | Notes |
@@ -802,6 +835,10 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | PUT | `/users/{id}/roles` · `/users/{id}/permissions` | Replace roles / direct permissions (audited) | `user.assign-role` / `user.assign-permission` |
 | GET/POST, GET/PUT/DELETE | `/roles`, `/roles/{id}` | Roles with counts / CRUD (super-admin protected) | `accounting.manage-settings` |
 | GET | `/permissions` | All permissions grouped by area | `accounting.manage-settings` |
+| GET | `/reports/statements/{balance-sheet\|income-statement\|cash-flow}` | Statements by report lines (`as_of_date`, `compare_as_of`, `date_from`, `date_to`, `compare_from`, `compare_to`) | `reports.financial-statements.view` |
+| GET · POST | `/report-mapping` · `/report-mapping/recommended` | Lines and the mapping of every account / apply the recommended mapping | `report-mapping.manage` |
+| PUT | `/chart-of-accounts/{id}/report-mapping` | Map an account to a line (`report_line_id`, `cash_flow_category`) | `report-mapping.manage` |
+| POST · PUT · DELETE | `/report-lines` · `/report-lines/{id}` | Add / change / delete statement lines | `report-mapping.manage` |
 | GET | `/reports/consolidated/{report}` | Group trial balance, balance sheet, income statement | `reports.consolidated.view` |
 | GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
 | GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
@@ -1032,6 +1069,7 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `voucher-types.update` | ✔ | ✔ |  |  |  |  |
 | `voucher-types.delete` | ✔ | ✔ |  |  |  |  |
 | `control-accounts.manage` | ✔ | ✔ |  |  |  |  |
+| `report-mapping.manage` | ✔ | ✔ |  |  |  |  |
 | `control-accounts.post-manual` | ✔ |  |  |  |  |  |
 | `attachments.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `attachments.create` | ✔ |  | ✔ |  |  |  |
@@ -1040,6 +1078,7 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `reports.general-ledger.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `reports.trial-balance.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `reports.balance-sheet.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `reports.financial-statements.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `reports.income-statement.view` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `reports.cash-flow.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `reports.aged-receivables.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |

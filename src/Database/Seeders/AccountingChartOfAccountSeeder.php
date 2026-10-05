@@ -48,7 +48,7 @@ class AccountingChartOfAccountSeeder extends Seeder
      *
      * @return array<int, array<string, mixed>>
      */
-    private function accounts(): array
+    public function accounts(): array
     {
         $accounts = $this->schoolChart();
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.12.0
+  version: 2.13.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -4537,6 +4537,9 @@ paths:
         - bank-book
         - cash-book
         - account-statement
+        - statement-balance-sheet
+        - statement-income-statement
+        - statement-cash-flow
     - name: format
       in: path
       required: true
@@ -4635,6 +4638,9 @@ paths:
         - bank-book
         - cash-book
         - account-statement
+        - statement-balance-sheet
+        - statement-income-statement
+        - statement-cash-flow
     - name: format
       in: path
       required: true
@@ -5180,6 +5186,359 @@ paths:
                 description:
                   type: string
       parameters:
+      - $ref: '#/components/parameters/Company'
+  /report-mapping:
+    get:
+      tags:
+      - Reports
+      summary: Report lines and the mapping of every account
+      operationId: report_mapping
+      description: 'Permission: `report-mapping.manage`.'
+      responses:
+        '200':
+          description: Lines and accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      lines:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ReportLine'
+                      accounts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AccountMapping'
+                      unmapped:
+                        type: integer
+                        description: Posting accounts without a line
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /report-mapping/recommended:
+    post:
+      tags:
+      - Reports
+      summary: Map the seeded accounts to their standard lines
+      operationId: report_mapping_recommended
+      description: 'Accounts that already have a line are left alone. Audited.
+
+
+        Permission: `report-mapping.manage`.'
+      responses:
+        '200':
+          description: Accounts mapped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/{id}/report-mapping:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    put:
+      tags:
+      - Reports
+      summary: Map an account (and its sub-accounts) to a line
+      operationId: map_account
+      description: 'The line must belong to the account''s statement. Audited (REPORT_MAPPING_CHANGED).
+
+
+        Permission: `report-mapping.manage`.'
+      responses:
+        '200':
+          description: Mapped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AccountMapping'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                report_line_id:
+                  type:
+                  - integer
+                  - 'null'
+                  description: 'null: inherit from the parent'
+                cash_flow_category:
+                  type:
+                  - string
+                  - 'null'
+                  enum:
+                  - cash
+                  - operating
+                  - non_cash
+                  - investing
+                  - financing
+                  - null
+                  description: 'Balance sheet accounts only; null: the line''s'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /report-lines:
+    post:
+      tags:
+      - Reports
+      summary: Add a statement line
+      operationId: create_report_line
+      description: 'Permission: `report-mapping.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReportLine'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                statement:
+                  type: string
+                  enum:
+                  - balance_sheet
+                  - income_statement
+                  description: Create only
+                code:
+                  type: string
+                name:
+                  type: string
+                section:
+                  type: string
+                cash_flow_category:
+                  type:
+                  - string
+                  - 'null'
+                  enum:
+                  - cash
+                  - operating
+                  - non_cash
+                  - investing
+                  - financing
+                  - null
+                sort_order:
+                  type: integer
+              required:
+              - statement
+              - code
+              - name
+              - section
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /report-lines/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    put:
+      tags:
+      - Reports
+      summary: Rename, move or reclassify a line
+      operationId: update_report_line
+      description: 'The code of a standard line cannot change.
+
+
+        Permission: `report-mapping.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReportLine'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                statement:
+                  type: string
+                  enum:
+                  - balance_sheet
+                  - income_statement
+                  description: Create only
+                code:
+                  type: string
+                name:
+                  type: string
+                section:
+                  type: string
+                cash_flow_category:
+                  type:
+                  - string
+                  - 'null'
+                  enum:
+                  - cash
+                  - operating
+                  - non_cash
+                  - investing
+                  - financing
+                  - null
+                sort_order:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Reports
+      summary: Delete a custom line
+      operationId: delete_report_line
+      description: '422 for standard lines and for lines with accounts mapped.
+
+
+        Permission: `report-mapping.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /reports/statements/{type}:
+    parameters:
+    - name: type
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - balance-sheet
+        - income-statement
+        - cash-flow
+    get:
+      tags:
+      - Reports
+      summary: Financial statement by report lines
+      operationId: financial_statement
+      description: 'balance-sheet: sections → lines → accounts with `totals` (assets, liabilities, equity, difference) as
+        of `as_of_date`, optional `compare_as_of` column. income-statement: sections with `subtotals` (gross_profit, operating_profit,
+        profit_before_tax, net_profit), optional comparative period. cash-flow: indirect method — profit, non-cash adjustments,
+        working capital, investing, financing, opening/closing cash and `difference` (0 when it reconciles). Unmapped accounts
+        appear on ''unmapped'' lines / as unclassified. Export with `/reports/statement-{type}/export/{format}`.
+
+
+        Permission: `reports.financial-statements.view`.'
+      responses:
+        '200':
+          description: Statement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: as_of_date
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: compare_as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: compare_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: compare_to
+        in: query
+        schema:
+          type: string
+          format: date
       - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
@@ -6507,6 +6866,9 @@ components:
           - bank-book
           - cash-book
           - account-statement
+          - statement-balance-sheet
+          - statement-income-statement
+          - statement-cash-flow
         title:
           type: string
         format:
@@ -6635,3 +6997,89 @@ components:
           items:
             type: string
           description: Why the merge cannot run (empty when it can)
+    ReportLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        statement:
+          type: string
+          enum:
+          - balance_sheet
+          - income_statement
+        code:
+          type: string
+        name:
+          type: string
+        section:
+          type: string
+          enum:
+          - current_assets
+          - non_current_assets
+          - current_liabilities
+          - non_current_liabilities
+          - equity
+          - revenue
+          - cost_of_sales
+          - other_income
+          - operating_expenses
+          - finance_costs
+          - income_tax
+        cash_flow_category:
+          type:
+          - string
+          - 'null'
+          enum:
+          - cash
+          - operating
+          - non_cash
+          - investing
+          - financing
+          - null
+          description: 'Balance sheet lines only: where the line''s movements go in the indirect cash flow'
+        sort_order:
+          type: integer
+        is_system:
+          type: boolean
+          description: Standard lines can be renamed but not deleted
+        accounts_count:
+          type: integer
+    AccountMapping:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_code:
+          type: string
+        account_name:
+          type: string
+        parent_id:
+          type:
+          - integer
+          - 'null'
+        is_group:
+          type: boolean
+        statement:
+          type: string
+          enum:
+          - balance_sheet
+          - income_statement
+        report_line_id:
+          type:
+          - integer
+          - 'null'
+          description: 'Own mapping (null: inherits from the parent)'
+        cash_flow_category:
+          type:
+          - string
+          - 'null'
+        resolved_line_id:
+          type:
+          - integer
+          - 'null'
+        resolved_cash_flow_category:
+          type:
+          - string
+          - 'null'
+        inherited:
+          type: boolean

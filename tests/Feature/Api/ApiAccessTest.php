@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportExport;
+use Alimarchal\LaravelChartOfAccounts\Models\ReportLine;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
@@ -53,6 +54,10 @@ function concreteUri(Route $route): string
             return 'trial-balance';
         }
 
+        if ($resource === 'statements') {
+            return 'balance-sheet';
+        }
+
         if (in_array($resource, ['export', 'template'], true)) {
             return 'csv';
         }
@@ -78,6 +83,7 @@ function concreteUri(Route $route): string
             'users' => User::class,
             'roles' => Role::class,
             'exports' => ReportExport::class,
+            'report-lines' => ReportLine::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
         };

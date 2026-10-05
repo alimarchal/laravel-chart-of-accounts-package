@@ -107,6 +107,24 @@ export default function AccountingDashboard({ summary }: Props) {
             href: '/accounting/reports/cash-flow',
             icon: BarChart3,
         },
+        ...(permissions['reports.financial-statements.view']
+            ? [
+                  {
+                      title: 'Financial Statements',
+                      href: '/accounting/reports/financial-statements',
+                      icon: BarChart3,
+                  },
+              ]
+            : []),
+        ...(permissions['report-mapping.manage']
+            ? [
+                  {
+                      title: 'Report Mapping',
+                      href: '/accounting/report-mapping',
+                      icon: FileText,
+                  },
+              ]
+            : []),
         {
             title: 'Aged Receivables',
             href: '/accounting/reports/aged-receivables',

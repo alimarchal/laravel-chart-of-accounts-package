@@ -21,7 +21,9 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\UserApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\VoucherTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportMappingController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
@@ -94,6 +96,13 @@ Route::middleware($apiMiddleware)
         Route::post('chart-of-accounts/{chartOfAccount}/renumber', [ChartRestructureController::class, 'renumber'])->name('chart-of-accounts.renumber')->middleware('can:chart-of-accounts.restructure');
         Route::get('chart-of-accounts/{chartOfAccount}/merge-preview', [ChartRestructureController::class, 'mergePreview'])->name('chart-of-accounts.merge-preview')->middleware('can:chart-of-accounts.restructure');
         Route::post('chart-of-accounts/{chartOfAccount}/merge', [ChartRestructureController::class, 'merge'])->name('chart-of-accounts.merge')->middleware('can:chart-of-accounts.restructure');
+        Route::get('report-mapping', [ReportMappingController::class, 'index'])->name('report-mapping.index')->middleware('can:report-mapping.manage');
+        Route::post('report-mapping/recommended', [ReportMappingController::class, 'recommended'])->name('report-mapping.recommended')->middleware('can:report-mapping.manage');
+        Route::put('chart-of-accounts/{chartOfAccount}/report-mapping', [ReportMappingController::class, 'updateAccount'])->name('chart-of-accounts.report-mapping')->middleware('can:report-mapping.manage');
+        Route::post('report-lines', [ReportMappingController::class, 'storeLine'])->name('report-lines.store')->middleware('can:report-mapping.manage');
+        Route::put('report-lines/{reportLine}', [ReportMappingController::class, 'updateLine'])->name('report-lines.update')->middleware('can:report-mapping.manage');
+        Route::delete('report-lines/{reportLine}', [ReportMappingController::class, 'destroyLine'])->name('report-lines.destroy')->middleware('can:report-mapping.manage');
+        Route::get('reports/statements/{type}', [FinancialStatementController::class, 'api'])->whereIn('type', FinancialStatementController::TYPES)->name('reports.statements')->middleware('can:reports.financial-statements.view');
         Route::get('chart-of-accounts/tree', [AccountingApiController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

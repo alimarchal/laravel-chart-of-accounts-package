@@ -2,6 +2,28 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.13.0] - 2026-10-15
+
+Financial statements and report mapping release.
+
+### Added
+- **Report lines**: the lines of the balance sheet and income statement per company, with a standard IFRS-style
+  layout seeded for every company (also on upgrade and for new companies). Lines can be renamed, reordered and
+  added; each balance sheet line has a cash-flow class (cash, operating, non-cash, investing, financing).
+- **Report mapping**: accounts map to lines, groups pass their mapping down, accounts can override the line and
+  the cash-flow class. "Apply recommended mapping" maps the seeded chart (done automatically for new installs and
+  new companies; `accounting:seed` maps seeded accounts that still carry their seeded names). Audited.
+- **Financial statements by lines** (React, Blade, API `GET /reports/statements/{type}`, CSV/Excel/PDF exports):
+  balance sheet with comparative date, income statement with gross/operating/before-tax/net profit and a
+  comparative period, drill-down to accounts, and the **cash flow statement by the indirect method**, which
+  reconciles opening + net change to closing cash. Unmapped accounts are reported on "unmapped" lines.
+- Permissions `reports.financial-statements.view` (every role with balance sheet access) and
+  `report-mapping.manage` (super-admin, admin).
+
+### Fixed
+- (Shipped in 2.12.0, not listed there.) The cost center factory produced types the column refuses (`department`,
+  `branch`); tests creating cost centers failed at random on PostgreSQL and MySQL.
+
 ## [2.12.0] - 2026-10-14
 
 Renumber and merge accounts release.
