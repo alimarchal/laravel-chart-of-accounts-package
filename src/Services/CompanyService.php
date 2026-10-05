@@ -62,17 +62,27 @@ class CompanyService
      * and tax codes (seed: false creates an empty company). The creator gets access to it.
      *
      * @param  array<string, mixed>  $data
+     * @param  string|null  $template  an industry chart template (ChartTemplates) instead of the configured chart preset
      */
-    public function create(array $data, bool $seed = true, ?Authenticatable $creator = null): Company
+    public function create(array $data, bool $seed = true, ?Authenticatable $creator = null, ?string $template = null): Company
     {
-        return DB::transaction(function () use ($data, $seed, $creator): Company {
+        return DB::transaction(function () use ($data, $seed, $creator, $template): Company {
             $company = Company::query()->create([
                 ...$data,
                 'code' => strtoupper((string) $data['code']),
                 'fiscal_year_start_month' => $data['fiscal_year_start_month'] ?? 1,
             ]);
 
-            if ($seed) {
+            if ($seed && $template !== null) {
+                $this->companies->runAs($company, function () use ($template): void {
+                    foreach ([AccountingPeriodSeeder::class, AccountingCostCenterSeeder::class, AccountingTaxCodeSeeder::class, AccountingTaxRateSeeder::class, AccountingVoucherTypeSeeder::class] as $seeder) {
+                        app($seeder)->run();
+                    }
+
+                    app(ReportMappingService::class)->seedLines();
+                    app(ChartTemplateService::class)->apply($template);
+                });
+            } elseif ($seed) {
                 $this->companies->runAs($company, function (): void {
                     foreach ([AccountingPeriodSeeder::class, AccountingChartOfAccountSeeder::class, AccountingCostCenterSeeder::class, AccountingTaxCodeSeeder::class, AccountingTaxRateSeeder::class, AccountingVoucherTypeSeeder::class, AccountingReportLineSeeder::class] as $seeder) {
                         app($seeder)->run();

@@ -25,6 +25,7 @@
 - **Voucher numbering** — JV, CPV, CRV, BPV, BRV (and your own types) with **gapless** numbers such as `JV-2026-00012`, issued at posting, restarting per fiscal year or month, locked in the database
 - **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
 - **Attachments** — scanned bills, receipts and contracts on every entry, stored privately, never removable once posted, duplicate-file warning, optional "evidence required above" amount
+- **Industry chart templates** — trading, manufacturing, services, school, NGO and healthcare charts: start a company from one, or add an industry's accounts to the chart you have (existing accounts are never changed); add your own in config
 - **Chart import & export** — bring your existing chart in from Excel or CSV with a line-by-line preview (new / updated / errors) before anything is saved; export it, edit it, import it back
 - **Renumber & merge accounts** — give an account (and its sub-accounts) new codes, or fold a duplicate into another account with a posted transfer entry — the ledger history is never rewritten
 - **Control accounts** — receivables, payables, inventory, payroll and tax control accounts that only their module may post to, with a manual-postings exception list
@@ -400,6 +401,43 @@ Visit `/settings/journal-entries/create` (or `/accounting/journal-entries/create
 - Live debit/credit totals update as you type
 
 ---
+
+## Industry chart templates
+
+Chart of Accounts → **Templates** (React and Blade), `GET /chart-templates`, or `php artisan accounting:chart-templates`.
+A template is a base chart plus the accounts an industry adds:
+
+| Template | Adds (examples) |
+|---|---|
+| `general` | The standard chart (the default) |
+| `trading` | Merchandise and goods in transit, sales returns / discounts (contra income), purchases, purchase returns, freight inward, customs duty, sales commission |
+| `manufacturing` | Work in progress, packing materials, spare parts, factory building, tools and dies, a **Manufacturing Overheads** group (rent, utilities, depreciation, indirect labour, wastage) and production variances |
+| `services` | Unbilled revenue, retention payable, consulting / retainer / project income, subcontractor costs |
+| `school` | The school chart (student fee receivable, fee incomes, books and uniform stock) plus hostel, annual charges and examination accounts |
+| `ngo` | Restricted / unrestricted / endowment funds, grants and pledges receivable, donations, grant income, programme and fundraising costs |
+| `healthcare` | Patient and insurance receivables, medical and pharmacy stock, consultation / laboratory / pharmacy / procedure income, doctors' fees |
+
+- **Preview first**: every account is listed as *new*, *already there*, *named differently* (your name is kept) or
+  *blocked* (missing parent).
+- **Safe on a chart in use**: only missing accounts are added, parents first; nothing existing is renamed, moved or
+  re-typed, so a template can be applied again later or on top of another one. Contra accounts get the opposite
+  side, and every new account is mapped to its **statement line** (see Report mapping) so the statements stay complete.
+- **New companies** can start from one: `php artisan accounting:create-company SUB "Clinic" --template=healthcare`.
+- Permission `chart-templates.apply` (super-admin); audited as `CHART_TEMPLATE_APPLIED`.
+
+```php
+// config/accounting.php — your own template
+'chart_templates' => [
+    'bakery' => ['name' => 'Bakery', 'description' => 'Bread and cakes', 'base' => 'general',
+        'extras' => [['5121', '5100', 'EXPENSE', 'Flour and Ingredients', false, ['line' => 'IS-COST-OF-SALES']]]],
+],
+```
+
+```bash
+php artisan accounting:chart-templates                       # list
+php artisan accounting:chart-templates ngo --dry-run          # what it would add
+php artisan accounting:chart-templates ngo --company=SUB      # add it to a company
+```
 
 ## Importing and exporting the chart
 
@@ -842,6 +880,8 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET | `/reports/consolidated/{report}` | Group trial balance, balance sheet, income statement | `reports.consolidated.view` |
 | GET/POST | `/chart-of-accounts` | List / Create | `chart-of-accounts.view` / `.create` |
 | GET | `/chart-of-accounts/tree` | Whole chart as a tree | `chart-of-accounts.view` |
+| GET | `/chart-templates` · `/chart-templates/{key}` | Industry templates / what one would add | `chart-templates.apply` |
+| POST | `/chart-templates/{key}/apply` | Add a template's missing accounts (`dry_run` to preview) | `chart-templates.apply` |
 | GET | `/chart-of-accounts/export/{csv\|xlsx\|pdf}` | Export the chart (re-importable layout) | `chart-of-accounts.view` |
 | GET | `/chart-of-accounts/import/template/{csv\|xlsx}` | Import template with example rows | `chart-of-accounts.import` |
 | GET · POST | `/chart-of-accounts/{id}/renumber-preview` · `/renumber` | Preview / renumber (`account_code`, `with_children`) | `chart-of-accounts.restructure` |
@@ -944,7 +984,8 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 | `accounting:open-period` | Reopen a closed accounting period |
 | `accounting:roles` | Print the role × permission matrix; fails if a role can both create and approve entries |
 | `accounting:prune-exports` | Delete background exports older than `accounting.exports.keep_days` with their files |
-| `accounting:create-company` | Create a company with its own chart, fiscal year, cost centers and tax codes (`--fiscal-start`, `--user`, `--empty`) |
+| `accounting:chart-templates` | List the industry chart templates, preview (`--dry-run`) or add one to a company (`--company=`) |
+| `accounting:create-company` | Create a company with its own chart, fiscal year, cost centers and tax codes (`--fiscal-start`, `--user`, `--empty`, `--template=`) |
 
 ---
 
@@ -1035,6 +1076,7 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `chart-of-accounts.update` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.import` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.restructure` | ✔ |  |  |  |  |  |
+| `chart-templates.apply` | ✔ |  |  |  |  |  |
 | `chart-of-accounts.delete` | ✔ |  |  |  |  |  |
 | `cost-centers.view` | ✔ |  | ✔ |  | ✔ |  |
 | `cost-centers.create` | ✔ |  | ✔ |  |  |  |

@@ -148,6 +148,10 @@ return [
     // Existing accounts are never overwritten by the seeder.
     'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'general'),
 
+    // Your own industry chart templates, in the shape of Support/ChartTemplates:
+    // 'key' => ['name' => '…', 'description' => '…', 'base' => 'general', 'extras' => [['6001', '5100', 'EXPENSE', 'Name', false, ['line' => 'IS-ADMIN']]]]
+    'chart_templates' => [],
+
     'permissions' => [
         'accounting.view',
         'accounting.manage-settings',
@@ -179,6 +183,7 @@ return [
         'chart-of-accounts.import',
         'chart-of-accounts.restructure',
         'report-mapping.manage',
+        'chart-templates.apply',
         'chart-of-accounts.delete',
         'cost-centers.view',
         'cost-centers.create',

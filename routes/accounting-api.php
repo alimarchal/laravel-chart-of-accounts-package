@@ -21,6 +21,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\UserApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\VoucherTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportMappingController;
@@ -103,6 +104,9 @@ Route::middleware($apiMiddleware)
         Route::put('report-lines/{reportLine}', [ReportMappingController::class, 'updateLine'])->name('report-lines.update')->middleware('can:report-mapping.manage');
         Route::delete('report-lines/{reportLine}', [ReportMappingController::class, 'destroyLine'])->name('report-lines.destroy')->middleware('can:report-mapping.manage');
         Route::get('reports/statements/{type}', [FinancialStatementController::class, 'api'])->whereIn('type', FinancialStatementController::TYPES)->name('reports.statements')->middleware('can:reports.financial-statements.view');
+        Route::get('chart-templates', [ChartTemplateController::class, 'index'])->name('chart-templates.index')->middleware('can:chart-templates.apply');
+        Route::get('chart-templates/{template}', [ChartTemplateController::class, 'show'])->name('chart-templates.show')->middleware('can:chart-templates.apply');
+        Route::post('chart-templates/{template}/apply', [ChartTemplateController::class, 'apply'])->name('chart-templates.apply')->middleware('can:chart-templates.apply');
         Route::get('chart-of-accounts/tree', [AccountingApiController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

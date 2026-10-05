@@ -451,6 +451,23 @@ paths["/reports/statements/{type}"] = {"parameters": [{"name": "type", "in": "pa
                    "cash-flow: indirect method — profit, non-cash adjustments, working capital, investing, financing, opening/closing cash and `difference` (0 when it reconciles). "
                    "Unmapped accounts appear on 'unmapped' lines / as unclassified. Export with `/reports/statement-{type}/export/{format}`.", opid="financial_statement")}
 
+# Industry chart templates.
+TEMPLATE_KEY = {"name": "template", "in": "path", "required": True, "schema": {"type": "string", "enum": ["general", "trading", "manufacturing", "services", "school", "ngo", "healthcare"], "description": "Or a key from `accounting.chart_templates`"}}
+schemas["ChartTemplate"] = {"type": "object", "properties": {"key": {"type": "string"}, "name": {"type": "string"}, "description": {"type": "string"}, "base": {"type": "string", "enum": ["general", "school"]}, "accounts": {"type": "integer"}, "extras": {"type": "integer", "description": "Accounts specific to the industry (on top of the base chart)"}}}
+schemas["ChartTemplatePreview"] = {"type": "object", "properties": {
+    "template": {"type": "object", "properties": {"key": {"type": "string"}, "name": {"type": "string"}, "description": {"type": "string"}}},
+    "summary": {"type": "object", "properties": {k: {"type": "integer"} for k in ["new", "exists", "different", "blocked"]}},
+    "rows": {"type": "array", "items": {"type": "object", "properties": {
+        "account_code": {"type": "string"}, "account_name": {"type": "string"}, "parent_code": {"type": ["string", "null"]}, "type": {"type": "string"}, "is_group": {"type": "boolean"}, "extra": {"type": "boolean"},
+        "status": {"type": "string", "enum": ["new", "exists", "different", "blocked"], "description": "different: the code exists under another name (left as it is); blocked: its parent is missing"},
+        "existing_name": {"type": ["string", "null"]}, "line": {"type": ["string", "null"], "description": "Statement line code it is mapped to"}}}}}}
+paths["/chart-templates"] = {"get": op("Chart of accounts", "Industry chart templates", "chart-templates.apply", {"200": resp("Templates", data({"type": "array", "items": ref("ChartTemplate")}))}, opid="list_chart_templates")}
+paths["/chart-templates/{template}"] = {"parameters": [TEMPLATE_KEY], "get": op("Chart of accounts", "What a template would add to this company", "chart-templates.apply", {"200": resp("Preview", data(ref("ChartTemplatePreview"))), **E404_422}, opid="show_chart_template")}
+paths["/chart-templates/{template}/apply"] = {"parameters": [TEMPLATE_KEY], "post": op("Chart of accounts", "Add a template's accounts to this company", "chart-templates.apply",
+    {"200": resp("Nothing to add, or a preview (dry_run)", data({"type": "object"})), "201": resp("Accounts added", data({"type": "object", "properties": {"created": {"type": "array", "items": {"type": "string"}}, "skipped": {"type": "integer"}}})), **E422},
+    body={"type": "object", "properties": {"dry_run": {"type": "boolean", "default": False}}},
+    desc="Adds the accounts the company lacks, parents first, mapped to statement lines; accounts that exist are never changed, so it is safe on a chart in use and can be repeated. Audited (CHART_TEMPLATE_APPLIED).", opid="apply_chart_template")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -459,7 +476,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.13.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.14.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

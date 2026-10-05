@@ -6,6 +6,9 @@
                 <a href="{{ route('accounting.chart-of-accounts.tree') }}" class="inline-flex items-center px-4 py-2 bg-indigo-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600 transition">Tree View</a>
                 <a href="{{ route('accounting.chart-of-accounts.export', 'xlsx') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Export Excel</a>
                 <a href="{{ route('accounting.chart-of-accounts.export', 'csv') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">CSV</a>
+                @can('chart-templates.apply')
+                <a href="{{ route('accounting.chart-templates.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Templates</a>
+                @endcan
                 @can('chart-of-accounts.import')
                 <a href="{{ route('accounting.chart-of-accounts.import') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Import</a>
                 @endcan

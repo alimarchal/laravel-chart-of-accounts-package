@@ -54,6 +54,10 @@ function concreteUri(Route $route): string
             return 'trial-balance';
         }
 
+        if ($resource === 'chart-templates') {
+            return 'trading';
+        }
+
         if ($resource === 'statements') {
             return 'balance-sheet';
         }

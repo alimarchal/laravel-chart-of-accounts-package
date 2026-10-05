@@ -2,6 +2,22 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.14.0] - 2026-10-16
+
+Industry chart templates release.
+
+### Added
+- **Chart templates**: trading, manufacturing, services, school, NGO and healthcare (and the general chart): a base
+  chart plus the accounts the industry adds, including a Manufacturing Overheads group, contra income and purchase
+  accounts for trading, fund accounts for NGOs and patient / insurance receivables for healthcare.
+- **Preview and add** from Chart of Accounts → Templates (React and Blade), `GET /chart-templates[/{key}]` and
+  `POST /chart-templates/{key}/apply` (`dry_run`), or `accounting:chart-templates [template] [--dry-run] [--company=]`.
+  Only missing accounts are added, parents first; existing accounts are never changed, so a template can be applied to
+  a chart in use and repeated. Every new account is mapped to its statement line. Audited (`CHART_TEMPLATE_APPLIED`).
+- `accounting:create-company --template=` and `CompanyService::create(..., template:)` start a company from a template.
+- Your own templates in `config('accounting.chart_templates')`.
+- Permission `chart-templates.apply` (super-admin).
+
 ## [2.13.0] - 2026-10-15
 
 Financial statements and report mapping release.
