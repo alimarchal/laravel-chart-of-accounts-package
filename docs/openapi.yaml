@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.10.0
+  version: 2.11.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -4814,6 +4814,158 @@ paths:
           description: PDF engine (dompdf) not installed
       parameters:
       - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/export/{format}:
+    parameters:
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+        - pdf
+    get:
+      tags:
+      - Chart of accounts
+      summary: Export the chart (re-importable)
+      operationId: export_chart
+      description: 'Columns: account_code, account_name, parent_code, account_type, normal_balance, currency, is_group, is_active,
+        control_type, description — the import layout, so an export can be edited and imported back.
+
+
+        Permission: `chart-of-accounts.view`.'
+      responses:
+        '200':
+          description: The chart in import layout
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/import/template/{format}:
+    parameters:
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+    get:
+      tags:
+      - Chart of accounts
+      summary: Import template with example rows
+      operationId: chart_import_template
+      description: 'Permission: `chart-of-accounts.import`.'
+      responses:
+        '200':
+          description: The chart in import layout
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /chart-of-accounts/import:
+    post:
+      tags:
+      - Chart of accounts
+      summary: Import accounts from CSV or Excel (multipart/form-data)
+      operationId: import_chart
+      description: 'Fields: `file` (.csv/.xlsx, max `ACCOUNTING_CHART_IMPORT_MAX_KB`), `mode` (`upsert` updates existing codes
+        — default; `create` leaves them unchanged) and `dry_run` (preview, nothing saved). Parents may appear anywhere in
+        the file. Every row passes the same rules as the API and the database guards; if any row is in error nothing is imported
+        (422 with the rows).
+
+
+        Permission: `chart-of-accounts.import`.'
+      responses:
+        '200':
+          description: Preview (dry_run) or nothing to change
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChartImportResult'
+                required:
+                - data
+        '201':
+          description: Imported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChartImportResult'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                mode:
+                  type: string
+                  enum:
+                  - upsert
+                  - create
+                  default: upsert
+                dry_run:
+                  type: boolean
+                  default: false
+      parameters:
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -6179,3 +6331,51 @@ components:
           - string
           - 'null'
           format: date-time
+    ChartImportResult:
+      type: object
+      properties:
+        committed:
+          type: boolean
+          description: true when the accounts were saved
+        summary:
+          type: object
+          properties:
+            create:
+              type: integer
+            update:
+              type: integer
+            unchanged:
+              type: integer
+            error:
+              type: integer
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              line:
+                type: integer
+                description: Line in the file (the header is line 1)
+              account_code:
+                type: string
+              account_name:
+                type: string
+              action:
+                type: string
+                enum:
+                - create
+                - update
+                - unchanged
+                - error
+              changes:
+                type: object
+                additionalProperties:
+                  type: array
+                  items: {}
+                  minItems: 2
+                  maxItems: 2
+                description: field → [old, new] for updates
+              errors:
+                type: array
+                items:
+                  type: string

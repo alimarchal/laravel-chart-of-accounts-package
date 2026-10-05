@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AuditLogController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ControlAccountController;
@@ -95,6 +96,11 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::post('periods/{period}/close-fiscal-year', [PeriodCloseController::class, 'closeFiscalYear'])->name('periods.close-fiscal-year')->middleware('can:periods.close');
         Route::post('periods/{period}/reopen', [PeriodCloseController::class, 'reopen'])->name('periods.reopen')->middleware('can:periods.reopen');
 
+        Route::get('chart-of-accounts/export/{format}', [ChartOfAccountImportController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('chart-of-accounts.export')->middleware('can:chart-of-accounts.view');
+        Route::get('chart-of-accounts/import/template/{format}', [ChartOfAccountImportController::class, 'template'])->whereIn('format', ['csv', 'xlsx'])->name('chart-of-accounts.import.template')->middleware('can:chart-of-accounts.import');
+        Route::get('chart-of-accounts/import', [ChartOfAccountImportController::class, 'show'])->name('chart-of-accounts.import')->middleware('can:chart-of-accounts.import');
+        Route::post('chart-of-accounts/import/preview', [ChartOfAccountImportController::class, 'preview'])->name('chart-of-accounts.import.preview')->middleware('can:chart-of-accounts.import');
+        Route::post('chart-of-accounts/import', [ChartOfAccountImportController::class, 'store'])->name('chart-of-accounts.import.store')->middleware('can:chart-of-accounts.import');
         Route::get('chart-of-accounts/tree', [ChartOfAccountController::class, 'tree'])
             ->name('chart-of-accounts.tree')
             ->middleware('can:chart-of-accounts.view');

@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.11.0] - 2026-10-13
+
+Chart of accounts import and export release.
+
+### Added
+- **Import the chart of accounts from Excel (.xlsx) or CSV**: Chart of Accounts → Import (React and Blade) or
+  `POST /chart-of-accounts/import`. A preview lists every line as new, updated (old → new per field), unchanged
+  or error before anything is saved; the import then runs in one transaction and changes nothing if any row
+  is wrong. Parents may come after their children in the file; blank cells keep existing values; new accounts
+  default to their parent's type and currency. Existing codes are updated (`mode=upsert`) or left alone
+  (`mode=create`). Every row passes the API rules and the database guards.
+- **Export the chart** (`/chart-of-accounts/export/{csv|xlsx|pdf}`, buttons on the chart screens) in the import
+  layout, so it can be edited and imported back; an import **template** with example rows.
+- Header aliases (`Code`, `Name`, `Parent`, `Type` …), comma / semicolon / tab CSVs, UTF-8 BOM and Windows-1252
+  files. Excel files are read without extra dependencies (PHP zip extension).
+- Permission `chart-of-accounts.import` (super-admin); `CHART_IMPORTED` audit record with the codes created and
+  updated. Limits `ACCOUNTING_CHART_IMPORT_MAX_KB` / `ACCOUNTING_CHART_IMPORT_MAX_ROWS`.
+
 ## [2.10.0] - 2026-10-12
 
 Professional PDFs and background exports release.

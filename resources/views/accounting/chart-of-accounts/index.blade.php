@@ -4,6 +4,11 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Chart of Accounts</h2>
             <div class="flex gap-2">
                 <a href="{{ route('accounting.chart-of-accounts.tree') }}" class="inline-flex items-center px-4 py-2 bg-indigo-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600 transition">Tree View</a>
+                <a href="{{ route('accounting.chart-of-accounts.export', 'xlsx') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Export Excel</a>
+                <a href="{{ route('accounting.chart-of-accounts.export', 'csv') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">CSV</a>
+                @can('chart-of-accounts.import')
+                <a href="{{ route('accounting.chart-of-accounts.import') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Import</a>
+                @endcan
                 @can('chart-of-accounts.create')
                 <a href="{{ route('accounting.chart-of-accounts.create') }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">Add Account</a>
                 @endcan

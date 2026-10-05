@@ -105,6 +105,12 @@ return [
         'dompdf_max_rows' => (int) env('ACCOUNTING_PDF_DOMPDF_MAX_ROWS', 3000),
     ],
 
+    // Chart of accounts import (CSV / XLSX): the largest file accepted and the most rows it may hold.
+    'chart_import' => [
+        'max_size_kb' => (int) env('ACCOUNTING_CHART_IMPORT_MAX_KB', 5120),
+        'max_rows' => (int) env('ACCOUNTING_CHART_IMPORT_MAX_ROWS', 5000),
+    ],
+
     // Exports above export_max_rows are generated in the background (queue) and listed under Exports.
     'exports' => [
         'queue_large' => (bool) env('ACCOUNTING_QUEUE_LARGE_EXPORTS', true),
@@ -170,6 +176,7 @@ return [
         'chart-of-accounts.view',
         'chart-of-accounts.create',
         'chart-of-accounts.update',
+        'chart-of-accounts.import',
         'chart-of-accounts.delete',
         'cost-centers.view',
         'cost-centers.create',
