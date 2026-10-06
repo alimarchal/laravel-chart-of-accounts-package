@@ -26,6 +26,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyDocumentController;
@@ -150,6 +151,15 @@ Route::middleware($apiMiddleware)
         Route::post('tax/returns', [TaxController::class, 'fileReturn'])->name('tax.returns.store')->middleware('can:tax-returns.file');
         Route::get('tax/returns/{taxReturn}', [TaxController::class, 'showReturn'])->name('tax.returns.show')->middleware('can:tax-returns.view');
         Route::delete('tax/returns/{taxReturn}', [TaxController::class, 'destroyReturn'])->name('tax.returns.destroy')->middleware('can:tax-returns.file');
+        Route::get('fixed-assets', [FixedAssetController::class, 'index'])->name('fixed-assets.index')->middleware('can:fixed-assets.view');
+        Route::post('fixed-assets', [FixedAssetController::class, 'store'])->name('fixed-assets.store')->middleware('can:fixed-assets.create');
+        Route::get('fixed-assets/depreciation', [FixedAssetController::class, 'depreciation'])->name('fixed-assets.depreciation')->middleware('can:fixed-assets.view');
+        Route::post('fixed-assets/depreciation', [FixedAssetController::class, 'runDepreciation'])->name('fixed-assets.depreciation.run')->middleware('can:fixed-assets.depreciate');
+        Route::get('fixed-assets/export/{format}', [FixedAssetController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('fixed-assets.export')->middleware('can:fixed-assets.view');
+        Route::get('fixed-assets/{asset}', [FixedAssetController::class, 'show'])->name('fixed-assets.show')->middleware('can:fixed-assets.view');
+        Route::match(['put', 'patch'], 'fixed-assets/{asset}', [FixedAssetController::class, 'update'])->name('fixed-assets.update')->middleware('can:fixed-assets.update');
+        Route::delete('fixed-assets/{asset}', [FixedAssetController::class, 'destroy'])->name('fixed-assets.destroy')->middleware('can:fixed-assets.delete');
+        Route::post('fixed-assets/{asset}/dispose', [FixedAssetController::class, 'dispose'])->name('fixed-assets.dispose')->middleware('can:fixed-assets.dispose');
         Route::get('budgets', [BudgetController::class, 'index'])->name('budgets.index')->middleware('can:budgets.view');
         Route::post('budgets', [BudgetController::class, 'store'])->name('budgets.store')->middleware('can:budgets.create');
         Route::get('budgets/{budget}', [BudgetController::class, 'show'])->name('budgets.show')->middleware('can:budgets.view');

@@ -2,6 +2,20 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.22.0] - 2026-10-24
+
+Fixed assets release.
+
+### Added
+- **Fixed asset register**: cost, salvage value, useful life, straight-line or declining-balance method, the cost / accumulated
+  depreciation / expense accounts, optional booking of the purchase, edit locks once entries exist, register report with a
+  ledger-against-register check and CSV/Excel/PDF export.
+- **Depreciation run**: preview and book what is due month by month (one entry per month, idempotent, catches up missed months,
+  never below salvage value, exact to the cent).
+- **Disposal**: sell or scrap with the gain or loss booked, depreciation first brought up to date.
+- React and Blade screens (register, asset, form, depreciation), API (`/fixed-assets`, `/fixed-assets/depreciation`,
+  `/fixed-assets/{id}/dispose`), permissions `fixed-assets.*`, OpenAPI and Postman.
+
 ## [2.21.0] - 2026-10-23
 
 Accounting dashboard release.

@@ -495,6 +495,25 @@ cash and bank, receivables and payables with ageing, income vs expense by month,
 needing attention, each linking to the page that deals with it. Sections are filtered by the user's permissions. The existing
 `/accounting` page remains the module hub.
 
+## Fixed assets
+
+`/accounting/fixed-assets` (and `/api/v1/accounting/fixed-assets`) is the asset register: code, cost, salvage value, useful life,
+straight-line or declining-balance depreciation, and the three accounts an asset posts to (cost, accumulated depreciation,
+depreciation expense). Giving an "offset" account when registering books the purchase (debit the asset account, credit cash,
+bank or the supplier).
+
+- **Depreciation run** (`/fixed-assets/depreciation`): previews and books everything due up to a month end. One journal entry per
+  month, dated on the month's last day, one line per expense/accumulated account. Depreciation starts in the month the asset enters
+  service, never takes an asset below its salvage value, keeps every cent (the last month takes the remainder), and a month is
+  booked once per asset, so running it again does nothing. Months missed are caught up in order.
+- **Disposal**: sell or scrap an asset. Depreciation is brought up to the month before the disposal date, cost and accumulated
+  depreciation are removed, the proceeds are received in the account you choose, and the gain or loss goes to the account you
+  choose. Disposed assets stay in the register history.
+- Cost, life, method, dates and accounts are locked once an asset has an acquisition or depreciation entry; the register shows the
+  difference between the ledger and the register (should be zero) and exports to CSV, Excel and PDF.
+- Entries use the `fixed_assets` origin, so they may post to accounts marked as fixed-asset control accounts. Permissions
+  `fixed-assets.view/create/update/delete/depreciate/dispose`; audited (`FIXED_ASSET_*`, `ASSET_DEPRECIATION_POSTED`).
+
 ## Budgets
 
 Dashboard → **Budgets** (React and Blade) or `/api/v1/accounting/budgets`. A budget plans income and expenses by
@@ -1304,6 +1323,12 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `budgets.delete` | ✔ |  | ✔ |  |  |  |
 | `budgets.approve` | ✔ |  |  | ✔ |  |  |
 | `budgets.override` | ✔ |  |  |  |  |  |
+| `fixed-assets.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `fixed-assets.create` | ✔ |  | ✔ |  |  |  |
+| `fixed-assets.update` | ✔ |  | ✔ |  |  |  |
+| `fixed-assets.delete` | ✔ |  | ✔ |  |  |  |
+| `fixed-assets.depreciate` | ✔ |  | ✔ |  |  |  |
+| `fixed-assets.dispose` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `bank-statements.import` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.match` | ✔ |  | ✔ |  |  |  |

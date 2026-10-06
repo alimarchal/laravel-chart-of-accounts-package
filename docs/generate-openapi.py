@@ -587,6 +587,27 @@ paths["/budgets/{id}/copy"] = {"parameters": [ID], "post": op("Budgets", "Copy a
     body={"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "start_date": {"type": "string", "format": "date", "description": "New first month (the budget is shifted)"}, "uplift_percent": {"type": "number"}}}, opid="copy_budget")}
 paths["/budgets/{id}/export/{format}"] = {"parameters": [ID, {"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Budgets", "Export budget against actual", "budgets.view", {"200": {"description": "The file"}, **E404}, opid="export_budget")}
 
+# Fixed assets.
+fa_props = {"code": {"type": "string"}, "name": {"type": "string"}, "category": {"type": "string", "nullable": True}, "description": {"type": "string", "nullable": True},
+            "acquisition_date": {"type": "string", "format": "date"}, "in_service_date": {"type": "string", "format": "date", "description": "Depreciation starts in this month (default: acquisition date)."},
+            "cost": {"type": "number"}, "salvage_value": {"type": "number"}, "useful_life_months": {"type": "integer", "minimum": 1}, "method": {"type": "string", "enum": ["straight_line", "declining_balance"]},
+            "declining_rate": {"type": "number", "nullable": True, "description": "Annual percent for declining balance (default: double the straight-line rate)."},
+            "asset_account_id": {"type": "integer"}, "accumulated_account_id": {"type": "integer"}, "expense_account_id": {"type": "integer"},
+            "offset_account_id": {"type": "integer", "description": "On create: books the purchase (debit the asset account, credit this account)."}}
+schemas["FixedAsset"] = {"type": "object", "properties": {**fa_props, "id": {"type": "integer"}, "status": {"type": "string", "enum": ["active", "disposed"]}, "accumulated_depreciation": {"type": "string"}, "book_value": {"type": "string"}, "locked": {"type": "boolean"}, "disposed_at": {"type": "string", "format": "date", "nullable": True}, "disposal_proceeds": {"type": "string", "nullable": True}, "disposal_gain_loss": {"type": "string", "nullable": True}}}
+paths["/fixed-assets"] = {
+    "get": op("Fixed assets", "Fixed asset register at a date", "fixed-assets.view", {"200": resp("Register: rows, totals and the ledger-against-register difference", data({"type": "object"})), **E422}, params=[{"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["active", "disposed"]}}], opid="list_fixed_assets"),
+    "post": op("Fixed assets", "Register an asset", "fixed-assets.create", {"201": resp("Created", data(ref("FixedAsset"))), **E422}, body={"type": "object", "required": ["code", "name", "acquisition_date", "cost", "useful_life_months", "method", "asset_account_id", "accumulated_account_id", "expense_account_id"], "properties": fa_props}, opid="create_fixed_asset")}
+paths["/fixed-assets/{id}"] = {"parameters": [ID],
+    "get": op("Fixed assets", "An asset with its depreciation history", "fixed-assets.view", {"200": resp("The asset", data({"type": "object", "properties": {"asset": ref("FixedAsset"), "depreciation": {"type": "array", "items": {"type": "object"}}}})), **E404}, opid="get_fixed_asset"),
+    "put": op("Fixed assets", "Change an asset (PATCH also accepted)", "fixed-assets.update", {"200": resp("Updated", data(ref("FixedAsset"))), **E404_422}, body={"type": "object", "properties": fa_props}, desc="Cost, life, method, dates and accounts are locked once the asset has an acquisition or depreciation entry.", opid="update_fixed_asset"),
+    "delete": op("Fixed assets", "Delete an asset without entries", "fixed-assets.delete", {"204": resp("Deleted"), **E404_422}, opid="delete_fixed_asset")}
+paths["/fixed-assets/{id}/dispose"] = {"parameters": [ID], "post": op("Fixed assets", "Sell or scrap an asset", "fixed-assets.dispose", {"200": resp("Disposed", data(ref("FixedAsset"))), **E404_422}, body={"type": "object", "required": ["disposal_date", "gain_loss_account_id"], "properties": {"disposal_date": {"type": "string", "format": "date"}, "proceeds": {"type": "number"}, "proceeds_account_id": {"type": "integer"}, "gain_loss_account_id": {"type": "integer"}, "notes": {"type": "string"}}}, desc="Brings depreciation up to the month before the disposal date, removes cost and accumulated depreciation, books the proceeds and the gain or loss.", opid="dispose_fixed_asset")}
+paths["/fixed-assets/depreciation"] = {
+    "get": op("Fixed assets", "Preview the depreciation due", "fixed-assets.view", {"200": resp("Months and amounts per asset", data({"type": "object"})), **E422}, params=[{"name": "up_to", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Default: end of last month."}], opid="preview_depreciation"),
+    "post": op("Fixed assets", "Book the depreciation due", "fixed-assets.depreciate", {"200": resp("Booked", data({"type": "object", "properties": {"months": {"type": "integer"}, "total": {"type": "string"}, "entries": {"type": "array", "items": {"type": "integer"}}}})), **E422}, body={"type": "object", "required": ["up_to"], "properties": {"up_to": {"type": "string", "format": "date"}}}, desc="One journal entry per month, dated on the month's last day; a month already booked for an asset is never booked twice.", opid="run_depreciation")}
+paths["/fixed-assets/export/{format}"] = {"parameters": [{"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Fixed assets", "Export the register", "fixed-assets.view", {"200": {"description": "The file"}, **E}, params=[{"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}}], opid="export_fixed_assets")}
+
 # Tax engine.
 TAX_TYPES = ["sale", "sale_return", "purchase", "purchase_return", "withholding_payment", "withholding_receipt"]
 schemas["TaxCalculation"] = {"type": "object", "properties": {"code": {"type": "string"}, "kind": {"type": "string"}, "rate": {"type": "string", "description": "Percent, four decimals"}, "inclusive": {"type": "boolean"}, "base": ref("Money"), "tax": ref("Money"), "gross": ref("Money")}}
@@ -688,7 +709,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.21.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.22.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

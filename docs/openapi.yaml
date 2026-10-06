@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.21.0
+  version: 2.22.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -7429,6 +7429,454 @@ paths:
           $ref: '#/components/responses/NotFound'
       parameters:
       - $ref: '#/components/parameters/Company'
+  /fixed-assets:
+    get:
+      tags:
+      - Fixed assets
+      summary: Fixed asset register at a date
+      operationId: list_fixed_assets
+      description: 'Permission: `fixed-assets.view`.'
+      responses:
+        '200':
+          description: 'Register: rows, totals and the ledger-against-register difference'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - active
+          - disposed
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Fixed assets
+      summary: Register an asset
+      operationId: create_fixed_asset
+      description: 'Permission: `fixed-assets.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FixedAsset'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - acquisition_date
+              - cost
+              - useful_life_months
+              - method
+              - asset_account_id
+              - accumulated_account_id
+              - expense_account_id
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                category:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                acquisition_date:
+                  type: string
+                  format: date
+                in_service_date:
+                  type: string
+                  format: date
+                  description: 'Depreciation starts in this month (default: acquisition date).'
+                cost:
+                  type: number
+                salvage_value:
+                  type: number
+                useful_life_months:
+                  type: integer
+                  minimum: 1
+                method:
+                  type: string
+                  enum:
+                  - straight_line
+                  - declining_balance
+                declining_rate:
+                  type: number
+                  nullable: true
+                  description: 'Annual percent for declining balance (default: double the straight-line rate).'
+                asset_account_id:
+                  type: integer
+                accumulated_account_id:
+                  type: integer
+                expense_account_id:
+                  type: integer
+                offset_account_id:
+                  type: integer
+                  description: 'On create: books the purchase (debit the asset account, credit this account).'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fixed-assets/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Fixed assets
+      summary: An asset with its depreciation history
+      operationId: get_fixed_asset
+      description: 'Permission: `fixed-assets.view`.'
+      responses:
+        '200':
+          description: The asset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      asset:
+                        $ref: '#/components/schemas/FixedAsset'
+                      depreciation:
+                        type: array
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Fixed assets
+      summary: Change an asset (PATCH also accepted)
+      operationId: update_fixed_asset
+      description: 'Cost, life, method, dates and accounts are locked once the asset has an acquisition or depreciation entry.
+
+
+        Permission: `fixed-assets.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FixedAsset'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                category:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                acquisition_date:
+                  type: string
+                  format: date
+                in_service_date:
+                  type: string
+                  format: date
+                  description: 'Depreciation starts in this month (default: acquisition date).'
+                cost:
+                  type: number
+                salvage_value:
+                  type: number
+                useful_life_months:
+                  type: integer
+                  minimum: 1
+                method:
+                  type: string
+                  enum:
+                  - straight_line
+                  - declining_balance
+                declining_rate:
+                  type: number
+                  nullable: true
+                  description: 'Annual percent for declining balance (default: double the straight-line rate).'
+                asset_account_id:
+                  type: integer
+                accumulated_account_id:
+                  type: integer
+                expense_account_id:
+                  type: integer
+                offset_account_id:
+                  type: integer
+                  description: 'On create: books the purchase (debit the asset account, credit this account).'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Fixed assets
+      summary: Delete an asset without entries
+      operationId: delete_fixed_asset
+      description: 'Permission: `fixed-assets.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fixed-assets/{id}/dispose:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Fixed assets
+      summary: Sell or scrap an asset
+      operationId: dispose_fixed_asset
+      description: 'Brings depreciation up to the month before the disposal date, removes cost and accumulated depreciation,
+        books the proceeds and the gain or loss.
+
+
+        Permission: `fixed-assets.dispose`.'
+      responses:
+        '200':
+          description: Disposed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FixedAsset'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - disposal_date
+              - gain_loss_account_id
+              properties:
+                disposal_date:
+                  type: string
+                  format: date
+                proceeds:
+                  type: number
+                proceeds_account_id:
+                  type: integer
+                gain_loss_account_id:
+                  type: integer
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fixed-assets/depreciation:
+    get:
+      tags:
+      - Fixed assets
+      summary: Preview the depreciation due
+      operationId: preview_depreciation
+      description: 'Permission: `fixed-assets.view`.'
+      responses:
+        '200':
+          description: Months and amounts per asset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: up_to
+        in: query
+        schema:
+          type: string
+          format: date
+        description: 'Default: end of last month.'
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Fixed assets
+      summary: Book the depreciation due
+      operationId: run_depreciation
+      description: 'One journal entry per month, dated on the month''s last day; a month already booked for an asset is never
+        booked twice.
+
+
+        Permission: `fixed-assets.depreciate`.'
+      responses:
+        '200':
+          description: Booked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      months:
+                        type: integer
+                      total:
+                        type: string
+                      entries:
+                        type: array
+                        items:
+                          type: integer
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - up_to
+              properties:
+                up_to:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /fixed-assets/export/{format}:
+    parameters:
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+        - pdf
+    get:
+      tags:
+      - Fixed assets
+      summary: Export the register
+      operationId: export_fixed_assets
+      description: 'Permission: `fixed-assets.view`.'
+      responses:
+        '200':
+          description: The file
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
   /tax/calculate:
     post:
       tags:
@@ -10878,6 +11326,74 @@ components:
                 $ref: '#/components/schemas/Money'
               actual:
                 $ref: '#/components/schemas/Money'
+    FixedAsset:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        acquisition_date:
+          type: string
+          format: date
+        in_service_date:
+          type: string
+          format: date
+          description: 'Depreciation starts in this month (default: acquisition date).'
+        cost:
+          type: number
+        salvage_value:
+          type: number
+        useful_life_months:
+          type: integer
+          minimum: 1
+        method:
+          type: string
+          enum:
+          - straight_line
+          - declining_balance
+        declining_rate:
+          type: number
+          nullable: true
+          description: 'Annual percent for declining balance (default: double the straight-line rate).'
+        asset_account_id:
+          type: integer
+        accumulated_account_id:
+          type: integer
+        expense_account_id:
+          type: integer
+        offset_account_id:
+          type: integer
+          description: 'On create: books the purchase (debit the asset account, credit this account).'
+        id:
+          type: integer
+        status:
+          type: string
+          enum:
+          - active
+          - disposed
+        accumulated_depreciation:
+          type: string
+        book_value:
+          type: string
+        locked:
+          type: boolean
+        disposed_at:
+          type: string
+          format: date
+          nullable: true
+        disposal_proceeds:
+          type: string
+          nullable: true
+        disposal_gain_loss:
+          type: string
+          nullable: true
     TaxCalculation:
       type: object
       properties:
