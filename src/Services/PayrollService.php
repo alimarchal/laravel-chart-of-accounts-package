@@ -196,6 +196,8 @@ class PayrollService
         $components = PayComponent::query()->where('is_active', true)->get()->keyBy('id');
         $assigned = EmployeeComponent::query()->get()->groupBy('employee_id');
         $totals = ['gross' => 0, 'deductions' => 0, 'tax' => 0, 'net' => 0];
+        $lineRows = [];
+        $stamp = now();
 
         foreach (Employee::query()->where('is_active', true)->whereDate('join_date', '<=', $end->toDateString())
             ->where(fn ($query) => $query->whereNull('leave_date')->orWhereDate('leave_date', '>=', $period->toDateString()))->orderBy('code')->get() as $employee) {
@@ -239,7 +241,7 @@ class PayrollService
 
             foreach ($lines as $line) {
                 if ($line['cents'] !== 0) {
-                    PayslipLine::query()->create(['payslip_id' => $slip->id, 'pay_component_id' => $line['pay_component_id'], 'kind' => $line['kind'], 'description' => $line['description'], 'amount' => Money::fromCents($line['cents']), 'account_id' => $line['account_id']]);
+                    $lineRows[] = ['payslip_id' => $slip->id, 'pay_component_id' => $line['pay_component_id'], 'kind' => $line['kind'], 'description' => $line['description'], 'amount' => Money::fromCents($line['cents']), 'account_id' => $line['account_id'], 'created_at' => $stamp, 'updated_at' => $stamp];
                 }
             }
 
@@ -247,6 +249,10 @@ class PayrollService
             $totals['deductions'] += $deductions;
             $totals['tax'] += $tax;
             $totals['net'] += $net;
+        }
+
+        foreach (array_chunk($lineRows, 500) as $chunk) {
+            PayslipLine::query()->insert($chunk);
         }
 
         $run->forceFill(array_map(fn (int $cents) => Money::fromCents($cents), $totals))->save();

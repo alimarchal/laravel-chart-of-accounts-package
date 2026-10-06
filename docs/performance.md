@@ -58,7 +58,43 @@ the 4 vCPUs; a production setup (PHP-FPM or Octane, OPcache) will be faster.
 | Insert 400,000 lines (+ audit rows) | 36.3 s |
 | Post 200,000 entries (immutability + audit triggers) | 22.1 s |
 
-## Reproducing
+## Sub-ledgers, inventory, payroll and bank matching at scale (2.26.0)
+
+The 2.20–2.25 modules were measured on the same kind of server (PostgreSQL 16, 4 vCPU, default settings) with
+`ACCOUNTING_PERF=1 vendor/bin/pest tests/Performance` (see below). The first run found four places that did a query per
+customer, asset or statement line, or work quadratic in the number of items; they were rewritten to fetch everything at once and
+group in memory.
+
+| Operation (data) | Before | After |
+|---|---|---|
+| Receivables ageing (1,000 customers, 10,000 invoices, 3,334 allocations) | 7.65 s, 3,001 queries | **0.28 s, 4 queries** |
+| Ledger-vs-sub-ledger check (same data) | 5.82 s, 3,004 queries | **0.30 s, 7 queries** |
+| Dashboard overview (same data) | 18.01 s, 9,024 queries | **0.38 s, 27 queries** |
+| Stock valuation (2,000 items, 12,000 movements) | 11.64 s | **0.22 s** |
+| Depreciation plan for 12 months (1,500 assets) | 1.94 s, 1,501 queries | **0.93 s, 2 queries** |
+| Auto-match a bank statement (1,500 lines against 1,500 ledger lines) | 115.65 s, 15,962 queries | **12.1 s, 6,005 queries** |
+| Payroll run (2,000 employees, one allowance each) | not measured before the change | 2.8 s, 2,027 queries |
+
+What changed: ageing and the dashboard read documents, allocations and payments for all parties in three queries (the dashboard
+ages each side once instead of up to three times); the stock valuation grouped movements by item once instead of filtering the whole
+list per item; the depreciation plan reads what is booked on every asset in one query; bank auto-match reads the ledger lines that
+can match once per bank account and matches by amount and date in memory (the remaining queries are the two writes and their audit
+rows per matched line); payroll payslip lines are inserted in batches. Indexes were added for the allocation, payslip and stock
+movement lookups that PostgreSQL does not index on its own (`2026_10_24_000001_add_scale_indexes`); their effect is not visible at
+these sizes and was not measured.
+
+The query counts are guarded in the normal test suite (`tests/Performance/ScaleTest.php` runs on small data and asserts that the number
+of queries does not grow with the data), so a query-per-row regression fails the build.
+
+### Reproducing
+
+```bash
+# large data, timings printed (add DB_CONNECTION=pgsql DB_HOST=… DB_DATABASE=… to use a real server)
+ACCOUNTING_PERF=1 vendor/bin/pest tests/Performance
+# sizes: ACCOUNTING_PERF_PARTIES, _ITEMS, _ASSETS, _EMPLOYEES, _STATEMENT_LINES
+```
+
+## Reproducing the ledger benchmark
 
 Load the data with plain SQL inserts (drafts, then one `UPDATE … SET status = 'posted'`) so the
 database triggers run exactly as in production, then time the endpoints with

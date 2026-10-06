@@ -210,6 +210,7 @@ class InventoryService
             ->whereNotIn('type', ['transfer_in', 'transfer_out'])->groupBy('item_id')->selectRaw('item_id, SUM(quantity) as quantity, SUM(value) as value')->get()->keyBy('item_id');
         $perWarehouse = DB::table('accounting_stock_movements')->where('company_id', CurrentCompany::currentId())->whereDate('movement_date', '<=', $asOf)
             ->when($warehouseId, fn ($query) => $query->where('warehouse_id', $warehouseId))->groupBy('item_id', 'warehouse_id')->selectRaw('item_id, warehouse_id, SUM(quantity) as quantity')->get();
+        $byItem = $perWarehouse->groupBy('item_id');
         $names = Warehouse::query()->pluck('name', 'id');
         $rows = [];
         $total = 0;
@@ -217,7 +218,7 @@ class InventoryService
         foreach (InventoryItem::query()->orderBy('sku')->get() as $item) {
             $total_units = $this->units((string) ($moves[$item->id]->quantity ?? 0));
             $total_value = Money::toCents((string) ($moves[$item->id]->value ?? 0));
-            $where = $perWarehouse->where('item_id', $item->id)->filter(fn ($row) => $this->units((string) $row->quantity) !== 0);
+            $where = $byItem->get($item->id, collect())->filter(fn ($row) => $this->units((string) $row->quantity) !== 0);
 
             if ($total_units === 0 && $total_value === 0 && $where->isEmpty()) {
                 continue;
