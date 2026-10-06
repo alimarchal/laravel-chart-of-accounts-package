@@ -146,6 +146,21 @@ class AccountingReportExporter
     }
 
     /**
+     * Spreadsheet programs run cells starting with = + - @ (or a tab/CR) as formulas: prefix text like that with an
+     * apostrophe so a narration such as "=HYPERLINK(...)" is shown, never executed. Plain numbers stay numbers.
+     */
+    public static function safeCell(mixed $value): string
+    {
+        $text = (string) $value;
+
+        if ($text === '' || is_numeric($text) || ! in_array($text[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return $text;
+        }
+
+        return "'".$text;
+    }
+
+    /**
      * @param  Collection<int, array<string, mixed>>  $rows
      */
     private function csvString(Collection $rows): string
@@ -153,11 +168,11 @@ class AccountingReportExporter
         $handle = fopen('php://temp', 'r+');
 
         if ($rows->isNotEmpty()) {
-            fputcsv($handle, array_keys($rows->first()));
+            fputcsv($handle, array_map(fn ($key): string => self::safeCell($key), array_keys($rows->first())));
         }
 
         foreach ($rows as $row) {
-            fputcsv($handle, array_map(fn ($value): string => (string) $value, array_values($row)));
+            fputcsv($handle, array_map(fn ($value): string => self::safeCell($value), array_values($row)));
         }
 
         rewind($handle);
@@ -197,11 +212,11 @@ class AccountingReportExporter
                 $row = (array) $row;
 
                 if (! $headerWritten) {
-                    fputcsv($handle, array_keys($row));
+                    fputcsv($handle, array_map(fn ($key): string => self::safeCell($key), array_keys($row)));
                     $headerWritten = true;
                 }
 
-                fputcsv($handle, array_map(fn ($value): string => (string) $value, array_values($row)));
+                fputcsv($handle, array_map(fn ($value): string => self::safeCell($value), array_values($row)));
             }
 
             fclose($handle);

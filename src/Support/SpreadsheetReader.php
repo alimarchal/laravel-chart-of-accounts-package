@@ -10,6 +10,8 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
  */
 class SpreadsheetReader
 {
+    private const MAX_PART_BYTES = 50 * 1024 * 1024;
+
     /**
      * @return list<array<string, string>> rows keyed by header (lower case, spaces → underscores); blank rows are skipped
      */
@@ -98,7 +100,10 @@ class SpreadsheetReader
         }
 
         try {
-            $sheetXml = $zip->getFromName(self::firstSheetPath($zip));
+            $sheetPath = self::firstSheetPath($zip);
+            self::assertSize($zip, $sheetPath);
+            self::assertSize($zip, 'xl/sharedStrings.xml');
+            $sheetXml = $zip->getFromName($sheetPath);
 
             if ($sheetXml === false) {
                 throw new AccountingException('The Excel workbook has no worksheet.');
@@ -226,8 +231,25 @@ class SpreadsheetReader
         return $index - 1;
     }
 
+    /**
+     * A small .xlsx can inflate to gigabytes (zip bomb): refuse parts whose uncompressed size is above the limit.
+     */
+    private static function assertSize(\ZipArchive $zip, string $name): void
+    {
+        $stat = $zip->statName($name);
+
+        if ($stat !== false && $stat['size'] > self::MAX_PART_BYTES) {
+            throw new AccountingException('The Excel workbook is too large to import. Split it or upload a CSV.');
+        }
+    }
+
     private static function xml(string $content): \SimpleXMLElement
     {
+        // Workbooks never carry a DOCTYPE; one means entity-expansion tricks.
+        if (stripos($content, '<!DOCTYPE') !== false || stripos($content, '<!ENTITY') !== false) {
+            throw new AccountingException('The Excel workbook could not be read.');
+        }
+
         $previous = libxml_use_internal_errors(true);
 
         try {

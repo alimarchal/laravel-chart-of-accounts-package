@@ -1586,6 +1586,20 @@ base currency is seeded.
 
 ---
 
+## Security
+
+The package is reviewed against the OWASP top ten for what it controls; see `tests/Feature/Accounting/SecurityRoutesTest.php`,
+`SecurityHardeningTest.php` and the cross-company test in `ApiAccessTest.php`.
+
+- **Authorisation:** every route carries a `can:` ability and authentication; a test fails the build if a new route is added without one, or if a GET route changes data.
+- **Company isolation:** a record of another company is never served, changed or deleted by id, on any API resource (tested for every route).
+- **Uploads:** attachments are limited to a whitelist of document types, stored on a private disk and downloaded with `nosniff`; Excel imports reject DOCTYPE/entity tricks and oversized (zip-bomb) parts.
+- **Exports:** CSV cells starting with `=`, `+`, `-` or `@` are prefixed so spreadsheets never run them as formulas.
+- **FBR:** the token is only sent to an `https://` address.
+- **Audit:** postings, voids, role and permission changes are written to the audit trail.
+
+A UAT checklist for accountants is in `docs/uat.md`.
+
 ## Testing
 
 ```bash

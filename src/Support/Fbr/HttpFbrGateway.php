@@ -21,6 +21,10 @@ class HttpFbrGateway implements FbrGateway
             return ['accepted' => false, 'invoice_number' => null, 'response' => '', 'error' => 'accounting.fbr.url is not set.'];
         }
 
+        if (! str_starts_with(strtolower($url), 'https://')) {
+            return ['accepted' => false, 'invoice_number' => null, 'response' => '', 'error' => 'accounting.fbr.url must be an https:// address: the token is never sent over plain http.'];
+        }
+
         try {
             $response = Http::timeout(max(1, (int) config('accounting.fbr.timeout', 20)))->withToken((string) config('accounting.fbr.token'))->acceptJson()->asJson()->post($url, $payload);
         } catch (ConnectionException $exception) {
