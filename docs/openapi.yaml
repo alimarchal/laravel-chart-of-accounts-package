@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.19.0
+  version: 2.20.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -7673,6 +7673,1101 @@ paths:
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
       - $ref: '#/components/parameters/Company'
+  /parties:
+    get:
+      tags:
+      - Receivables & payables
+      summary: Customers and suppliers
+      operationId: list_parties
+      description: 'Permission: `parties.view`.'
+      responses:
+        '200':
+          description: Parties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Party'
+                required:
+                - data
+      parameters:
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum:
+          - customer
+          - supplier
+          - both
+      - name: search
+        in: query
+        schema:
+          type: string
+      - name: active
+        in: query
+        schema:
+          type: boolean
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Create a customer or supplier
+      operationId: create_party
+      description: 'Permission: `parties.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Party'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - type
+              - code
+              - name
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - customer
+                  - supplier
+                  - both
+                code:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type:
+                  - string
+                  - 'null'
+                phone:
+                  type:
+                  - string
+                  - 'null'
+                address:
+                  type:
+                  - string
+                  - 'null'
+                tax_number:
+                  type:
+                  - string
+                  - 'null'
+                payment_terms_days:
+                  type: integer
+                credit_limit:
+                  type:
+                  - string
+                  - 'null'
+                receivable_account_id:
+                  type:
+                  - integer
+                  - 'null'
+                payable_account_id:
+                  type:
+                  - integer
+                  - 'null'
+                is_active:
+                  type: boolean
+                notes:
+                  type:
+                  - string
+                  - 'null'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /parties/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Receivables & payables
+      summary: A party with its balance and open items
+      operationId: show_party
+      description: 'Permission: `parties.view`.'
+      responses:
+        '200':
+          description: Party
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      balance:
+                        $ref: '#/components/schemas/Money'
+                      open_items:
+                        type: array
+                        items:
+                          type: object
+                      unapplied:
+                        type: array
+                        description: Credit / debit notes and payments not yet applied
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: side
+        in: query
+        schema:
+          type: string
+          enum:
+          - receivable
+          - payable
+        description: 'receivable: what customers owe; payable: what is owed to suppliers (default: by the party''s type)'
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Receivables & payables
+      summary: Change a party (PATCH also accepted)
+      operationId: update_party
+      description: 'Permission: `parties.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Party'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - type
+              - code
+              - name
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - customer
+                  - supplier
+                  - both
+                code:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type:
+                  - string
+                  - 'null'
+                phone:
+                  type:
+                  - string
+                  - 'null'
+                address:
+                  type:
+                  - string
+                  - 'null'
+                tax_number:
+                  type:
+                  - string
+                  - 'null'
+                payment_terms_days:
+                  type: integer
+                credit_limit:
+                  type:
+                  - string
+                  - 'null'
+                receivable_account_id:
+                  type:
+                  - integer
+                  - 'null'
+                payable_account_id:
+                  type:
+                  - integer
+                  - 'null'
+                is_active:
+                  type: boolean
+                notes:
+                  type:
+                  - string
+                  - 'null'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Receivables & payables
+      summary: Delete a party without documents or payments
+      operationId: delete_party
+      description: 'Permission: `parties.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /parties/{id}/statement:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Receivables & payables
+      summary: Statement of account with a running balance
+      operationId: party_statement
+      description: 'Permission: `parties.view`.'
+      responses:
+        '200':
+          description: Statement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      opening:
+                        $ref: '#/components/schemas/Money'
+                      rows:
+                        type: array
+                        items:
+                          type: object
+                      closing:
+                        $ref: '#/components/schemas/Money'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: side
+        in: query
+        schema:
+          type: string
+          enum:
+          - receivable
+          - payable
+        description: 'receivable: what customers owe; payable: what is owed to suppliers (default: by the party''s type)'
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
+  /party-documents:
+    get:
+      tags:
+      - Receivables & payables
+      summary: Invoices, bills, credit and debit notes
+      operationId: list_party_documents
+      description: 'Permission: `party-documents.view`.'
+      responses:
+        '200':
+          description: Documents, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PartyDocument'
+                required:
+                - data
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+          enum:
+          - invoice
+          - bill
+          - credit_note
+          - debit_note
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - draft
+          - posted
+          - void
+      - name: party_id
+        in: query
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Create a draft document
+      operationId: create_party_document
+      description: 'Line amounts and tax are computed on the issue date; nothing is booked until the document is posted.
+
+
+        Permission: `party-documents.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyDocument'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - party_id
+              - kind
+              - issue_date
+              - lines
+              properties:
+                party_id:
+                  type: integer
+                kind:
+                  type: string
+                  enum:
+                  - invoice
+                  - bill
+                  - credit_note
+                  - debit_note
+                  description: invoice / credit_note need a customer, bill / debit_note a supplier
+                issue_date:
+                  type: string
+                  format: date
+                due_date:
+                  type: string
+                  format: date
+                  description: 'Default: issue date plus the party''s payment terms (credit and debit notes: the issue date)'
+                reference:
+                  type: string
+                prices_include_tax:
+                  type: boolean
+                notes:
+                  type: string
+                lines:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                    - chart_of_account_id
+                    - unit_price
+                    properties:
+                      chart_of_account_id:
+                        type: integer
+                        description: An active posting account that is not a control account
+                      description:
+                        type: string
+                      quantity:
+                        type: number
+                        default: 1
+                      unit_price:
+                        type: number
+                      cost_center_id:
+                        type: integer
+                      tax_code_id:
+                        type: integer
+                        description: An output code for invoices and credit notes, an input code for bills and debit notes
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-documents/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Receivables & payables
+      summary: A document with its lines
+      operationId: show_party_document
+      description: 'Permission: `party-documents.view`.'
+      responses:
+        '200':
+          description: Document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyDocument'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Receivables & payables
+      summary: Change a draft (PATCH also accepted)
+      operationId: update_party_document
+      description: 'Permission: `party-documents.update`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyDocument'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - party_id
+              - kind
+              - issue_date
+              - lines
+              properties:
+                party_id:
+                  type: integer
+                kind:
+                  type: string
+                  enum:
+                  - invoice
+                  - bill
+                  - credit_note
+                  - debit_note
+                  description: invoice / credit_note need a customer, bill / debit_note a supplier
+                issue_date:
+                  type: string
+                  format: date
+                due_date:
+                  type: string
+                  format: date
+                  description: 'Default: issue date plus the party''s payment terms (credit and debit notes: the issue date)'
+                reference:
+                  type: string
+                prices_include_tax:
+                  type: boolean
+                notes:
+                  type: string
+                lines:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                    - chart_of_account_id
+                    - unit_price
+                    properties:
+                      chart_of_account_id:
+                        type: integer
+                        description: An active posting account that is not a control account
+                      description:
+                        type: string
+                      quantity:
+                        type: number
+                        default: 1
+                      unit_price:
+                        type: number
+                      cost_center_id:
+                        type: integer
+                      tax_code_id:
+                        type: integer
+                        description: An output code for invoices and credit notes, an input code for bills and debit notes
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Receivables & payables
+      summary: Delete a draft
+      operationId: delete_party_document
+      description: 'Permission: `party-documents.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-documents/{id}/post:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Number and post a draft
+      operationId: post_party_document
+      description: 'Books one journal entry: the party''s control account against the lines and their tax (marked for the
+        tax report). The number is gapless per kind and year; a posting that fails gives it back.
+
+
+        Permission: `party-documents.post`.'
+      responses:
+        '200':
+          description: Posted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyDocument'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-documents/{id}/void:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Void a posted document (its entry is reversed)
+      operationId: void_party_document
+      description: '422 while payments or credits are applied to it.
+
+
+        Permission: `party-documents.void`.'
+      responses:
+        '200':
+          description: Voided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyDocument'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-documents/{id}/apply:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Apply a credit or debit note to invoices or bills
+      operationId: apply_credit_note
+      description: 'Permission: `party-payments.create`.'
+      responses:
+        '200':
+          description: Applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyDocument'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - allocations
+              properties:
+                allocations:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - document_id
+                    - amount
+                    properties:
+                      document_id:
+                        type: integer
+                      amount:
+                        type: number
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-allocations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    delete:
+      tags:
+      - Receivables & payables
+      summary: Undo an allocation
+      operationId: undo_allocation
+      description: 'Permission: `party-payments.create`.'
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-payments:
+    get:
+      tags:
+      - Receivables & payables
+      summary: Receipts and payments
+      operationId: list_party_payments
+      description: 'Permission: `party-payments.view`.'
+      responses:
+        '200':
+          description: Payments, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PartyPayment'
+                required:
+                - data
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+          enum:
+          - receipt
+          - payment
+      - name: party_id
+        in: query
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Record a receipt from a customer or a payment to a supplier
+      operationId: create_party_payment
+      description: 'Posted at once and numbered (RCT-… / PAY-…): the bank account against the party''s control account. What
+        is not allocated stays on the party''s account.
+
+
+        Permission: `party-payments.create`.'
+      responses:
+        '201':
+          description: Recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyPayment'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - party_id
+              - kind
+              - payment_date
+              - amount
+              - account_id
+              properties:
+                party_id:
+                  type: integer
+                kind:
+                  type: string
+                  enum:
+                  - receipt
+                  - payment
+                payment_date:
+                  type: string
+                  format: date
+                amount:
+                  type: number
+                account_id:
+                  type: integer
+                  description: The bank or cash account
+                method:
+                  type: string
+                reference:
+                  type: string
+                notes:
+                  type: string
+                allocations:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - document_id
+                    - amount
+                    properties:
+                      document_id:
+                        type: integer
+                      amount:
+                        type: number
+                auto_allocate:
+                  type: boolean
+                  description: Settle the oldest invoices (bills) first, as far as the amount goes
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-payments/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Receivables & payables
+      summary: A payment with its allocations
+      operationId: show_party_payment
+      description: 'Permission: `party-payments.view`.'
+      responses:
+        '200':
+          description: Payment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyPayment'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-payments/{id}/allocate:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Allocate (more of) a payment to documents
+      operationId: allocate_party_payment
+      description: 'Permission: `party-payments.create`.'
+      responses:
+        '200':
+          description: Allocated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyPayment'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                allocations:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - document_id
+                    - amount
+                    properties:
+                      document_id:
+                        type: integer
+                      amount:
+                        type: number
+                auto_allocate:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /party-payments/{id}/void:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Receivables & payables
+      summary: Void a payment (entry reversed, allocations released)
+      operationId: void_party_payment
+      description: 'Permission: `party-payments.void`.'
+      responses:
+        '200':
+          description: Voided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PartyPayment'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /receivables/aging:
+    get:
+      tags:
+      - Receivables & payables
+      summary: Ageing by customer or supplier, checked against the control account
+      operationId: party_aging
+      description: 'Permission: `party-documents.view`.'
+      responses:
+        '200':
+          description: Report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      as_of:
+                        type: string
+                        format: date
+                      side:
+                        type: string
+                      rows:
+                        type: array
+                        items:
+                          type: object
+                          description: not_due, days_1_30, days_31_60, days_61_90, over_90 (by days past due), unapplied (negative),
+                            total
+                      totals:
+                        type: object
+                      reconciliation:
+                        type: object
+                        properties:
+                          ledger:
+                            $ref: '#/components/schemas/Money'
+                          subledger:
+                            $ref: '#/components/schemas/Money'
+                          difference:
+                            $ref: '#/components/schemas/Money'
+                required:
+                - data
+      parameters:
+      - name: side
+        in: query
+        schema:
+          type: string
+          enum:
+          - receivable
+          - payable
+        description: 'receivable: what customers owe; payable: what is owed to suppliers (default: by the party''s type)'
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
+  /receivables/aging/export/{format}:
+    parameters:
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+        - pdf
+    get:
+      tags:
+      - Receivables & payables
+      summary: Export the ageing
+      operationId: export_party_aging
+      description: 'Permission: `party-documents.view`.'
+      responses:
+        '200':
+          description: The file
+      parameters:
+      - name: side
+        in: query
+        schema:
+          type: string
+          enum:
+          - receivable
+          - payable
+        description: 'receivable: what customers owe; payable: what is owed to suppliers (default: by the party''s type)'
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -9788,3 +10883,207 @@ components:
               $ref: '#/components/schemas/Money'
             advance:
               $ref: '#/components/schemas/Money'
+    Party:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum:
+          - customer
+          - supplier
+          - both
+        code:
+          type: string
+        name:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        tax_number:
+          type:
+          - string
+          - 'null'
+        payment_terms_days:
+          type: integer
+        credit_limit:
+          type:
+          - string
+          - 'null'
+        receivable_account_id:
+          type:
+          - integer
+          - 'null'
+        payable_account_id:
+          type:
+          - integer
+          - 'null'
+        is_active:
+          type: boolean
+        notes:
+          type:
+          - string
+          - 'null'
+    PartyDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum:
+          - invoice
+          - bill
+          - credit_note
+          - debit_note
+        number:
+          type:
+          - string
+          - 'null'
+          description: 'Assigned when posted: INV-2026-00001'
+        party_id:
+          type: integer
+        party:
+          type:
+          - string
+          - 'null'
+        issue_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        reference:
+          type:
+          - string
+          - 'null'
+        prices_include_tax:
+          type: boolean
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        tax_total:
+          $ref: '#/components/schemas/Money'
+        total:
+          $ref: '#/components/schemas/Money'
+        open:
+          type: string
+          description: 'Posted documents: what is still open (invoice, bill) or available (credit, debit note)'
+        status:
+          type: string
+          enum:
+          - draft
+          - posted
+          - void
+        journal_entry_id:
+          type:
+          - integer
+          - 'null'
+        notes:
+          type:
+          - string
+          - 'null'
+        lines:
+          type: array
+          description: Only on single-document responses
+          items:
+            type: object
+            properties:
+              chart_of_account_id:
+                type: integer
+              account:
+                type:
+                - string
+                - 'null'
+              description:
+                type:
+                - string
+                - 'null'
+              quantity:
+                type: string
+              unit_price:
+                type: string
+              tax_code:
+                type:
+                - string
+                - 'null'
+              tax_rate:
+                type:
+                - string
+                - 'null'
+              net_amount:
+                $ref: '#/components/schemas/Money'
+              tax_amount:
+                $ref: '#/components/schemas/Money'
+    PartyPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum:
+          - receipt
+          - payment
+        number:
+          type:
+          - string
+          - 'null'
+        party_id:
+          type: integer
+        party:
+          type:
+          - string
+          - 'null'
+        payment_date:
+          type: string
+          format: date
+        amount:
+          $ref: '#/components/schemas/Money'
+        unapplied:
+          $ref: '#/components/schemas/Money'
+        account_id:
+          type: integer
+        method:
+          type:
+          - string
+          - 'null'
+        reference:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+          enum:
+          - posted
+          - void
+        journal_entry_id:
+          type:
+          - integer
+          - 'null'
+        allocations:
+          type: array
+          description: Only on single-payment responses
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              document_id:
+                type: integer
+              document:
+                type: string
+              amount:
+                $ref: '#/components/schemas/Money'
+              allocated_on:
+                type: string
+                format: date

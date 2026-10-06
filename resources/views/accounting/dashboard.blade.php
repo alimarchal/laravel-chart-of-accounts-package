@@ -49,6 +49,20 @@
                             <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></x-slot>
                         </x-accounting::settings-row>
                         @endcan
+                        @can('parties.view')
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.parties.index') }}" label="Customers & Suppliers" description="Accounts, statements and ageing" icon-bg="bg-orange-600">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.party-documents.index') }}" label="Invoices & Bills" description="Sales invoices, purchase bills, credit and debit notes" icon-bg="bg-orange-500">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.party-payments.index') }}" label="Receipts & Payments" description="Money in and out, allocated to documents" icon-bg="bg-orange-400">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        @endcan
                         @can('chart-of-accounts.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row href="{{ route('accounting.chart-of-accounts.index') }}" label="Chart of Accounts" description="Hierarchical account tree" :count="$summary['accounts']" icon-bg="bg-indigo-500">

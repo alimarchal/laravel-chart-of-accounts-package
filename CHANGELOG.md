@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.20.0] - 2026-10-22
+
+Receivables and payables release.
+
+### Added
+- **Customers and suppliers** (parties) with payment terms, credit limit, tax number and optional own receivable / payable account.
+- **Invoices, bills, credit notes and debit notes**: lines with tax codes (exclusive or inclusive prices), drafts, gapless numbers
+  per kind and year assigned at posting, one journal entry per document in the control account's module (tax lines marked for the
+  tax report), void by reversal.
+- **Receipts and payments** with allocation to invoices and bills (specific amounts or oldest due first), credit and debit notes
+  applied to documents, unapplied amounts, undo of allocations.
+- **Open items, statements of account and ageing** by customer / supplier (days past due buckets, unapplied), CSV / XLSX / PDF
+  export, and a **check of the sub-ledger against the control account**.
+- Screens (React and Blade) and API for all of it: `/parties`, `/party-documents`, `/party-payments`, `/party-allocations`,
+  `/receivables/aging`.
+- Permissions `parties.*`, `party-documents.*`, `party-payments.*` (accountant all; approver, auditor, viewer view); audited
+  (`PARTY_*`).
+
 ## [2.19.0] - 2026-10-21
 
 Tax engine release.

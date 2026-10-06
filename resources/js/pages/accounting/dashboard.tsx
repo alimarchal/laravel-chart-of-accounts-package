@@ -183,6 +183,13 @@ export default function AccountingDashboard({ summary }: Props) {
         ...(permissions['tax-returns.view']
             ? [{ title: 'Tax', href: '/accounting/tax', icon: FileText }]
             : []),
+        ...(permissions['parties.view']
+            ? [
+                  { title: 'Customers & Suppliers', href: '/accounting/parties', icon: Users },
+                  { title: 'Invoices & Bills', href: '/accounting/party-documents', icon: FileText },
+                  { title: 'Receipts & Payments', href: '/accounting/party-payments', icon: FileText },
+              ]
+            : []),
         { title: 'My Exports', href: '/accounting/exports', icon: FileText },
         ...(permissions['user.view']
             ? [{ title: 'Users', href: '/accounting/users', icon: Users }]

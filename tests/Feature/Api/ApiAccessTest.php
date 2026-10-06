@@ -16,6 +16,10 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
 use Alimarchal\LaravelChartOfAccounts\Models\FxRevaluation;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\Party;
+use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
+use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
+use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportExport;
@@ -102,6 +106,10 @@ function concreteUri(Route $route): string
             'rates' => ExchangeRate::class,
             'budgets' => Budget::class,
             'returns' => TaxReturn::class,
+            'parties' => Party::class,
+            'party-documents' => PartyDocument::class,
+            'party-payments' => PartyPayment::class,
+            'party-allocations' => PartyAllocation::class,
             'bank-statements' => BankStatement::class,
             'bank-statement-lines' => BankStatementLine::class,
             'fx-revaluation' => FxRevaluation::class,
@@ -140,6 +148,10 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     Storage::fake('local');
     $entry = journal(['1101' => 10, '4101' => -10]);
     app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
+    $party = Party::query()->create(['type' => 'both', 'code' => 'P1', 'name' => 'Party']);
+    $partyDocument = PartyDocument::query()->create(['party_id' => $party->id, 'kind' => 'invoice', 'issue_date' => now()->toDateString(), 'due_date' => now()->toDateString()]);
+    $partyPayment = PartyPayment::query()->create(['party_id' => $party->id, 'kind' => 'receipt', 'payment_date' => now()->toDateString(), 'amount' => 1, 'account_id' => account('1101')->id]);
+    PartyAllocation::query()->create(['party_id' => $party->id, 'document_id' => $partyDocument->id, 'payment_id' => $partyPayment->id, 'amount' => 1, 'allocated_on' => now()->toDateString()]);
     TaxReturn::query()->create(['period_from' => now()->startOfYear()->toDateString(), 'period_to' => now()->startOfYear()->addDays(5)->toDateString(), 'payable_account_id' => account('2101')->id]);
     Budget::query()->create(['name' => 'Plan', 'start_date' => now()->startOfYear()->toDateString(), 'end_date' => now()->endOfYear()->toDateString()]);
     $bankAccount = BankAccount::factory()->create();
@@ -158,7 +170,7 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
         $method = collect($route->methods())->reject(fn ($m) => $m === 'HEAD')->first();
 
         // Queuing or deleting your own report export reads the books, it does not write to them.
-        if ($method === 'GET' || in_array($route->uri(), ['api/v1/accounting/reports/{report}/exports/{format}', 'api/v1/accounting/exports/{export}', 'api/v1/accounting/tax/calculate'], true)) {
+        if ($method === 'GET' || in_array($route->uri(), ['api/v1/accounting/reports/{report}/exports/{format}', 'api/v1/accounting/exports/{export}', 'api/v1/accounting/tax/calculate', 'api/v1/accounting/receivables/aging/export/{format}'], true)) {
             continue;
         }
 
