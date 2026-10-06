@@ -25,6 +25,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\InventoryController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\JournalEntryController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\LocaleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyDocumentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyPaymentController;
@@ -54,6 +55,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\UserController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\SetAccountingLocale;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\ShareAccountingInertiaData;
 use Illuminate\Support\Facades\Route;
 
@@ -81,7 +83,7 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
         ->middleware("can:{$permissionPrefix}.delete");
 };
 
-Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, ShareAccountingInertiaData::class])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, ShareAccountingInertiaData::class, SetAccountingLocale::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name('accounting.')
     ->group(function () use ($resourceRoutes): void {
@@ -90,6 +92,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
             ->middleware('can:accounting.view');
         Route::get('overview', AccountingOverviewController::class)
             ->name('overview')
+            ->middleware('can:accounting.view');
+        Route::post('locale', LocaleController::class)
+            ->name('locale')
             ->middleware('can:accounting.view');
         Route::post('company/switch', CompanySwitchController::class)
             ->name('company.switch')

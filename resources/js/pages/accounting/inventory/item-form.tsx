@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Props = {
     item: { id: number; sku: string; name: string; unit: string; category: string | null; reorder_level: string; inventory_account_id: number; cogs_account_id: number; is_active: boolean } | null;
@@ -16,6 +17,7 @@ type Props = {
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default function InventoryItemForm({ item, accounts, locked }: Props) {
+    useAccountingI18n();
     const form = useForm({
         sku: item?.sku ?? '', name: item?.name ?? '', unit: item?.unit ?? 'pcs', category: item?.category ?? '', reorder_level: item?.reorder_level ?? '0',
         inventory_account_id: item ? String(item.inventory_account_id) : '', cogs_account_id: item ? String(item.cogs_account_id) : '', is_active: item?.is_active ?? true,

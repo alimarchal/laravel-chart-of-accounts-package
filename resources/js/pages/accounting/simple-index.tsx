@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Props = {
     records: {
@@ -27,6 +28,7 @@ function display(value: unknown): string {
 }
 
 export default function SimpleAccountingIndex({ records }: Props) {
+    useAccountingI18n();
     const first = records.data[0] ?? {};
     const columns = Object.keys(first).filter(
         (key) => !['created_at', 'updated_at', 'deleted_at'].includes(key),

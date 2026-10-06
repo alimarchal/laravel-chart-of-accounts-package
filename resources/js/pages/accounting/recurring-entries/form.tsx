@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Line = {
     chart_of_account_id: string;
@@ -72,6 +73,7 @@ export default function RecurringEntryForm({
     frequencies,
     today,
 }: Props) {
+    useAccountingI18n();
     const form = useForm({
         name: entry?.name ?? '',
         voucher_type_id: entry?.voucher_type_id

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Account = { id: number; account_code: string; account_name: string; type: string };
 type Asset = {
@@ -17,6 +18,7 @@ type Props = { asset: Asset | null; accounts: Account[]; methods: Record<string,
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default function FixedAssetForm({ asset, accounts, methods, today }: Props) {
+    useAccountingI18n();
     const form = useForm({
         code: asset?.code ?? '', name: asset?.name ?? '', category: asset?.category ?? '', description: asset?.description ?? '',
         acquisition_date: asset?.acquisition_date ?? today, in_service_date: asset?.in_service_date ?? '', cost: asset?.cost ?? '', salvage_value: asset?.salvage_value ?? '0',

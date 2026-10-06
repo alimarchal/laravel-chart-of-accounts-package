@@ -69,6 +69,10 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
             ], 'accounting-js');
 
             $this->publishes([
+                __DIR__.'/../resources/lang/' => lang_path(),
+            ], 'accounting-lang');
+
+            $this->publishes([
                 __DIR__.'/../public/vendor/accounting/' => public_path('vendor/accounting'),
             ], 'accounting-assets');
 
@@ -125,6 +129,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         }
 
         $this->loadViewsFrom(__DIR__.'/../resources/views/accounting', 'accounting');
+        $this->loadJsonTranslationsFrom(__DIR__.'/../resources/lang');
 
         Blade::anonymousComponentPath(__DIR__.'/../resources/views/accounting/components', 'accounting');
 

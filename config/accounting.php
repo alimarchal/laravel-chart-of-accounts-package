@@ -166,6 +166,13 @@ return [
         ],
     ],
 
+    // Language of the accounting screens. locale is the default; the switcher offers every entry of locales. A phrase is
+    // translated when resources/lang/<locale>.json (or your application's own lang/<locale>.json, which wins) has it as a key;
+    // any other phrase stays in English. rtl_locales are shown right to left. The API is never translated.
+    'locale' => env('ACCOUNTING_LOCALE', 'en'),
+    'locales' => ['en' => 'English', 'ur' => 'اردو'],
+    'rtl_locales' => ['ur'],
+
     // Budgets: control = block refuses a posting that takes a budgeted expense account past its cumulative budget in
     // the approved budget covering the entry date (users with budgets.override may still post). warn_percent: the
     // share of the budget used from which a line shows a warning.

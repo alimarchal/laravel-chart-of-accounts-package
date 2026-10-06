@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Period = { income: string; expense: string; net: string };
 type Overview = {
@@ -147,6 +148,7 @@ function AgingBars({ side }: { side: Side }) {
 }
 
 export default function AccountingOverview({ overview }: { overview: Overview }) {
+    useAccountingI18n();
     const [asOf, setAsOf] = useState(overview.as_of);
     const { performance, cash, receivables, payables, alerts, recent_entries: recent } = overview;
 

@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Row = { party_id: number; code: string; name: string; credit_limit: string | null; not_due: string; days_1_30: string; days_31_60: string; days_61_90: string; over_90: string; unapplied: string; total: string };
 type Props = {
@@ -25,6 +26,7 @@ const columns: Array<[keyof Row, string]> = [
 ];
 
 export default function Aging({ report, reconciliation }: Props) {
+    useAccountingI18n();
     const [asOf, setAsOf] = useState(report.as_of);
     const query = `side=${report.side}&as_of=${asOf}`;
     const apply = (event: FormEvent) => {

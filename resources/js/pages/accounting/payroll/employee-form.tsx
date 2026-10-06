@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Component = { id: number; code: string; name: string; kind: string; method: string; value: string };
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default function PayrollEmployeeForm({ employee, components, costCenters, today }: Props) {
+    useAccountingI18n();
     const form = useForm({
         code: employee?.code ?? '', name: employee?.name ?? '', national_id: employee?.national_id ?? '', designation: employee?.designation ?? '', cost_center_id: employee?.cost_center_id ? String(employee.cost_center_id) : '',
         join_date: employee?.join_date ?? today, leave_date: employee?.leave_date ?? '', base_salary: employee?.base_salary ?? '', withhold_tax: employee?.withhold_tax ?? false,

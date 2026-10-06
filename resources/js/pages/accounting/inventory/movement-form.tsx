@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Props = {
     items: Array<{ id: number; sku: string; name: string; is_active: boolean }>;
@@ -19,6 +20,7 @@ const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-
 const TYPES: Record<string, string> = { receipt: 'Receive stock', issue: 'Issue stock (cost of goods sold)', adjustment: 'Adjust (count difference)', transfer: 'Transfer between warehouses' };
 
 export default function InventoryMovementForm({ items, warehouses, accounts, today, preset }: Props) {
+    useAccountingI18n();
     const form = useForm({
         type: preset.type in TYPES ? preset.type : 'receipt', item_id: String(preset.item_id ?? ''), warehouse_id: '', to_warehouse_id: '', movement_date: today, quantity: '', unit_cost: '', offset_account_id: '', reference: '', notes: '',
     });

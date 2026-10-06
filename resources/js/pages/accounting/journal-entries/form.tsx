@@ -15,6 +15,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 import {
     Select,
     SelectContent,
@@ -111,6 +112,7 @@ export default function JournalEntryForm({
     voucherTypes,
     documentTypes,
 }: Props) {
+    useAccountingI18n();
     const baseCurrency =
         currencies.find((currency) => currency.is_base) ?? currencies[0];
     const today = new Date().toISOString().slice(0, 10);

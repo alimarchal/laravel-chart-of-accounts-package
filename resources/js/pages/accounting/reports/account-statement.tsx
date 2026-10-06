@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BreadcrumbItem } from '@/types';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Account = {
     id: number;
@@ -53,6 +54,7 @@ export default function AccountStatement({
     filters,
     statement,
 }: Props) {
+    useAccountingI18n();
     const [form, setForm] = useState({
         account_id: filters.account_id ? String(filters.account_id) : '',
         date_from: filters.date_from ?? '',
