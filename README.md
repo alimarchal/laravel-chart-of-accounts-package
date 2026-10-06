@@ -431,6 +431,31 @@ The package schedules the command daily at `ACCOUNTING_RECURRING_TIME` (02:00) �
 (`* * * * * php artisan schedule:run`); `ACCOUNTING_RECURRING_SCHEDULE=false` leaves scheduling to you. Permissions
 `recurring-entries.view / create / update / delete / run` (accountant: all; approver, auditor, viewer: view).
 
+## Budgets
+
+Dashboard → **Budgets** (React and Blade) or `/api/v1/accounting/budgets`. A budget plans income and expenses by
+**account** (optionally **cost center**) and **month**, in the base currency and the account's natural direction (income
+earned, expense spent), and is then followed against the ledger.
+
+- **Plan**: a first and last month (up to 24 months) and one line per account — an *annual* figure that is spread
+  evenly (the odd cents land in the first months) or amounts *by month*. **Build from last year**: add every account that
+  had income or expenses in the same months a year earlier, raised or lowered by a percentage. **Copy** a budget to a later
+  year with a percentage change.
+- **Workflow**: *draft* (editable) → *approved* (needs `budgets.approve` — the accountant plans, the approver approves) →
+  *closed*; reopen to revise. Only one approved budget may cover a month.
+- **Budget against actual**: for the whole budget or any range of months, and for one cost center. Actuals are posted
+  entries in base currency (closing entries excluded). Per account: budget, actual, **variance** (favourable when
+  positive: income above plan, expenses below it), share used and a status — *ok*, *warning* (an expense at
+  `ACCOUNTING_BUDGET_WARN_PERCENT`, 90%, of its budget), *over*, *behind* (income below plan), *unbudgeted* (spending with
+  no budget line); click a row for the months. Totals for income, expenses and net. Export to CSV, XLSX and PDF.
+- **Optional control**: `ACCOUNTING_BUDGET_CONTROL=block` refuses to post an entry that takes a budgeted expense account
+  past its **cumulative** budget (the sum of its monthly budgets up to the entry's month) in the approved budget covering
+  the date. Unbudgeted accounts, income, drafts and system entries are never blocked; users with `budgets.override` may
+  post anyway. The default is `off`.
+
+Permissions `budgets.view` (accountant, approver, auditor, viewer), `budgets.create / update / delete` (accountant),
+`budgets.approve` (approver) and `budgets.override` (administrators). Audited (`BUDGET_*`).
+
 ## Bank statements
 
 Dashboard → **Bank Statements** (React and Blade) or `/api/v1/accounting/bank-statements`. Import the statement your bank
@@ -964,6 +989,10 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET/POST | `/recurring-entries` | Templates / create one (balanced lines + schedule) | `recurring-entries.view` / `.create` |
 | GET/PUT/DELETE | `/recurring-entries/{id}` | Template with runs and upcoming dates / change / delete (only if it has not run) | `recurring-entries.*` |
 | POST | `/recurring-entries/{id}/pause` · `/resume` · `/run` | Pause / resume (`skip_missed`) / generate the next entry now | `recurring-entries.update` / `.run` |
+| GET/POST | `/budgets` | Budgets / create a draft (`lines` with `annual` or `amounts`, or `from_actuals`) | `budgets.view` / `.create` |
+| GET/PUT/DELETE | `/budgets/{id}` | Budget against actual (`date_from`, `date_to`, `cost_center_id`) / change a draft / delete | `budgets.view` / `.update` / `.delete` |
+| POST | `/budgets/{id}/approve` · `/close` · `/reopen` · `/copy` | Approve / close / reopen as a draft / copy (`name`, `start_date`, `uplift_percent`) | `budgets.approve` / `.update` / `.create` |
+| GET | `/budgets/{id}/export/{csv\|xlsx\|pdf}` | Budget against actual as a file | `budgets.view` |
 | GET | `/bank-statements` · `/bank-statements/{id}` | Statements / one with its transactions | `bank-statements.view` |
 | POST | `/bank-statements/import` | Import a CSV/XLSX statement (`file`, `bank_account_id`, `dry_run`, `closing_balance`, `auto_match`) | `bank-statements.import` |
 | PUT · DELETE | `/bank-statements/{id}` | Set the closing balance / delete (releases matches) | `bank-statements.match` |
@@ -1178,6 +1207,12 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `recurring-entries.update` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.delete` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.run` | ✔ |  | ✔ |  |  |  |
+| `budgets.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `budgets.create` | ✔ |  | ✔ |  |  |  |
+| `budgets.update` | ✔ |  | ✔ |  |  |  |
+| `budgets.delete` | ✔ |  | ✔ |  |  |  |
+| `budgets.approve` | ✔ |  |  | ✔ |  |  |
+| `budgets.override` | ✔ |  |  |  |  |  |
 | `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `bank-statements.import` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.match` | ✔ |  | ✔ |  |  |  |

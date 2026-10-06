@@ -2,6 +2,23 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.18.0] - 2026-10-20
+
+Budgets release.
+
+### Added
+- **Budgets**: income and expense plans by account (and cost center) and month, up to 24 months; an annual figure
+  spread evenly or amounts by month; build from last year's actuals with a percentage; copy to a later year.
+  Draft → approved (`budgets.approve`) → closed, reopen to revise, one approved budget per month.
+- **Budget against actual** for any range and cost center: budget, actual, variance (favourable when positive), share
+  used, status (ok / warning / over / behind / unbudgeted), months per account, totals; CSV / XLSX / PDF export.
+- **Optional posting control** (`ACCOUNTING_BUDGET_CONTROL=block`): refuses an entry that takes a budgeted expense
+  account past its cumulative budget; `budgets.override` may still post; `ACCOUNTING_BUDGET_WARN_PERCENT` sets the warning level.
+- Screens (React and Blade): list, form, report with filters and monthly detail; API `/budgets` (+ `/approve`, `/close`,
+  `/reopen`, `/copy`, `/export/{format}`).
+- Permissions `budgets.view` (accountant, approver, auditor, viewer), `.create / .update / .delete` (accountant),
+  `.approve` (approver), `.override`; audited (`BUDGET_*`).
+
 ## [2.17.0] - 2026-10-19
 
 Bank statement import release.
