@@ -431,6 +431,36 @@ The package schedules the command daily at `ACCOUNTING_RECURRING_TIME` (02:00) �
 (`* * * * * php artisan schedule:run`); `ACCOUNTING_RECURRING_SCHEDULE=false` leaves scheduling to you. Permissions
 `recurring-entries.view / create / update / delete / run` (accountant: all; approver, auditor, viewer: view).
 
+## Customers, suppliers, invoices and bills
+
+Dashboard → **Customers & Suppliers**, **Invoices & Bills**, **Receipts & Payments** (React and Blade) or
+`/api/v1/accounting/parties`, `/party-documents`, `/party-payments`. The receivables and payables sub-ledger: who owes you,
+whom you owe, and the ledger moves with it.
+
+- **Parties**: customers, suppliers or both, with payment terms (the default due date), an optional credit limit (a warning
+  on the account page when the balance passes it), a tax number and, optionally, their own receivable / payable account.
+  Otherwise documents post to the **receivables / payables control account** (Control accounts), so only this module — not a
+  manual entry — moves those balances.
+- **Documents**: invoice, credit note (customers), bill, debit note (suppliers). Lines carry an account, quantity, unit price
+  and an output (sales) or input (purchase) **tax code**, tax-exclusive or inclusive prices; amounts and tax are worked out on
+  the issue date. A document is a **draft** until posted; posting gives it a **gapless number** (`INV-2026-00001`, per kind
+  and year; a posting that fails gives the number back) and books **one entry**: the control account against the lines and their
+  tax, the tax lines marked for the tax report, with the invoice number as the entry's source document. A posted document is
+  never edited: **void** it (its entry is reversed) and issue a new one.
+- **Receipts and payments** are posted when recorded (bank or cash account against the control account) and numbered (`RCT-…`,
+  `PAY-…`). **Allocate** them to specific invoices (bills), or leave the oldest due first; what is not allocated stays on the
+  account as an *unapplied* payment. A **credit (debit) note** is applied to invoices (bills) the same way. Allocations can be
+  undone; a document with allocations cannot be voided until they are.
+- **Statements and open items**: per party, the open invoices with days overdue, unapplied credits and payments, and a
+  **statement of account** for any period with a running balance.
+- **Ageing** by customer or supplier (not due, 1–30, 31–60, 61–90, over 90 days past due, unapplied, total) as of any date, with
+  CSV / XLSX / PDF export — and a **check against the control account**: the sub-ledger total must equal the ledger, and any
+  difference (a manual posting on the control account) is shown.
+- Base currency only in this release.
+
+Permissions `parties.view / create / update / delete`, `party-documents.view / create / update / delete / post / void` and
+`party-payments.view / create / void` (accountant: all; approver, auditor, viewer: view). Audited (`PARTY_*`).
+
 ## Tax
 
 Dashboard → **Tax** (React and Blade) or `/api/v1/accounting/tax/…`. Tax codes and their dated rates (Accounting →
@@ -1016,6 +1046,17 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET/POST | `/recurring-entries` | Templates / create one (balanced lines + schedule) | `recurring-entries.view` / `.create` |
 | GET/PUT/DELETE | `/recurring-entries/{id}` | Template with runs and upcoming dates / change / delete (only if it has not run) | `recurring-entries.*` |
 | POST | `/recurring-entries/{id}/pause` · `/resume` · `/run` | Pause / resume (`skip_missed`) / generate the next entry now | `recurring-entries.update` / `.run` |
+| GET/POST | `/parties` | Customers and suppliers (`type`, `search`) / create | `parties.view` / `.create` |
+| GET/PUT/DELETE | `/parties/{id}` | A party with its balance and open items (`side`, `as_of`) / change / delete | `parties.*` |
+| GET | `/parties/{id}/statement` | Statement of account (`side`, `date_from`, `date_to`) | `parties.view` |
+| GET/POST | `/party-documents` | Invoices, bills, credit and debit notes / create a draft | `party-documents.view` / `.create` |
+| GET/PUT/DELETE | `/party-documents/{id}` | A document / change a draft / delete a draft | `party-documents.*` |
+| POST | `/party-documents/{id}/post` · `/void` · `/apply` | Number and post / void (reverses the entry) / apply a credit or debit note | `party-documents.post` / `.void` / `party-payments.create` |
+| GET/POST | `/party-payments` | Receipts and payments / record one (`allocations` or `auto_allocate`) | `party-payments.view` / `.create` |
+| GET | `/party-payments/{id}` | A payment with its allocations | `party-payments.view` |
+| POST | `/party-payments/{id}/allocate` · `/void` | Allocate more / void | `party-payments.create` / `.void` |
+| DELETE | `/party-allocations/{id}` | Undo an allocation | `party-payments.create` |
+| GET | `/receivables/aging` · `/receivables/aging/export/{format}` | Ageing by customer or supplier (`side`, `as_of`) with the control-account check | `party-documents.view` |
 | POST | `/tax/calculate` | Tax on an amount (`tax_code_id`, `amount`, `inclusive`, `date`) | `tax-codes.view` |
 | POST | `/tax/entries` | Book a taxed document (`type`, `amount`, `tax_code_id`, `account_id`, `counter_account_id`, `auto_post`) | `tax-entries.create` |
 | GET | `/tax/returns/report` · `/tax/returns/report/export/{format}` | The tax ledger of a period / as a file | `tax-returns.view` |
@@ -1239,6 +1280,14 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `recurring-entries.update` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.delete` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.run` | ✔ |  | ✔ |  |  |  |
+| `parties.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `parties.create` | ✔ |  | ✔ |  |  |  |
+| `parties.update` | ✔ |  | ✔ |  |  |  |
+| `parties.delete` | ✔ |  | ✔ |  |  |  |
+| `party-documents.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `party-documents.create / update / delete / post / void` | ✔ |  | ✔ |  |  |  |
+| `party-payments.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `party-payments.create / void` | ✔ |  | ✔ |  |  |  |
 | `tax-returns.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `tax-returns.file` | ✔ |  | ✔ |  |  |  |
 | `tax-entries.create` | ✔ |  | ✔ |  |  |  |

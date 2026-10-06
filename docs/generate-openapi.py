@@ -618,6 +618,67 @@ paths["/tax/returns/{id}"] = {"parameters": [ID],
     "get": op("Tax", "A filed return", "tax-returns.view", {"200": resp("Return", data(ref("TaxReturn"))), **E404}, opid="show_tax_return"),
     "delete": op("Tax", "Void a return (its entry is reversed)", "tax-returns.file", {"204": resp("Voided"), **E404_422}, opid="void_tax_return")}
 
+# Receivables and payables.
+DOC_KINDS = ["invoice", "bill", "credit_note", "debit_note"]
+schemas["Party"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "type": {"type": "string", "enum": ["customer", "supplier", "both"]}, "code": {"type": "string"}, "name": {"type": "string"}, "email": {"type": ["string", "null"]}, "phone": {"type": ["string", "null"]},
+    "address": {"type": ["string", "null"]}, "tax_number": {"type": ["string", "null"]}, "payment_terms_days": {"type": "integer"}, "credit_limit": {"type": ["string", "null"]},
+    "receivable_account_id": {"type": ["integer", "null"]}, "payable_account_id": {"type": ["integer", "null"]}, "is_active": {"type": "boolean"}, "notes": {"type": ["string", "null"]}}}
+party_props = {k: v for k, v in schemas["Party"]["properties"].items() if k != "id"}
+schemas["PartyDocument"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "kind": {"type": "string", "enum": DOC_KINDS}, "number": {"type": ["string", "null"], "description": "Assigned when posted: INV-2026-00001"}, "party_id": {"type": "integer"}, "party": {"type": ["string", "null"]},
+    "issue_date": {"type": "string", "format": "date"}, "due_date": {"type": "string", "format": "date"}, "reference": {"type": ["string", "null"]}, "prices_include_tax": {"type": "boolean"},
+    "subtotal": ref("Money"), "tax_total": ref("Money"), "total": ref("Money"), "open": {"type": "string", "description": "Posted documents: what is still open (invoice, bill) or available (credit, debit note)"},
+    "status": {"type": "string", "enum": ["draft", "posted", "void"]}, "journal_entry_id": {"type": ["integer", "null"]}, "notes": {"type": ["string", "null"]},
+    "lines": {"type": "array", "description": "Only on single-document responses", "items": {"type": "object", "properties": {"chart_of_account_id": {"type": "integer"}, "account": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]}, "quantity": {"type": "string"}, "unit_price": {"type": "string"}, "tax_code": {"type": ["string", "null"]}, "tax_rate": {"type": ["string", "null"]}, "net_amount": ref("Money"), "tax_amount": ref("Money")}}}}}
+doc_body = {"type": "object", "required": ["party_id", "kind", "issue_date", "lines"], "properties": {
+    "party_id": {"type": "integer"}, "kind": {"type": "string", "enum": DOC_KINDS, "description": "invoice / credit_note need a customer, bill / debit_note a supplier"}, "issue_date": {"type": "string", "format": "date"},
+    "due_date": {"type": "string", "format": "date", "description": "Default: issue date plus the party's payment terms (credit and debit notes: the issue date)"}, "reference": {"type": "string"}, "prices_include_tax": {"type": "boolean"}, "notes": {"type": "string"},
+    "lines": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["chart_of_account_id", "unit_price"], "properties": {"chart_of_account_id": {"type": "integer", "description": "An active posting account that is not a control account"}, "description": {"type": "string"}, "quantity": {"type": "number", "default": 1}, "unit_price": {"type": "number"}, "cost_center_id": {"type": "integer"}, "tax_code_id": {"type": "integer", "description": "An output code for invoices and credit notes, an input code for bills and debit notes"}}}}}}
+schemas["PartyPayment"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "kind": {"type": "string", "enum": ["receipt", "payment"]}, "number": {"type": ["string", "null"]}, "party_id": {"type": "integer"}, "party": {"type": ["string", "null"]}, "payment_date": {"type": "string", "format": "date"},
+    "amount": ref("Money"), "unapplied": ref("Money"), "account_id": {"type": "integer"}, "method": {"type": ["string", "null"]}, "reference": {"type": ["string", "null"]}, "status": {"type": "string", "enum": ["posted", "void"]}, "journal_entry_id": {"type": ["integer", "null"]},
+    "allocations": {"type": "array", "description": "Only on single-payment responses", "items": {"type": "object", "properties": {"id": {"type": "integer"}, "document_id": {"type": "integer"}, "document": {"type": "string"}, "amount": ref("Money"), "allocated_on": {"type": "string", "format": "date"}}}}}}
+alloc_items = {"type": "array", "items": {"type": "object", "required": ["document_id", "amount"], "properties": {"document_id": {"type": "integer"}, "amount": {"type": "number"}}}}
+SIDE = {"name": "side", "in": "query", "schema": {"type": "string", "enum": ["receivable", "payable"]}, "description": "receivable: what customers owe; payable: what is owed to suppliers (default: by the party's type)"}
+paths["/parties"] = {
+    "get": op("Receivables & payables", "Customers and suppliers", "parties.view", {"200": resp("Parties", data({"type": "array", "items": ref("Party")}))}, params=[{"name": "type", "in": "query", "schema": {"type": "string", "enum": ["customer", "supplier", "both"]}}, {"name": "search", "in": "query", "schema": {"type": "string"}}, {"name": "active", "in": "query", "schema": {"type": "boolean"}}], opid="list_parties"),
+    "post": op("Receivables & payables", "Create a customer or supplier", "parties.create", {"201": resp("Created", data(ref("Party"))), **E422}, body={"type": "object", "required": ["type", "code", "name"], "properties": party_props}, opid="create_party")}
+paths["/parties/{id}"] = {"parameters": [ID],
+    "get": op("Receivables & payables", "A party with its balance and open items", "parties.view", {"200": resp("Party", data({"type": "object", "properties": {"balance": ref("Money"), "open_items": {"type": "array", "items": {"type": "object"}}, "unapplied": {"type": "array", "description": "Credit / debit notes and payments not yet applied", "items": {"type": "object"}}}})), **E404},
+        params=[SIDE, {"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}}], opid="show_party"),
+    "put": op("Receivables & payables", "Change a party (PATCH also accepted)", "parties.update", {"200": resp("Updated", data(ref("Party"))), **E404_422}, body={"type": "object", "required": ["type", "code", "name"], "properties": party_props}, opid="update_party"),
+    "delete": op("Receivables & payables", "Delete a party without documents or payments", "parties.delete", {"204": resp("Deleted"), **E404_422}, opid="delete_party")}
+paths["/parties/{id}/statement"] = {"parameters": [ID], "get": op("Receivables & payables", "Statement of account with a running balance", "parties.view", {"200": resp("Statement", data({"type": "object", "properties": {"opening": ref("Money"), "rows": {"type": "array", "items": {"type": "object"}}, "closing": ref("Money")}})), **E404},
+    params=[SIDE, {"name": "date_from", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "date_to", "in": "query", "schema": {"type": "string", "format": "date"}}], opid="party_statement")}
+paths["/party-documents"] = {
+    "get": op("Receivables & payables", "Invoices, bills, credit and debit notes", "party-documents.view", {"200": resp("Documents, newest first", data({"type": "array", "items": ref("PartyDocument")}))},
+        params=[{"name": "kind", "in": "query", "schema": {"type": "string", "enum": DOC_KINDS}}, {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["draft", "posted", "void"]}}, {"name": "party_id", "in": "query", "schema": {"type": "integer"}}], opid="list_party_documents"),
+    "post": op("Receivables & payables", "Create a draft document", "party-documents.create", {"201": resp("Created", data(ref("PartyDocument"))), **E422}, body=doc_body, desc="Line amounts and tax are computed on the issue date; nothing is booked until the document is posted.", opid="create_party_document")}
+paths["/party-documents/{id}"] = {"parameters": [ID],
+    "get": op("Receivables & payables", "A document with its lines", "party-documents.view", {"200": resp("Document", data(ref("PartyDocument"))), **E404}, opid="show_party_document"),
+    "put": op("Receivables & payables", "Change a draft (PATCH also accepted)", "party-documents.update", {"200": resp("Updated", data(ref("PartyDocument"))), **E404_422}, body=doc_body, opid="update_party_document"),
+    "delete": op("Receivables & payables", "Delete a draft", "party-documents.delete", {"204": resp("Deleted"), **E404_422}, opid="delete_party_document")}
+paths["/party-documents/{id}/post"] = {"parameters": [ID], "post": op("Receivables & payables", "Number and post a draft", "party-documents.post", {"200": resp("Posted", data(ref("PartyDocument"))), **E404_422},
+    desc="Books one journal entry: the party's control account against the lines and their tax (marked for the tax report). The number is gapless per kind and year; a posting that fails gives it back.", opid="post_party_document")}
+paths["/party-documents/{id}/void"] = {"parameters": [ID], "post": op("Receivables & payables", "Void a posted document (its entry is reversed)", "party-documents.void", {"200": resp("Voided", data(ref("PartyDocument"))), **E404_422}, desc="422 while payments or credits are applied to it.", opid="void_party_document")}
+paths["/party-documents/{id}/apply"] = {"parameters": [ID], "post": op("Receivables & payables", "Apply a credit or debit note to invoices or bills", "party-payments.create", {"200": resp("Applied", data(ref("PartyDocument"))), **E404_422}, body={"type": "object", "required": ["allocations"], "properties": {"allocations": alloc_items}}, opid="apply_credit_note")}
+paths["/party-allocations/{id}"] = {"parameters": [ID], "delete": op("Receivables & payables", "Undo an allocation", "party-payments.create", {"204": resp("Removed"), **E404}, opid="undo_allocation")}
+paths["/party-payments"] = {
+    "get": op("Receivables & payables", "Receipts and payments", "party-payments.view", {"200": resp("Payments, newest first", data({"type": "array", "items": ref("PartyPayment")}))}, params=[{"name": "kind", "in": "query", "schema": {"type": "string", "enum": ["receipt", "payment"]}}, {"name": "party_id", "in": "query", "schema": {"type": "integer"}}], opid="list_party_payments"),
+    "post": op("Receivables & payables", "Record a receipt from a customer or a payment to a supplier", "party-payments.create", {"201": resp("Recorded", data(ref("PartyPayment"))), **E422},
+        body={"type": "object", "required": ["party_id", "kind", "payment_date", "amount", "account_id"], "properties": {"party_id": {"type": "integer"}, "kind": {"type": "string", "enum": ["receipt", "payment"]}, "payment_date": {"type": "string", "format": "date"}, "amount": {"type": "number"},
+            "account_id": {"type": "integer", "description": "The bank or cash account"}, "method": {"type": "string"}, "reference": {"type": "string"}, "notes": {"type": "string"}, "allocations": alloc_items, "auto_allocate": {"type": "boolean", "description": "Settle the oldest invoices (bills) first, as far as the amount goes"}}},
+        desc="Posted at once and numbered (RCT-… / PAY-…): the bank account against the party's control account. What is not allocated stays on the party's account.", opid="create_party_payment")}
+paths["/party-payments/{id}"] = {"parameters": [ID], "get": op("Receivables & payables", "A payment with its allocations", "party-payments.view", {"200": resp("Payment", data(ref("PartyPayment"))), **E404}, opid="show_party_payment")}
+paths["/party-payments/{id}/allocate"] = {"parameters": [ID], "post": op("Receivables & payables", "Allocate (more of) a payment to documents", "party-payments.create", {"200": resp("Allocated", data(ref("PartyPayment"))), **E404_422},
+    body={"type": "object", "properties": {"allocations": alloc_items, "auto_allocate": {"type": "boolean"}}}, opid="allocate_party_payment")}
+paths["/party-payments/{id}/void"] = {"parameters": [ID], "post": op("Receivables & payables", "Void a payment (entry reversed, allocations released)", "party-payments.void", {"200": resp("Voided", data(ref("PartyPayment"))), **E404_422}, opid="void_party_payment")}
+paths["/receivables/aging"] = {"get": op("Receivables & payables", "Ageing by customer or supplier, checked against the control account", "party-documents.view",
+    {"200": resp("Report", data({"type": "object", "properties": {"as_of": {"type": "string", "format": "date"}, "side": {"type": "string"}, "rows": {"type": "array", "items": {"type": "object", "description": "not_due, days_1_30, days_31_60, days_61_90, over_90 (by days past due), unapplied (negative), total"}}, "totals": {"type": "object"},
+        "reconciliation": {"type": "object", "properties": {"ledger": ref("Money"), "subledger": ref("Money"), "difference": ref("Money")}}}}))}, params=[SIDE, {"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}}], opid="party_aging")}
+paths["/receivables/aging/export/{format}"] = {"parameters": [{"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Receivables & payables", "Export the ageing", "party-documents.view", {"200": {"description": "The file"}}, params=[SIDE, {"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}}], opid="export_party_aging")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -626,7 +687,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.19.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.20.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
