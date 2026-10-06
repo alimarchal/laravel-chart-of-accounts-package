@@ -169,6 +169,15 @@ export default function AccountingDashboard({ summary }: Props) {
                   },
               ]
             : []),
+        ...(permissions['inventory.view']
+            ? [
+                  {
+                      title: 'Inventory',
+                      href: '/accounting/inventory',
+                      icon: Landmark,
+                  },
+              ]
+            : []),
         ...(permissions['fixed-assets.view']
             ? [
                   {

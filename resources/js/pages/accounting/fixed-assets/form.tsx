@@ -33,7 +33,7 @@ export default function FixedAssetForm({ asset, accounts, methods, today }: Prop
     const field = (name: keyof typeof form.data, label: string, type = 'text', disabled = false) => (
         <div className="space-y-1">
             <Label htmlFor={name}>{label}</Label>
-            <Input id={name} type={type} value={form.data[name]} disabled={disabled} onChange={(event) => form.setData(name, event.target.value)} />
+            <Input id={name} type={type} step="any" value={form.data[name]} disabled={disabled} onChange={(event) => form.setData(name, event.target.value)} />
             <InputError message={form.errors[name]} />
         </div>
     );

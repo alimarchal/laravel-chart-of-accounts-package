@@ -608,6 +608,29 @@ paths["/fixed-assets/depreciation"] = {
     "post": op("Fixed assets", "Book the depreciation due", "fixed-assets.depreciate", {"200": resp("Booked", data({"type": "object", "properties": {"months": {"type": "integer"}, "total": {"type": "string"}, "entries": {"type": "array", "items": {"type": "integer"}}}})), **E422}, body={"type": "object", "required": ["up_to"], "properties": {"up_to": {"type": "string", "format": "date"}}}, desc="One journal entry per month, dated on the month's last day; a month already booked for an asset is never booked twice.", opid="run_depreciation")}
 paths["/fixed-assets/export/{format}"] = {"parameters": [{"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Fixed assets", "Export the register", "fixed-assets.view", {"200": {"description": "The file"}, **E}, params=[{"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}}], opid="export_fixed_assets")}
 
+# Inventory.
+item_props = {"sku": {"type": "string"}, "name": {"type": "string"}, "unit": {"type": "string"}, "category": {"type": "string", "nullable": True}, "reorder_level": {"type": "number"},
+              "inventory_account_id": {"type": "integer"}, "cogs_account_id": {"type": "integer"}, "is_active": {"type": "boolean"}}
+schemas["InventoryItem"] = {"type": "object", "properties": {**item_props, "id": {"type": "integer"}, "on_hand_quantity": {"type": "string"}, "on_hand_value": {"type": "string"}}}
+schemas["Warehouse"] = {"type": "object", "properties": {"id": {"type": "integer"}, "code": {"type": "string"}, "name": {"type": "string"}, "address": {"type": "string", "nullable": True}, "is_active": {"type": "boolean"}}}
+wh_body = {"type": "object", "required": ["code", "name"], "properties": {"code": {"type": "string"}, "name": {"type": "string"}, "address": {"type": "string"}, "is_active": {"type": "boolean"}}}
+paths["/inventory"] = {"get": op("Inventory", "Stock valuation at a date", "inventory.view", {"200": resp("Items with quantity, average cost and value per warehouse, totals and the ledger-against-stock difference", data({"type": "object"})), **E422}, params=[{"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "warehouse_id", "in": "query", "schema": {"type": "integer"}}], opid="stock_valuation")}
+paths["/inventory/export/{format}"] = {"parameters": [{"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Inventory", "Export the stock valuation", "inventory.view", {"200": {"description": "The file"}, **E}, opid="export_stock_valuation")}
+paths["/inventory/items"] = {"post": op("Inventory", "Create an item", "inventory.manage", {"201": resp("Created", data(ref("InventoryItem"))), **E422}, body={"type": "object", "required": ["sku", "name", "inventory_account_id", "cogs_account_id"], "properties": item_props}, opid="create_inventory_item")}
+paths["/inventory/items/{id}"] = {"parameters": [ID],
+    "get": op("Inventory", "An item with its stock card", "inventory.view", {"200": resp("Item and card", data({"type": "object", "properties": {"item": ref("InventoryItem"), "card": {"type": "array", "items": {"type": "object"}}}})), **E404}, opid="get_inventory_item"),
+    "put": op("Inventory", "Change an item (PATCH also accepted)", "inventory.manage", {"200": resp("Updated", data(ref("InventoryItem"))), **E404_422}, body={"type": "object", "properties": item_props}, desc="The accounts cannot change once the item has stock movements.", opid="update_inventory_item"),
+    "delete": op("Inventory", "Delete an item without movements", "inventory.manage", {"204": resp("Deleted"), **E404_422}, opid="delete_inventory_item")}
+paths["/inventory/warehouses"] = {
+    "get": op("Inventory", "Warehouses", "inventory.view", {"200": resp("Warehouses", data({"type": "array", "items": ref("Warehouse")}))}, opid="list_warehouses"),
+    "post": op("Inventory", "Add a warehouse", "inventory.manage", {"201": resp("Created", data(ref("Warehouse"))), **E422}, body=wh_body, opid="create_warehouse")}
+paths["/inventory/warehouses/{id}"] = {"parameters": [ID],
+    "put": op("Inventory", "Change a warehouse (PATCH also accepted)", "inventory.manage", {"200": resp("Updated", data(ref("Warehouse"))), **E404_422}, body=wh_body, opid="update_warehouse"),
+    "delete": op("Inventory", "Delete a warehouse without movements", "inventory.manage", {"204": resp("Deleted"), **E404_422}, opid="delete_warehouse")}
+paths["/inventory/movements"] = {
+    "get": op("Inventory", "The latest 200 stock movements", "inventory.view", {"200": resp("Movements", data({"type": "array", "items": {"type": "object"}})), **E422}, params=[{"name": "item_id", "in": "query", "schema": {"type": "integer"}}, {"name": "warehouse_id", "in": "query", "schema": {"type": "integer"}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["receipt", "issue", "adjustment", "transfer_in", "transfer_out"]}}], opid="list_stock_movements"),
+    "post": op("Inventory", "Receive, issue, adjust or transfer stock", "inventory.move", {"201": resp("The movement(s); a transfer returns the out and in lines", data({"type": "array", "items": {"type": "object"}})), **E422}, body={"type": "object", "required": ["type", "item_id", "warehouse_id", "movement_date", "quantity"], "properties": {"type": {"type": "string", "enum": ["receipt", "issue", "adjustment", "transfer"]}, "item_id": {"type": "integer"}, "warehouse_id": {"type": "integer"}, "to_warehouse_id": {"type": "integer", "description": "Transfers."}, "movement_date": {"type": "string", "format": "date"}, "quantity": {"type": "number", "description": "Negative only for an adjustment that removes stock."}, "unit_cost": {"type": "number", "description": "Required for a receipt; an adjustment that adds stock defaults to the average cost."}, "offset_account_id": {"type": "integer", "description": "Receipt: paid from / owed to. Adjustment: gain/loss account. Issue: cost account (default the item's)."}, "reference": {"type": "string"}, "notes": {"type": "string"}}}, desc="Booked with its journal entry in one transaction (not for transfers). Stock never goes negative, in total or in a warehouse; issues leave at the moving average cost.", opid="move_stock")}
+
 # Tax engine.
 TAX_TYPES = ["sale", "sale_return", "purchase", "purchase_return", "withholding_payment", "withholding_receipt"]
 schemas["TaxCalculation"] = {"type": "object", "properties": {"code": {"type": "string"}, "kind": {"type": "string"}, "rate": {"type": "string", "description": "Percent, four decimals"}, "inclusive": {"type": "boolean"}, "base": ref("Money"), "tax": ref("Money"), "gross": ref("Money")}}
@@ -709,7 +732,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.22.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.23.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

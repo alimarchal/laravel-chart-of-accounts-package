@@ -71,7 +71,7 @@ export default function FixedAssetShow({ asset, history, accounts, today }: Prop
                             <CardHeader><CardTitle>Sell or scrap</CardTitle></CardHeader>
                             <CardContent className="grid gap-4 md:grid-cols-3">
                                 <div className="space-y-1"><Label htmlFor="disposal_date">Date</Label><Input id="disposal_date" type="date" value={form.data.disposal_date} onChange={(event) => form.setData('disposal_date', event.target.value)} /><InputError message={form.errors.disposal_date} /></div>
-                                <div className="space-y-1"><Label htmlFor="proceeds">Proceeds (blank when scrapped)</Label><Input id="proceeds" type="number" value={form.data.proceeds} onChange={(event) => form.setData('proceeds', event.target.value)} /><InputError message={form.errors.proceeds} /></div>
+                                <div className="space-y-1"><Label htmlFor="proceeds">Proceeds (blank when scrapped)</Label><Input id="proceeds" type="number" step="any" value={form.data.proceeds} onChange={(event) => form.setData('proceeds', event.target.value)} /><InputError message={form.errors.proceeds} /></div>
                                 <div className="space-y-1"><Label htmlFor="proceeds_account_id">Proceeds received in</Label>
                                     <select id="proceeds_account_id" className={selectClass} value={form.data.proceeds_account_id} onChange={(event) => form.setData('proceeds_account_id', event.target.value)}>
                                         <option value="">—</option>{accounts.filter((account) => account.type === 'ASSET').map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}

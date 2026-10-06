@@ -2,6 +2,22 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.23.0] - 2026-10-25
+
+Inventory release.
+
+### Added
+- **Items, warehouses and a stock ledger** valued at moving average cost: receipts (debit inventory), issues (debit cost of goods
+  sold at the average, last unit takes the remaining value), count adjustments and transfers between warehouses; no negative stock
+  in total or per warehouse; every movement and its journal entry in one transaction.
+- **Stock valuation** at any date with per-warehouse quantities, reorder-level flags, a ledger-against-stock check and
+  CSV/Excel/PDF export; **stock card** per item with the running quantity and value.
+- React and Blade screens (valuation, item, item form, warehouses, movements, move-stock form), API (`/inventory`,
+  `/inventory/items`, `/inventory/warehouses`, `/inventory/movements`), permissions `inventory.view/manage/move`, OpenAPI and Postman.
+
+### Fixed
+- Decimal amounts are accepted by the browser in the fixed asset form and the disposal proceeds field.
+
 ## [2.22.0] - 2026-10-24
 
 Fixed assets release.

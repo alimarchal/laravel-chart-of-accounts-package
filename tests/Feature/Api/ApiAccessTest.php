@@ -16,6 +16,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
 use Alimarchal\LaravelChartOfAccounts\Models\FixedAsset;
 use Alimarchal\LaravelChartOfAccounts\Models\FxRevaluation;
+use Alimarchal\LaravelChartOfAccounts\Models\InventoryItem;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
@@ -29,6 +30,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
+use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Http\UploadedFile;
@@ -59,7 +61,7 @@ function apiRoutes(): array
 function concreteUri(Route $route): string
 {
     return '/'.preg_replace_callback('/\{([^}]+)\}/', function (array $match) use ($route): string {
-        if ($match[1] === 'format' && (str_contains($route->uri(), 'budgets/') || str_contains($route->uri(), 'fixed-assets/'))) {
+        if ($match[1] === 'format' && (str_contains($route->uri(), 'budgets/') || str_contains($route->uri(), 'fixed-assets/') || str_contains($route->uri(), 'inventory/'))) {
             return 'csv';
         }
 
@@ -107,6 +109,8 @@ function concreteUri(Route $route): string
             'rates' => ExchangeRate::class,
             'budgets' => Budget::class,
             'fixed-assets' => FixedAsset::class,
+            'items' => InventoryItem::class,
+            'warehouses' => Warehouse::class,
             'returns' => TaxReturn::class,
             'parties' => Party::class,
             'party-documents' => PartyDocument::class,
@@ -157,6 +161,8 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     TaxReturn::query()->create(['period_from' => now()->startOfYear()->toDateString(), 'period_to' => now()->startOfYear()->addDays(5)->toDateString(), 'payable_account_id' => account('2101')->id]);
     Budget::query()->create(['name' => 'Plan', 'start_date' => now()->startOfYear()->toDateString(), 'end_date' => now()->endOfYear()->toDateString()]);
     FixedAsset::query()->create(['code' => 'FA1', 'name' => 'Asset', 'acquisition_date' => now()->toDateString(), 'in_service_date' => now()->toDateString(), 'cost' => 100, 'useful_life_months' => 12, 'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => account('5114')->id]);
+    InventoryItem::query()->create(['sku' => 'SKU1', 'name' => 'Item', 'inventory_account_id' => account('1151')->id, 'cogs_account_id' => account('5202')->id]);
+    Warehouse::query()->create(['code' => 'W1', 'name' => 'Main']);
     $bankAccount = BankAccount::factory()->create();
     $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);
     BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bankAccount->id, 'line_no' => 1, 'txn_date' => now()->toDateString(), 'deposit' => 1, 'hash' => 'x']);
@@ -169,12 +175,19 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     $viewer->assignRole('viewer');
     Sanctum::actingAs($viewer);
 
+    $sent = 0;
+
     foreach (apiRoutes() as $route) {
         $method = collect($route->methods())->reject(fn ($m) => $m === 'HEAD')->first();
 
         // Queuing or deleting your own report export reads the books, it does not write to them.
         if ($method === 'GET' || in_array($route->uri(), ['api/v1/accounting/reports/{report}/exports/{format}', 'api/v1/accounting/exports/{export}', 'api/v1/accounting/tax/calculate', 'api/v1/accounting/receivables/aging/export/{format}'], true)) {
             continue;
+        }
+
+        // Stay under the per-minute API rate limit as the number of write routes grows.
+        if (++$sent % 80 === 0) {
+            $this->travel(2)->minutes();
         }
 
         $this->json($method, concreteUri($route), [])->assertForbidden();
