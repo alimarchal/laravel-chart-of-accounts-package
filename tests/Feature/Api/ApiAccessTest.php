@@ -6,6 +6,8 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\Attachment;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
+use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
@@ -92,6 +94,8 @@ function concreteUri(Route $route): string
             'exports' => ReportExport::class,
             'recurring-entries' => RecurringEntry::class,
             'rates' => ExchangeRate::class,
+            'bank-statements' => BankStatement::class,
+            'bank-statement-lines' => BankStatementLine::class,
             'fx-revaluation' => FxRevaluation::class,
             'report-lines' => ReportLine::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
@@ -128,7 +132,9 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     Storage::fake('local');
     $entry = journal(['1101' => 10, '4101' => -10]);
     app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
-    BankAccount::factory()->create();
+    $bankAccount = BankAccount::factory()->create();
+    $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);
+    BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bankAccount->id, 'line_no' => 1, 'txn_date' => now()->toDateString(), 'deposit' => 1, 'hash' => 'x']);
     Reconciliation::factory()->create();
     ExchangeRate::query()->create(['currency_id' => Currency::query()->where('is_base', false)->value('id'), 'rate_date' => now()->toDateString(), 'rate' => 1]);
     FxRevaluation::query()->create(['as_of_date' => now()->toDateString(), 'gain_loss_account_id' => account('4101')->id, 'journal_entry_id' => $entry->id]);

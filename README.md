@@ -431,6 +431,34 @@ The package schedules the command daily at `ACCOUNTING_RECURRING_TIME` (02:00) �
 (`* * * * * php artisan schedule:run`); `ACCOUNTING_RECURRING_SCHEDULE=false` leaves scheduling to you. Permissions
 `recurring-entries.view / create / update / delete / run` (accountant: all; approver, auditor, viewer: view).
 
+## Bank statements
+
+Dashboard → **Bank Statements** (React and Blade) or `/api/v1/accounting/bank-statements`. Import the statement your bank
+gives you, match it to the ledger and reconcile — no retyping.
+
+- **Import** a CSV or Excel file for a bank account (one linked to a chart of accounts account). Columns are recognised
+  by name: *Date* (Transaction / Value / Posting Date), *Description* (Narration, Particulars, Details …), *Reference*
+  (Cheque No, Ref No …), *Withdrawal / Debit* and *Deposit / Credit* — or one signed *Amount* — and *Balance*. Dates
+  as `2026-10-05`, `05/10/2026` (`ACCOUNTING_BANK_DATE_ORDER=mdy` for US order), `5-Oct-2026` or Excel serials; amounts
+  as `1,234.50`, `(120.00)`, `-45`, `500.00 DR`, `1.234,56`. A preview lists every row first; a file with an error
+  imports nothing.
+- **No duplicates**: each transaction is fingerprinted (account, date, amount, reference, description and its n-th
+  occurrence in the file), so importing an overlapping statement again brings in only what is new, while two identical
+  charges on one day both come in. The fingerprint is unique in the database.
+- **Matching**: a transaction matches a posted, unreconciled ledger line on the bank's account with the same amount, dated
+  within `ACCOUNTING_BANK_MATCH_DAYS` (5) days. **Auto-match** takes every transaction with exactly one candidate (and
+  whose candidate nobody else wants); the rest you match by hand from the list of candidates. A ledger line serves one
+  transaction. Matched ledger lines are marked *cleared*.
+- **Book it**: for a transaction not in the books yet (bank charges, interest, a direct deposit) pick the other account:
+  a deposit debits the bank and credits it, a withdrawal the reverse; the entry is posted when possible, otherwise left
+  as a draft (closed period, approval, evidence required) and still linked. Or **ignore** it.
+- **Reconcile** once every transaction is matched, booked or ignored (and the closing balance — read from the file's last
+  balance, or typed — is known): the matched ledger lines become *reconciled* in a bank reconciliation dated at the
+  statement's end. A reconciled statement is locked; deleting an unreconciled one releases its matches.
+
+Permissions `bank-statements.view` (accountant, approver, auditor, viewer), `bank-statements.import` and
+`bank-statements.match` (accountant). Audited (`BANK_STATEMENT_*`).
+
 ## Currency revaluation
 
 Dashboard → **Currency Revaluation** (React and Blade) or `/api/v1/accounting/fx-revaluation`. An asset or liability
@@ -936,6 +964,12 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET/POST | `/recurring-entries` | Templates / create one (balanced lines + schedule) | `recurring-entries.view` / `.create` |
 | GET/PUT/DELETE | `/recurring-entries/{id}` | Template with runs and upcoming dates / change / delete (only if it has not run) | `recurring-entries.*` |
 | POST | `/recurring-entries/{id}/pause` · `/resume` · `/run` | Pause / resume (`skip_missed`) / generate the next entry now | `recurring-entries.update` / `.run` |
+| GET | `/bank-statements` · `/bank-statements/{id}` | Statements / one with its transactions | `bank-statements.view` |
+| POST | `/bank-statements/import` | Import a CSV/XLSX statement (`file`, `bank_account_id`, `dry_run`, `closing_balance`, `auto_match`) | `bank-statements.import` |
+| PUT · DELETE | `/bank-statements/{id}` | Set the closing balance / delete (releases matches) | `bank-statements.match` |
+| POST | `/bank-statements/{id}/auto-match` · `/reconcile` | Match unambiguous transactions / reconcile | `bank-statements.match` |
+| GET | `/bank-statement-lines/{id}/candidates` | Ledger lines that could be the transaction | `bank-statements.view` |
+| POST | `/bank-statement-lines/{id}/match` · `/unmatch` · `/ignore` · `/create-entry` | Match to a ledger line / release / ignore / book as an entry | `bank-statements.match` |
 | GET/POST | `/fx-revaluation` | Revaluations and dated rates / post a revaluation (`as_of_date`, `gain_loss_account_id`, `rates`, `auto_reverse`) | `fx-revaluation.view` / `.run` |
 | GET | `/fx-revaluation/preview` | What a revaluation at `as_of_date` (and optional `rates[currency]`) would adjust | `fx-revaluation.view` |
 | GET | `/fx-revaluation/{id}` | A revaluation with its accounts | `fx-revaluation.view` |
@@ -1144,6 +1178,9 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `recurring-entries.update` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.delete` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.run` | ✔ |  | ✔ |  |  |  |
+| `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `bank-statements.import` | ✔ |  | ✔ |  |  |  |
+| `bank-statements.match` | ✔ |  | ✔ |  |  |  |
 | `fx-revaluation.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `fx-revaluation.run` | ✔ |  | ✔ |  |  |  |
 | `fx-revaluation.rates` | ✔ |  | ✔ |  |  |  |

@@ -119,6 +119,15 @@ return [
         'gain_loss_account' => env('ACCOUNTING_FX_GAIN_LOSS_ACCOUNT'),
     ],
 
+    // Bank statement import (CSV / XLSX): file limits, how many days either side of a statement line a ledger line
+    // may be dated to match it, and the order of day and month in dates such as 05/10/2026 (dmy or mdy).
+    'bank_import' => [
+        'max_size_kb' => (int) env('ACCOUNTING_BANK_IMPORT_MAX_KB', 5120),
+        'max_rows' => (int) env('ACCOUNTING_BANK_IMPORT_MAX_ROWS', 20000),
+        'match_days' => (int) env('ACCOUNTING_BANK_MATCH_DAYS', 5),
+        'date_order' => env('ACCOUNTING_BANK_DATE_ORDER', 'dmy'),
+    ],
+
     // Chart of accounts import (CSV / XLSX): the largest file accepted and the most rows it may hold.
     'chart_import' => [
         'max_size_kb' => (int) env('ACCOUNTING_CHART_IMPORT_MAX_KB', 5120),
@@ -206,6 +215,9 @@ return [
         'fx-revaluation.view',
         'fx-revaluation.run',
         'fx-revaluation.rates',
+        'bank-statements.view',
+        'bank-statements.import',
+        'bank-statements.match',
         'chart-of-accounts.delete',
         'cost-centers.view',
         'cost-centers.create',
@@ -311,6 +323,9 @@ return [
             'fx-revaluation.view',
             'fx-revaluation.run',
             'fx-revaluation.rates',
+            'bank-statements.view',
+            'bank-statements.import',
+            'bank-statements.match',
             'attachments.create',
             'attachments.delete',
             'bank-accounts.view',
@@ -358,6 +373,7 @@ return [
             'attachments.view',
             'recurring-entries.view',
             'fx-revaluation.view',
+            'bank-statements.view',
             'journal-entries.approve',
             'account-balance-snapshots.view',
             'reports.general-ledger.view',
@@ -384,6 +400,7 @@ return [
             'attachments.view',
             'recurring-entries.view',
             'fx-revaluation.view',
+            'bank-statements.view',
             'bank-accounts.view',
             'reconciliations.view',
             'tax-codes.view',
@@ -412,6 +429,7 @@ return [
             'attachments.view',
             'recurring-entries.view',
             'fx-revaluation.view',
+            'bank-statements.view',
             'tax-codes.view',
             'tax-rates.view',
             'voucher-types.view',

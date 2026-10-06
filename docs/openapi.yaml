@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.16.0
+  version: 2.17.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -6410,6 +6410,474 @@ paths:
                   description: 'After the revaluation date (default: the next day)'
       parameters:
       - $ref: '#/components/parameters/Company'
+  /bank-statements:
+    get:
+      tags:
+      - Bank statements
+      summary: Imported statements
+      operationId: list_bank_statements
+      description: 'Permission: `bank-statements.view`.'
+      responses:
+        '200':
+          description: Statements, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BankStatement'
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statements/import:
+    post:
+      tags:
+      - Bank statements
+      summary: Import a statement (CSV or XLSX)
+      operationId: import_bank_statement
+      description: 'Columns are recognised by name: Date; Description / Narration; Reference; Withdrawal / Debit and Deposit
+        / Credit, or one signed Amount; Balance. Transactions already imported (same date, amount, reference and description)
+        are skipped; 422 when any row has an error (nothing is imported) or when nothing is new.
+
+
+        Permission: `bank-statements.import`.'
+      responses:
+        '201':
+          description: Imported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BankStatement'
+                required:
+                - data
+        '200':
+          description: Preview (dry_run)
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              - bank_account_id
+              properties:
+                file:
+                  type: string
+                  format: binary
+                bank_account_id:
+                  type: integer
+                  description: Must be linked to a chart of accounts account
+                dry_run:
+                  type: boolean
+                  default: false
+                closing_balance:
+                  type: number
+                auto_match:
+                  type: boolean
+                  default: false
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statements/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Bank statements
+      summary: A statement with its transactions
+      operationId: show_bank_statement
+      description: 'Permission: `bank-statements.view`.'
+      responses:
+        '200':
+          description: Statement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      statement:
+                        $ref: '#/components/schemas/BankStatement'
+                      lines:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/BankStatementLine'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Bank statements
+      summary: Set the closing balance (PATCH also accepted)
+      operationId: update_bank_statement
+      description: 'Permission: `bank-statements.match`.'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BankStatement'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - closing_balance
+              properties:
+                closing_balance:
+                  type: number
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Bank statements
+      summary: Delete a statement and release its matches
+      operationId: delete_bank_statement
+      description: '422 once it has been reconciled.
+
+
+        Permission: `bank-statements.match`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statements/{id}/auto-match:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Bank statements
+      summary: Match every transaction that has exactly one ledger candidate
+      operationId: auto_match_bank_statement
+      description: 'A candidate is a posted, unreconciled ledger line on the bank''s account with the same amount, dated within
+        `ACCOUNTING_BANK_MATCH_DAYS` (5). Ambiguous transactions are left for you.
+
+
+        Permission: `bank-statements.match`.'
+      responses:
+        '200':
+          description: Matched count
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statements/{id}/reconcile:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Bank statements
+      summary: Reconcile the statement
+      operationId: reconcile_bank_statement
+      description: 'Every transaction must be matched, booked or ignored, and the closing balance known. Marks the matched
+        ledger lines reconciled in a bank reconciliation dated at the statement end.
+
+
+        Permission: `bank-statements.match`.'
+      responses:
+        '200':
+          description: Reconciled
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statement-lines/{id}/candidates:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Bank statements
+      summary: Ledger lines that could be this transaction
+      operationId: bank_statement_line_candidates
+      description: 'Permission: `bank-statements.view`.'
+      responses:
+        '200':
+          description: Candidates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statement-lines/{id}/match:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Bank statements
+      summary: Match a transaction to a ledger line
+      operationId: match_bank_statement_line
+      description: 'Permission: `bank-statements.match`.'
+      responses:
+        '200':
+          description: Matched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BankStatementLine'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - journal_entry_line_id
+              properties:
+                journal_entry_line_id:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statement-lines/{id}/unmatch:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Bank statements
+      summary: Release a matched or booked transaction
+      operationId: unmatch_bank_statement_line
+      description: 'An entry booked from the line stays in the ledger; only the link is released.
+
+
+        Permission: `bank-statements.match`.'
+      responses:
+        '200':
+          description: Unmatched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BankStatementLine'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statement-lines/{id}/ignore:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Bank statements
+      summary: Ignore (or restore) a transaction
+      operationId: ignore_bank_statement_line
+      description: 'Permission: `bank-statements.match`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BankStatementLine'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ignored:
+                  type: boolean
+                  default: true
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /bank-statement-lines/{id}/create-entry:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Bank statements
+      summary: Book a transaction as a journal entry
+      operationId: book_bank_statement_line
+      description: 'A deposit debits the bank account and credits the chosen one; a withdrawal the reverse. Posted when possible;
+        a closed period, approval or evidence requirement leaves a draft (the transaction is still linked).
+
+
+        Permission: `bank-statements.match`.'
+      responses:
+        '201':
+          description: Booked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      journal_entry_id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - posted
+                        - draft
+                      line:
+                        $ref: '#/components/schemas/BankStatementLine'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - chart_of_account_id
+              properties:
+                chart_of_account_id:
+                  type: integer
+                description:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -8228,6 +8696,87 @@ components:
         rate:
           type: string
         source:
+          type:
+          - string
+          - 'null'
+    BankStatement:
+      type: object
+      properties:
+        id:
+          type: integer
+        bank_account_id:
+          type: integer
+        bank:
+          type:
+          - string
+          - 'null'
+        file_name:
+          type: string
+        from_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        to_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        closing_balance:
+          type:
+          - string
+          - 'null'
+          description: From the file's last balance, or entered
+        lines_count:
+          type: integer
+        unmatched_count:
+          type: integer
+        reconciliation_id:
+          type:
+          - integer
+          - 'null'
+    BankStatementLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        line_no:
+          type: integer
+        txn_date:
+          type: string
+          format: date
+        description:
+          type:
+          - string
+          - 'null'
+        reference:
+          type:
+          - string
+          - 'null'
+        deposit:
+          $ref: '#/components/schemas/Money'
+        withdrawal:
+          $ref: '#/components/schemas/Money'
+        balance:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+          enum:
+          - unmatched
+          - matched
+          - created
+          - ignored
+        journal_entry_id:
+          type:
+          - integer
+          - 'null'
+        voucher_number:
+          type:
+          - string
+          - 'null'
+        journal_status:
           type:
           - string
           - 'null'

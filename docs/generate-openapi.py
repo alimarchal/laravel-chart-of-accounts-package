@@ -524,6 +524,37 @@ paths["/fx-revaluation/{id}"] = {"parameters": [ID], "get": op("Currency revalua
 paths["/fx-revaluation/{id}/reverse"] = {"parameters": [ID], "post": op("Currency revaluation", "Reverse a revaluation", "fx-revaluation.run", {"200": resp("Reversed", data(ref("FxRevaluation"))), **E404_422},
     body={"type": "object", "properties": {"reversal_date": {"type": "string", "format": "date", "description": "After the revaluation date (default: the next day)"}}}, opid="reverse_fx_revaluation")}
 
+# Bank statements.
+LINE_STATUS = ["unmatched", "matched", "created", "ignored"]
+schemas["BankStatement"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "bank_account_id": {"type": "integer"}, "bank": {"type": ["string", "null"]}, "file_name": {"type": "string"},
+    "from_date": {"type": ["string", "null"], "format": "date"}, "to_date": {"type": ["string", "null"], "format": "date"}, "closing_balance": {"type": ["string", "null"], "description": "From the file's last balance, or entered"},
+    "lines_count": {"type": "integer"}, "unmatched_count": {"type": "integer"}, "reconciliation_id": {"type": ["integer", "null"]}}}
+schemas["BankStatementLine"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "line_no": {"type": "integer"}, "txn_date": {"type": "string", "format": "date"}, "description": {"type": ["string", "null"]}, "reference": {"type": ["string", "null"]},
+    "deposit": ref("Money"), "withdrawal": ref("Money"), "balance": {"type": ["string", "null"]}, "status": {"type": "string", "enum": LINE_STATUS},
+    "journal_entry_id": {"type": ["integer", "null"]}, "voucher_number": {"type": ["string", "null"]}, "journal_status": {"type": ["string", "null"]}}}
+paths["/bank-statements"] = {"get": op("Bank statements", "Imported statements", "bank-statements.view", {"200": resp("Statements, newest first", data({"type": "array", "items": ref("BankStatement")}))}, opid="list_bank_statements")}
+paths["/bank-statements/import"] = {"post": op("Bank statements", "Import a statement (CSV or XLSX)", "bank-statements.import",
+    {"201": resp("Imported", data(ref("BankStatement"))), "200": resp("Preview (dry_run)", {"type": "object"}), **E422},
+    body={"type": "object", "required": ["file", "bank_account_id"], "properties": {"file": {"type": "string", "format": "binary"}, "bank_account_id": {"type": "integer", "description": "Must be linked to a chart of accounts account"},
+        "dry_run": {"type": "boolean", "default": False}, "closing_balance": {"type": "number"}, "auto_match": {"type": "boolean", "default": False}}},
+    desc="Columns are recognised by name: Date; Description / Narration; Reference; Withdrawal / Debit and Deposit / Credit, or one signed Amount; Balance. Transactions already imported (same date, amount, reference and description) are skipped; 422 when any row has an error (nothing is imported) or when nothing is new.", opid="import_bank_statement")}
+paths["/bank-statements/import"]["post"]["requestBody"]["content"] = {"multipart/form-data": paths["/bank-statements/import"]["post"]["requestBody"]["content"]["application/json"]}
+paths["/bank-statements/{id}"] = {"parameters": [ID],
+    "get": op("Bank statements", "A statement with its transactions", "bank-statements.view", {"200": resp("Statement", data({"type": "object", "properties": {"statement": ref("BankStatement"), "lines": {"type": "array", "items": ref("BankStatementLine")}}})), **E404}, opid="show_bank_statement"),
+    "put": op("Bank statements", "Set the closing balance (PATCH also accepted)", "bank-statements.match", {"200": resp("Saved", data(ref("BankStatement"))), **E404_422}, body={"type": "object", "required": ["closing_balance"], "properties": {"closing_balance": {"type": "number"}}}, opid="update_bank_statement"),
+    "delete": op("Bank statements", "Delete a statement and release its matches", "bank-statements.match", {"204": resp("Deleted"), **E404_422}, desc="422 once it has been reconciled.", opid="delete_bank_statement")}
+paths["/bank-statements/{id}/auto-match"] = {"parameters": [ID], "post": op("Bank statements", "Match every transaction that has exactly one ledger candidate", "bank-statements.match", {"200": resp("Matched count", {"type": "object"}), **E404}, desc="A candidate is a posted, unreconciled ledger line on the bank's account with the same amount, dated within `ACCOUNTING_BANK_MATCH_DAYS` (5). Ambiguous transactions are left for you.", opid="auto_match_bank_statement")}
+paths["/bank-statements/{id}/reconcile"] = {"parameters": [ID], "post": op("Bank statements", "Reconcile the statement", "bank-statements.match", {"200": resp("Reconciled", {"type": "object"}), **E404_422}, desc="Every transaction must be matched, booked or ignored, and the closing balance known. Marks the matched ledger lines reconciled in a bank reconciliation dated at the statement end.", opid="reconcile_bank_statement")}
+paths["/bank-statement-lines/{id}/candidates"] = {"parameters": [ID], "get": op("Bank statements", "Ledger lines that could be this transaction", "bank-statements.view", {"200": resp("Candidates", data({"type": "array", "items": {"type": "object"}})), **E404}, opid="bank_statement_line_candidates")}
+paths["/bank-statement-lines/{id}/match"] = {"parameters": [ID], "post": op("Bank statements", "Match a transaction to a ledger line", "bank-statements.match", {"200": resp("Matched", data(ref("BankStatementLine"))), **E404_422}, body={"type": "object", "required": ["journal_entry_line_id"], "properties": {"journal_entry_line_id": {"type": "integer"}}}, opid="match_bank_statement_line")}
+paths["/bank-statement-lines/{id}/unmatch"] = {"parameters": [ID], "post": op("Bank statements", "Release a matched or booked transaction", "bank-statements.match", {"200": resp("Unmatched", data(ref("BankStatementLine"))), **E404_422}, desc="An entry booked from the line stays in the ledger; only the link is released.", opid="unmatch_bank_statement_line")}
+paths["/bank-statement-lines/{id}/ignore"] = {"parameters": [ID], "post": op("Bank statements", "Ignore (or restore) a transaction", "bank-statements.match", {"200": resp("Updated", data(ref("BankStatementLine"))), **E404_422}, body={"type": "object", "properties": {"ignored": {"type": "boolean", "default": True}}}, opid="ignore_bank_statement_line")}
+paths["/bank-statement-lines/{id}/create-entry"] = {"parameters": [ID], "post": op("Bank statements", "Book a transaction as a journal entry", "bank-statements.match", {"201": resp("Booked", data({"type": "object", "properties": {"journal_entry_id": {"type": "integer"}, "status": {"type": "string", "enum": ["posted", "draft"]}, "line": ref("BankStatementLine")}})), **E404_422},
+    body={"type": "object", "required": ["chart_of_account_id"], "properties": {"chart_of_account_id": {"type": "integer"}, "description": {"type": "string"}}},
+    desc="A deposit debits the bank account and credits the chosen one; a withdrawal the reverse. Posted when possible; a closed period, approval or evidence requirement leaves a draft (the transaction is still linked).", opid="book_bank_statement_line")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -532,7 +563,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.16.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.17.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

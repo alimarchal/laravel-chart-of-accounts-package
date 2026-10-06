@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.17.0] - 2026-10-19
+
+Bank statement import release.
+
+### Added
+- **Bank statement import** (CSV / XLSX): columns recognised by name (deposit / withdrawal columns or one signed
+  amount, optional balance), many date and amount formats, a preview, and no duplicates — every transaction has a unique
+  fingerprint, so an overlapping statement imports only what is new.
+- **Matching**: transactions match posted ledger lines of the bank's account (same amount, nearby date,
+  `ACCOUNTING_BANK_MATCH_DAYS`); auto-match for the unambiguous ones, manual match from candidates, unmatch, ignore.
+  Matched ledger lines are marked cleared.
+- **Book a transaction** as a journal entry against a chosen account (posted when possible, else a draft that stays
+  linked), and **reconcile** a statement into a bank reconciliation. Reconciled statements are locked.
+- Screens (React and Blade): statements, import with preview, statement with match / book / ignore; API
+  `/bank-statements` (+ `/import`, `/auto-match`, `/reconcile`) and `/bank-statement-lines/{id}/…`.
+- Permissions `bank-statements.view` (accountant, approver, auditor, viewer), `.import` and `.match` (accountant);
+  audited (`BANK_STATEMENT_*`).
+
 ## [2.16.0] - 2026-10-18
 
 Currency revaluation release.

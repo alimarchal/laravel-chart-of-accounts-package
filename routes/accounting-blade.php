@@ -1,6 +1,7 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountBalanceSnapshotBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingDashboardBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingPeriodBladeController;
@@ -106,6 +107,20 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::get('reports/financial-statements', [FinancialStatementController::class, 'show'])->name('reports.financial-statements')->middleware('can:reports.financial-statements.view');
         Route::get('chart-templates', [ChartTemplateController::class, 'index'])->name('chart-templates.index')->middleware('can:chart-templates.apply');
         Route::post('chart-templates/{template}/apply', [ChartTemplateController::class, 'apply'])->name('chart-templates.apply')->middleware('can:chart-templates.apply');
+        Route::get('bank-statements', [BankStatementController::class, 'index'])->name('bank-statements.index')->middleware('can:bank-statements.view');
+        Route::get('bank-statements/import', [BankStatementController::class, 'create'])->name('bank-statements.import')->middleware('can:bank-statements.import');
+        Route::post('bank-statements/import/preview', [BankStatementController::class, 'preview'])->name('bank-statements.import.preview')->middleware('can:bank-statements.import');
+        Route::post('bank-statements/import', [BankStatementController::class, 'store'])->name('bank-statements.import.store')->middleware('can:bank-statements.import');
+        Route::get('bank-statements/{bankStatement}', [BankStatementController::class, 'show'])->name('bank-statements.show')->middleware('can:bank-statements.view');
+        Route::match(['put', 'patch'], 'bank-statements/{bankStatement}', [BankStatementController::class, 'update'])->name('bank-statements.update')->middleware('can:bank-statements.match');
+        Route::delete('bank-statements/{bankStatement}', [BankStatementController::class, 'destroy'])->name('bank-statements.destroy')->middleware('can:bank-statements.match');
+        Route::post('bank-statements/{bankStatement}/auto-match', [BankStatementController::class, 'autoMatch'])->name('bank-statements.auto-match')->middleware('can:bank-statements.match');
+        Route::post('bank-statements/{bankStatement}/reconcile', [BankStatementController::class, 'reconcile'])->name('bank-statements.reconcile')->middleware('can:bank-statements.match');
+        Route::get('bank-statement-lines/{bankStatementLine}/candidates', [BankStatementController::class, 'candidates'])->name('bank-statements.lines.candidates')->middleware('can:bank-statements.view');
+        Route::post('bank-statement-lines/{bankStatementLine}/match', [BankStatementController::class, 'match'])->name('bank-statements.lines.match')->middleware('can:bank-statements.match');
+        Route::post('bank-statement-lines/{bankStatementLine}/unmatch', [BankStatementController::class, 'unmatch'])->name('bank-statements.lines.unmatch')->middleware('can:bank-statements.match');
+        Route::post('bank-statement-lines/{bankStatementLine}/ignore', [BankStatementController::class, 'ignore'])->name('bank-statements.lines.ignore')->middleware('can:bank-statements.match');
+        Route::post('bank-statement-lines/{bankStatementLine}/create-entry', [BankStatementController::class, 'createEntry'])->name('bank-statements.lines.create-entry')->middleware('can:bank-statements.match');
         Route::get('fx-revaluation', [FxRevaluationController::class, 'index'])->name('fx-revaluation.index')->middleware('can:fx-revaluation.view');
         Route::get('fx-revaluation/preview', [FxRevaluationController::class, 'preview'])->name('fx-revaluation.preview')->middleware('can:fx-revaluation.view');
         Route::post('fx-revaluation', [FxRevaluationController::class, 'store'])->name('fx-revaluation.store')->middleware('can:fx-revaluation.run');
