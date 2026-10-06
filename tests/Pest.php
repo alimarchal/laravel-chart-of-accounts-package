@@ -7,7 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Tests\BladeTestCase;
 use Alimarchal\LaravelChartOfAccounts\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
-uses(TestCase::class)->in('Feature');
+uses(TestCase::class)->in('Feature', 'Performance');
 uses(BladeTestCase::class)->in('Blade');
 
 /**

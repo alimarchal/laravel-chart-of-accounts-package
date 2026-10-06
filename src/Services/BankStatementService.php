@@ -242,30 +242,66 @@ class BankStatementService
 
     /**
      * Match every unmatched line that has exactly one candidate (and whose candidate no other line wants).
+     *
+     * The ledger lines that can match are read once per bank account, for the date range the statement covers, and matched
+     * to the lines in memory by amount and date: a query per line made a long statement take minutes.
      */
     public function autoMatch(BankStatement $statement): int
     {
         return DB::transaction(function () use ($statement): int {
             $lines = $statement->lines()->where('status', 'unmatched')->get();
+            $days = (int) config('accounting.bank_import.match_days', 5);
             $options = [];
             $wanted = [];
+            $book = [];
 
-            foreach ($lines as $line) {
-                $ids = $this->candidates($line)->pluck('id')->all();
-                $options[$line->id] = $ids;
+            foreach ($lines->groupBy('bank_account_id') as $group) {
+                $bank = $this->bankOf($group->first());
+                $from = $group->min(fn (BankStatementLine $line) => $line->txn_date)->copy()->subDays($days)->toDateString();
+                $to = $group->max(fn (BankStatementLine $line) => $line->txn_date)->copy()->addDays($days)->toDateString();
+                $byAmount = [];
 
-                foreach ($ids as $id) {
-                    $wanted[$id] = ($wanted[$id] ?? 0) + 1;
+                foreach (JournalEntryLine::query()
+                    ->with(['journalEntry:id,entry_date'])
+                    ->where('chart_of_account_id', $bank->chart_of_account_id)
+                    ->where('reconciliation_status', '!=', 'reconciled')
+                    ->whereHas('journalEntry', fn ($query) => $query->where('status', 'posted')->whereDate('entry_date', '>=', $from)->whereDate('entry_date', '<=', $to))
+                    ->whereNotIn('id', BankStatementLine::query()->whereNotNull('journal_entry_line_id')->select('journal_entry_line_id'))
+                    ->get(['id', 'journal_entry_id', 'debit', 'credit', 'reconciliation_status']) as $row) {
+                    $book[$row->id] = $row;
+                    $byAmount[Money::toCents((string) $row->debit) - Money::toCents((string) $row->credit)][] = $row;
+                }
+
+                foreach ($group as $line) {
+                    $signed = Money::toCents($line->deposit) - Money::toCents($line->withdrawal);
+                    $near = [];
+
+                    foreach ($byAmount[$signed] ?? [] as $row) {
+                        $distance = abs($line->txn_date->diffInDays($row->journalEntry->entry_date, false));
+
+                        if ($distance <= $days) {
+                            $near[] = ['id' => $row->id, 'distance' => $distance];
+                        }
+                    }
+
+                    usort($near, fn (array $a, array $b) => $a['distance'] <=> $b['distance']);
+                    $options[$line->id] = array_column($near, 'id');
+
+                    foreach ($options[$line->id] as $id) {
+                        $wanted[$id] = ($wanted[$id] ?? 0) + 1;
+                    }
                 }
             }
 
             $matched = 0;
 
             foreach ($lines as $line) {
-                $ids = $options[$line->id];
+                $ids = $options[$line->id] ?? [];
 
                 if (count($ids) === 1 && $wanted[$ids[0]] === 1) {
-                    $this->match($line, $ids[0]);
+                    $row = $book[$ids[0]];
+                    $row->forceFill(['reconciliation_status' => 'cleared'])->save();
+                    $line->forceFill(['status' => 'matched', 'journal_entry_id' => $row->journal_entry_id, 'journal_entry_line_id' => $row->id])->save();
                     $matched++;
                 }
             }

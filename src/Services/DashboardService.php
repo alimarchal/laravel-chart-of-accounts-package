@@ -37,9 +37,15 @@ class DashboardService
 
         $data['performance'] = $can('reports.income-statement.view') ? $this->performance($asOf, $months) : null;
         $data['cash'] = $can('reports.balance-sheet.view') ? $this->cash($asOf) : null;
-        $data['receivables'] = $can('parties.view') ? $this->receivables('receivable', $asOf) : null;
-        $data['payables'] = $can('parties.view') ? $this->receivables('payable', $asOf) : null;
-        $data['alerts'] = $this->alerts($asOf, $can);
+        $aging = [];
+
+        foreach ($can('parties.view') ? ['receivable', 'payable'] : [] as $side) {
+            $aging[$side] = $this->ledger->aging($side, $asOf->toDateString());
+        }
+
+        $data['receivables'] = isset($aging['receivable']) ? $this->receivables('receivable', $asOf, $aging['receivable']) : null;
+        $data['payables'] = isset($aging['payable']) ? $this->receivables('payable', $asOf, $aging['payable']) : null;
+        $data['alerts'] = $this->alerts($asOf, $can, $aging['receivable'] ?? null);
         $data['recent_entries'] = $can('journal-entries.view') ? $this->recent() : null;
 
         return $data;
@@ -157,11 +163,11 @@ class DashboardService
     }
 
     /**
+     * @param  array{as_of: string, side: string, rows: list<array<string, mixed>>, totals: array<string, string>}  $aging
      * @return array<string, mixed>
      */
-    private function receivables(string $side, Carbon $asOf): array
+    private function receivables(string $side, Carbon $asOf, array $aging): array
     {
-        $aging = $this->ledger->aging($side, $asOf->toDateString());
         $totals = $aging['totals'];
         $overdue = Money::toCents($totals['days_1_30']) + Money::toCents($totals['days_31_60']) + Money::toCents($totals['days_61_90']) + Money::toCents($totals['over_90']);
         $top = collect($aging['rows'])->sortByDesc(fn (array $row): int => Money::toCents($row['total']))->take(5)
@@ -172,16 +178,17 @@ class DashboardService
             'overdue' => Money::fromCents($overdue),
             'buckets' => collect(['not_due', 'days_1_30', 'days_31_60', 'days_61_90', 'over_90'])->map(fn (string $bucket): array => ['bucket' => $bucket, 'amount' => $totals[$bucket]])->all(),
             'top' => $top,
-            'difference' => $this->ledger->reconcile($side, $asOf->toDateString())['difference'],
+            'difference' => $this->ledger->reconcile($side, $asOf->toDateString(), $aging)['difference'],
         ];
     }
 
     /**
      * Things waiting on someone, each with the page that deals with it.
      *
+     * @param  array{as_of: string, side: string, rows: list<array<string, mixed>>, totals: array<string, string>}|null  $receivableAging
      * @return list<array{key: string, level: string, count: int, label: string, amount: string|null}>
      */
-    private function alerts(Carbon $asOf, callable $can): array
+    private function alerts(Carbon $asOf, callable $can, ?array $receivableAging): array
     {
         $alerts = [];
 
@@ -193,7 +200,7 @@ class DashboardService
         }
 
         if ($can('parties.view')) {
-            $receivable = $this->ledger->aging('receivable', $asOf->toDateString())['totals'];
+            $receivable = ($receivableAging ?? $this->ledger->aging('receivable', $asOf->toDateString()))['totals'];
             $overdue = Money::toCents($receivable['days_1_30']) + Money::toCents($receivable['days_31_60']) + Money::toCents($receivable['days_61_90']) + Money::toCents($receivable['over_90']);
             $overdue > 0 && $alerts[] = ['key' => 'overdue_receivables', 'level' => 'warning', 'count' => 1, 'label' => 'Overdue customer invoices', 'amount' => Money::fromCents($overdue)];
         }

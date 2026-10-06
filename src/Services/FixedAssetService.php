@@ -180,8 +180,11 @@ class FixedAssetService
         $plan = [];
         $assets = FixedAsset::query()->where('status', 'active')->when($only !== null, fn ($query) => $query->whereIn('id', $only))->orderBy('code')->get();
 
+        // One query for what is booked on every asset: a query per asset made a run over a large register slow.
+        $booked = AssetDepreciation::query()->whereIn('fixed_asset_id', $assets->pluck('id'))->get(['fixed_asset_id', 'period_month', 'amount'])->groupBy('fixed_asset_id');
+
         foreach ($assets as $asset) {
-            $done = AssetDepreciation::query()->where('fixed_asset_id', $asset->id)->pluck('amount', 'period_month')->mapWithKeys(fn ($amount, $month) => [Carbon::parse($month)->format('Y-m') => Money::toCents($amount)]);
+            $done = collect($booked->get($asset->id, []))->mapWithKeys(fn (AssetDepreciation $row) => [Carbon::parse($row->period_month)->format('Y-m') => Money::toCents($row->amount)]);
             $accumulated = $done->sum();
             $month = Carbon::parse($asset->in_service_date)->startOfMonth();
             $index = 0;

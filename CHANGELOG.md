@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.26.0] - 2026-10-28
+
+Performance release.
+
+### Changed
+- **Receivables and payables ageing, the ledger-against-sub-ledger check and the dashboard** read their data for all customers at
+  once instead of several queries per customer: 1,000 customers and 10,000 invoices went from 7.7 s (3,001 queries) to 0.28 s
+  (4 queries); the dashboard from 18 s to 0.4 s.
+- **Stock valuation** no longer does work proportional to items × movements: 2,000 items went from 11.6 s to 0.22 s.
+- **Depreciation planning** reads what is booked on all assets in one query; **bank statement auto-match** reads the ledger lines
+  that can match once per bank account and matches in memory: 1,500 lines went from 116 s to 12 s; payroll payslip lines are
+  inserted in batches.
+
+### Added
+- Indexes on the party allocation, payslip, payslip line and stock movement lookups (migration `add_scale_indexes`).
+- `tests/Performance/ScaleTest.php`: query-count guards in the normal test run, and a benchmark (`ACCOUNTING_PERF=1`) that prints
+  timings on any database; results in `docs/performance.md`.
+
 ## [2.25.0] - 2026-10-27
 
 FBR invoicing release.
