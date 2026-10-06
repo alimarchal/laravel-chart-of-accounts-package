@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+use Alimarchal\LaravelChartOfAccounts\Jobs\SubmitFbrInvoice;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
@@ -12,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocumentLine;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\TaxCalculator;
 use Illuminate\Support\Carbon;
@@ -225,6 +227,10 @@ class PartyDocumentService
 
             $document->forceFill(['number' => $number, 'status' => 'posted', 'journal_entry_id' => $entry->id])->save();
             AccountingAuditLog::record($document, 'PARTY_DOCUMENT_POSTED', null, ['number' => $number, 'total' => $document->total, 'journal_entry_id' => $entry->id]);
+
+            if (config('accounting.fbr.enabled') && config('accounting.fbr.auto_submit') && in_array($document->kind, ['invoice', 'credit_note'], true)) {
+                SubmitFbrInvoice::dispatch($document->id, CurrentCompany::currentId())->afterCommit();
+            }
 
             return $document->refresh();
         });

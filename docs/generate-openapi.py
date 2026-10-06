@@ -667,6 +667,11 @@ paths["/payroll/components/{id}"] = {"parameters": [ID],
     "put": op("Payroll", "Change a component (PATCH also accepted)", "payroll.manage", {"200": resp("Updated", data(ref("PayComponent"))), **E404_422}, body={"type": "object", "required": ["code", "name", "kind", "method", "value", "account_id"], "properties": comp_props}, opid="update_pay_component"),
     "delete": op("Payroll", "Delete a component that is not in use", "payroll.manage", {"204": resp("Deleted"), **E404_422}, opid="delete_pay_component")}
 
+# FBR.
+schemas["FbrSubmission"] = {"type": "object", "properties": {"id": {"type": "integer"}, "document_id": {"type": "integer"}, "status": {"type": "string", "enum": ["pending", "accepted", "failed"]}, "mode": {"type": "string", "enum": ["fake", "live"]}, "attempts": {"type": "integer"}, "fbr_invoice_number": {"type": "string", "nullable": True}, "error": {"type": "string", "nullable": True}, "submitted_at": {"type": "string", "format": "date-time", "nullable": True}}}
+paths["/fbr"] = {"get": op("FBR", "Posted sales invoices and credit notes with their FBR status", "fbr.view", {"200": resp("Documents (status none = not sent yet)", data({"type": "object", "properties": {"enabled": {"type": "boolean"}, "mode": {"type": "string"}, "documents": {"type": "array", "items": {"type": "object"}}}})), **E422}, params=[{"name": "status", "in": "query", "schema": {"type": "string", "enum": ["none", "pending", "accepted", "failed"]}}], opid="list_fbr_documents")}
+paths["/fbr/documents/{id}/submit"] = {"parameters": [ID], "post": op("FBR", "Send a sales invoice or credit note to FBR (or retry a failed one)", "fbr.submit", {"200": resp("The outcome: accepted (with FBR's invoice number) or failed (with the reason); a refusal by FBR is a result, not an HTTP error", data(ref("FbrSubmission"))), **E404_422}, desc="Needs accounting.fbr.enabled. A posted invoice or credit note is sent once: an accepted one is never sent again (422), a failed one can be retried. Mode fake accepts locally; live posts to the configured URL.", opid="submit_fbr_document")}
+
 # Tax engine.
 TAX_TYPES = ["sale", "sale_return", "purchase", "purchase_return", "withholding_payment", "withholding_receipt"]
 schemas["TaxCalculation"] = {"type": "object", "properties": {"code": {"type": "string"}, "kind": {"type": "string"}, "rate": {"type": "string", "description": "Percent, four decimals"}, "inclusive": {"type": "boolean"}, "base": ref("Money"), "tax": ref("Money"), "gross": ref("Money")}}
@@ -768,7 +773,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.24.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.25.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

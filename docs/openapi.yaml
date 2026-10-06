@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.24.0
+  version: 2.25.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -9162,6 +9162,91 @@ paths:
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
       - $ref: '#/components/parameters/Company'
+  /fbr:
+    get:
+      tags:
+      - FBR
+      summary: Posted sales invoices and credit notes with their FBR status
+      operationId: list_fbr_documents
+      description: 'Permission: `fbr.view`.'
+      responses:
+        '200':
+          description: Documents (status none = not sent yet)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      mode:
+                        type: string
+                      documents:
+                        type: array
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - none
+          - pending
+          - accepted
+          - failed
+      - $ref: '#/components/parameters/Company'
+  /fbr/documents/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - FBR
+      summary: Send a sales invoice or credit note to FBR (or retry a failed one)
+      operationId: submit_fbr_document
+      description: 'Needs accounting.fbr.enabled. A posted invoice or credit note is sent once: an accepted one is never sent
+        again (422), a failed one can be retried. Mode fake accepts locally; live posts to the configured URL.
+
+
+        Permission: `fbr.submit`.'
+      responses:
+        '200':
+          description: 'The outcome: accepted (with FBR''s invoice number) or failed (with the reason); a refusal by FBR is
+            a result, not an HTTP error'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FbrSubmission'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /tax/calculate:
     post:
       tags:
@@ -12836,6 +12921,36 @@ components:
           nullable: true
         employees:
           type: integer
+    FbrSubmission:
+      type: object
+      properties:
+        id:
+          type: integer
+        document_id:
+          type: integer
+        status:
+          type: string
+          enum:
+          - pending
+          - accepted
+          - failed
+        mode:
+          type: string
+          enum:
+          - fake
+          - live
+        attempts:
+          type: integer
+        fbr_invoice_number:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
     TaxCalculation:
       type: object
       properties:

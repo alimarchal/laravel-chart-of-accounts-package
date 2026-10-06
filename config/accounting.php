@@ -138,6 +138,34 @@ return [
         ],
     ],
 
+    // FBR sales tax invoicing: posted sales invoices and credit notes are sent as digital invoices and the invoice number
+    // FBR returns is kept. mode: fake (accepts locally, for development and demos) or live (posts JSON with a bearer
+    // token to url; the invoice number is read from the response key invoice_number_key). seller and defaults fill what
+    // the books do not hold; auto_submit sends an invoice on a queue as soon as it is posted. Bind your own
+    // Alimarchal\LaravelChartOfAccounts\Contracts\FbrGateway to integrate differently.
+    'fbr' => [
+        'enabled' => (bool) env('ACCOUNTING_FBR_ENABLED', false),
+        'mode' => env('ACCOUNTING_FBR_MODE', 'fake'),
+        'url' => env('ACCOUNTING_FBR_URL'),
+        'token' => env('ACCOUNTING_FBR_TOKEN'),
+        'timeout' => (int) env('ACCOUNTING_FBR_TIMEOUT', 20),
+        'auto_submit' => (bool) env('ACCOUNTING_FBR_AUTO_SUBMIT', false),
+        'invoice_number_key' => env('ACCOUNTING_FBR_INVOICE_NUMBER_KEY', 'invoiceNumber'),
+        'seller' => [
+            'ntn' => env('ACCOUNTING_FBR_SELLER_NTN'),
+            'business_name' => env('ACCOUNTING_FBR_SELLER_NAME'),
+            'province' => env('ACCOUNTING_FBR_SELLER_PROVINCE'),
+            'address' => env('ACCOUNTING_FBR_SELLER_ADDRESS'),
+        ],
+        'defaults' => [
+            'hs_code' => env('ACCOUNTING_FBR_HS_CODE'),
+            'uom' => env('ACCOUNTING_FBR_UOM', 'Numbers, pieces, units'),
+            'sale_type' => env('ACCOUNTING_FBR_SALE_TYPE', 'Goods at standard rate (default)'),
+            'scenario_id' => env('ACCOUNTING_FBR_SCENARIO_ID'),
+            'buyer_province' => env('ACCOUNTING_FBR_BUYER_PROVINCE'),
+        ],
+    ],
+
     // Budgets: control = block refuses a posting that takes a budgeted expense account past its cumulative budget in
     // the approved budget covering the entry date (users with budgets.override may still post). warn_percent: the
     // share of the budget used from which a line shows a warning.
@@ -265,6 +293,8 @@ return [
         'payroll.run',
         'payroll.post',
         'payroll.void',
+        'fbr.view',
+        'fbr.submit',
         'tax-returns.view',
         'tax-returns.file',
         'tax-entries.create',
@@ -405,6 +435,8 @@ return [
             'payroll.view',
             'payroll.manage',
             'payroll.run',
+            'fbr.view',
+            'fbr.submit',
             'tax-returns.view',
             'tax-returns.file',
             'tax-entries.create',
@@ -475,6 +507,7 @@ return [
             'payroll.view',
             'payroll.post',
             'payroll.void',
+            'fbr.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',
@@ -511,6 +544,7 @@ return [
             'fixed-assets.view',
             'inventory.view',
             'payroll.view',
+            'fbr.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',
@@ -548,6 +582,7 @@ return [
             'fixed-assets.view',
             'inventory.view',
             'payroll.view',
+            'fbr.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',

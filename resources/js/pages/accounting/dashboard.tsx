@@ -169,6 +169,15 @@ export default function AccountingDashboard({ summary }: Props) {
                   },
               ]
             : []),
+        ...(permissions['fbr.view']
+            ? [
+                  {
+                      title: 'FBR Invoices',
+                      href: '/accounting/fbr',
+                      icon: ReceiptText,
+                  },
+              ]
+            : []),
         ...(permissions['payroll.view']
             ? [
                   {

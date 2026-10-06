@@ -495,6 +495,27 @@ cash and bank, receivables and payables with ageing, income vs expense by month,
 needing attention, each linking to the page that deals with it. Sections are filtered by the user's permissions. The existing
 `/accounting` page remains the module hub.
 
+## FBR sales tax invoices
+
+`/accounting/fbr` (and `/api/v1/accounting/fbr`) sends posted **sales invoices and credit notes** to FBR as digital invoices and keeps
+the invoice number FBR returns.
+
+- Each document is turned into the digital-invoice payload (seller and buyer NTN, name, province and address, one item per line
+  with HS code, unit of measure, rate, value excluding sales tax, sales tax and total; a credit note carries the FBR number of
+  the invoice it refers to). Sent once: an accepted invoice is never sent again, a refused one keeps the reason and can be
+  retried; every attempt stores what was sent and received.
+- **Configuration** (`accounting.fbr`, all `ACCOUNTING_FBR_*` environment variables): `enabled`, `mode`, `url`, `token`,
+  the seller identity, and the defaults the books do not hold (HS code, unit of measure, sale type, scenario, buyer province).
+  With `auto_submit` an invoice is queued for sending as soon as it is posted.
+- **Modes:** `fake` (the default) accepts locally with a generated number: use it for development, demos and tests, nothing leaves
+  your server. `live` posts the payload as JSON with a bearer token to the URL you configure and reads the invoice number from
+  the response key `invoice_number_key`. To integrate differently (certificates, another format) bind your own
+  `Alimarchal\LaravelChartOfAccounts\Contracts\FbrGateway`.
+- **Check before going live:** the field names follow FBR's published digital-invoice format as understood when this was written,
+  and this package has not been exercised against FBR's own sandbox or production service. Register with FBR, run your
+  invoices through their sandbox, and adjust the defaults, the response key or the gateway to what they require.
+- Permissions `fbr.view` and `fbr.submit`; audited (`FBR_INVOICE_ACCEPTED`, `FBR_INVOICE_FAILED`).
+
 ## Payroll
 
 `/accounting/payroll` (and `/api/v1/accounting/payroll`) runs the monthly salaries:
@@ -1371,6 +1392,8 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `payroll.run` | ✔ |  | ✔ |  |  |  |
 | `payroll.post` | ✔ |  |  | ✔ |  |  |
 | `payroll.void` | ✔ |  |  | ✔ |  |  |
+| `fbr.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `fbr.submit` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `bank-statements.import` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.match` | ✔ |  | ✔ |  |  |  |

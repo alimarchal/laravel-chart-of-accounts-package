@@ -114,6 +114,7 @@ function concreteUri(Route $route): string
             'budgets' => Budget::class,
             'fixed-assets' => FixedAsset::class,
             'items' => InventoryItem::class,
+            'documents' => PartyDocument::class,
             'runs' => PayrollRun::class,
             'payslips' => Payslip::class,
             'employees' => Employee::class,
