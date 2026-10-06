@@ -2,6 +2,19 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.28.0] - 2026-10-30
+
+Security review release.
+
+### Security
+- Excel (.xlsx) imports reject workbooks that declare a DOCTYPE or entities and parts larger than 50 MB uncompressed (zip bomb).
+- CSV exports prefix cells that start with `=`, `+`, `-` or `@` so spreadsheets do not run them as formulas.
+- The FBR gateway refuses a non-`https://` address, so the token is never sent in clear text.
+
+### Added
+- Tests: every route has an ability check and GETs never write; no API resource serves, changes or deletes another company's record by id; attachment whitelist.
+- `docs/uat.md`: user acceptance checklist for accountants; README Security section.
+
 ## [2.27.0] - 2026-10-29
 
 Urdu release.

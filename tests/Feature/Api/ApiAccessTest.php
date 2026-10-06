@@ -36,6 +36,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
+use Alimarchal\LaravelChartOfAccounts\Services\CompanyService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Route;
@@ -62,9 +63,9 @@ function apiRoutes(): array
 /**
  * Fill route parameters with ids of records that exist, so permission checks are reached (not 404s).
  */
-function concreteUri(Route $route): string
+function concreteUri(Route $route, ?string &$modelResource = null): string
 {
-    return '/'.preg_replace_callback('/\{([^}]+)\}/', function (array $match) use ($route): string {
+    return '/'.preg_replace_callback('/\{([^}]+)\}/', function (array $match) use ($route, &$modelResource): string {
         if ($match[1] === 'format' && (str_contains($route->uri(), 'budgets/') || str_contains($route->uri(), 'fixed-assets/') || str_contains($route->uri(), 'inventory/'))) {
             return 'csv';
         }
@@ -133,8 +134,40 @@ function concreteUri(Route $route): string
             'journal-entries' => JournalEntry::class,
         };
 
+        $modelResource = $resource;
+
         return (string) ($model::query()->value('id') ?? 1);
     }, $route->uri());
+}
+
+/**
+ * One record of every kind the API serves, in the current company.
+ */
+function createEveryResource(): void
+{
+    Storage::fake('local');
+    $entry = journal(['1101' => 10, '4101' => -10]);
+    app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
+    $party = Party::query()->create(['type' => 'both', 'code' => 'P1', 'name' => 'Party']);
+    $partyDocument = PartyDocument::query()->create(['party_id' => $party->id, 'kind' => 'invoice', 'issue_date' => now()->toDateString(), 'due_date' => now()->toDateString()]);
+    $partyPayment = PartyPayment::query()->create(['party_id' => $party->id, 'kind' => 'receipt', 'payment_date' => now()->toDateString(), 'amount' => 1, 'account_id' => account('1101')->id]);
+    PartyAllocation::query()->create(['party_id' => $party->id, 'document_id' => $partyDocument->id, 'payment_id' => $partyPayment->id, 'amount' => 1, 'allocated_on' => now()->toDateString()]);
+    TaxReturn::query()->create(['period_from' => now()->startOfYear()->toDateString(), 'period_to' => now()->startOfYear()->addDays(5)->toDateString(), 'payable_account_id' => account('2101')->id]);
+    Budget::query()->create(['name' => 'Plan', 'start_date' => now()->startOfYear()->toDateString(), 'end_date' => now()->endOfYear()->toDateString()]);
+    FixedAsset::query()->create(['code' => 'FA1', 'name' => 'Asset', 'acquisition_date' => now()->toDateString(), 'in_service_date' => now()->toDateString(), 'cost' => 100, 'useful_life_months' => 12, 'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => account('5114')->id]);
+    InventoryItem::query()->create(['sku' => 'SKU1', 'name' => 'Item', 'inventory_account_id' => account('1151')->id, 'cogs_account_id' => account('5202')->id]);
+    Warehouse::query()->create(['code' => 'W1', 'name' => 'Main']);
+    $employee = Employee::query()->create(['code' => 'E1', 'name' => 'Emp', 'join_date' => now()->toDateString(), 'base_salary' => 1]);
+    PayComponent::query()->create(['code' => 'C1', 'name' => 'Comp', 'kind' => 'earning', 'account_id' => account('5102')->id]);
+    $payrollRun = PayrollRun::query()->create(['period_month' => now()->startOfMonth()->toDateString()]);
+    Payslip::query()->create(['payroll_run_id' => $payrollRun->id, 'employee_id' => $employee->id, 'basic' => 1, 'gross' => 1, 'net' => 1, 'days_paid' => 1, 'days_in_month' => 30]);
+    $bankAccount = BankAccount::factory()->create();
+    $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);
+    BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bankAccount->id, 'line_no' => 1, 'txn_date' => now()->toDateString(), 'deposit' => 1, 'hash' => 'x']);
+    Reconciliation::factory()->create();
+    ExchangeRate::query()->create(['currency_id' => Currency::query()->where('is_base', false)->value('id'), 'rate_date' => now()->toDateString(), 'rate' => 1]);
+    FxRevaluation::query()->create(['as_of_date' => now()->toDateString(), 'gain_loss_account_id' => account('4101')->id, 'journal_entry_id' => $entry->id]);
+    RecurringEntry::query()->create(['name' => 'Rent', 'frequency' => 'monthly', 'interval' => 1, 'start_date' => now()->toDateString(), 'next_run_date' => now()->toDateString(), 'mode' => 'draft']);
 }
 
 it('registers every API route behind authentication, a permission check and the rate limiter', function (): void {
@@ -160,29 +193,7 @@ it('returns 401 JSON for unauthenticated calls to every endpoint', function (): 
 });
 
 it('returns 403 for a viewer on every write endpoint', function (): void {
-    Storage::fake('local');
-    $entry = journal(['1101' => 10, '4101' => -10]);
-    app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
-    $party = Party::query()->create(['type' => 'both', 'code' => 'P1', 'name' => 'Party']);
-    $partyDocument = PartyDocument::query()->create(['party_id' => $party->id, 'kind' => 'invoice', 'issue_date' => now()->toDateString(), 'due_date' => now()->toDateString()]);
-    $partyPayment = PartyPayment::query()->create(['party_id' => $party->id, 'kind' => 'receipt', 'payment_date' => now()->toDateString(), 'amount' => 1, 'account_id' => account('1101')->id]);
-    PartyAllocation::query()->create(['party_id' => $party->id, 'document_id' => $partyDocument->id, 'payment_id' => $partyPayment->id, 'amount' => 1, 'allocated_on' => now()->toDateString()]);
-    TaxReturn::query()->create(['period_from' => now()->startOfYear()->toDateString(), 'period_to' => now()->startOfYear()->addDays(5)->toDateString(), 'payable_account_id' => account('2101')->id]);
-    Budget::query()->create(['name' => 'Plan', 'start_date' => now()->startOfYear()->toDateString(), 'end_date' => now()->endOfYear()->toDateString()]);
-    FixedAsset::query()->create(['code' => 'FA1', 'name' => 'Asset', 'acquisition_date' => now()->toDateString(), 'in_service_date' => now()->toDateString(), 'cost' => 100, 'useful_life_months' => 12, 'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => account('5114')->id]);
-    InventoryItem::query()->create(['sku' => 'SKU1', 'name' => 'Item', 'inventory_account_id' => account('1151')->id, 'cogs_account_id' => account('5202')->id]);
-    Warehouse::query()->create(['code' => 'W1', 'name' => 'Main']);
-    $employee = Employee::query()->create(['code' => 'E1', 'name' => 'Emp', 'join_date' => now()->toDateString(), 'base_salary' => 1]);
-    PayComponent::query()->create(['code' => 'C1', 'name' => 'Comp', 'kind' => 'earning', 'account_id' => account('5102')->id]);
-    $payrollRun = PayrollRun::query()->create(['period_month' => now()->startOfMonth()->toDateString()]);
-    Payslip::query()->create(['payroll_run_id' => $payrollRun->id, 'employee_id' => $employee->id, 'basic' => 1, 'gross' => 1, 'net' => 1, 'days_paid' => 1, 'days_in_month' => 30]);
-    $bankAccount = BankAccount::factory()->create();
-    $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);
-    BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bankAccount->id, 'line_no' => 1, 'txn_date' => now()->toDateString(), 'deposit' => 1, 'hash' => 'x']);
-    Reconciliation::factory()->create();
-    ExchangeRate::query()->create(['currency_id' => Currency::query()->where('is_base', false)->value('id'), 'rate_date' => now()->toDateString(), 'rate' => 1]);
-    FxRevaluation::query()->create(['as_of_date' => now()->toDateString(), 'gain_loss_account_id' => account('4101')->id, 'journal_entry_id' => $entry->id]);
-    RecurringEntry::query()->create(['name' => 'Rent', 'frequency' => 'monthly', 'interval' => 1, 'start_date' => now()->toDateString(), 'next_run_date' => now()->toDateString(), 'mode' => 'draft']);
+    createEveryResource();
 
     $viewer = User::factory()->create();
     $viewer->assignRole('viewer');
@@ -205,6 +216,56 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
 
         $this->json($method, concreteUri($route), [])->assertForbidden();
     }
+});
+
+it('never serves, changes or deletes another company\'s record by id', function (): void {
+    config(['accounting.multi_company.enabled' => true]);
+    $main = Company::query()->where('code', 'MAIN')->firstOrFail();
+    $sub = app(CompanyService::class)->create(['code' => 'SUB', 'name' => 'Subsidiary Ltd']);
+    $mainAdmin = User::factory()->create();
+    $mainAdmin->assignRole('super-admin');
+    app(CompanyService::class)->grantAccess($main, $mainAdmin, default: true);
+    $subAdmin = User::factory()->create();
+    $subAdmin->assignRole('super-admin');
+    app(CompanyService::class)->grantAccess($sub, $subAdmin, default: true);
+
+    // The books of the main company: one record of every kind, and the address of each.
+    Storage::fake('local');
+    Sanctum::actingAs($mainAdmin);
+    createEveryResource();
+    $targets = [];
+
+    foreach (apiRoutes() as $route) {
+        $resource = null;
+        $uri = concreteUri($route, $resource);
+
+        if ($resource !== null) {
+            $targets[] = [$route, $uri, $resource];
+        }
+    }
+
+    expect(count($targets))->toBeGreaterThan(80);
+
+    // These are shared by every company on purpose.
+    $shared = ['companies', 'users', 'roles', 'currencies', 'account-types', 'rates', 'permissions'];
+    app('auth')->forgetGuards();
+    Sanctum::actingAs($subAdmin);
+    $leaks = [];
+
+    foreach ($targets as [$route, $uri, $resource]) {
+        if (in_array($resource, $shared, true)) {
+            continue;
+        }
+
+        $method = collect($route->methods())->reject(fn ($m) => $m === 'HEAD')->first();
+        $status = $this->json($method, $uri, [])->getStatusCode();
+
+        if ($status < 400 || $status >= 500) {
+            $leaks[] = "{$method} {$uri} -> {$status}";
+        }
+    }
+
+    expect($leaks)->toBe([]);
 });
 
 it('rate limits API clients', function (): void {
