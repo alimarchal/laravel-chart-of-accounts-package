@@ -22,6 +22,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ReportExport;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportLine;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
+use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
@@ -100,6 +101,7 @@ function concreteUri(Route $route): string
             'recurring-entries' => RecurringEntry::class,
             'rates' => ExchangeRate::class,
             'budgets' => Budget::class,
+            'returns' => TaxReturn::class,
             'bank-statements' => BankStatement::class,
             'bank-statement-lines' => BankStatementLine::class,
             'fx-revaluation' => FxRevaluation::class,
@@ -138,6 +140,7 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     Storage::fake('local');
     $entry = journal(['1101' => 10, '4101' => -10]);
     app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
+    TaxReturn::query()->create(['period_from' => now()->startOfYear()->toDateString(), 'period_to' => now()->startOfYear()->addDays(5)->toDateString(), 'payable_account_id' => account('2101')->id]);
     Budget::query()->create(['name' => 'Plan', 'start_date' => now()->startOfYear()->toDateString(), 'end_date' => now()->endOfYear()->toDateString()]);
     $bankAccount = BankAccount::factory()->create();
     $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);

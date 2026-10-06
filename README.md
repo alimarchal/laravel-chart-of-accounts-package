@@ -431,6 +431,33 @@ The package schedules the command daily at `ACCOUNTING_RECURRING_TIME` (02:00) �
 (`* * * * * php artisan schedule:run`); `ACCOUNTING_RECURRING_SCHEDULE=false` leaves scheduling to you. Permissions
 `recurring-entries.view / create / update / delete / run` (accountant: all; approver, auditor, viewer: view).
 
+## Tax
+
+Dashboard → **Tax** (React and Blade) or `/api/v1/accounting/tax/…`. Tax codes and their dated rates (Accounting →
+Tax codes) drive a tax ledger and tax returns.
+
+- **Tax codes** now have a **kind** — *output* (collected on sales), *input* (paid on purchases), *withheld* (deducted from
+  payments we make) or *advance* (deducted from payments to us) — the **tax account** the tax is booked to, and a
+  jurisdiction. A rate is picked by date: the active rate with the latest start on or before the document's date.
+- **Calculator**: base, tax and total for an amount, tax-exclusive or inclusive, rounded to the cent (an inclusive amount
+  always splits exactly: base + tax = amount).
+- **Taxed documents**: *Tax → New taxed document* books an invoice, bill, credit or debit note, or a payment / receipt with
+  tax withheld in one go — the tax is worked out and booked to the code's tax account, with a live preview. In the API and
+  in any journal entry a line may carry `tax_code_id` (and `tax_inclusive`): it is split into the taxable amount and a tax
+  line on the same side. Both lines are **marked** (`tax_role` base / tax), which is what the reports read; zero-rated and
+  exempt sales keep only the marked base.
+- **Tax report**: per tax code the taxable base, the tax and the number of documents for any period, from posted entries
+  in the base currency (credit notes and returns reduce them), with the documents behind it, and CSV / XLSX / PDF export.
+  Totals: output tax, input tax, **net payable**, tax withheld by us, advance tax.
+- **Tax return**: *File a return* settles a period in one entry dated at its end — output tax debited and input tax credited
+  on their tax accounts, the difference on the payable account you pick (a refund debits it). Periods cannot overlap; a
+  return can be **voided** (its entry is reversed and the period can be filed again). Audited (`TAX_RETURN_*`).
+- Editing a draft keeps its tax markers (send `tax_code_id`, `tax_role` and `tax_rate` back with the lines). Withholding
+  you remit, or advance tax you claim, is an ordinary payment / entry on the withholding account.
+
+Permissions `tax-returns.view` (accountant, approver, auditor, viewer), `tax-returns.file` and `tax-entries.create`
+(accountant); the calculator needs `tax-codes.view`.
+
 ## Budgets
 
 Dashboard → **Budgets** (React and Blade) or `/api/v1/accounting/budgets`. A budget plans income and expenses by
@@ -989,6 +1016,11 @@ Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml).
 | GET/POST | `/recurring-entries` | Templates / create one (balanced lines + schedule) | `recurring-entries.view` / `.create` |
 | GET/PUT/DELETE | `/recurring-entries/{id}` | Template with runs and upcoming dates / change / delete (only if it has not run) | `recurring-entries.*` |
 | POST | `/recurring-entries/{id}/pause` · `/resume` · `/run` | Pause / resume (`skip_missed`) / generate the next entry now | `recurring-entries.update` / `.run` |
+| POST | `/tax/calculate` | Tax on an amount (`tax_code_id`, `amount`, `inclusive`, `date`) | `tax-codes.view` |
+| POST | `/tax/entries` | Book a taxed document (`type`, `amount`, `tax_code_id`, `account_id`, `counter_account_id`, `auto_post`) | `tax-entries.create` |
+| GET | `/tax/returns/report` · `/tax/returns/report/export/{format}` | The tax ledger of a period / as a file | `tax-returns.view` |
+| GET/POST | `/tax/returns` | Filed returns / file one (`period_from`, `period_to`, `payable_account_id`) | `tax-returns.view` / `.file` |
+| GET/DELETE | `/tax/returns/{id}` | A return / void it (reverses its entry) | `tax-returns.view` / `.file` |
 | GET/POST | `/budgets` | Budgets / create a draft (`lines` with `annual` or `amounts`, or `from_actuals`) | `budgets.view` / `.create` |
 | GET/PUT/DELETE | `/budgets/{id}` | Budget against actual (`date_from`, `date_to`, `cost_center_id`) / change a draft / delete | `budgets.view` / `.update` / `.delete` |
 | POST | `/budgets/{id}/approve` · `/close` · `/reopen` · `/copy` | Approve / close / reopen as a draft / copy (`name`, `start_date`, `uplift_percent`) | `budgets.approve` / `.update` / `.create` |
@@ -1207,6 +1239,9 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `recurring-entries.update` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.delete` | ✔ |  | ✔ |  |  |  |
 | `recurring-entries.run` | ✔ |  | ✔ |  |  |  |
+| `tax-returns.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `tax-returns.file` | ✔ |  | ✔ |  |  |  |
+| `tax-entries.create` | ✔ |  | ✔ |  |  |  |
 | `budgets.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `budgets.create` | ✔ |  | ✔ |  |  |  |
 | `budgets.update` | ✔ |  | ✔ |  |  |  |

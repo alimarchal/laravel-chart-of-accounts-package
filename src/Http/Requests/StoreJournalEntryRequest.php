@@ -104,6 +104,10 @@ class StoreJournalEntryRequest extends FormRequest
             'lines.*.debit' => $this->moneyRules(),
             'lines.*.credit' => $this->moneyRules(),
             'lines.*.description' => ['nullable', 'string', 'max:255'],
+            'lines.*.tax_code_id' => ['nullable', 'integer', CompanyRule::exists('accounting_tax_codes', 'id')->where(fn ($query) => $query->where('is_active', true))],
+            'lines.*.tax_inclusive' => ['nullable', 'boolean'],
+            'lines.*.tax_role' => ['nullable', 'in:base,tax'],
+            'lines.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:1000'],
         ];
     }
 

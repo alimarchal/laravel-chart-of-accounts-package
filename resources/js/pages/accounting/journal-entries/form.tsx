@@ -54,6 +54,10 @@ type JournalLine = {
     debit: string;
     credit: string;
     description: string;
+    // Tax markers of lines made by the tax engine: sent back unchanged so editing a draft keeps its tax ledger.
+    tax_code_id?: string;
+    tax_role?: string;
+    tax_rate?: string;
 };
 
 type Props = {
@@ -76,6 +80,9 @@ type Props = {
             debit: string | number;
             credit: string | number;
             description: string | null;
+            tax_code_id?: number | null;
+            tax_role?: string | null;
+            tax_rate?: string | number | null;
         }>;
     } | null;
     accounts: Account[];
@@ -149,6 +156,9 @@ export default function JournalEntryForm({
             debit: String(line.debit ?? '0'),
             credit: String(line.credit ?? '0'),
             description: line.description ?? '',
+            tax_code_id: line.tax_code_id ? String(line.tax_code_id) : '',
+            tax_role: line.tax_role ?? '',
+            tax_rate: line.tax_rate === null || line.tax_rate === undefined ? '' : String(line.tax_rate),
         })) ?? [emptyLine(), emptyLine()],
     });
 

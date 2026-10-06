@@ -20,6 +20,7 @@ class JournalEntryService
      */
     public function create(array $data): JournalEntry
     {
+        $data['lines'] = app(TaxService::class)->expand($data['lines'], (string) $data['entry_date']);
         $this->assertAccountsInCompany($data['lines']);
 
         return DB::transaction(function () use ($data): JournalEntry {
@@ -50,6 +51,9 @@ class JournalEntryService
                     'debit' => $line['debit'] ?? 0,
                     'credit' => $line['credit'] ?? 0,
                     'description' => $line['description'] ?? null,
+                    'tax_code_id' => $line['tax_code_id'] ?? null,
+                    'tax_role' => $line['tax_role'] ?? null,
+                    'tax_rate' => $line['tax_rate'] ?? null,
                 ]);
             }
 
@@ -70,6 +74,7 @@ class JournalEntryService
             throw new JournalEntryNotEditableException('Only draft journal entries can be edited.');
         }
 
+        $data['lines'] = app(TaxService::class)->expand($data['lines'], (string) $data['entry_date']);
         $this->assertAccountsInCompany($data['lines']);
 
         return DB::transaction(function () use ($journalEntry, $data): JournalEntry {
@@ -120,6 +125,9 @@ class JournalEntryService
                     'debit' => $line['debit'] ?? 0,
                     'credit' => $line['credit'] ?? 0,
                     'description' => $line['description'] ?? null,
+                    'tax_code_id' => $line['tax_code_id'] ?? null,
+                    'tax_role' => $line['tax_role'] ?? null,
+                    'tax_rate' => $line['tax_rate'] ?? null,
                 ];
 
                 if (! empty($line['id'])) {

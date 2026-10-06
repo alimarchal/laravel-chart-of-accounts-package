@@ -18,6 +18,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $base_debit amount in the base currency, set when the entry is posted
  * @property string $base_credit
  * @property string|null $description
+ * @property int|null $tax_code_id the tax code this line is the base or the tax of
+ * @property string|null $tax_role base|tax
+ * @property string|null $tax_rate the rate applied (percent)
  * @property string|null $reconciliation_status
  * @property-read JournalEntry $journalEntry
  * @property-read ChartOfAccount|null $account company-scoped: null for an account of another company
@@ -42,6 +45,9 @@ class JournalEntryLine extends Model
         'base_debit',
         'base_credit',
         'description',
+        'tax_code_id',
+        'tax_role',
+        'tax_rate',
         'reconciliation_status',
         'reconciliation_id',
         'reconciled_at',
@@ -55,6 +61,7 @@ class JournalEntryLine extends Model
             'credit' => 'decimal:2',
             'base_debit' => 'decimal:2',
             'base_credit' => 'decimal:2',
+            'tax_rate' => 'decimal:4',
             'reconciled_at' => 'datetime',
         ];
     }

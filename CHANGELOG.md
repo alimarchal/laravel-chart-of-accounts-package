@@ -2,6 +2,28 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.19.0] - 2026-10-21
+
+Tax engine release.
+
+### Added
+- **Tax codes** have a kind (output / input / withheld / advance), the account the tax is booked to and a jurisdiction;
+  rates are picked by date.
+- **Tax calculation** (tax-exclusive or inclusive, exact to the cent) and **taxed journal lines**: a line with a
+  `tax_code_id` is split into its taxable amount and a tax line on the code's tax account; both are marked
+  (`tax_role`) so reports never depend on the screen the entry came from.
+- **Taxed documents**: invoice, bill, credit / debit note, payment or receipt with tax withheld, in React, Blade and the API.
+- **Tax report** by tax code and period (taxable base, tax, documents, net payable, withheld, advance) with the documents
+  behind it and CSV / XLSX / PDF export, and **tax returns**: file a period (output offset against input in one entry,
+  the difference on a payable account), no overlapping periods, void by reversal.
+- Permissions `tax-returns.view` (accountant, approver, auditor, viewer), `tax-returns.file` and `tax-entries.create`
+  (accountant); audited (`TAX_RETURN_*`).
+
+### Changed
+- `accounting_journal_entry_lines` gains `tax_code_id`, `tax_role` and `tax_rate`; `accounting_tax_codes` gains `kind`,
+  `tax_account_id` and `jurisdiction` (existing codes become output codes without an account). The journal entry form
+  keeps the tax markers of a draft it edits.
+
 ## [2.18.0] - 2026-10-20
 
 Budgets release.

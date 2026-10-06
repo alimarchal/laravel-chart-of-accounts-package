@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.18.0
+  version: 2.19.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -7336,6 +7336,343 @@ paths:
           $ref: '#/components/responses/NotFound'
       parameters:
       - $ref: '#/components/parameters/Company'
+  /tax/calculate:
+    post:
+      tags:
+      - Tax
+      summary: Tax on an amount
+      operationId: calculate_tax
+      description: 'Rounded to the cent, half away from zero; for an inclusive amount base + tax equals the amount exactly.
+
+
+        Permission: `tax-codes.view`.'
+      responses:
+        '200':
+          description: Calculation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaxCalculation'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tax_code_id
+              - amount
+              properties:
+                tax_code_id:
+                  type: integer
+                amount:
+                  type: number
+                inclusive:
+                  type: boolean
+                  default: false
+                  description: The amount already contains the tax
+                date:
+                  type: string
+                  format: date
+                  description: The rate in force on this date (default today)
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /tax/entries:
+    post:
+      tags:
+      - Tax
+      summary: Book a taxed document as a journal entry
+      operationId: create_taxed_entry
+      description: 'Journal entry lines may also carry `tax_code_id` (+ `tax_inclusive`): such a line is split into its taxable
+        amount and a tax line to the code''s tax account, marked for the tax report.
+
+
+        Permission: `tax-entries.create`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                      voucher_number:
+                        type:
+                        - string
+                        - 'null'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - type
+              - entry_date
+              - amount
+              - tax_code_id
+              - account_id
+              - counter_account_id
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - sale
+                  - sale_return
+                  - purchase
+                  - purchase_return
+                  - withholding_payment
+                  - withholding_receipt
+                  description: sale / sale_return need an output code, purchase / purchase_return an input code, withholding_payment
+                    a withheld code, withholding_receipt an advance code
+                entry_date:
+                  type: string
+                  format: date
+                amount:
+                  type: number
+                tax_inclusive:
+                  type: boolean
+                tax_code_id:
+                  type: integer
+                account_id:
+                  type: integer
+                  description: Revenue / expense account (the party account for withholding)
+                counter_account_id:
+                  type: integer
+                  description: Customer / supplier / bank account
+                cost_center_id:
+                  type: integer
+                reference:
+                  type: string
+                description:
+                  type: string
+                auto_post:
+                  type: boolean
+                  default: false
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /tax/returns/report:
+    get:
+      tags:
+      - Tax
+      summary: The tax ledger of a period
+      operationId: tax_report
+      description: 'Per tax code: taxable base and tax from posted entries in base currency (default: this month).
+
+
+        Permission: `tax-returns.view`.'
+      responses:
+        '200':
+          description: Report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaxReport'
+                required:
+                - data
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: tax_code_id
+        in: query
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+  /tax/returns/report/export/{format}:
+    parameters:
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+        - pdf
+    get:
+      tags:
+      - Tax
+      summary: Export the tax report
+      operationId: export_tax_report
+      description: 'Permission: `tax-returns.view`.'
+      responses:
+        '200':
+          description: The file
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /tax/returns:
+    get:
+      tags:
+      - Tax
+      summary: Filed tax returns
+      operationId: list_tax_returns
+      description: 'Permission: `tax-returns.view`.'
+      responses:
+        '200':
+          description: Returns, newest period first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaxReturn'
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Tax
+      summary: File a return for a period
+      operationId: file_tax_return
+      description: 'Posts one entry dated at the period end: output tax debited and input tax credited on their tax accounts,
+        the difference on the payable account (a refund debits it). 422 when the period overlaps a filed return or there is
+        no output or input tax.
+
+
+        Permission: `tax-returns.file`.'
+      responses:
+        '201':
+          description: Filed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaxReturn'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - period_from
+              - period_to
+              - payable_account_id
+              properties:
+                period_from:
+                  type: string
+                  format: date
+                period_to:
+                  type: string
+                  format: date
+                payable_account_id:
+                  type: integer
+                  description: An active liability (or asset) posting account
+                reference:
+                  type: string
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /tax/returns/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Tax
+      summary: A filed return
+      operationId: show_tax_return
+      description: 'Permission: `tax-returns.view`.'
+      responses:
+        '200':
+          description: Return
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaxReturn'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Tax
+      summary: Void a return (its entry is reversed)
+      operationId: void_tax_return
+      description: 'Permission: `tax-returns.file`.'
+      responses:
+        '204':
+          description: Voided
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
 components:
   securitySchemes:
     bearerAuth:
@@ -8338,11 +8675,30 @@ components:
       required:
       - code
       - name
+      - kind
       properties:
         code:
           type: string
         name:
           type: string
+        kind:
+          type: string
+          enum:
+          - output
+          - input
+          - withheld
+          - advance
+          description: 'output: collected on sales; input: paid on purchases; withheld: deducted from payments we make; advance:
+            deducted from payments to us'
+        tax_account_id:
+          type:
+          - integer
+          - 'null'
+          description: The account the tax is booked to
+        jurisdiction:
+          type:
+          - string
+          - 'null'
         description:
           type:
           - string
@@ -9334,3 +9690,101 @@ components:
                 $ref: '#/components/schemas/Money'
               actual:
                 $ref: '#/components/schemas/Money'
+    TaxCalculation:
+      type: object
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+        rate:
+          type: string
+          description: Percent, four decimals
+        inclusive:
+          type: boolean
+        base:
+          $ref: '#/components/schemas/Money'
+        tax:
+          $ref: '#/components/schemas/Money'
+        gross:
+          $ref: '#/components/schemas/Money'
+    TaxReturn:
+      type: object
+      properties:
+        id:
+          type: integer
+        period_from:
+          type: string
+          format: date
+        period_to:
+          type: string
+          format: date
+        output_tax:
+          $ref: '#/components/schemas/Money'
+        input_tax:
+          $ref: '#/components/schemas/Money'
+        net_payable:
+          type: string
+          description: Negative when a refund is due
+        journal_entry_id:
+          type:
+          - integer
+          - 'null'
+        voucher_number:
+          type:
+          - string
+          - 'null'
+        reference:
+          type:
+          - string
+          - 'null'
+        notes:
+          type:
+          - string
+          - 'null'
+    TaxReport:
+      type: object
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              tax_code_id:
+                type: integer
+              code:
+                type: string
+              name:
+                type: string
+              kind:
+                type: string
+                enum:
+                - output
+                - input
+                - withheld
+                - advance
+              base:
+                $ref: '#/components/schemas/Money'
+              tax:
+                $ref: '#/components/schemas/Money'
+              documents:
+                type: integer
+        totals:
+          type: object
+          properties:
+            output_tax:
+              $ref: '#/components/schemas/Money'
+            input_tax:
+              $ref: '#/components/schemas/Money'
+            net_payable:
+              type: string
+            withheld:
+              $ref: '#/components/schemas/Money'
+            advance:
+              $ref: '#/components/schemas/Money'
