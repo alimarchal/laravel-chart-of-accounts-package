@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
 use Alimarchal\LaravelChartOfAccounts\Models\FixedAsset;
 use Alimarchal\LaravelChartOfAccounts\Models\FxRevaluation;
@@ -22,6 +23,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
+use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
+use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
+use Alimarchal\LaravelChartOfAccounts\Models\Payslip;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportExport;
@@ -110,6 +114,10 @@ function concreteUri(Route $route): string
             'budgets' => Budget::class,
             'fixed-assets' => FixedAsset::class,
             'items' => InventoryItem::class,
+            'runs' => PayrollRun::class,
+            'payslips' => Payslip::class,
+            'employees' => Employee::class,
+            'components' => PayComponent::class,
             'warehouses' => Warehouse::class,
             'returns' => TaxReturn::class,
             'parties' => Party::class,
@@ -163,6 +171,10 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     FixedAsset::query()->create(['code' => 'FA1', 'name' => 'Asset', 'acquisition_date' => now()->toDateString(), 'in_service_date' => now()->toDateString(), 'cost' => 100, 'useful_life_months' => 12, 'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => account('5114')->id]);
     InventoryItem::query()->create(['sku' => 'SKU1', 'name' => 'Item', 'inventory_account_id' => account('1151')->id, 'cogs_account_id' => account('5202')->id]);
     Warehouse::query()->create(['code' => 'W1', 'name' => 'Main']);
+    $employee = Employee::query()->create(['code' => 'E1', 'name' => 'Emp', 'join_date' => now()->toDateString(), 'base_salary' => 1]);
+    PayComponent::query()->create(['code' => 'C1', 'name' => 'Comp', 'kind' => 'earning', 'account_id' => account('5102')->id]);
+    $payrollRun = PayrollRun::query()->create(['period_month' => now()->startOfMonth()->toDateString()]);
+    Payslip::query()->create(['payroll_run_id' => $payrollRun->id, 'employee_id' => $employee->id, 'basic' => 1, 'gross' => 1, 'net' => 1, 'days_paid' => 1, 'days_in_month' => 30]);
     $bankAccount = BankAccount::factory()->create();
     $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);
     BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bankAccount->id, 'line_no' => 1, 'txn_date' => now()->toDateString(), 'deposit' => 1, 'hash' => 'x']);

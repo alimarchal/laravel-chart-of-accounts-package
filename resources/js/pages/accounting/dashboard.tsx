@@ -169,6 +169,15 @@ export default function AccountingDashboard({ summary }: Props) {
                   },
               ]
             : []),
+        ...(permissions['payroll.view']
+            ? [
+                  {
+                      title: 'Payroll',
+                      href: '/accounting/payroll',
+                      icon: Landmark,
+                  },
+              ]
+            : []),
         ...(permissions['inventory.view']
             ? [
                   {

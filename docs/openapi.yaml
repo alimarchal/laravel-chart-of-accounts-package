@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.23.0
+  version: 2.24.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -8385,6 +8385,783 @@ paths:
                   type: string
       parameters:
       - $ref: '#/components/parameters/Company'
+  /payroll:
+    get:
+      tags:
+      - Payroll
+      summary: Payroll runs, newest first
+      operationId: list_payroll_runs
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Runs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRun'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs:
+    post:
+      tags:
+      - Payroll
+      summary: Start a payroll run for a month
+      operationId: create_payroll_run
+      description: 'One run per month (a voided run does not count). Joiners and leavers are paid for the days employed; flagged
+        employees have income tax withheld from the configured slabs.
+
+
+        Permission: `payroll.run`.'
+      responses:
+        '201':
+          description: Created with payslips worked out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRun'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - period_month
+              properties:
+                period_month:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Payroll
+      summary: A run with its payslips and their lines
+      operationId: get_payroll_run
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The run
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      run:
+                        $ref: '#/components/schemas/PayrollRun'
+                      payslips:
+                        type: array
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Payroll
+      summary: Delete a draft run
+      operationId: delete_payroll_run
+      description: 'Permission: `payroll.run`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/recalculate:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Work the payslips out again (draft runs)
+      operationId: recalculate_payroll_run
+      description: 'Permission: `payroll.run`.'
+      responses:
+        '200':
+          description: Recalculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRun'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/post:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Post the run to the books
+      operationId: post_payroll_run
+      description: 'One entry in the payroll module: expense for basic pay and earnings, liabilities for deductions and tax,
+        and the net pay owed to employees.
+
+
+        Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Posted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRun'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payable_account_id:
+                  type: integer
+                  description: 'Default: the net payable account in config.'
+                date:
+                  type: string
+                  format: date
+                  description: 'Default: the month''s last day.'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/pay:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Pay the net salaries
+      operationId: pay_payroll_run
+      description: 'Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Paid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRun'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - account_id
+              properties:
+                account_id:
+                  type: integer
+                  description: The bank or cash account paid from.
+                date:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/void:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Void a posted or paid run
+      operationId: void_payroll_run
+      description: 'Reverses the payment and the salary entry.
+
+
+        Permission: `payroll.void`.'
+      responses:
+        '200':
+          description: Voided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRun'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/payslips/{payslip}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    - name: payslip
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Payroll
+      summary: One payslip
+      operationId: get_payslip
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Payslip with the employee and lines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/employees:
+    get:
+      tags:
+      - Payroll
+      summary: Employees
+      operationId: list_employees
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Employees
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Employee'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Add an employee
+      operationId: create_employee
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Employee'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - join_date
+              - base_salary
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                national_id:
+                  type: string
+                  nullable: true
+                designation:
+                  type: string
+                  nullable: true
+                cost_center_id:
+                  type: integer
+                  nullable: true
+                join_date:
+                  type: string
+                  format: date
+                leave_date:
+                  type: string
+                  format: date
+                  nullable: true
+                base_salary:
+                  type: number
+                  description: Monthly basic salary.
+                withhold_tax:
+                  type: boolean
+                bank_name:
+                  type: string
+                bank_account:
+                  type: string
+                is_active:
+                  type: boolean
+                components:
+                  type: array
+                  description: Replaces the allowances and deductions of the employee when sent.
+                  items:
+                    type: object
+                    required:
+                    - pay_component_id
+                    properties:
+                      pay_component_id:
+                        type: integer
+                      value:
+                        type: number
+                        nullable: true
+                        description: Overrides the component's value.
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/employees/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Payroll
+      summary: An employee with their allowances and deductions
+      operationId: get_employee
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The employee
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Employee'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Payroll
+      summary: Change an employee (PATCH also accepted)
+      operationId: update_employee
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Employee'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - join_date
+              - base_salary
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                national_id:
+                  type: string
+                  nullable: true
+                designation:
+                  type: string
+                  nullable: true
+                cost_center_id:
+                  type: integer
+                  nullable: true
+                join_date:
+                  type: string
+                  format: date
+                leave_date:
+                  type: string
+                  format: date
+                  nullable: true
+                base_salary:
+                  type: number
+                  description: Monthly basic salary.
+                withhold_tax:
+                  type: boolean
+                bank_name:
+                  type: string
+                bank_account:
+                  type: string
+                is_active:
+                  type: boolean
+                components:
+                  type: array
+                  description: Replaces the allowances and deductions of the employee when sent.
+                  items:
+                    type: object
+                    required:
+                    - pay_component_id
+                    properties:
+                      pay_component_id:
+                        type: integer
+                      value:
+                        type: number
+                        nullable: true
+                        description: Overrides the component's value.
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Payroll
+      summary: Delete an employee without payslips
+      operationId: delete_employee
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/components:
+    get:
+      tags:
+      - Payroll
+      summary: Allowances and deductions
+      operationId: list_pay_components
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Components
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayComponent'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Add an allowance or deduction
+      operationId: create_pay_component
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayComponent'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - kind
+              - method
+              - value
+              - account_id
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - earning
+                  - deduction
+                method:
+                  type: string
+                  enum:
+                  - fixed
+                  - percent_of_basic
+                value:
+                  type: number
+                taxable:
+                  type: boolean
+                account_id:
+                  type: integer
+                  description: An expense account for an earning, a liability account for a deduction.
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/components/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    put:
+      tags:
+      - Payroll
+      summary: Change a component (PATCH also accepted)
+      operationId: update_pay_component
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayComponent'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - kind
+              - method
+              - value
+              - account_id
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - earning
+                  - deduction
+                method:
+                  type: string
+                  enum:
+                  - fixed
+                  - percent_of_basic
+                value:
+                  type: number
+                taxable:
+                  type: boolean
+                account_id:
+                  type: integer
+                  description: An expense account for an earning, a liability account for a deduction.
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Payroll
+      summary: Delete a component that is not in use
+      operationId: delete_pay_component
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /tax/calculate:
     post:
       tags:
@@ -11942,6 +12719,123 @@ components:
           nullable: true
         is_active:
           type: boolean
+    Employee:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        national_id:
+          type: string
+          nullable: true
+        designation:
+          type: string
+          nullable: true
+        cost_center_id:
+          type: integer
+          nullable: true
+        join_date:
+          type: string
+          format: date
+        leave_date:
+          type: string
+          format: date
+          nullable: true
+        base_salary:
+          type: number
+          description: Monthly basic salary.
+        withhold_tax:
+          type: boolean
+        bank_name:
+          type: string
+        bank_account:
+          type: string
+        is_active:
+          type: boolean
+        components:
+          type: array
+          description: Replaces the allowances and deductions of the employee when sent.
+          items:
+            type: object
+            required:
+            - pay_component_id
+            properties:
+              pay_component_id:
+                type: integer
+              value:
+                type: number
+                nullable: true
+                description: Overrides the component's value.
+        id:
+          type: integer
+    PayComponent:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - earning
+          - deduction
+        method:
+          type: string
+          enum:
+          - fixed
+          - percent_of_basic
+        value:
+          type: number
+        taxable:
+          type: boolean
+        account_id:
+          type: integer
+          description: An expense account for an earning, a liability account for a deduction.
+        is_active:
+          type: boolean
+        id:
+          type: integer
+    PayrollRun:
+      type: object
+      properties:
+        id:
+          type: integer
+        period_month:
+          type: string
+          example: 2026-10
+        status:
+          type: string
+          enum:
+          - draft
+          - posted
+          - paid
+          - void
+        gross:
+          type: string
+        deductions:
+          type: string
+        tax:
+          type: string
+        net:
+          type: string
+        journal_entry_id:
+          type: integer
+          nullable: true
+        payment_entry_id:
+          type: integer
+          nullable: true
+        posted_on:
+          type: string
+          format: date
+          nullable: true
+        paid_on:
+          type: string
+          format: date
+          nullable: true
+        employees:
+          type: integer
     TaxCalculation:
       type: object
       properties:
