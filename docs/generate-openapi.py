@@ -555,6 +555,37 @@ paths["/bank-statement-lines/{id}/create-entry"] = {"parameters": [ID], "post": 
     body={"type": "object", "required": ["chart_of_account_id"], "properties": {"chart_of_account_id": {"type": "integer"}, "description": {"type": "string"}}},
     desc="A deposit debits the bank account and credits the chosen one; a withdrawal the reverse. Posted when possible; a closed period, approval or evidence requirement leaves a draft (the transaction is still linked).", opid="book_bank_statement_line")}
 
+# Budgets.
+BUDGET_STATUS = ["draft", "approved", "closed"]
+schemas["Budget"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "name": {"type": "string"}, "status": {"type": "string", "enum": BUDGET_STATUS}, "start_date": {"type": "string", "format": "date"}, "end_date": {"type": "string", "format": "date"},
+    "notes": {"type": ["string", "null"]}, "lines_count": {"type": ["integer", "null"], "description": "Amounts (account x month) in the list"}, "approved_at": {"type": ["string", "null"], "format": "date-time"},
+    "lines": {"type": "array", "description": "Only on single-budget responses", "items": {"type": "object", "properties": {"chart_of_account_id": {"type": "integer"}, "cost_center_id": {"type": ["integer", "null"]}, "annual": ref("Money"), "amounts": {"type": "object", "additionalProperties": ref("Money"), "description": "Month (YYYY-MM) to amount"}}}}}}
+schemas["BudgetReportRow"] = {"type": "object", "properties": {
+    "account_id": {"type": "integer"}, "account_code": {"type": "string"}, "account_name": {"type": "string"}, "type": {"type": "string", "enum": ["INCOME", "EXPENSE"]},
+    "budget": ref("Money"), "actual": ref("Money"), "variance": {"type": "string", "description": "Favourable when positive: income above plan, expense below it"},
+    "used_percent": {"type": ["number", "null"]}, "status": {"type": "string", "enum": ["ok", "warning", "over", "behind", "unbudgeted"]},
+    "monthly": {"type": "array", "items": {"type": "object", "properties": {"month": {"type": "string"}, "budget": ref("Money"), "actual": ref("Money")}}}}}
+bud_props = {"name": {"type": "string"}, "start_date": {"type": "string", "format": "date", "description": "Moved to the first day of its month"}, "end_date": {"type": "string", "format": "date", "description": "Moved to the last day of its month; at most 24 months"}, "notes": {"type": "string"},
+    "lines": {"type": "array", "items": {"type": "object", "required": ["chart_of_account_id"], "properties": {"chart_of_account_id": {"type": "integer", "description": "An active income or expense posting account"}, "cost_center_id": {"type": "integer"},
+        "annual": {"type": "number", "description": "Spread evenly over the months (used when amounts is empty)"}, "amounts": {"type": "object", "additionalProperties": {"type": "number"}, "description": "Month (YYYY-MM) to amount"}}}},
+    "from_actuals": {"type": "object", "description": "Also add every account that had income or expenses in the same months a year earlier", "properties": {"uplift_percent": {"type": "number", "default": 0}}}}
+paths["/budgets"] = {
+    "get": op("Budgets", "Budgets", "budgets.view", {"200": resp("Budgets, newest period first", data({"type": "array", "items": ref("Budget")}))}, opid="list_budgets"),
+    "post": op("Budgets", "Create a draft budget", "budgets.create", {"201": resp("Created", data(ref("Budget"))), **E422}, body={"type": "object", "required": ["name", "start_date", "end_date"], "properties": bud_props}, desc="Needs lines, `from_actuals`, or both.", opid="create_budget")}
+paths["/budgets/{id}"] = {"parameters": [ID],
+    "get": op("Budgets", "Budget against actual", "budgets.view", {"200": resp("The report", data({"type": "object", "properties": {"budget": ref("Budget"), "date_from": {"type": "string", "format": "date"}, "date_to": {"type": "string", "format": "date"}, "months": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": ref("BudgetReportRow")}, "totals": {"type": "object", "additionalProperties": ref("Money")}}})), **E404},
+        params=[{"name": "date_from", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "date_to", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "cost_center_id", "in": "query", "schema": {"type": "integer"}}],
+        desc="Actuals are posted entries in base currency (closing entries excluded), in the account's natural direction.", opid="show_budget"),
+    "put": op("Budgets", "Change a draft budget (PATCH also accepted)", "budgets.update", {"200": resp("Updated", data(ref("Budget"))), **E404_422}, body={"type": "object", "required": ["name", "start_date", "end_date"], "properties": bud_props}, opid="update_budget"),
+    "delete": op("Budgets", "Delete a budget that is not approved", "budgets.delete", {"204": resp("Deleted"), **E404_422}, opid="delete_budget")}
+paths["/budgets/{id}/approve"] = {"parameters": [ID], "post": op("Budgets", "Approve a draft budget", "budgets.approve", {"200": resp("Approved", data(ref("Budget"))), **E404_422}, desc="Only one approved budget may cover a month. With `ACCOUNTING_BUDGET_CONTROL=block` an approved budget refuses postings that take a budgeted expense account past its cumulative budget (`budgets.override` may still post).", opid="approve_budget")}
+paths["/budgets/{id}/reopen"] = {"parameters": [ID], "post": op("Budgets", "Reopen an approved or closed budget as a draft", "budgets.update", {"200": resp("Reopened", data(ref("Budget"))), **E404_422}, opid="reopen_budget")}
+paths["/budgets/{id}/close"] = {"parameters": [ID], "post": op("Budgets", "Close an approved budget", "budgets.approve", {"200": resp("Closed", data(ref("Budget"))), **E404_422}, opid="close_budget")}
+paths["/budgets/{id}/copy"] = {"parameters": [ID], "post": op("Budgets", "Copy as a draft, optionally shifted and raised", "budgets.create", {"201": resp("Copy", data(ref("Budget"))), **E404_422},
+    body={"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "start_date": {"type": "string", "format": "date", "description": "New first month (the budget is shifted)"}, "uplift_percent": {"type": "number"}}}, opid="copy_budget")}
+paths["/budgets/{id}/export/{format}"] = {"parameters": [ID, {"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Budgets", "Export budget against actual", "budgets.view", {"200": {"description": "The file"}, **E404}, opid="export_budget")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -563,7 +594,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.17.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.18.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

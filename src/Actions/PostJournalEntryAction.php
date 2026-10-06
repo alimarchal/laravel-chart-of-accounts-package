@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
+use Alimarchal\LaravelChartOfAccounts\Services\BudgetService;
 use Alimarchal\LaravelChartOfAccounts\Services\FxRevaluationService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherNumberService;
@@ -46,6 +47,7 @@ class PostJournalEntryAction
             if (! $systemGenerated) {
                 ControlAccounts::assertCanPost($entry);
                 app(AttachmentService::class)->assertEvidence($entry);
+                app(BudgetService::class)->assertWithinBudget($entry);
             }
 
             $this->writeBaseAmounts($entry);

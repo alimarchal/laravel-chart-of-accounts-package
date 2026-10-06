@@ -37,6 +37,12 @@
                             <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M5 6l7-3 7 3M4 10v8m4-8v8m4-8v8m4-8v8m4-8v8M3 21h18"/></svg></x-slot>
                         </x-accounting::settings-row>
                         @endcan
+                        @can('budgets.view')
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.budgets.index') }}" label="Budgets" description="Plan by account and month, follow budget vs actual" icon-bg="bg-lime-600">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        @endcan
                         @can('chart-of-accounts.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row href="{{ route('accounting.chart-of-accounts.index') }}" label="Chart of Accounts" description="Hierarchical account tree" :count="$summary['accounts']" icon-bg="bg-indigo-500">

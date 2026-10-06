@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Attachment;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
+use Alimarchal\LaravelChartOfAccounts\Models\Budget;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
@@ -52,6 +53,10 @@ function apiRoutes(): array
 function concreteUri(Route $route): string
 {
     return '/'.preg_replace_callback('/\{([^}]+)\}/', function (array $match) use ($route): string {
+        if ($match[1] === 'format' && str_contains($route->uri(), 'budgets/')) {
+            return 'csv';
+        }
+
         $resource = explode('/', substr($route->uri(), 0, strpos($route->uri(), '{')));
         $resource = $resource[count($resource) - 2];
 
@@ -94,6 +99,7 @@ function concreteUri(Route $route): string
             'exports' => ReportExport::class,
             'recurring-entries' => RecurringEntry::class,
             'rates' => ExchangeRate::class,
+            'budgets' => Budget::class,
             'bank-statements' => BankStatement::class,
             'bank-statement-lines' => BankStatementLine::class,
             'fx-revaluation' => FxRevaluation::class,
@@ -132,6 +138,7 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     Storage::fake('local');
     $entry = journal(['1101' => 10, '4101' => -10]);
     app(AttachmentService::class)->attach($entry, UploadedFile::fake()->createWithContent('bill.pdf', 'bill'));
+    Budget::query()->create(['name' => 'Plan', 'start_date' => now()->startOfYear()->toDateString(), 'end_date' => now()->endOfYear()->toDateString()]);
     $bankAccount = BankAccount::factory()->create();
     $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);
     BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bankAccount->id, 'line_no' => 1, 'txn_date' => now()->toDateString(), 'deposit' => 1, 'hash' => 'x']);

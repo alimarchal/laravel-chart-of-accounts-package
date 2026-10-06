@@ -119,6 +119,14 @@ return [
         'gain_loss_account' => env('ACCOUNTING_FX_GAIN_LOSS_ACCOUNT'),
     ],
 
+    // Budgets: control = block refuses a posting that takes a budgeted expense account past its cumulative budget in
+    // the approved budget covering the entry date (users with budgets.override may still post). warn_percent: the
+    // share of the budget used from which a line shows a warning.
+    'budgets' => [
+        'control' => env('ACCOUNTING_BUDGET_CONTROL', 'off'),
+        'warn_percent' => (int) env('ACCOUNTING_BUDGET_WARN_PERCENT', 90),
+    ],
+
     // Bank statement import (CSV / XLSX): file limits, how many days either side of a statement line a ledger line
     // may be dated to match it, and the order of day and month in dates such as 05/10/2026 (dmy or mdy).
     'bank_import' => [
@@ -218,6 +226,12 @@ return [
         'bank-statements.view',
         'bank-statements.import',
         'bank-statements.match',
+        'budgets.view',
+        'budgets.create',
+        'budgets.update',
+        'budgets.delete',
+        'budgets.approve',
+        'budgets.override',
         'chart-of-accounts.delete',
         'cost-centers.view',
         'cost-centers.create',
@@ -326,6 +340,10 @@ return [
             'bank-statements.view',
             'bank-statements.import',
             'bank-statements.match',
+            'budgets.view',
+            'budgets.create',
+            'budgets.update',
+            'budgets.delete',
             'attachments.create',
             'attachments.delete',
             'bank-accounts.view',
@@ -374,6 +392,8 @@ return [
             'recurring-entries.view',
             'fx-revaluation.view',
             'bank-statements.view',
+            'budgets.view',
+            'budgets.approve',
             'journal-entries.approve',
             'account-balance-snapshots.view',
             'reports.general-ledger.view',
@@ -401,6 +421,7 @@ return [
             'recurring-entries.view',
             'fx-revaluation.view',
             'bank-statements.view',
+            'budgets.view',
             'bank-accounts.view',
             'reconciliations.view',
             'tax-codes.view',
@@ -430,6 +451,7 @@ return [
             'recurring-entries.view',
             'fx-revaluation.view',
             'bank-statements.view',
+            'budgets.view',
             'tax-codes.view',
             'tax-rates.view',
             'voucher-types.view',

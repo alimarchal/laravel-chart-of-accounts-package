@@ -31,6 +31,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxCodeBladeControl
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxRateBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\UserBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\VoucherTypeBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BudgetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
@@ -107,6 +108,18 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::get('reports/financial-statements', [FinancialStatementController::class, 'show'])->name('reports.financial-statements')->middleware('can:reports.financial-statements.view');
         Route::get('chart-templates', [ChartTemplateController::class, 'index'])->name('chart-templates.index')->middleware('can:chart-templates.apply');
         Route::post('chart-templates/{template}/apply', [ChartTemplateController::class, 'apply'])->name('chart-templates.apply')->middleware('can:chart-templates.apply');
+        Route::get('budgets', [BudgetController::class, 'index'])->name('budgets.index')->middleware('can:budgets.view');
+        Route::get('budgets/create', [BudgetController::class, 'create'])->name('budgets.create')->middleware('can:budgets.create');
+        Route::post('budgets', [BudgetController::class, 'store'])->name('budgets.store')->middleware('can:budgets.create');
+        Route::get('budgets/{budget}', [BudgetController::class, 'show'])->name('budgets.show')->middleware('can:budgets.view');
+        Route::get('budgets/{budget}/edit', [BudgetController::class, 'edit'])->name('budgets.edit')->middleware('can:budgets.update');
+        Route::match(['put', 'patch'], 'budgets/{budget}', [BudgetController::class, 'update'])->name('budgets.update')->middleware('can:budgets.update');
+        Route::delete('budgets/{budget}', [BudgetController::class, 'destroy'])->name('budgets.destroy')->middleware('can:budgets.delete');
+        Route::post('budgets/{budget}/approve', [BudgetController::class, 'approve'])->name('budgets.approve')->middleware('can:budgets.approve');
+        Route::post('budgets/{budget}/reopen', [BudgetController::class, 'reopen'])->name('budgets.reopen')->middleware('can:budgets.update');
+        Route::post('budgets/{budget}/close', [BudgetController::class, 'close'])->name('budgets.close')->middleware('can:budgets.approve');
+        Route::post('budgets/{budget}/copy', [BudgetController::class, 'copy'])->name('budgets.copy')->middleware('can:budgets.create');
+        Route::get('budgets/{budget}/export/{format}', [BudgetController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('budgets.export')->middleware('can:budgets.view');
         Route::get('bank-statements', [BankStatementController::class, 'index'])->name('bank-statements.index')->middleware('can:bank-statements.view');
         Route::get('bank-statements/import', [BankStatementController::class, 'create'])->name('bank-statements.import')->middleware('can:bank-statements.import');
         Route::post('bank-statements/import/preview', [BankStatementController::class, 'preview'])->name('bank-statements.import.preview')->middleware('can:bank-statements.import');
