@@ -25,6 +25,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BudgetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FbrController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
@@ -153,6 +154,8 @@ Route::middleware($apiMiddleware)
         Route::post('tax/returns', [TaxController::class, 'fileReturn'])->name('tax.returns.store')->middleware('can:tax-returns.file');
         Route::get('tax/returns/{taxReturn}', [TaxController::class, 'showReturn'])->name('tax.returns.show')->middleware('can:tax-returns.view');
         Route::delete('tax/returns/{taxReturn}', [TaxController::class, 'destroyReturn'])->name('tax.returns.destroy')->middleware('can:tax-returns.file');
+        Route::get('fbr', [FbrController::class, 'index'])->name('fbr.index')->middleware('can:fbr.view');
+        Route::post('fbr/documents/{document}/submit', [FbrController::class, 'submit'])->name('fbr.submit')->middleware('can:fbr.submit');
         Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index')->middleware('can:payroll.view');
         Route::post('payroll/runs', [PayrollController::class, 'runStore'])->name('payroll.runs.store')->middleware('can:payroll.run');
         Route::get('payroll/runs/{run}', [PayrollController::class, 'runShow'])->name('payroll.runs.show')->middleware('can:payroll.view');

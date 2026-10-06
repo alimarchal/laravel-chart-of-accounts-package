@@ -5,7 +5,7 @@
       "description": "Create, post, reverse and void double-entry journal entries.",
       "item": [
         {
-          "id": "2f8bf943-1b59-4d6c-8fad-7151d161e31b",
+          "id": "df4dec8f-3393-429b-ba8d-fee48c0e7ee1",
           "name": "List entries",
           "request": {
             "name": "List entries",
@@ -46,7 +46,7 @@
                     "type": "text/plain"
                   },
                   "key": "filter[status]",
-                  "value": "posted"
+                  "value": "void"
                 },
                 {
                   "disabled": false,
@@ -145,7 +145,7 @@
                     "type": "text/plain"
                   },
                   "key": "sort",
-                  "value": "reference"
+                  "value": "id"
                 },
                 {
                   "disabled": false,
@@ -184,7 +184,7 @@
           }
         },
         {
-          "id": "a308316d-0beb-4918-b0f0-41cbb7799148",
+          "id": "91461da4-1a8a-409c-ad07-5327654cfdf2",
           "name": "Create (and optionally post) an entry",
           "request": {
             "name": "Create (and optionally post) an entry",
@@ -242,7 +242,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"payroll\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
+              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"credit_note\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -258,7 +258,7 @@
           }
         },
         {
-          "id": "789f588c-aedb-4cde-8909-f85055c83db9",
+          "id": "afb58fd9-2be7-469d-a3e5-eb685ed48765",
           "name": "Two-line entry by account codes",
           "request": {
             "name": "Two-line entry by account codes",
@@ -333,7 +333,7 @@
           }
         },
         {
-          "id": "8b5f70e7-617b-44c3-a305-a55ff0c3092a",
+          "id": "78569581-70a5-4cca-8c75-ae8d32629b75",
           "name": "Show an entry with lines",
           "request": {
             "name": "Show an entry with lines",
@@ -388,7 +388,7 @@
           }
         },
         {
-          "id": "1f37c487-c0d0-4ca6-befb-f923c5150dbe",
+          "id": "a8adc5e4-66c3-49d8-a1a5-59caa937df13",
           "name": "Update a draft (PATCH also accepted)",
           "request": {
             "name": "Update a draft (PATCH also accepted)",
@@ -440,7 +440,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"payroll\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
+              "raw": "{\n  \"entry_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    },\n    {\n      \"id\": \"<integer>\",\n      \"chart_of_account_id\": \"<integer>\",\n      \"account_code\": \"<string>\",\n      \"cost_center_id\": \"<integer,null>\",\n      \"cost_center_code\": \"<string,null>\",\n      \"debit\": \"<number>\",\n      \"credit\": \"<number>\",\n      \"description\": \"<string,null>\"\n    }\n  ],\n  \"voucher_type_id\": \"<integer,null>\",\n  \"voucher_type_code\": \"<string,null>\",\n  \"source_document_type\": \"credit_note\",\n  \"source_document_number\": \"<string,null>\",\n  \"source_document_date\": \"<string,null-date>\",\n  \"currency_id\": \"<integer,null>\",\n  \"currency_code\": \"<string,null>\",\n  \"fx_rate_to_base\": 1,\n  \"reference\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"auto_post\": false\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -456,7 +456,7 @@
           }
         },
         {
-          "id": "fb1aca16-2f79-40b2-9fd6-313105985d5e",
+          "id": "e8c2bf2c-e820-410a-80dd-d0768e3ced4b",
           "name": "Post a draft",
           "request": {
             "name": "Post a draft",
@@ -512,7 +512,7 @@
           }
         },
         {
-          "id": "76a73ae4-65a2-477c-9859-e816a55b198b",
+          "id": "ab460244-0c2b-4635-877a-aaf4e47411dd",
           "name": "Reverse a posted entry",
           "request": {
             "name": "Reverse a posted entry",
@@ -581,7 +581,7 @@
           }
         },
         {
-          "id": "93028f7d-d4b4-41a2-b192-f15a0f0841d0",
+          "id": "47727a87-2bb9-4da2-8483-aee6f9c53209",
           "name": "Submit a draft for approval (maker)",
           "request": {
             "name": "Submit a draft for approval (maker)",
@@ -637,7 +637,7 @@
           }
         },
         {
-          "id": "3913afb4-7ed6-4ad2-9122-1f74a5c4a14e",
+          "id": "23bc31fe-5c3a-4654-82e1-cdd479db9039",
           "name": "Approve and post (checker)",
           "request": {
             "name": "Approve and post (checker)",
@@ -693,7 +693,7 @@
           }
         },
         {
-          "id": "37a73555-c3ad-4d29-a3b2-f56fafd7ebdc",
+          "id": "cfdf2625-a9c7-4c65-843d-72ab0477fe6f",
           "name": "Reject back to the maker (checker)",
           "request": {
             "name": "Reject back to the maker (checker)",
@@ -762,7 +762,7 @@
           }
         },
         {
-          "id": "da7b71fb-c0ee-4eb6-a1ff-95621343d78c",
+          "id": "b5c1adf0-b565-4ad4-b414-bebf7bf5ff9c",
           "name": "Void a draft",
           "request": {
             "name": "Void a draft",
@@ -818,7 +818,7 @@
           }
         },
         {
-          "id": "05c8da30-bad5-46fe-8bbc-4033cd60d053",
+          "id": "898cd284-990d-427b-96df-1ab3083b7297",
           "name": "Supporting documents of an entry",
           "request": {
             "name": "Supporting documents of an entry",
@@ -874,7 +874,7 @@
           }
         },
         {
-          "id": "9897eacc-9e09-409e-8678-e32a2b608893",
+          "id": "599b6de4-4037-475e-bfc5-ba985dd2a5e5",
           "name": "Attach a document (multipart/form-data)",
           "request": {
             "name": "Attach a document (multipart/form-data)",
@@ -955,7 +955,7 @@
           }
         },
         {
-          "id": "0bbe6dff-bef9-4001-a4d6-878320df3676",
+          "id": "8f41894f-6f9b-4344-be41-20b049346304",
           "name": "Download a document",
           "request": {
             "name": "Download a document",
@@ -1011,7 +1011,7 @@
           }
         },
         {
-          "id": "cd833de6-7989-47b8-8d9b-12faa49245af",
+          "id": "9799f0f1-4a6b-45e9-868d-c6ceff334559",
           "name": "Remove a document of a draft",
           "request": {
             "name": "Remove a document of a draft",
@@ -1066,7 +1066,7 @@
           }
         },
         {
-          "id": "0a61c501-924e-43aa-9dc4-90433b4d070e",
+          "id": "26ad2956-8931-4f5d-999c-507891158b4c",
           "name": "Printable voucher PDF",
           "request": {
             "name": "Printable voucher PDF",
@@ -1128,7 +1128,7 @@
       "description": "Hierarchical accounts, the account tree and account balances.",
       "item": [
         {
-          "id": "ac67f4cc-bff1-4191-b49a-0f268b3f613c",
+          "id": "3c495917-60f2-46c9-b2e4-39ca5f369bbf",
           "name": "List accounts",
           "request": {
             "name": "List accounts",
@@ -1244,7 +1244,7 @@
           }
         },
         {
-          "id": "0c2fbdff-55dd-4b3c-a469-abbd536f3de1",
+          "id": "f39ec263-64f5-4d46-bf8c-a8835ed93ff5",
           "name": "Create an account",
           "request": {
             "name": "Create an account",
@@ -1284,7 +1284,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"debit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
+              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -1300,7 +1300,7 @@
           }
         },
         {
-          "id": "cd19808a-f32b-4ef8-bcd7-1799a582ad33",
+          "id": "5b789ab4-fe5e-4370-85c2-6097404c8cac",
           "name": "Whole chart as a nested tree",
           "request": {
             "name": "Whole chart as a nested tree",
@@ -1344,7 +1344,7 @@
           }
         },
         {
-          "id": "387f44c0-c85a-4757-a980-5f38aa6353fc",
+          "id": "dd6dea39-407e-4766-ab9b-e245ea49865f",
           "name": "Account balance",
           "request": {
             "name": "Account balance",
@@ -1410,7 +1410,7 @@
           }
         },
         {
-          "id": "78b328ef-12af-4795-bf6f-7cfca0ea9a3d",
+          "id": "9fc1f9fc-25a0-40ff-87a7-f1f4304c1caa",
           "name": "Show an account",
           "request": {
             "name": "Show an account",
@@ -1465,7 +1465,7 @@
           }
         },
         {
-          "id": "a3dd7ba1-550e-4bf4-b8de-b1f87825042a",
+          "id": "ba63d0a4-e3e5-4c2f-93e5-97e86f95e23f",
           "name": "Update an account (PATCH also accepted)",
           "request": {
             "name": "Update an account (PATCH also accepted)",
@@ -1517,7 +1517,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"debit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
+              "raw": "{\n  \"account_type_id\": \"<integer>\",\n  \"currency_id\": \"<integer>\",\n  \"account_code\": \"<string>\",\n  \"account_name\": \"<string>\",\n  \"parent_id\": \"<integer,null>\",\n  \"normal_balance\": \"credit\",\n  \"description\": \"<string,null>\",\n  \"is_group\": false,\n  \"is_active\": true,\n  \"control_type\": \"<string,null>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -1533,7 +1533,7 @@
           }
         },
         {
-          "id": "a0f29e76-f850-4d1d-8e48-2e9ef455fc0e",
+          "id": "b3a65e02-75a5-499f-ad9e-436c2afd95ff",
           "name": "Delete an account",
           "request": {
             "name": "Delete an account",
@@ -1588,7 +1588,7 @@
           }
         },
         {
-          "id": "10983f4e-22b4-4a2b-a3c2-4a850bab0391",
+          "id": "ab7f02cd-90f9-4e03-82e0-1494359bbaaa",
           "name": "Control accounts with balances and manual postings",
           "request": {
             "name": "Control accounts with balances and manual postings",
@@ -1631,7 +1631,7 @@
           }
         },
         {
-          "id": "27baa49d-9dd9-48a7-9ba2-775ceb6ce694",
+          "id": "3332ce19-b994-426c-a1c2-80b8ced0ac2a",
           "name": "Mark the recommended control accounts",
           "request": {
             "name": "Mark the recommended control accounts",
@@ -1675,7 +1675,7 @@
           }
         },
         {
-          "id": "64477ac4-2e6e-4081-b7ae-c16c4dcfdb74",
+          "id": "f75f89e0-1b22-4af1-9580-2a700b4707e5",
           "name": "Manual postings to a control account",
           "request": {
             "name": "Manual postings to a control account",
@@ -1731,7 +1731,7 @@
           }
         },
         {
-          "id": "aeba5397-f25f-4632-89c2-281e6ab3c2db",
+          "id": "f9540bec-7da4-4c3f-8177-b633adece273",
           "name": "Set or clear an account's control type",
           "request": {
             "name": "Set or clear an account's control type",
@@ -1800,7 +1800,7 @@
           }
         },
         {
-          "id": "9dacf22f-fb10-4a16-86ab-25b57ed7b468",
+          "id": "d6148a6e-ca53-4140-84d5-48c3e3876f2d",
           "name": "Export the chart (re-importable)",
           "request": {
             "name": "Export the chart (re-importable)",
@@ -1856,7 +1856,7 @@
           }
         },
         {
-          "id": "c13b5b9e-c757-4ad6-af9f-a8e7ccc851e2",
+          "id": "65abb53c-8cd6-4442-bd2b-6a284f6f70bb",
           "name": "Import template with example rows",
           "request": {
             "name": "Import template with example rows",
@@ -1878,7 +1878,7 @@
               "variable": [
                 {
                   "type": "any",
-                  "value": "xlsx",
+                  "value": "csv",
                   "key": "format",
                   "disabled": false,
                   "description": {
@@ -1913,7 +1913,7 @@
           }
         },
         {
-          "id": "515ecf7c-14e3-406a-8e5c-5f3436be78c7",
+          "id": "380e1ea5-598b-4004-9768-547d04494494",
           "name": "Import accounts from CSV or Excel (multipart/form-data)",
           "request": {
             "name": "Import accounts from CSV or Excel (multipart/form-data)",
@@ -1991,7 +1991,7 @@
           }
         },
         {
-          "id": "a62b4702-760d-47bd-8eb1-f95ace633358",
+          "id": "3f551cdd-8cc5-4707-81ef-ba0465ced840",
           "name": "Preview a renumbering",
           "request": {
             "name": "Preview a renumbering",
@@ -2066,7 +2066,7 @@
           }
         },
         {
-          "id": "3a916d18-dc59-4aa4-bdc0-319293d60fd5",
+          "id": "30591470-b2b5-47c1-ba5d-89f441c18ef3",
           "name": "Renumber an account (used accounts too)",
           "request": {
             "name": "Renumber an account (used accounts too)",
@@ -2135,7 +2135,7 @@
           }
         },
         {
-          "id": "7181a9ac-59c8-4776-b77b-24efb2ccd026",
+          "id": "b0442e22-0027-4439-b65e-e173e9f9fa1d",
           "name": "Preview merging this account into another",
           "request": {
             "name": "Preview merging this account into another",
@@ -2201,7 +2201,7 @@
           }
         },
         {
-          "id": "d8da651b-1852-4dde-8ab0-dfab8301bb4f",
+          "id": "15917c7d-7a1d-4e68-b43b-216ed3b07424",
           "name": "Merge this account into another",
           "request": {
             "name": "Merge this account into another",
@@ -2270,7 +2270,7 @@
           }
         },
         {
-          "id": "fd410140-2f1b-49a9-a848-e5119c8fcd4d",
+          "id": "75a4f3a0-c512-41bc-9e1f-c47c126a21fa",
           "name": "Industry chart templates",
           "request": {
             "name": "Industry chart templates",
@@ -2313,7 +2313,7 @@
           }
         },
         {
-          "id": "b1812b2b-905b-411a-89af-591e78e25505",
+          "id": "112c36f5-d142-4fe4-a014-97bc87d9eac9",
           "name": "What a template would add to this company",
           "request": {
             "name": "What a template would add to this company",
@@ -2333,7 +2333,7 @@
               "variable": [
                 {
                   "type": "any",
-                  "value": "school",
+                  "value": "trading",
                   "key": "template",
                   "disabled": false,
                   "description": {
@@ -2368,7 +2368,7 @@
           }
         },
         {
-          "id": "f783cfb3-da3e-492f-a963-d0de5770afbb",
+          "id": "8fc28943-7348-4e65-862c-1c62c1473927",
           "name": "Add a template's accounts to this company",
           "request": {
             "name": "Add a template's accounts to this company",
@@ -2389,7 +2389,7 @@
               "variable": [
                 {
                   "type": "any",
-                  "value": "school",
+                  "value": "trading",
                   "key": "template",
                   "disabled": false,
                   "description": {
@@ -2443,7 +2443,7 @@
       "description": "Financial statements and ledgers (posted entries only).",
       "item": [
         {
-          "id": "2ae42c78-755c-480c-9f97-300af73cdb73",
+          "id": "c0a251c4-b8f4-4b04-bed3-49e679f85ef7",
           "name": "Trial balance",
           "request": {
             "name": "Trial balance",
@@ -2487,7 +2487,7 @@
           }
         },
         {
-          "id": "fc7f6e42-834c-40e1-ba63-b500eb420acc",
+          "id": "f3cf1183-9c05-437d-a5d5-c4f40eb7171b",
           "name": "Balance sheet",
           "request": {
             "name": "Balance sheet",
@@ -2559,7 +2559,7 @@
           }
         },
         {
-          "id": "b25e8bb5-74e6-40d5-91b5-99af86ee0777",
+          "id": "0877ca01-8af9-4061-a6cd-80bdb52d01c5",
           "name": "Income statement",
           "request": {
             "name": "Income statement",
@@ -2622,7 +2622,7 @@
           }
         },
         {
-          "id": "8fc880ef-97bb-43da-8c9c-7f59efb7121a",
+          "id": "8dbfa9df-7576-450a-b2c0-d7c1e703c248",
           "name": "General ledger",
           "request": {
             "name": "General ledger",
@@ -2730,7 +2730,7 @@
           }
         },
         {
-          "id": "5bff36d6-71d9-4ead-a189-02b6c311a70d",
+          "id": "f351a248-d915-482c-a47f-f927b820c4bc",
           "name": "Cash flow",
           "request": {
             "name": "Cash flow",
@@ -2811,7 +2811,7 @@
           }
         },
         {
-          "id": "22c29cad-0726-4eb8-91ca-c2a0bd3d6add",
+          "id": "4539883e-c9eb-4949-a41f-31214a3040a3",
           "name": "Bank book",
           "request": {
             "name": "Bank book",
@@ -2919,7 +2919,7 @@
           }
         },
         {
-          "id": "19cff00e-e7a9-42e9-979d-c7bafcbed182",
+          "id": "53f11c17-b617-49d3-82dc-ab80b3cb329d",
           "name": "Cash book",
           "request": {
             "name": "Cash book",
@@ -3027,7 +3027,7 @@
           }
         },
         {
-          "id": "6ba000e0-87bc-4b04-ba02-71b4111db705",
+          "id": "07ce675d-f131-40a6-b973-e4b048a702d4",
           "name": "Aged receivables",
           "request": {
             "name": "Aged receivables",
@@ -3099,7 +3099,7 @@
           }
         },
         {
-          "id": "797aeb66-b21a-4b79-89bc-fdf7391eb1e6",
+          "id": "5186092d-944a-4b83-8228-0e1f14ab93bf",
           "name": "Aged payables",
           "request": {
             "name": "Aged payables",
@@ -3171,7 +3171,7 @@
           }
         },
         {
-          "id": "8293b7ff-937a-4f4e-b2e0-5c6042da04a1",
+          "id": "8bb6391b-4dd2-49bd-b8b1-4bf055f270a7",
           "name": "Account statement",
           "request": {
             "name": "Account statement",
@@ -3270,7 +3270,7 @@
           }
         },
         {
-          "id": "506fb9d9-1848-4b23-8543-db99daaf50a3",
+          "id": "a72c16a3-a504-4b0b-bf15-56b5c1ad0bb2",
           "name": "Consolidated report",
           "request": {
             "name": "Consolidated report",
@@ -3328,7 +3328,7 @@
               "variable": [
                 {
                   "type": "any",
-                  "value": "income-statement",
+                  "value": "trial-balance",
                   "key": "report",
                   "disabled": false,
                   "description": {
@@ -3363,7 +3363,7 @@
           }
         },
         {
-          "id": "23ae56f4-a9ed-4a01-a043-1160605a8342",
+          "id": "af7ffc18-d396-4ea1-a0bb-723b81d88b09",
           "name": "Download a report as CSV, Excel or a typeset PDF",
           "request": {
             "name": "Download a report as CSV, Excel or a typeset PDF",
@@ -3431,7 +3431,7 @@
               "variable": [
                 {
                   "type": "any",
-                  "value": "account-statement",
+                  "value": "cash-flow",
                   "key": "report",
                   "disabled": false,
                   "description": {
@@ -3485,7 +3485,7 @@
           }
         },
         {
-          "id": "d720ea97-ac5f-498b-a00c-203ed80add62",
+          "id": "25c88694-8d39-4819-8b7a-dddcbb714356",
           "name": "Queue a background export",
           "request": {
             "name": "Queue a background export",
@@ -3553,7 +3553,7 @@
               "variable": [
                 {
                   "type": "any",
-                  "value": "account-statement",
+                  "value": "cash-flow",
                   "key": "report",
                   "disabled": false,
                   "description": {
@@ -3607,7 +3607,7 @@
           }
         },
         {
-          "id": "32a52a0e-d252-4dda-a7d4-c09168e2a52f",
+          "id": "530bc5f5-02d0-4f1e-a200-6309ae4d1c74",
           "name": "Your background exports",
           "request": {
             "name": "Your background exports",
@@ -3650,7 +3650,7 @@
           }
         },
         {
-          "id": "eb3283e3-3801-4dad-8a63-439d1bcc893c",
+          "id": "768bb79d-fa9a-4e3b-ad50-7ba2512c0fe4",
           "name": "Download a finished export",
           "request": {
             "name": "Download a finished export",
@@ -3706,7 +3706,7 @@
           }
         },
         {
-          "id": "ce193688-f2cf-426f-8c0b-4fd489b8c7fd",
+          "id": "8d7237ca-0cb4-49c2-8f0d-872b93154163",
           "name": "Delete one of your exports and its file",
           "request": {
             "name": "Delete one of your exports and its file",
@@ -3761,7 +3761,7 @@
           }
         },
         {
-          "id": "43469fc9-8f7b-4687-86a5-56d06474b9de",
+          "id": "267ff9a3-8538-464d-a648-114d8efdac89",
           "name": "Report lines and the mapping of every account",
           "request": {
             "name": "Report lines and the mapping of every account",
@@ -3804,7 +3804,7 @@
           }
         },
         {
-          "id": "774c1596-df5e-44e2-918c-dea518779a1f",
+          "id": "2119b0b0-56aa-4f1f-ada8-17f8d2229bb0",
           "name": "Map the seeded accounts to their standard lines",
           "request": {
             "name": "Map the seeded accounts to their standard lines",
@@ -3848,7 +3848,7 @@
           }
         },
         {
-          "id": "d53fbfc7-3ae8-4eb3-a82a-4a091dc23604",
+          "id": "f1c29b64-c80a-47a9-844c-99a4b63b7227",
           "name": "Map an account (and its sub-accounts) to a line",
           "request": {
             "name": "Map an account (and its sub-accounts) to a line",
@@ -3901,7 +3901,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"report_line_id\": \"<integer,null>\",\n  \"cash_flow_category\": \"non_cash\"\n}",
+              "raw": "{\n  \"report_line_id\": \"<integer,null>\",\n  \"cash_flow_category\": \"investing\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -3917,7 +3917,7 @@
           }
         },
         {
-          "id": "5fa4c214-ef5c-4377-a4dc-86d3328e3830",
+          "id": "9a74b8f9-b0c5-4d38-ba2d-503ca546a434",
           "name": "Add a statement line",
           "request": {
             "name": "Add a statement line",
@@ -3973,7 +3973,7 @@
           }
         },
         {
-          "id": "696ec810-cb28-4396-b23a-e0e2af93cc3a",
+          "id": "20f47ca7-f80a-48b7-a0a3-d16accb99165",
           "name": "Rename, move or reclassify a line",
           "request": {
             "name": "Rename, move or reclassify a line",
@@ -4025,7 +4025,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"statement\": \"income_statement\",\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"section\": \"<string>\",\n  \"cash_flow_category\": \"non_cash\",\n  \"sort_order\": \"<integer>\"\n}",
+              "raw": "{\n  \"statement\": \"income_statement\",\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"section\": \"<string>\",\n  \"cash_flow_category\": null,\n  \"sort_order\": \"<integer>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -4041,7 +4041,7 @@
           }
         },
         {
-          "id": "214adae4-8a1f-453c-aba6-0f33f56836f5",
+          "id": "9e495edb-6e3e-4c1b-b00c-6d01ff219de9",
           "name": "Delete a custom line",
           "request": {
             "name": "Delete a custom line",
@@ -4096,7 +4096,7 @@
           }
         },
         {
-          "id": "0ecd2971-331b-4320-b46d-0c561cc6b0af",
+          "id": "42912a2b-cf14-4e58-87d2-4c58a3ed902c",
           "name": "Financial statement by report lines",
           "request": {
             "name": "Financial statement by report lines",
@@ -4213,7 +4213,7 @@
       "description": "Accounting periods, closing and balance snapshots.",
       "item": [
         {
-          "id": "12383f28-2841-4c67-8a1e-ea42c5b36569",
+          "id": "df7a296d-9402-4669-b7f6-d62bbc37a720",
           "name": "List periods",
           "request": {
             "name": "List periods",
@@ -4284,7 +4284,7 @@
           }
         },
         {
-          "id": "29efe0ea-40d2-4a9a-b0a3-317ff4e0e233",
+          "id": "00475330-c7af-46d3-b748-744af736b6c0",
           "name": "Create periods",
           "request": {
             "name": "Create periods",
@@ -4324,7 +4324,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"closed\"\n}",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -4340,7 +4340,7 @@
           }
         },
         {
-          "id": "061a0427-1f2e-4d3d-86d6-0f5aa119985d",
+          "id": "f7fe9e8c-2048-4d52-8deb-821abd281aeb",
           "name": "Show periods",
           "request": {
             "name": "Show periods",
@@ -4395,7 +4395,7 @@
           }
         },
         {
-          "id": "5159da81-be8f-4c9c-b0d0-52d57e8be0dc",
+          "id": "4fe80d76-76d1-43d7-96b7-551f0b0b788a",
           "name": "Update periods (PATCH also accepted)",
           "request": {
             "name": "Update periods (PATCH also accepted)",
@@ -4447,7 +4447,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"closed\"\n}",
+              "raw": "{\n  \"name\": \"<string>\",\n  \"start_date\": \"<date>\",\n  \"end_date\": \"<date>\",\n  \"status\": \"open\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -4463,7 +4463,7 @@
           }
         },
         {
-          "id": "d1b80046-0da3-4b99-a848-1c31047bc169",
+          "id": "cece87ff-39f6-49bb-8057-8972bf460c05",
           "name": "Delete periods",
           "request": {
             "name": "Delete periods",
@@ -4518,7 +4518,7 @@
           }
         },
         {
-          "id": "70016e14-0399-4b85-866a-b401b7e6625a",
+          "id": "3d1d18aa-e035-4694-a581-099340213025",
           "name": "Close a period",
           "request": {
             "name": "Close a period",
@@ -4574,7 +4574,7 @@
           }
         },
         {
-          "id": "5f4e008a-3323-4453-8f3a-13295813b934",
+          "id": "e41c246a-3ef4-440c-852f-56ce01da266a",
           "name": "Reopen a closed period",
           "request": {
             "name": "Reopen a closed period",
@@ -4643,7 +4643,7 @@
           }
         },
         {
-          "id": "c75a536d-6300-4ef2-83c4-ba423b6fc8d0",
+          "id": "73c6726e-acd2-41c6-b767-f380d6f45ba2",
           "name": "Pre-close checklist",
           "request": {
             "name": "Pre-close checklist",
@@ -4709,7 +4709,7 @@
           }
         },
         {
-          "id": "f423afdf-795a-4b48-bdf8-6463d864f3a8",
+          "id": "e605d63e-288e-4899-9a33-f0ade43dac0a",
           "name": "Create twelve monthly periods",
           "request": {
             "name": "Create twelve monthly periods",
@@ -4766,7 +4766,7 @@
           }
         },
         {
-          "id": "c18a73c7-c4f3-46a0-94b5-7b84b339f9aa",
+          "id": "2ca620fd-3d57-4b53-8057-8eb38cedf1d5",
           "name": "Year-end close",
           "request": {
             "name": "Year-end close",
@@ -4822,7 +4822,7 @@
           }
         },
         {
-          "id": "da5e2916-fff7-487c-a731-11211b3b2218",
+          "id": "c1045e51-456d-4b54-bba7-da0dc56e66f9",
           "name": "List balance snapshots",
           "request": {
             "name": "List balance snapshots",
@@ -4902,7 +4902,7 @@
           }
         },
         {
-          "id": "da2c13f9-2218-4d1f-856c-0f08493025f4",
+          "id": "2c3991f8-a5f1-46ab-b7fd-48e14fb2a9c7",
           "name": "Show a balance snapshot",
           "request": {
             "name": "Show a balance snapshot",
@@ -4963,7 +4963,7 @@
       "description": "Asset, liability, equity, income and expense types.",
       "item": [
         {
-          "id": "c4dac148-edb7-4800-9145-7b699db25ec9",
+          "id": "3269233b-794b-438e-9e05-cd16d34d64d1",
           "name": "List account-types",
           "request": {
             "name": "List account-types",
@@ -5034,7 +5034,7 @@
           }
         },
         {
-          "id": "1ce1ccde-7ba5-4993-aea2-5737db5ee3bc",
+          "id": "8999d526-022f-454d-83a0-c492e5240384",
           "name": "Create account-types",
           "request": {
             "name": "Create account-types",
@@ -5090,7 +5090,7 @@
           }
         },
         {
-          "id": "eb849041-1c0b-452c-b601-29b1eab7db69",
+          "id": "4ca419f5-8f03-4a44-b308-3333952acb22",
           "name": "Show account-types",
           "request": {
             "name": "Show account-types",
@@ -5145,7 +5145,7 @@
           }
         },
         {
-          "id": "c07bf465-e6eb-4a28-9c0e-b1955e1769f2",
+          "id": "ad5f5b9e-0a6d-4347-a7f8-d2d4813cd29e",
           "name": "Update account-types (PATCH also accepted)",
           "request": {
             "name": "Update account-types (PATCH also accepted)",
@@ -5213,7 +5213,7 @@
           }
         },
         {
-          "id": "e63039d4-5bc2-4996-bc62-682630b0ace5",
+          "id": "19568e16-7457-4e7e-94c6-83728244f910",
           "name": "Delete account-types",
           "request": {
             "name": "Delete account-types",
@@ -5274,7 +5274,7 @@
       "description": "Currencies and exchange rates (exactly one base currency).",
       "item": [
         {
-          "id": "ec6a6b3a-2de8-4bf2-aae6-01a7b9fb7850",
+          "id": "3dcac8bb-2979-4b04-89a9-b7924b2e2feb",
           "name": "List currencies",
           "request": {
             "name": "List currencies",
@@ -5345,7 +5345,7 @@
           }
         },
         {
-          "id": "bc39b22b-d81f-406f-bfc1-5141daeb4b80",
+          "id": "d3603462-d058-448e-9ca9-347cb48cfa32",
           "name": "Create currencies",
           "request": {
             "name": "Create currencies",
@@ -5401,7 +5401,7 @@
           }
         },
         {
-          "id": "7e35ec93-393b-428d-ba54-0fbd7fb608b6",
+          "id": "210d18ab-c162-4579-aa4e-ae12fabefe9f",
           "name": "Show currencies",
           "request": {
             "name": "Show currencies",
@@ -5456,7 +5456,7 @@
           }
         },
         {
-          "id": "652fd3fa-13a8-4cfe-8285-afc5cf8e8225",
+          "id": "bcf6bf37-baf1-462f-9d19-40e8f2f601bc",
           "name": "Update currencies (PATCH also accepted)",
           "request": {
             "name": "Update currencies (PATCH also accepted)",
@@ -5524,7 +5524,7 @@
           }
         },
         {
-          "id": "da794918-7dc9-472e-bb4a-cfd713db1e03",
+          "id": "deb7601b-826e-4924-819a-2af854ec3db4",
           "name": "Delete currencies",
           "request": {
             "name": "Delete currencies",
@@ -5585,7 +5585,7 @@
       "description": "Cost centers and projects for line-level analysis.",
       "item": [
         {
-          "id": "2076240b-0b97-46d9-8b21-b5458177d2b6",
+          "id": "dab749d3-fdae-43aa-9483-0646d7dbc6f6",
           "name": "List cost-centers",
           "request": {
             "name": "List cost-centers",
@@ -5656,7 +5656,7 @@
           }
         },
         {
-          "id": "216eceb9-4a89-4d24-b7d7-94ba7094f12b",
+          "id": "32077155-2b28-40e4-9622-16eeee3faed4",
           "name": "Create cost-centers",
           "request": {
             "name": "Create cost-centers",
@@ -5696,7 +5696,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"cost_center\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -5712,7 +5712,7 @@
           }
         },
         {
-          "id": "981a628f-77f5-4585-a957-485edceacb0a",
+          "id": "57d2d6a3-5833-4d7c-a6c5-21ab8f38353c",
           "name": "Show cost-centers",
           "request": {
             "name": "Show cost-centers",
@@ -5767,7 +5767,7 @@
           }
         },
         {
-          "id": "24187bc7-0b2e-4ae3-8810-fa465c784f48",
+          "id": "f23846b7-39bc-437e-8fb1-5f7502be2caf",
           "name": "Update cost-centers (PATCH also accepted)",
           "request": {
             "name": "Update cost-centers (PATCH also accepted)",
@@ -5819,7 +5819,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"project\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"cost_center\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -5835,7 +5835,7 @@
           }
         },
         {
-          "id": "0cf8a173-bb58-4776-a02d-14ba6081681f",
+          "id": "6eb0d2ad-2ea8-4107-b8ec-fcf4ec90ed00",
           "name": "Delete cost-centers",
           "request": {
             "name": "Delete cost-centers",
@@ -5896,7 +5896,7 @@
       "description": "Bank accounts linked to GL accounts.",
       "item": [
         {
-          "id": "b27466ab-bb0c-450e-b768-7e5786567a6b",
+          "id": "1c7cc957-d0b8-47d9-8c7f-a4ef1bec03e9",
           "name": "List bank-accounts",
           "request": {
             "name": "List bank-accounts",
@@ -5967,7 +5967,7 @@
           }
         },
         {
-          "id": "a9080209-be1e-4476-9bbf-c70175f88cf7",
+          "id": "34cc99f3-4a18-4719-8808-28960d52659c",
           "name": "Create bank-accounts",
           "request": {
             "name": "Create bank-accounts",
@@ -6023,7 +6023,7 @@
           }
         },
         {
-          "id": "133be230-fc2d-4c5c-8138-fa04c43274fa",
+          "id": "77972a33-e66f-4f56-b1a1-20aa01549f72",
           "name": "Show bank-accounts",
           "request": {
             "name": "Show bank-accounts",
@@ -6078,7 +6078,7 @@
           }
         },
         {
-          "id": "920eabaf-c72f-4881-82a6-afe371609791",
+          "id": "0901ae23-daad-4ac1-9258-6862e1fc4501",
           "name": "Update bank-accounts (PATCH also accepted)",
           "request": {
             "name": "Update bank-accounts (PATCH also accepted)",
@@ -6146,7 +6146,7 @@
           }
         },
         {
-          "id": "158a2f16-f1a7-4734-b00d-d759aff16bad",
+          "id": "4551ec51-de43-41ac-b5c7-60b8e6cf1b86",
           "name": "Delete bank-accounts",
           "request": {
             "name": "Delete bank-accounts",
@@ -6207,7 +6207,7 @@
       "description": "Bank statement reconciliations.",
       "item": [
         {
-          "id": "9aa19e30-7f98-44a9-865c-ca6193803895",
+          "id": "c6fd203b-0150-4d53-9a52-2f92497e94d7",
           "name": "List reconciliations",
           "request": {
             "name": "List reconciliations",
@@ -6278,7 +6278,7 @@
           }
         },
         {
-          "id": "5f5661c4-492c-4565-a591-242375e35da8",
+          "id": "5749cd52-d4b1-4a7b-88e8-e08b8844cabb",
           "name": "Create reconciliations",
           "request": {
             "name": "Create reconciliations",
@@ -6334,7 +6334,7 @@
           }
         },
         {
-          "id": "da2cde57-3d92-4c2d-9385-c240d2e814da",
+          "id": "7d7545e6-2a6a-4894-b72a-69dce2d250b8",
           "name": "Show reconciliations",
           "request": {
             "name": "Show reconciliations",
@@ -6389,7 +6389,7 @@
           }
         },
         {
-          "id": "5ff5d490-b102-43a5-bdb5-501ec941a32a",
+          "id": "988ed492-a7ea-46af-88ef-a8435d5a793d",
           "name": "Update reconciliations (PATCH also accepted)",
           "request": {
             "name": "Update reconciliations (PATCH also accepted)",
@@ -6457,7 +6457,7 @@
           }
         },
         {
-          "id": "38859778-326d-41a2-9ac8-cb8314a843dd",
+          "id": "c453373b-2df8-429e-b0fe-c596bbd589df",
           "name": "Delete reconciliations",
           "request": {
             "name": "Delete reconciliations",
@@ -6518,7 +6518,7 @@
       "description": "Tax codes and dated tax rates.",
       "item": [
         {
-          "id": "30dbf658-8355-4bf1-aba9-787879dd45e9",
+          "id": "ca574aa3-b790-4c0b-b88a-0ba278bf1930",
           "name": "List tax-codes",
           "request": {
             "name": "List tax-codes",
@@ -6589,7 +6589,7 @@
           }
         },
         {
-          "id": "2e12b459-78eb-4b07-8c88-aa3a65c72df6",
+          "id": "356665c1-8270-43de-95cb-8e281d6ed84b",
           "name": "Create tax-codes",
           "request": {
             "name": "Create tax-codes",
@@ -6629,7 +6629,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"withheld\",\n  \"tax_account_id\": \"<integer,null>\",\n  \"jurisdiction\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"input\",\n  \"tax_account_id\": \"<integer,null>\",\n  \"jurisdiction\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -6645,7 +6645,7 @@
           }
         },
         {
-          "id": "19ff60d7-81d1-4537-9379-039e6a8bfc8f",
+          "id": "871513dc-bb67-409e-be47-f9b2168e6c9b",
           "name": "Show tax-codes",
           "request": {
             "name": "Show tax-codes",
@@ -6700,7 +6700,7 @@
           }
         },
         {
-          "id": "d0e41c85-d461-4800-a325-7cecb4254ec7",
+          "id": "064f429b-8a50-4c09-9452-c986921ce829",
           "name": "Update tax-codes (PATCH also accepted)",
           "request": {
             "name": "Update tax-codes (PATCH also accepted)",
@@ -6752,7 +6752,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"withheld\",\n  \"tax_account_id\": \"<integer,null>\",\n  \"jurisdiction\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"input\",\n  \"tax_account_id\": \"<integer,null>\",\n  \"jurisdiction\": \"<string,null>\",\n  \"description\": \"<string,null>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -6768,7 +6768,7 @@
           }
         },
         {
-          "id": "5b3b98ee-9ef4-4adb-bdbf-a9c2e9e8dc2c",
+          "id": "b18b73a7-545f-41a7-9ac9-3a1a9211e565",
           "name": "Delete tax-codes",
           "request": {
             "name": "Delete tax-codes",
@@ -6823,7 +6823,7 @@
           }
         },
         {
-          "id": "ba551964-b867-4cc3-a280-48ba97c787e6",
+          "id": "788eb6c5-f9c9-4176-8ad2-ae460b37588d",
           "name": "List tax-rates",
           "request": {
             "name": "List tax-rates",
@@ -6894,7 +6894,7 @@
           }
         },
         {
-          "id": "004bd54f-19bc-404c-827d-a2465f7122c5",
+          "id": "cab9bc5c-52a2-4aa8-888c-3991f63fc2ce",
           "name": "Create tax-rates",
           "request": {
             "name": "Create tax-rates",
@@ -6950,7 +6950,7 @@
           }
         },
         {
-          "id": "e3340b2e-6131-4d3f-b289-a94ef285955f",
+          "id": "dff3faae-0ef7-41fc-83e7-909172773f29",
           "name": "Show tax-rates",
           "request": {
             "name": "Show tax-rates",
@@ -7005,7 +7005,7 @@
           }
         },
         {
-          "id": "cd832598-7c10-4afe-b1b4-90856170f9d3",
+          "id": "ba139968-0638-4006-b696-05ce5b1f137b",
           "name": "Update tax-rates (PATCH also accepted)",
           "request": {
             "name": "Update tax-rates (PATCH also accepted)",
@@ -7073,7 +7073,7 @@
           }
         },
         {
-          "id": "6c2af6b8-5c3d-4923-b5b6-0e4ba1270610",
+          "id": "30ee6616-7d2f-42a2-93f8-c1e16487e146",
           "name": "Delete tax-rates",
           "request": {
             "name": "Delete tax-rates",
@@ -7128,7 +7128,7 @@
           }
         },
         {
-          "id": "d0b31617-85ef-449b-9faa-c659a5795ccf",
+          "id": "015adf38-cbe1-4bee-8d36-f142c240e666",
           "name": "Tax on an amount",
           "request": {
             "name": "Tax on an amount",
@@ -7185,7 +7185,7 @@
           }
         },
         {
-          "id": "1c5f0a7e-44d6-449b-ba6e-1751e312e95a",
+          "id": "225179a4-6b48-4a75-b229-014d2815a83c",
           "name": "Book a taxed document as a journal entry",
           "request": {
             "name": "Book a taxed document as a journal entry",
@@ -7226,7 +7226,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"sale\",\n  \"entry_date\": \"<date>\",\n  \"amount\": \"<number>\",\n  \"tax_code_id\": \"<integer>\",\n  \"account_id\": \"<integer>\",\n  \"counter_account_id\": \"<integer>\",\n  \"tax_inclusive\": \"<boolean>\",\n  \"cost_center_id\": \"<integer>\",\n  \"reference\": \"<string>\",\n  \"description\": \"<string>\",\n  \"auto_post\": false\n}",
+              "raw": "{\n  \"type\": \"purchase_return\",\n  \"entry_date\": \"<date>\",\n  \"amount\": \"<number>\",\n  \"tax_code_id\": \"<integer>\",\n  \"account_id\": \"<integer>\",\n  \"counter_account_id\": \"<integer>\",\n  \"tax_inclusive\": \"<boolean>\",\n  \"cost_center_id\": \"<integer>\",\n  \"reference\": \"<string>\",\n  \"description\": \"<string>\",\n  \"auto_post\": false\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -7242,7 +7242,7 @@
           }
         },
         {
-          "id": "87c34e35-434f-4e2b-a4ec-a60785f25a11",
+          "id": "20ea19bd-f103-4498-97e6-6fdc0bedbe7e",
           "name": "The tax ledger of a period",
           "request": {
             "name": "The tax ledger of a period",
@@ -7315,7 +7315,7 @@
           }
         },
         {
-          "id": "a9557dde-b934-423f-9a3b-be33d930727f",
+          "id": "d8cc99a8-bea8-4e2e-b9ba-49823092617b",
           "name": "Export the tax report",
           "request": {
             "name": "Export the tax report",
@@ -7369,7 +7369,7 @@
           }
         },
         {
-          "id": "ff11b887-96ff-4110-9306-8db1b4afe9f3",
+          "id": "08ed13c7-7930-41cb-95c5-638c87cfb687",
           "name": "Filed tax returns",
           "request": {
             "name": "Filed tax returns",
@@ -7413,7 +7413,7 @@
           }
         },
         {
-          "id": "afa3b6a7-4652-45e2-9e64-cfa4cde46780",
+          "id": "2a29db1e-9fb5-4f3e-aea3-f81abd756ed7",
           "name": "File a return for a period",
           "request": {
             "name": "File a return for a period",
@@ -7470,7 +7470,7 @@
           }
         },
         {
-          "id": "e834e999-4cf2-4a8a-b9bc-40956320b355",
+          "id": "b1863bc9-a052-414b-a60c-8ee176ac4372",
           "name": "A filed return",
           "request": {
             "name": "A filed return",
@@ -7526,7 +7526,7 @@
           }
         },
         {
-          "id": "9877c512-09f7-40c1-88ba-8fa774156b12",
+          "id": "4b423a12-5f51-4c29-8d14-7db371127ad1",
           "name": "Void a return (its entry is reversed)",
           "request": {
             "name": "Void a return (its entry is reversed)",
@@ -7588,7 +7588,7 @@
       "description": "Journal entries that repeat on a schedule: templates, runs, pause and resume.",
       "item": [
         {
-          "id": "86cf7db7-d0f5-4bde-968e-ba06f1365f08",
+          "id": "a7f5548d-9c44-4dd7-beca-a5efbf90b9b9",
           "name": "Recurring entry templates",
           "request": {
             "name": "Recurring entry templates",
@@ -7631,7 +7631,7 @@
           }
         },
         {
-          "id": "a8fe5498-6a15-4471-bf3d-2bc811be181d",
+          "id": "665871cc-587c-4a7a-a23a-ff50910365cd",
           "name": "Create a template",
           "request": {
             "name": "Create a template",
@@ -7687,7 +7687,7 @@
           }
         },
         {
-          "id": "42b66487-58e7-492b-b172-612634dc4612",
+          "id": "3620f9ae-22b4-450d-8498-e3d66e7f82dc",
           "name": "A template with its generated entries and upcoming dates",
           "request": {
             "name": "A template with its generated entries and upcoming dates",
@@ -7742,7 +7742,7 @@
           }
         },
         {
-          "id": "5fc585fc-2a40-4629-809f-047c7a53dee5",
+          "id": "beb1fd1c-f199-4564-953b-4ba9ffe4bfc5",
           "name": "Change a template (PATCH also accepted)",
           "request": {
             "name": "Change a template (PATCH also accepted)",
@@ -7810,7 +7810,7 @@
           }
         },
         {
-          "id": "22a7dd35-ed83-444b-9d9a-b2a894c51d56",
+          "id": "e3702113-42ae-4bc1-9408-e4b987c00796",
           "name": "Delete a template that has not generated anything",
           "request": {
             "name": "Delete a template that has not generated anything",
@@ -7865,7 +7865,7 @@
           }
         },
         {
-          "id": "8c0282c5-63d6-412d-84c1-23a4f522adb2",
+          "id": "0295e2c3-6920-46dc-931b-caeb10176f07",
           "name": "Pause a template",
           "request": {
             "name": "Pause a template",
@@ -7921,7 +7921,7 @@
           }
         },
         {
-          "id": "39f0d0f5-e980-4576-baad-ba4a1fa3cea8",
+          "id": "15d1207f-2da9-42f0-8a55-e391f19420ea",
           "name": "Resume a paused template",
           "request": {
             "name": "Resume a paused template",
@@ -7990,7 +7990,7 @@
           }
         },
         {
-          "id": "54bc4955-de17-4af8-8430-2ceafda9b3d1",
+          "id": "3d312f2d-99ff-4054-9413-2a38e7f40ac8",
           "name": "Generate the next entry now",
           "request": {
             "name": "Generate the next entry now",
@@ -8052,7 +8052,7 @@
       "description": "Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series.",
       "item": [
         {
-          "id": "5957ebdf-ac64-4d71-9244-1d0299e52f9f",
+          "id": "ab126cf2-504e-4781-8439-82ea314eaa41",
           "name": "List voucher types with their next numbers",
           "request": {
             "name": "List voucher types with their next numbers",
@@ -8105,7 +8105,7 @@
           }
         },
         {
-          "id": "4632459e-40b0-4c8f-9d8b-1a4c417d37bc",
+          "id": "59ac4a12-a89d-40e7-9745-e0c233a49f56",
           "name": "Create a voucher type",
           "request": {
             "name": "Create a voucher type",
@@ -8161,7 +8161,7 @@
           }
         },
         {
-          "id": "fe904ac2-9c77-4d58-b4c6-3e670b5e647c",
+          "id": "53822b88-7a16-4afe-b049-134d1e4f90fc",
           "name": "Show a voucher type",
           "request": {
             "name": "Show a voucher type",
@@ -8216,7 +8216,7 @@
           }
         },
         {
-          "id": "6d8812c5-f9e0-4887-9c0f-14c41cf7402b",
+          "id": "a1ea7780-ef4a-4ac4-aca7-2b29c6c95c65",
           "name": "Update a voucher type (PATCH also accepted)",
           "request": {
             "name": "Update a voucher type (PATCH also accepted)",
@@ -8284,7 +8284,7 @@
           }
         },
         {
-          "id": "bfeb7001-c316-4e1d-8dd8-165bc2398a0d",
+          "id": "e2296493-7d18-4c7e-9a15-e2ec2a606767",
           "name": "Delete an unused voucher type",
           "request": {
             "name": "Delete an unused voucher type",
@@ -8339,7 +8339,7 @@
           }
         },
         {
-          "id": "1fdf5f95-8e8e-4e7a-908a-3c387764ba2d",
+          "id": "101718ff-93bd-4e7e-abdd-1226521fd9c8",
           "name": "Preview the next number",
           "request": {
             "name": "Preview the next number",
@@ -8411,7 +8411,7 @@
       "description": "Companies (multi-company), access and consolidation.",
       "item": [
         {
-          "id": "9415d26d-a39e-4ccf-b7c6-839702c4fc4c",
+          "id": "91ee0508-c115-4958-8a07-34660a5469c7",
           "name": "Companies you can work in",
           "request": {
             "name": "Companies you can work in",
@@ -8454,7 +8454,7 @@
           }
         },
         {
-          "id": "98db1ec9-2988-4e74-bc4c-155b303ed2eb",
+          "id": "05b9523f-0348-4857-b9b5-716a4e23c140",
           "name": "Create a company",
           "request": {
             "name": "Create a company",
@@ -8494,7 +8494,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"ju35cO\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
+              "raw": "{\n  \"code\": \"TuIwUm-f_4X\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -8510,7 +8510,7 @@
           }
         },
         {
-          "id": "d74ce810-5994-4a36-9354-237b179e8abc",
+          "id": "43cc19b4-be40-4eee-93ed-02cd4b73c8ec",
           "name": "Show a company with its members",
           "request": {
             "name": "Show a company with its members",
@@ -8565,7 +8565,7 @@
           }
         },
         {
-          "id": "2cf9c1cb-7537-43f4-bb79-8058c75e817d",
+          "id": "dfcaa563-5c34-4c73-8ed0-acf0795bb4d2",
           "name": "Update a company",
           "request": {
             "name": "Update a company",
@@ -8617,7 +8617,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"DyK-2Kmlp3\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
+              "raw": "{\n  \"code\": \"S9WE-srLjo\",\n  \"name\": \"<string>\",\n  \"legal_name\": \"<string>\",\n  \"tax_number\": \"<string>\",\n  \"registration_number\": \"<string>\",\n  \"email\": \"<email>\",\n  \"phone\": \"<string>\",\n  \"address\": \"<string>\",\n  \"fiscal_year_start_month\": 1,\n  \"seed\": true\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -8633,7 +8633,7 @@
           }
         },
         {
-          "id": "457c8e78-3535-4f12-8f82-d2474daafb0e",
+          "id": "3c9b221d-b646-47c7-ab7e-2085cf154519",
           "name": "Give a user access",
           "request": {
             "name": "Give a user access",
@@ -8702,7 +8702,7 @@
           }
         },
         {
-          "id": "bb7a50aa-460b-4f13-9afd-5b779e460f7f",
+          "id": "9a968339-a22f-4e7a-9612-891ef444f1c3",
           "name": "Remove a user's access",
           "request": {
             "name": "Remove a user's access",
@@ -8775,7 +8775,7 @@
       "description": "Users, roles and permissions — privilege-checked and audited.",
       "item": [
         {
-          "id": "94bb2dd3-0056-4e50-9e3d-f5c3edcc6498",
+          "id": "6983fee4-9bf7-4b9d-8b53-54da8dbc6a07",
           "name": "List users",
           "request": {
             "name": "List users",
@@ -8864,7 +8864,7 @@
           }
         },
         {
-          "id": "eb253bdf-88ee-40f9-9bfe-f9538cbc120d",
+          "id": "184b958f-4e91-45fd-8fac-ea35d761e5c2",
           "name": "Create a user",
           "request": {
             "name": "Create a user",
@@ -8920,7 +8920,7 @@
           }
         },
         {
-          "id": "540bbd5c-25ba-411c-a2ad-fdb1f06a7632",
+          "id": "5b88e2ce-a0fc-465a-a6a5-407effd688cb",
           "name": "Show a user with all effective permissions",
           "request": {
             "name": "Show a user with all effective permissions",
@@ -8975,7 +8975,7 @@
           }
         },
         {
-          "id": "dc1c97af-b15b-46a0-a778-df66f0de261d",
+          "id": "b45e8c10-e2a4-4c12-9e47-cbce18c1f89a",
           "name": "Update a user (PATCH also accepted)",
           "request": {
             "name": "Update a user (PATCH also accepted)",
@@ -9043,7 +9043,7 @@
           }
         },
         {
-          "id": "38975998-202a-41b4-a426-a0c59161a1ce",
+          "id": "ea104434-b63c-4c7b-8b2e-102f8ccbfde2",
           "name": "Delete a user",
           "request": {
             "name": "Delete a user",
@@ -9098,7 +9098,7 @@
           }
         },
         {
-          "id": "79623908-f58f-49db-80af-1d62a48a9722",
+          "id": "f8803ad5-df89-4815-9ed4-b8240f4d4113",
           "name": "Replace a user's roles",
           "request": {
             "name": "Replace a user's roles",
@@ -9167,7 +9167,7 @@
           }
         },
         {
-          "id": "3e1415fa-ebdd-483b-b0db-77a4d6505830",
+          "id": "48bd22cf-6a25-432e-8460-458669f943e9",
           "name": "Replace a user's direct permissions",
           "request": {
             "name": "Replace a user's direct permissions",
@@ -9236,7 +9236,7 @@
           }
         },
         {
-          "id": "54c955f6-e40c-4221-9386-83e139409d16",
+          "id": "f04d4cc5-d6cd-49fd-8cb7-b4f30303add2",
           "name": "List roles with permission and user counts",
           "request": {
             "name": "List roles with permission and user counts",
@@ -9279,7 +9279,7 @@
           }
         },
         {
-          "id": "032b01ec-006a-4434-a2a1-697fd1f1394d",
+          "id": "04ec799e-d581-4f86-a965-c2c0b464dfb7",
           "name": "Create a role",
           "request": {
             "name": "Create a role",
@@ -9335,7 +9335,7 @@
           }
         },
         {
-          "id": "39d31db3-964f-42c2-8e95-43db6254a2b4",
+          "id": "13fddefc-4b97-4a07-8925-d26bdf7f5888",
           "name": "Show a role",
           "request": {
             "name": "Show a role",
@@ -9390,7 +9390,7 @@
           }
         },
         {
-          "id": "fe7ece9c-69ed-4bce-8588-8d439ab49354",
+          "id": "9c52b6de-1070-4c5a-9466-e8bd1b0de3c9",
           "name": "Update a role (PATCH also accepted)",
           "request": {
             "name": "Update a role (PATCH also accepted)",
@@ -9458,7 +9458,7 @@
           }
         },
         {
-          "id": "b2e737b8-0995-4459-9b86-43618c6433f4",
+          "id": "b4109329-add2-44fb-a566-3f1734445b69",
           "name": "Delete a role",
           "request": {
             "name": "Delete a role",
@@ -9513,7 +9513,7 @@
           }
         },
         {
-          "id": "bf5a18ce-229c-43c0-bd0e-32e1605935f1",
+          "id": "9549502f-0afa-444a-9ec5-cd29a739dc72",
           "name": "All permissions grouped by area",
           "request": {
             "name": "All permissions grouped by area",
@@ -9562,7 +9562,7 @@
       "description": "Installation health.",
       "item": [
         {
-          "id": "c3e373ac-8426-411b-8cc2-e39b36480924",
+          "id": "88241b96-faa0-48b6-b464-f331065625ba",
           "name": "Dashboard overview",
           "request": {
             "name": "Dashboard overview",
@@ -9624,7 +9624,7 @@
           }
         },
         {
-          "id": "ae07a5a5-629c-4fbf-bf37-1d6f149dd164",
+          "id": "7b33dd55-b190-44ab-8f98-486c6adf2a2d",
           "name": "Installation health",
           "request": {
             "name": "Installation health",
@@ -9673,7 +9673,7 @@
       "description": "",
       "item": [
         {
-          "id": "55ac1f5b-74f4-4c7c-be52-42851b2a7838",
+          "id": "59d10c6f-b435-4b04-b448-0ee8cb3f2fa6",
           "name": "Past revaluations and the dated exchange rates",
           "request": {
             "name": "Past revaluations and the dated exchange rates",
@@ -9716,7 +9716,7 @@
           }
         },
         {
-          "id": "67fd6161-c8c7-4b3f-8ed0-477c268aabe3",
+          "id": "2b64fcc3-0657-4a14-bc28-2054966167b9",
           "name": "Post a revaluation",
           "request": {
             "name": "Post a revaluation",
@@ -9772,7 +9772,7 @@
           }
         },
         {
-          "id": "f22bd102-c0de-41b5-b2a9-ddd06db48e00",
+          "id": "383202c8-bdd0-4e0c-8cef-c30212444c6a",
           "name": "What a revaluation would adjust (nothing is posted)",
           "request": {
             "name": "What a revaluation would adjust (nothing is posted)",
@@ -9835,7 +9835,7 @@
           }
         },
         {
-          "id": "3774d06b-1703-46f3-a874-c6084cabfd7e",
+          "id": "9800d18b-ebc2-43a0-9e46-850f91b3b2e0",
           "name": "Save a dated exchange rate (replaces the rate of that currency and date)",
           "request": {
             "name": "Save a dated exchange rate (replaces the rate of that currency and date)",
@@ -9892,7 +9892,7 @@
           }
         },
         {
-          "id": "f60d3fd2-b9b2-4dc2-b4c1-df8c2fcbfe42",
+          "id": "8b09112b-3bdd-49d6-829f-cd230343276c",
           "name": "Remove a dated rate",
           "request": {
             "name": "Remove a dated rate",
@@ -9948,7 +9948,7 @@
           }
         },
         {
-          "id": "7612064f-297d-413c-b9d9-68d4e530b6c4",
+          "id": "37c1810e-c8f0-4f28-b908-73c20a353ec9",
           "name": "One revaluation with its accounts",
           "request": {
             "name": "One revaluation with its accounts",
@@ -10003,7 +10003,7 @@
           }
         },
         {
-          "id": "1c36d237-dcd3-430e-a6d9-d1c13c2cda8b",
+          "id": "9f1b8e03-72ca-456c-9b22-ea98d4fd9ff5",
           "name": "Reverse a revaluation",
           "request": {
             "name": "Reverse a revaluation",
@@ -10078,7 +10078,7 @@
       "description": "",
       "item": [
         {
-          "id": "61df9bd6-222a-4688-ba5f-7ee197c3164a",
+          "id": "0ba9bd11-3e7c-4599-aa97-ee673b97c5a0",
           "name": "Imported statements",
           "request": {
             "name": "Imported statements",
@@ -10121,7 +10121,7 @@
           }
         },
         {
-          "id": "9fa14fae-3ee3-4e16-aedd-5b161b74d564",
+          "id": "3f2da96a-503c-43eb-91b4-64ed458dd3a8",
           "name": "Import a statement (CSV or XLSX)",
           "request": {
             "name": "Import a statement (CSV or XLSX)",
@@ -10217,7 +10217,7 @@
           }
         },
         {
-          "id": "467c029a-baa5-4137-a61b-70b0e93616bc",
+          "id": "dca78e6b-c588-404f-831c-a3910e2d9849",
           "name": "A statement with its transactions",
           "request": {
             "name": "A statement with its transactions",
@@ -10272,7 +10272,7 @@
           }
         },
         {
-          "id": "767b9cef-0513-4712-9d4e-3d748aae61a3",
+          "id": "91926689-368d-42e3-aa5b-b712ed6327dc",
           "name": "Set the closing balance (PATCH also accepted)",
           "request": {
             "name": "Set the closing balance (PATCH also accepted)",
@@ -10340,7 +10340,7 @@
           }
         },
         {
-          "id": "6e659d43-3bc2-4fd1-8c5f-e40b23e37a0c",
+          "id": "d33a488f-7d72-4aea-8916-7cc36cdde31f",
           "name": "Delete a statement and release its matches",
           "request": {
             "name": "Delete a statement and release its matches",
@@ -10395,7 +10395,7 @@
           }
         },
         {
-          "id": "5b180664-70f2-4f46-98cf-7aab8fce9be6",
+          "id": "bf5e0608-5ee4-4ba6-abd7-9548c930ce35",
           "name": "Match every transaction that has exactly one ledger candidate",
           "request": {
             "name": "Match every transaction that has exactly one ledger candidate",
@@ -10451,7 +10451,7 @@
           }
         },
         {
-          "id": "184ea142-ac18-49d4-ba0d-a979540b6578",
+          "id": "c41e6005-97ca-4771-b464-e6ac0e49fe27",
           "name": "Reconcile the statement",
           "request": {
             "name": "Reconcile the statement",
@@ -10507,7 +10507,7 @@
           }
         },
         {
-          "id": "c5a0b3c8-3d2a-47a4-b944-d83d0c4e01e6",
+          "id": "5dacee0a-ea12-49ae-9b23-c0eb26eb3e7e",
           "name": "Ledger lines that could be this transaction",
           "request": {
             "name": "Ledger lines that could be this transaction",
@@ -10563,7 +10563,7 @@
           }
         },
         {
-          "id": "5e5b9507-7844-4ac4-81e5-6e1fc5e3a941",
+          "id": "d06a9aef-6534-41ed-b1f3-57b946758de8",
           "name": "Match a transaction to a ledger line",
           "request": {
             "name": "Match a transaction to a ledger line",
@@ -10632,7 +10632,7 @@
           }
         },
         {
-          "id": "4bdb3316-095e-4cde-b6b1-cab9e5814bbe",
+          "id": "ed03fdcb-d345-4ad7-8efe-881d7e1e05c8",
           "name": "Release a matched or booked transaction",
           "request": {
             "name": "Release a matched or booked transaction",
@@ -10688,7 +10688,7 @@
           }
         },
         {
-          "id": "e3930f7f-ad75-4259-be6a-99fec00c73a4",
+          "id": "f460be62-1de6-42c9-9fc5-5826eb3e5191",
           "name": "Ignore (or restore) a transaction",
           "request": {
             "name": "Ignore (or restore) a transaction",
@@ -10757,7 +10757,7 @@
           }
         },
         {
-          "id": "deaf5dc5-f911-4a75-bd5a-2a7223fdca2a",
+          "id": "e327b2d1-3da9-4baa-bf2f-ad0a559d7479",
           "name": "Book a transaction as a journal entry",
           "request": {
             "name": "Book a transaction as a journal entry",
@@ -10832,7 +10832,7 @@
       "description": "",
       "item": [
         {
-          "id": "59c65fd7-9f2f-4873-b61d-afeb95e71c78",
+          "id": "afcb7e5f-59f3-4b0c-82e4-a59c5ea737fb",
           "name": "Budgets",
           "request": {
             "name": "Budgets",
@@ -10875,7 +10875,7 @@
           }
         },
         {
-          "id": "a3f36bec-c4fc-432a-a385-2edee4d9e6bb",
+          "id": "288bb3a6-8332-41ba-8abb-038ecb6330dc",
           "name": "Create a draft budget",
           "request": {
             "name": "Create a draft budget",
@@ -10931,7 +10931,7 @@
           }
         },
         {
-          "id": "c9ae5d2c-4e5e-43ca-88f9-1c8315ddc243",
+          "id": "046a5aa4-0d24-4e8e-87dc-2e413c074db2",
           "name": "Budget against actual",
           "request": {
             "name": "Budget against actual",
@@ -11014,7 +11014,7 @@
           }
         },
         {
-          "id": "9b1b03a5-fa55-4ac4-bf18-bee24328c4f6",
+          "id": "7381fffa-989e-4da5-867d-fde0b9d15574",
           "name": "Change a draft budget (PATCH also accepted)",
           "request": {
             "name": "Change a draft budget (PATCH also accepted)",
@@ -11082,7 +11082,7 @@
           }
         },
         {
-          "id": "5e8f0784-31ed-42ff-a3dd-342517c72ca8",
+          "id": "25fa692b-a512-49d7-9776-4342e7dc9285",
           "name": "Delete a budget that is not approved",
           "request": {
             "name": "Delete a budget that is not approved",
@@ -11137,7 +11137,7 @@
           }
         },
         {
-          "id": "5d282d08-eb58-48ef-a554-a81d3b1f64aa",
+          "id": "29911645-9a37-4b41-8565-19e4719dc622",
           "name": "Approve a draft budget",
           "request": {
             "name": "Approve a draft budget",
@@ -11193,7 +11193,7 @@
           }
         },
         {
-          "id": "49b39271-5efc-4be5-87ce-93b64dadadc7",
+          "id": "99cdf0e4-f874-4844-bd30-897cfbfbfa43",
           "name": "Reopen an approved or closed budget as a draft",
           "request": {
             "name": "Reopen an approved or closed budget as a draft",
@@ -11249,7 +11249,7 @@
           }
         },
         {
-          "id": "26a5858e-94bd-454c-880b-9d9a8c87b79e",
+          "id": "624f0440-0adc-4855-b199-2e069f2d1514",
           "name": "Close an approved budget",
           "request": {
             "name": "Close an approved budget",
@@ -11305,7 +11305,7 @@
           }
         },
         {
-          "id": "f90a5b06-cbbe-4bb0-8216-ca9757daa8aa",
+          "id": "be1c5652-58b2-47a1-b570-0733381c3e9f",
           "name": "Copy as a draft, optionally shifted and raised",
           "request": {
             "name": "Copy as a draft, optionally shifted and raised",
@@ -11374,7 +11374,7 @@
           }
         },
         {
-          "id": "4dd4b4d7-928c-4f1e-9145-3f158a75bfae",
+          "id": "e44f68b4-1932-4b2f-ac31-67198413dbc9",
           "name": "Export budget against actual",
           "request": {
             "name": "Export budget against actual",
@@ -11447,7 +11447,7 @@
       "description": "",
       "item": [
         {
-          "id": "98617eb0-9317-42ec-b628-d086e46432f4",
+          "id": "3d8c6235-ed98-4165-8b18-3415341c0e3a",
           "name": "Fixed asset register at a date",
           "request": {
             "name": "Fixed asset register at a date",
@@ -11509,7 +11509,7 @@
           }
         },
         {
-          "id": "cad1d9fc-09ef-46d1-9147-ee32186c78a3",
+          "id": "4b44426c-0c5c-4aaf-a00a-aca4424f1d69",
           "name": "Register an asset",
           "request": {
             "name": "Register an asset",
@@ -11565,7 +11565,7 @@
           }
         },
         {
-          "id": "1de6ab80-0953-4082-a00a-8f348676184b",
+          "id": "3b80ce1e-b7bc-47d4-bd05-05e51dd599e2",
           "name": "An asset with its depreciation history",
           "request": {
             "name": "An asset with its depreciation history",
@@ -11620,7 +11620,7 @@
           }
         },
         {
-          "id": "277b519e-d8be-49a7-956f-c0ce2fdab774",
+          "id": "64c1b958-e6f4-493c-9198-c36960f125bc",
           "name": "Change an asset (PATCH also accepted)",
           "request": {
             "name": "Change an asset (PATCH also accepted)",
@@ -11688,7 +11688,7 @@
           }
         },
         {
-          "id": "5553b58a-b912-4d33-bfdf-50094a65820d",
+          "id": "29db35db-3f21-415e-adcf-38319fc53d45",
           "name": "Delete an asset without entries",
           "request": {
             "name": "Delete an asset without entries",
@@ -11743,7 +11743,7 @@
           }
         },
         {
-          "id": "fedf44ec-dea2-4a77-aadc-6922fe51bda3",
+          "id": "49b74982-6c29-46e3-a486-8b94d54a5231",
           "name": "Sell or scrap an asset",
           "request": {
             "name": "Sell or scrap an asset",
@@ -11812,7 +11812,7 @@
           }
         },
         {
-          "id": "36e817cf-3edb-4eda-bf92-9f7f3225277a",
+          "id": "8d2068ad-9b8f-4584-9d04-9210af0dfc19",
           "name": "Preview the depreciation due",
           "request": {
             "name": "Preview the depreciation due",
@@ -11866,7 +11866,7 @@
           }
         },
         {
-          "id": "182d8734-9da1-4e31-ba01-7234867b412a",
+          "id": "de55c1c2-fe39-4d5d-b5c6-bcfb1ef1c8e6",
           "name": "Book the depreciation due",
           "request": {
             "name": "Book the depreciation due",
@@ -11923,7 +11923,7 @@
           }
         },
         {
-          "id": "bc7bf0f0-902d-4e17-ab05-0b6be4c136e7",
+          "id": "d0769973-9c3b-4542-a28b-32b3c7a7f868",
           "name": "Export the register",
           "request": {
             "name": "Export the register",
@@ -11995,7 +11995,7 @@
       "description": "",
       "item": [
         {
-          "id": "6b3d7d70-6389-417c-95dd-d0962fb02d55",
+          "id": "f20dd8fb-79bf-4ae7-94b2-0173c5c4fc8d",
           "name": "Stock valuation at a date",
           "request": {
             "name": "Stock valuation at a date",
@@ -12057,7 +12057,7 @@
           }
         },
         {
-          "id": "21041da6-5cea-4307-aa7c-72fc3c06da46",
+          "id": "92d3dc3e-5f4c-41bc-ad54-430ef9b7101e",
           "name": "Export the stock valuation",
           "request": {
             "name": "Export the stock valuation",
@@ -12113,7 +12113,7 @@
           }
         },
         {
-          "id": "f15db667-870d-4edf-88bd-53d3ca1ea0a3",
+          "id": "b14f2302-46fd-449c-b950-28fb52945a3f",
           "name": "Create an item",
           "request": {
             "name": "Create an item",
@@ -12170,7 +12170,7 @@
           }
         },
         {
-          "id": "04b28e71-202d-4c42-8ee1-ad1a1acf8199",
+          "id": "669c53e1-3ca8-4cb3-a803-687858d4d638",
           "name": "An item with its stock card",
           "request": {
             "name": "An item with its stock card",
@@ -12226,7 +12226,7 @@
           }
         },
         {
-          "id": "662efe06-5ac1-4d86-acb1-3cb73f41d3a2",
+          "id": "d9f50a29-c248-43d3-8bf6-3cbc41dc11e6",
           "name": "Change an item (PATCH also accepted)",
           "request": {
             "name": "Change an item (PATCH also accepted)",
@@ -12295,7 +12295,7 @@
           }
         },
         {
-          "id": "e9378bc8-745b-4d41-a490-b21eac4b8ef6",
+          "id": "e22beb6d-5767-46a1-b7b4-644a282cdbb0",
           "name": "Delete an item without movements",
           "request": {
             "name": "Delete an item without movements",
@@ -12351,7 +12351,7 @@
           }
         },
         {
-          "id": "ae1d71e5-1512-4aef-9004-89f2ab6f48fc",
+          "id": "11dc839f-9767-4f82-aa4f-2b43736c5370",
           "name": "Warehouses",
           "request": {
             "name": "Warehouses",
@@ -12395,7 +12395,7 @@
           }
         },
         {
-          "id": "10f25ea1-0c51-4451-afcb-0548ac42766a",
+          "id": "dc6558d5-e2bd-4340-9f4d-b1978c07c32a",
           "name": "Add a warehouse",
           "request": {
             "name": "Add a warehouse",
@@ -12452,7 +12452,7 @@
           }
         },
         {
-          "id": "38797007-655d-4c74-9d3c-57452aa1f697",
+          "id": "a7c79d1d-82b9-4266-9eb6-2bbb4c4fbf14",
           "name": "Change a warehouse (PATCH also accepted)",
           "request": {
             "name": "Change a warehouse (PATCH also accepted)",
@@ -12521,7 +12521,7 @@
           }
         },
         {
-          "id": "4f3f1fe7-fdde-487e-8f61-c6adc9414553",
+          "id": "1ae07de9-281a-4aa2-9e4c-3506f91b435d",
           "name": "Delete a warehouse without movements",
           "request": {
             "name": "Delete a warehouse without movements",
@@ -12577,7 +12577,7 @@
           }
         },
         {
-          "id": "5ddfe0e6-1c4a-495e-997c-804f2d304826",
+          "id": "3f43a545-7e2b-40c0-9ba5-c14565a7b513",
           "name": "The latest 200 stock movements",
           "request": {
             "name": "The latest 200 stock movements",
@@ -12649,7 +12649,7 @@
           }
         },
         {
-          "id": "e2d51b70-5709-4495-8676-4f9202efc5bb",
+          "id": "a134c35e-0f25-42bf-8ae6-1aeb5eba4989",
           "name": "Receive, issue, adjust or transfer stock",
           "request": {
             "name": "Receive, issue, adjust or transfer stock",
@@ -12690,7 +12690,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"receipt\",\n  \"item_id\": \"<integer>\",\n  \"warehouse_id\": \"<integer>\",\n  \"movement_date\": \"<date>\",\n  \"quantity\": \"<number>\",\n  \"to_warehouse_id\": \"<integer>\",\n  \"unit_cost\": \"<number>\",\n  \"offset_account_id\": \"<integer>\",\n  \"reference\": \"<string>\",\n  \"notes\": \"<string>\"\n}",
+              "raw": "{\n  \"type\": \"transfer\",\n  \"item_id\": \"<integer>\",\n  \"warehouse_id\": \"<integer>\",\n  \"movement_date\": \"<date>\",\n  \"quantity\": \"<number>\",\n  \"to_warehouse_id\": \"<integer>\",\n  \"unit_cost\": \"<number>\",\n  \"offset_account_id\": \"<integer>\",\n  \"reference\": \"<string>\",\n  \"notes\": \"<string>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -12712,7 +12712,7 @@
       "description": "",
       "item": [
         {
-          "id": "a94e8085-ac0e-47e4-8143-45a8cf96a2e8",
+          "id": "913b73bd-4c37-4b62-a351-241ecb3d0dcb",
           "name": "Payroll runs, newest first",
           "request": {
             "name": "Payroll runs, newest first",
@@ -12755,7 +12755,7 @@
           }
         },
         {
-          "id": "65c5920b-fd11-494d-bba5-68b75b107bc0",
+          "id": "8a9f6e35-b45d-4d05-bc82-c3e1a03edf5a",
           "name": "Start a payroll run for a month",
           "request": {
             "name": "Start a payroll run for a month",
@@ -12812,7 +12812,7 @@
           }
         },
         {
-          "id": "24ebfa90-d4af-40fd-9d0e-688fd09bdd88",
+          "id": "3933cc6d-03ef-4600-8a1a-412fc7966e7f",
           "name": "A run with its payslips and their lines",
           "request": {
             "name": "A run with its payslips and their lines",
@@ -12868,7 +12868,7 @@
           }
         },
         {
-          "id": "23beb482-901b-4261-8551-c484f386c29c",
+          "id": "00811c59-11ea-4620-be09-7e6b8c502a4f",
           "name": "Delete a draft run",
           "request": {
             "name": "Delete a draft run",
@@ -12924,7 +12924,7 @@
           }
         },
         {
-          "id": "0100d1aa-8a31-4841-806b-82b098c8609f",
+          "id": "662f6cd2-913c-462e-81df-db343d209bff",
           "name": "Work the payslips out again (draft runs)",
           "request": {
             "name": "Work the payslips out again (draft runs)",
@@ -12981,7 +12981,7 @@
           }
         },
         {
-          "id": "5ce08693-96d9-4d35-9e4f-76919b7cd355",
+          "id": "f204de80-6d59-4095-9d90-86aa1f0ed7e0",
           "name": "Post the run to the books",
           "request": {
             "name": "Post the run to the books",
@@ -13051,7 +13051,7 @@
           }
         },
         {
-          "id": "dc62e636-0748-4009-8a39-73eb2d3e1967",
+          "id": "61cb2567-b951-4910-84d1-13c4a1216d88",
           "name": "Pay the net salaries",
           "request": {
             "name": "Pay the net salaries",
@@ -13121,7 +13121,7 @@
           }
         },
         {
-          "id": "18712630-85e9-4310-b5b4-2f664601e3df",
+          "id": "07c85491-09f1-43c9-a2ac-a587df3dc282",
           "name": "Void a posted or paid run",
           "request": {
             "name": "Void a posted or paid run",
@@ -13178,7 +13178,7 @@
           }
         },
         {
-          "id": "8f7bc673-69d2-4453-80e1-f44dec0956eb",
+          "id": "61b80ad2-ff8d-4770-b2b6-06fd17af8b95",
           "name": "One payslip",
           "request": {
             "name": "One payslip",
@@ -13246,7 +13246,7 @@
           }
         },
         {
-          "id": "ac53163c-e58a-4880-a69a-28e455560d08",
+          "id": "a64d2503-6e1c-42ef-ae6c-b5a986904f6e",
           "name": "Employees",
           "request": {
             "name": "Employees",
@@ -13290,7 +13290,7 @@
           }
         },
         {
-          "id": "16868535-a971-44cb-a396-c9a130b73b48",
+          "id": "a3bf9c76-5aa1-4720-bc64-a04080ac5f24",
           "name": "Add an employee",
           "request": {
             "name": "Add an employee",
@@ -13347,7 +13347,7 @@
           }
         },
         {
-          "id": "06041a17-2a55-4be2-879c-f3f1990ad7e4",
+          "id": "db641074-47d1-4409-90c9-cbe581b6dc12",
           "name": "An employee with their allowances and deductions",
           "request": {
             "name": "An employee with their allowances and deductions",
@@ -13403,7 +13403,7 @@
           }
         },
         {
-          "id": "07cde3e1-0c91-48bf-a38c-b7db43233558",
+          "id": "30816f87-9438-44f0-a7a7-dd68a51c113c",
           "name": "Change an employee (PATCH also accepted)",
           "request": {
             "name": "Change an employee (PATCH also accepted)",
@@ -13472,7 +13472,7 @@
           }
         },
         {
-          "id": "fa36b9fa-0821-4965-b4a5-e031743e8998",
+          "id": "156961d4-fec3-4a40-b9b3-1f5b508b89b9",
           "name": "Delete an employee without payslips",
           "request": {
             "name": "Delete an employee without payslips",
@@ -13528,7 +13528,7 @@
           }
         },
         {
-          "id": "a04ae6ef-f7e3-4360-ba9b-34d452560d4f",
+          "id": "a50bc92f-a133-4646-8b27-c808e3a2ef01",
           "name": "Allowances and deductions",
           "request": {
             "name": "Allowances and deductions",
@@ -13572,7 +13572,7 @@
           }
         },
         {
-          "id": "c40a7c62-6b23-451f-9061-a75aa79f7afc",
+          "id": "bf091387-19bc-4f3f-837a-aae713529a52",
           "name": "Add an allowance or deduction",
           "request": {
             "name": "Add an allowance or deduction",
@@ -13613,7 +13613,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"earning\",\n  \"method\": \"fixed\",\n  \"value\": \"<number>\",\n  \"account_id\": \"<integer>\",\n  \"taxable\": \"<boolean>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"earning\",\n  \"method\": \"percent_of_basic\",\n  \"value\": \"<number>\",\n  \"account_id\": \"<integer>\",\n  \"taxable\": \"<boolean>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -13629,7 +13629,7 @@
           }
         },
         {
-          "id": "44705919-6f76-48e1-9e82-12d9d41010df",
+          "id": "6a5fbde7-e52b-4272-91bd-67f2448177fe",
           "name": "Change a component (PATCH also accepted)",
           "request": {
             "name": "Change a component (PATCH also accepted)",
@@ -13682,7 +13682,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"earning\",\n  \"method\": \"fixed\",\n  \"value\": \"<number>\",\n  \"account_id\": \"<integer>\",\n  \"taxable\": \"<boolean>\",\n  \"is_active\": \"<boolean>\"\n}",
+              "raw": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"kind\": \"earning\",\n  \"method\": \"percent_of_basic\",\n  \"value\": \"<number>\",\n  \"account_id\": \"<integer>\",\n  \"taxable\": \"<boolean>\",\n  \"is_active\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -13698,7 +13698,7 @@
           }
         },
         {
-          "id": "6c8fd205-1424-4a8b-af2d-a6a2b5cf5028",
+          "id": "a2ebaee3-f8e0-4421-a05b-96afc05492d2",
           "name": "Delete a component that is not in use",
           "request": {
             "name": "Delete a component that is not in use",
@@ -13756,11 +13756,127 @@
       ]
     },
     {
+      "name": "FBR",
+      "description": "",
+      "item": [
+        {
+          "id": "067e860b-5d4a-44b9-a401-2916aea40eb3",
+          "name": "Posted sales invoices and credit notes with their FBR status",
+          "request": {
+            "name": "Posted sales invoices and credit notes with their FBR status",
+            "description": {
+              "content": "Permission: `fbr.view`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "fbr"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": " (This can only be one of none,pending,accepted,failed)",
+                    "type": "text/plain"
+                  },
+                  "key": "status",
+                  "value": "none"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "cb25fb8b-8fbd-4726-87e4-388ce380c183",
+          "name": "Send a sales invoice or credit note to FBR (or retry a failed one)",
+          "request": {
+            "name": "Send a sales invoice or credit note to FBR (or retry a failed one)",
+            "description": {
+              "content": "Needs accounting.fbr.enabled. A posted invoice or credit note is sent once: an accepted one is never sent again (422), a failed one can be retried. Mode fake accepts locally; live posts to the configured URL.\n\nPermission: `fbr.submit`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "fbr",
+                "documents",
+                ":id",
+                "submit"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "<integer>",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) ",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": {
+                  "content": "Company code or id (multi-company). Default: your default company. 403 if you have no access, 404 if unknown.",
+                  "type": "text/plain"
+                },
+                "key": "X-Company",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {}
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ]
+    },
+    {
       "name": "Receivables & payables",
       "description": "",
       "item": [
         {
-          "id": "cea4325f-d0a0-4ce5-b3f8-f31123fc940a",
+          "id": "f3c1c836-1b33-44e0-b8df-d3b6deb5bb30",
           "name": "Customers and suppliers",
           "request": {
             "name": "Customers and suppliers",
@@ -13783,7 +13899,7 @@
                     "type": "text/plain"
                   },
                   "key": "type",
-                  "value": "customer"
+                  "value": "both"
                 },
                 {
                   "disabled": false,
@@ -13831,7 +13947,7 @@
           }
         },
         {
-          "id": "9017ed71-40df-4dd8-8485-3637164d3403",
+          "id": "0e55cce8-9531-44be-81b5-5bff61a529d2",
           "name": "Create a customer or supplier",
           "request": {
             "name": "Create a customer or supplier",
@@ -13871,7 +13987,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"supplier\",\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"email\": \"<string,null>\",\n  \"phone\": \"<string,null>\",\n  \"address\": \"<string,null>\",\n  \"tax_number\": \"<string,null>\",\n  \"payment_terms_days\": \"<integer>\",\n  \"credit_limit\": \"<string,null>\",\n  \"receivable_account_id\": \"<integer,null>\",\n  \"payable_account_id\": \"<integer,null>\",\n  \"is_active\": \"<boolean>\",\n  \"notes\": \"<string,null>\"\n}",
+              "raw": "{\n  \"type\": \"both\",\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"email\": \"<string,null>\",\n  \"phone\": \"<string,null>\",\n  \"address\": \"<string,null>\",\n  \"tax_number\": \"<string,null>\",\n  \"payment_terms_days\": \"<integer>\",\n  \"credit_limit\": \"<string,null>\",\n  \"receivable_account_id\": \"<integer,null>\",\n  \"payable_account_id\": \"<integer,null>\",\n  \"is_active\": \"<boolean>\",\n  \"notes\": \"<string,null>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -13887,7 +14003,7 @@
           }
         },
         {
-          "id": "fcda18f0-95bf-43f8-9589-77c8d55909ac",
+          "id": "6d3504cc-5539-4568-a203-25eefbfa57d2",
           "name": "A party with its balance and open items",
           "request": {
             "name": "A party with its balance and open items",
@@ -13961,7 +14077,7 @@
           }
         },
         {
-          "id": "b868d253-42cb-4f92-873b-06c2735c0d16",
+          "id": "fc35f273-0e8c-4641-bf10-3513e5a487f0",
           "name": "Change a party (PATCH also accepted)",
           "request": {
             "name": "Change a party (PATCH also accepted)",
@@ -14013,7 +14129,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"supplier\",\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"email\": \"<string,null>\",\n  \"phone\": \"<string,null>\",\n  \"address\": \"<string,null>\",\n  \"tax_number\": \"<string,null>\",\n  \"payment_terms_days\": \"<integer>\",\n  \"credit_limit\": \"<string,null>\",\n  \"receivable_account_id\": \"<integer,null>\",\n  \"payable_account_id\": \"<integer,null>\",\n  \"is_active\": \"<boolean>\",\n  \"notes\": \"<string,null>\"\n}",
+              "raw": "{\n  \"type\": \"both\",\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"email\": \"<string,null>\",\n  \"phone\": \"<string,null>\",\n  \"address\": \"<string,null>\",\n  \"tax_number\": \"<string,null>\",\n  \"payment_terms_days\": \"<integer>\",\n  \"credit_limit\": \"<string,null>\",\n  \"receivable_account_id\": \"<integer,null>\",\n  \"payable_account_id\": \"<integer,null>\",\n  \"is_active\": \"<boolean>\",\n  \"notes\": \"<string,null>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -14029,7 +14145,7 @@
           }
         },
         {
-          "id": "4784634a-110d-4905-920e-0d153bc2d271",
+          "id": "54ab786e-c132-4302-b567-e35409d95db6",
           "name": "Delete a party without documents or payments",
           "request": {
             "name": "Delete a party without documents or payments",
@@ -14084,7 +14200,7 @@
           }
         },
         {
-          "id": "cae59c76-9851-484c-8d9b-8daf665b9acb",
+          "id": "f2ba22d8-a978-4a82-9ea6-8e4bac003bf3",
           "name": "Statement of account with a running balance",
           "request": {
             "name": "Statement of account with a running balance",
@@ -14168,7 +14284,7 @@
           }
         },
         {
-          "id": "1a2db457-64bd-4d3b-81c1-e7a2cd883a94",
+          "id": "3f9939ad-b5d1-4764-9457-7f1908bd24c5",
           "name": "Invoices, bills, credit and debit notes",
           "request": {
             "name": "Invoices, bills, credit and debit notes",
@@ -14191,7 +14307,7 @@
                     "type": "text/plain"
                   },
                   "key": "kind",
-                  "value": "debit_note"
+                  "value": "invoice"
                 },
                 {
                   "disabled": false,
@@ -14200,7 +14316,7 @@
                     "type": "text/plain"
                   },
                   "key": "status",
-                  "value": "posted"
+                  "value": "void"
                 },
                 {
                   "disabled": false,
@@ -14239,7 +14355,7 @@
           }
         },
         {
-          "id": "69837ed2-abfb-42f8-88b0-dc6e646d3b4f",
+          "id": "8bba727e-d6cb-4af0-9f1c-6f0498d0da15",
           "name": "Create a draft document",
           "request": {
             "name": "Create a draft document",
@@ -14279,7 +14395,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"party_id\": \"<integer>\",\n  \"kind\": \"bill\",\n  \"issue_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"chart_of_account_id\": \"<integer>\",\n      \"unit_price\": \"<number>\",\n      \"description\": \"<string>\",\n      \"quantity\": 1,\n      \"cost_center_id\": \"<integer>\",\n      \"tax_code_id\": \"<integer>\"\n    }\n  ],\n  \"due_date\": \"<date>\",\n  \"reference\": \"<string>\",\n  \"prices_include_tax\": \"<boolean>\",\n  \"notes\": \"<string>\"\n}",
+              "raw": "{\n  \"party_id\": \"<integer>\",\n  \"kind\": \"debit_note\",\n  \"issue_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"chart_of_account_id\": \"<integer>\",\n      \"unit_price\": \"<number>\",\n      \"description\": \"<string>\",\n      \"quantity\": 1,\n      \"cost_center_id\": \"<integer>\",\n      \"tax_code_id\": \"<integer>\"\n    }\n  ],\n  \"due_date\": \"<date>\",\n  \"reference\": \"<string>\",\n  \"prices_include_tax\": \"<boolean>\",\n  \"notes\": \"<string>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -14295,7 +14411,7 @@
           }
         },
         {
-          "id": "e7f33635-60d7-47e6-86f4-7d4a4e8a9219",
+          "id": "d4394ec2-6664-4647-929e-4d8ccaeec5a2",
           "name": "A document with its lines",
           "request": {
             "name": "A document with its lines",
@@ -14350,7 +14466,7 @@
           }
         },
         {
-          "id": "d32f7042-968f-4dca-bf01-e638c612888b",
+          "id": "567d1c17-b2d0-4802-ad91-ce0657214719",
           "name": "Change a draft (PATCH also accepted)",
           "request": {
             "name": "Change a draft (PATCH also accepted)",
@@ -14402,7 +14518,7 @@
             "method": "PUT",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"party_id\": \"<integer>\",\n  \"kind\": \"bill\",\n  \"issue_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"chart_of_account_id\": \"<integer>\",\n      \"unit_price\": \"<number>\",\n      \"description\": \"<string>\",\n      \"quantity\": 1,\n      \"cost_center_id\": \"<integer>\",\n      \"tax_code_id\": \"<integer>\"\n    }\n  ],\n  \"due_date\": \"<date>\",\n  \"reference\": \"<string>\",\n  \"prices_include_tax\": \"<boolean>\",\n  \"notes\": \"<string>\"\n}",
+              "raw": "{\n  \"party_id\": \"<integer>\",\n  \"kind\": \"debit_note\",\n  \"issue_date\": \"<date>\",\n  \"lines\": [\n    {\n      \"chart_of_account_id\": \"<integer>\",\n      \"unit_price\": \"<number>\",\n      \"description\": \"<string>\",\n      \"quantity\": 1,\n      \"cost_center_id\": \"<integer>\",\n      \"tax_code_id\": \"<integer>\"\n    }\n  ],\n  \"due_date\": \"<date>\",\n  \"reference\": \"<string>\",\n  \"prices_include_tax\": \"<boolean>\",\n  \"notes\": \"<string>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -14418,7 +14534,7 @@
           }
         },
         {
-          "id": "3e138ded-c08f-435d-8434-040ee2103690",
+          "id": "29d74851-4f47-4055-9017-a31214dc4c46",
           "name": "Delete a draft",
           "request": {
             "name": "Delete a draft",
@@ -14473,7 +14589,7 @@
           }
         },
         {
-          "id": "dbcdaf4d-8bbc-4b27-a6b2-442a96787173",
+          "id": "c893ae8e-5eb4-4b56-b8c8-a53e9118ad5a",
           "name": "Number and post a draft",
           "request": {
             "name": "Number and post a draft",
@@ -14529,7 +14645,7 @@
           }
         },
         {
-          "id": "1b99a97a-82e0-4a09-b43f-243d97265438",
+          "id": "e7ff688f-4a14-40d4-b347-4cbe85623039",
           "name": "Void a posted document (its entry is reversed)",
           "request": {
             "name": "Void a posted document (its entry is reversed)",
@@ -14585,7 +14701,7 @@
           }
         },
         {
-          "id": "f164ef2a-40c3-40c4-8e98-bdf245ebac11",
+          "id": "2ae74095-4e80-4923-9031-7622e99c6e1d",
           "name": "Apply a credit or debit note to invoices or bills",
           "request": {
             "name": "Apply a credit or debit note to invoices or bills",
@@ -14654,7 +14770,7 @@
           }
         },
         {
-          "id": "8152ad47-cd30-4532-81eb-ed53d044db73",
+          "id": "9107f589-2d41-4a34-abc5-e1226ccdbe3d",
           "name": "Undo an allocation",
           "request": {
             "name": "Undo an allocation",
@@ -14709,7 +14825,7 @@
           }
         },
         {
-          "id": "5ebcc2f9-dc90-499f-bef7-b81989a8ae3c",
+          "id": "c7740f06-c5e9-4399-9e5d-63d055845505",
           "name": "Receipts and payments",
           "request": {
             "name": "Receipts and payments",
@@ -14771,7 +14887,7 @@
           }
         },
         {
-          "id": "a9ddfdd3-f294-435c-a9a7-c39ec60aabb2",
+          "id": "23052ddb-479e-4061-87b4-d49eba1ba282",
           "name": "Record a receipt from a customer or a payment to a supplier",
           "request": {
             "name": "Record a receipt from a customer or a payment to a supplier",
@@ -14811,7 +14927,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"party_id\": \"<integer>\",\n  \"kind\": \"receipt\",\n  \"payment_date\": \"<date>\",\n  \"amount\": \"<number>\",\n  \"account_id\": \"<integer>\",\n  \"method\": \"<string>\",\n  \"reference\": \"<string>\",\n  \"notes\": \"<string>\",\n  \"allocations\": [\n    {\n      \"document_id\": \"<integer>\",\n      \"amount\": \"<number>\"\n    },\n    {\n      \"document_id\": \"<integer>\",\n      \"amount\": \"<number>\"\n    }\n  ],\n  \"auto_allocate\": \"<boolean>\"\n}",
+              "raw": "{\n  \"party_id\": \"<integer>\",\n  \"kind\": \"payment\",\n  \"payment_date\": \"<date>\",\n  \"amount\": \"<number>\",\n  \"account_id\": \"<integer>\",\n  \"method\": \"<string>\",\n  \"reference\": \"<string>\",\n  \"notes\": \"<string>\",\n  \"allocations\": [\n    {\n      \"document_id\": \"<integer>\",\n      \"amount\": \"<number>\"\n    },\n    {\n      \"document_id\": \"<integer>\",\n      \"amount\": \"<number>\"\n    }\n  ],\n  \"auto_allocate\": \"<boolean>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -14827,7 +14943,7 @@
           }
         },
         {
-          "id": "72f38856-3ad7-40c9-a831-7b9c34343b0c",
+          "id": "c981775a-d9f6-4f65-8954-0458713ce91e",
           "name": "A payment with its allocations",
           "request": {
             "name": "A payment with its allocations",
@@ -14882,7 +14998,7 @@
           }
         },
         {
-          "id": "aa392292-3816-4801-94b0-c85f4d4e52ba",
+          "id": "6b649eb4-3cb4-46c8-9b2c-7e56edc9120a",
           "name": "Allocate (more of) a payment to documents",
           "request": {
             "name": "Allocate (more of) a payment to documents",
@@ -14951,7 +15067,7 @@
           }
         },
         {
-          "id": "8047ab56-f588-4686-bcd8-1b879aa42d60",
+          "id": "6bbc192d-ca0a-4b52-b5de-8f0ca5c202a3",
           "name": "Void a payment (entry reversed, allocations released)",
           "request": {
             "name": "Void a payment (entry reversed, allocations released)",
@@ -15007,7 +15123,7 @@
           }
         },
         {
-          "id": "eb78dd04-3b9e-4594-8ab0-bff174701f1f",
+          "id": "24b4dad8-cc51-481f-8af6-0a9c6130f176",
           "name": "Ageing by customer or supplier, checked against the control account",
           "request": {
             "name": "Ageing by customer or supplier, checked against the control account",
@@ -15070,7 +15186,7 @@
           }
         },
         {
-          "id": "aa2d1ed8-6787-4eb1-9729-a9f491e2f89d",
+          "id": "52f6a59c-5cbd-4be9-aaed-d059d0deb74c",
           "name": "Export the ageing",
           "request": {
             "name": "Export the ageing",

@@ -2,6 +2,20 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.25.0] - 2026-10-27
+
+FBR invoicing release.
+
+### Added
+- **FBR digital invoices**: posted sales invoices and credit notes are turned into the digital-invoice payload and sent through a
+  gateway; the invoice number FBR returns is kept, an accepted invoice is never sent twice, a refused one keeps the reason and can
+  be retried, and every attempt stores what was sent and received.
+- Gateways: `fake` (accepts locally, the default), `live` (JSON with a bearer token to a configured URL) and your own
+  `FbrGateway`; optional `auto_submit` on a queue when an invoice is posted. Not yet exercised against FBR's own service: test
+  in their sandbox before relying on it.
+- FBR screen (React and Blade), API (`/fbr`, `/fbr/documents/{id}/submit`), permissions `fbr.view/submit`, config
+  `accounting.fbr`, OpenAPI and Postman.
+
 ## [2.24.0] - 2026-10-26
 
 Payroll release.
