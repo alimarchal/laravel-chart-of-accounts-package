@@ -488,6 +488,13 @@ Tax codes) drive a tax ledger and tax returns.
 Permissions `tax-returns.view` (accountant, approver, auditor, viewer), `tax-returns.file` and `tax-entries.create`
 (accountant); the calculator needs `tax-codes.view`.
 
+## Dashboard
+
+`/accounting/overview` (and `GET /api/v1/accounting/dashboard?as_of=&months=`) shows what an accountant opens the system for:
+cash and bank, receivables and payables with ageing, income vs expense by month, top expenses, recent entries and a list of things
+needing attention, each linking to the page that deals with it. Sections are filtered by the user's permissions. The existing
+`/accounting` page remains the module hub.
+
 ## Budgets
 
 Dashboard → **Budgets** (React and Blade) or `/api/v1/accounting/budgets`. A budget plans income and expenses by

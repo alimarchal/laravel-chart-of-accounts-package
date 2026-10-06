@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.20.0
+  version: 2.21.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -1718,6 +1718,99 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
+      - $ref: '#/components/parameters/Company'
+  /dashboard:
+    get:
+      tags:
+      - System
+      summary: Dashboard overview
+      operationId: dashboard
+      description: 'Each section appears only if the caller holds the permission it needs; otherwise it is null.
+
+
+        Permission: `accounting.view`.'
+      responses:
+        '200':
+          description: KPIs, trend, ageing, alerts and recent entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      as_of:
+                        type: string
+                        format: date
+                      months:
+                        type: integer
+                      performance:
+                        type: object
+                        nullable: true
+                        description: this_month / last_month / year_to_date {income, expense, net}, trend by month, top_expenses.
+                          Needs reports.income-statement.view.
+                      cash:
+                        type: object
+                        nullable: true
+                        description: Bank-account balances. Needs reports.balance-sheet.view.
+                      receivables:
+                        type: object
+                        nullable: true
+                        description: total, overdue, ageing buckets, top parties, ledger vs sub-ledger difference. Needs parties.view.
+                      payables:
+                        type: object
+                        nullable: true
+                      alerts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            level:
+                              type: string
+                              enum:
+                              - critical
+                              - warning
+                              - info
+                            count:
+                              type: integer
+                            label:
+                              type: string
+                            amount:
+                              type: string
+                              nullable: true
+                      recent_entries:
+                        type: array
+                        nullable: true
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+        description: Default today.
+      - name: months
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 24
+          default: 6
+        description: Months in the income/expense trend.
       - $ref: '#/components/parameters/Company'
   /health:
     get:

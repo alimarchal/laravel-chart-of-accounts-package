@@ -1,5 +1,6 @@
 <?php
 
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingOverviewController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountBalanceSnapshotApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingPeriodApiController;
@@ -87,6 +88,10 @@ Route::middleware($apiMiddleware)
         Route::post('periods/{period}/close-fiscal-year', [AccountingApiController::class, 'closeFiscalYear'])
             ->name('periods.close-fiscal-year')
             ->middleware('can:periods.close');
+
+        Route::get('dashboard', AccountingOverviewController::class)
+            ->name('dashboard')
+            ->middleware('can:accounting.view');
 
         Route::get('health', [AccountingApiController::class, 'health'])
             ->name('health')

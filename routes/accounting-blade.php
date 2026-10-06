@@ -4,6 +4,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountBalanceSnapshotBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingDashboardBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingOverviewBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingPeriodBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountTypeBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AuditLogBladeController;
@@ -81,6 +82,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardBladeController::class)
             ->name('dashboard')
+            ->middleware('can:accounting.view');
+        Route::get('overview', AccountingOverviewBladeController::class)
+            ->name('overview')
             ->middleware('can:accounting.view');
         Route::post('company/switch', CompanySwitchController::class)
             ->name('company.switch')
