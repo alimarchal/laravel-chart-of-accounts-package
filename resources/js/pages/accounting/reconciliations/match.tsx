@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Candidate = {
     id: number;
@@ -27,6 +28,7 @@ export default function ReconciliationMatch({
     reconciliation,
     candidates,
 }: Props) {
+    useAccountingI18n();
     const form = useForm<{ line_ids: number[] }>({ line_ids: [] });
 
     const toggle = (id: number, checked: boolean) => {

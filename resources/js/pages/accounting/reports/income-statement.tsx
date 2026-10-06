@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import { Fragment } from 'react';
 import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type StatementRow = {
     account_code: string;
@@ -27,6 +28,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function IncomeStatement({ rows }: { rows: StatementRow[] }) {
+    useAccountingI18n();
     const grouped = rows.reduce<Record<string, StatementRow[]>>(
         (carry, row) => {
             carry[row.account_type] = [...(carry[row.account_type] ?? []), row];

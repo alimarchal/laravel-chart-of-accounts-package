@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { useAccountingI18n } from '@/lib/i18n';
 
 export type CompanySummary = { id: number; code: string; name: string };
 
@@ -18,6 +19,7 @@ export type AccountingShared = {
 };
 
 export function useAccounting(): AccountingShared {
+    useAccountingI18n();
     const props = usePage().props as { accounting?: Partial<AccountingShared> };
 
     return {

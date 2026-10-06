@@ -14,6 +14,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 import {
     Select,
     SelectContent,
@@ -49,6 +50,7 @@ export default function AccountingResourceForm({
     method,
     action,
 }: Props) {
+    useAccountingI18n();
     const initialData = Object.fromEntries(
         fields.map((field) => {
             const value = record?.[field.name];

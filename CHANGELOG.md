@@ -2,6 +2,18 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.27.0] - 2026-10-29
+
+Urdu release.
+
+### Added
+- **Urdu (اردو) and right-to-left screens** for the React and Blade UIs: a language switcher, `?lang=` and `ACCOUNTING_LOCALE`, a
+  dictionary of about 500 phrases (`resources/lang/ur.json`) covering module names, buttons, statuses, table headings and
+  reports, phrase-by-phrase translation (so any screen follows without being rewritten), `lang`/`dir` on the page, a right-to-left stylesheet
+  (alignment, spacing, an Urdu font stack, the starter kit's sidebar on the right). Applications can add or change phrases in their
+  own `lang/ur.json`, and add more languages through `accounting.locales`.
+- The API, PDFs and exports are not translated. The Urdu wording has not been reviewed by an accountant.
+
 ## [2.26.0] - 2026-10-28
 
 Performance release.

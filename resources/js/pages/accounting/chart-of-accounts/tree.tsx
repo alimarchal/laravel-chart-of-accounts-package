@@ -1,4 +1,5 @@
 import { Head } from '@inertiajs/react';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type AccountNode = {
     id: number;
@@ -39,6 +40,7 @@ export default function ChartOfAccountsTree({
 }: {
     roots: AccountNode[];
 }) {
+    useAccountingI18n();
     return (
         <>
             <Head title="COA Tree" />

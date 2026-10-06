@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { BreadcrumbItem } from '@/types';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type AgedRow = {
     account_code: string;
@@ -31,6 +32,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function AgedPayables({ rows }: { rows: AgedRow[] }) {
+    useAccountingI18n();
     return (
         <>
             <Head title="Aged Payables" />

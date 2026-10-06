@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BreadcrumbItem } from '@/types';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type CashFlowRow = {
     entry_date: string;
@@ -40,6 +41,7 @@ export default function CashFlow({
     totals: { cash_in: string; cash_out: string; net_cash_flow: string };
     filters: Record<string, string>;
 }) {
+    useAccountingI18n();
     const rows = page.data;
     const [dateFrom, setDateFrom] = useState(filters.date_from ?? '');
     const [dateTo, setDateTo] = useState(filters.date_to ?? '');

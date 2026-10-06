@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type Props = {
     run: { id: number; period_month: string; status: string };
@@ -12,6 +13,7 @@ type Props = {
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
 export default function Payslip({ run, employee, payslip }: Props) {
+    useAccountingI18n();
     const earnings = payslip.lines.filter((line) => ['basic', 'earning'].includes(line.kind));
     const deductions = payslip.lines.filter((line) => ['deduction', 'tax'].includes(line.kind));
 

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { BreadcrumbItem } from '@/types';
+import { useAccountingI18n } from '@/lib/i18n';
 
 type TrialBalanceRow = {
     account_code: string;
@@ -35,6 +36,7 @@ export default function TrialBalance({
     rows: TrialBalanceRow[];
     totals: Record<string, number>;
 }) {
+    useAccountingI18n();
     return (
         <>
             <Head title="Trial Balance" />

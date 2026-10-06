@@ -488,6 +488,27 @@ Tax codes) drive a tax ledger and tax returns.
 Permissions `tax-returns.view` (accountant, approver, auditor, viewer), `tax-returns.file` and `tax-entries.create`
 (accountant); the calculator needs `tax-codes.view`.
 
+## Urdu and right-to-left
+
+The screens can be shown in **Urdu** (اردو), right to left. A language switcher appears on every screen (a selector in the company bar
+in Blade, a small selector in the corner in React); the choice is kept for the session, and `?lang=ur` selects it directly.
+`ACCOUNTING_LOCALE=ur` makes Urdu the default.
+
+- **How it works:** phrases are translated one by one: any visible text, placeholder, title or aria-label that equals a key of
+  `resources/lang/ur.json` exactly is replaced (Blade pages on the server, React pages in the browser). A phrase that is not in the
+  dictionary, or has a name or number inside it, stays in English. About 500 phrases are included: the module names, buttons,
+  statuses, table headings and report names used across the screens.
+- **Your own wording:** put a `lang/ur.json` in your application with the phrases you want to add or change; it wins over the
+  package's. `php artisan vendor:publish --tag=accounting-lang` copies the package dictionary as a starting point. More languages:
+  add them to `accounting.locales` (and `rtl_locales` if they run right to left) with their own `lang/<code>.json`.
+- **Direction:** `lang` and `dir="rtl"` are set on the page, with a small stylesheet that flips alignment and spacing, uses an Urdu-capable
+  font stack and moves the starter kit's sidebar to the right. Numbers, dates and amounts keep Western digits, as accounts are
+  usually kept.
+- **Not translated:** the API (its messages stay as they are for integrations), the PDFs and Excel exports, Livewire updates after the
+  first render, texts that include data (for example "Last 6 months, closing entries excluded"), and the host application's own
+  menus. The Urdu terms were written without review by an accountant: have yours check them and override what they would say
+  differently.
+
 ## Dashboard
 
 `/accounting/overview` (and `GET /api/v1/accounting/dashboard?as_of=&months=`) shows what an accountant opens the system for:

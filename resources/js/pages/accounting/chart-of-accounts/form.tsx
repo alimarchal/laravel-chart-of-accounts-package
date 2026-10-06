@@ -15,6 +15,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccountingI18n } from '@/lib/i18n';
 import {
     Select,
     SelectContent,
@@ -65,6 +66,7 @@ export default function ChartOfAccountForm({
     currencies,
     parents,
 }: Props) {
+    useAccountingI18n();
     const parentOptions = [
         { value: 'none', label: 'No parent' },
         ...parents.map((parent) => ({
