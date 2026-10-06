@@ -49,6 +49,7 @@ export default function AccountingDashboard({ summary }: Props) {
             href: '/accounting/currencies',
             icon: WalletCards,
         },
+        { title: 'Overview (KPIs & charts)', href: '/accounting/overview', icon: BarChart3 },
         { title: 'Periods', href: '/accounting/periods', icon: CalendarDays },
         {
             title: 'Cost Centers',

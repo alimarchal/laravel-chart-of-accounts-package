@@ -6,6 +6,7 @@
     <div class="py-6 bg-[#F2F1F5] min-h-full">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-accounting::status-message class="mb-4" />
+            <a href="{{ route('accounting.overview') }}" class="mb-4 flex items-center justify-between rounded-2xl bg-white px-5 py-3 shadow hover:shadow-md transition"><span class="font-medium text-gray-800">Overview — cash, receivables, payables, income vs expense and what needs attention</span><span class="text-sm text-indigo-700">Open &rarr;</span></a>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 

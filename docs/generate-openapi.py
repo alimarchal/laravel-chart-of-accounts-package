@@ -172,6 +172,7 @@ paths["/periods/generate-monthly"] = {"post": op("Periods", "Create twelve month
     body={"type": "object", "required": ["start_date"], "properties": {"start_date": {"type": "string", "format": "date", "description": "First day of the fiscal year."}}},
     desc="Refused (422) if any month overlaps an existing period.", opid="generate_monthly_periods")}
 paths["/periods/{id}/close-fiscal-year"] = {"parameters": [ID], "post": op("Periods", "Year-end close", "periods.close", {"200": resp("Closed period with its closing entry", data(ref("Period"))), **E404_422}, desc="Posts a closing entry moving income-statement balances to retained earnings, then closes the period.", opid="close_fiscal_year")}
+paths["/dashboard"] = {"get": op("System", "Dashboard overview", "accounting.view", {"200": resp("KPIs, trend, ageing, alerts and recent entries", data({"type": "object", "properties": {"as_of": {"type": "string", "format": "date"}, "months": {"type": "integer"}, "performance": {"type": "object", "nullable": True, "description": "this_month / last_month / year_to_date {income, expense, net}, trend by month, top_expenses. Needs reports.income-statement.view."}, "cash": {"type": "object", "nullable": True, "description": "Bank-account balances. Needs reports.balance-sheet.view."}, "receivables": {"type": "object", "nullable": True, "description": "total, overdue, ageing buckets, top parties, ledger vs sub-ledger difference. Needs parties.view."}, "payables": {"type": "object", "nullable": True}, "alerts": {"type": "array", "items": {"type": "object", "properties": {"key": {"type": "string"}, "level": {"type": "string", "enum": ["critical", "warning", "info"]}, "count": {"type": "integer"}, "label": {"type": "string"}, "amount": {"type": "string", "nullable": True}}}}, "recent_entries": {"type": "array", "nullable": True, "items": {"type": "object"}}}})), **E, "422": {"$ref": "#/components/responses/UnprocessableEntity"}}, params=[{"name": "as_of", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Default today."}, {"name": "months", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 24, "default": 6}, "description": "Months in the income/expense trend."}], desc="Each section appears only if the caller holds the permission it needs; otherwise it is null.", opid="dashboard")}
 paths["/health"] = {"get": op("System", "Installation health", "accounting.view", {"200": resp("Healthy", ref("Health")), "503": resp("Unhealthy", ref("Health")), **E}, opid="health")}
 
 paths["/chart-of-accounts"] = {
@@ -687,7 +688,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.20.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.21.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

@@ -2,6 +2,20 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.21.0] - 2026-10-23
+
+Accounting dashboard release.
+
+### Added
+- **Overview page** (`/accounting/overview`, React and Blade) and `GET /dashboard` API: cash and bank balances, receivable and
+  payable totals with overdue amounts and ageing bars, income and expense for this month, last month and the year so far, a
+  monthly trend chart (closing entries left out, table view available), top expenses, recent journal entries, and a
+  "needs attention" list (entries awaiting approval, drafts, overdue invoices, unmatched bank lines, accounts over or near budget,
+  tax not yet filed) with links to the page that deals with each.
+- Each section is shown only to users holding the permission for it (`reports.income-statement.view`, `reports.balance-sheet.view`,
+  `parties.view`, `journal-entries.view`, `bank-statements.view`, `budgets.view`, `tax-returns.view`); the rest is `null` in the API.
+- `DashboardService::overview($user, $asOf, $months)` for use in your own pages.
+
 ## [2.20.0] - 2026-10-22
 
 Receivables and payables release.
