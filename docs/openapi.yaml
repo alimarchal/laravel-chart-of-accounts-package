@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.22.0
+  version: 2.23.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -7877,6 +7877,514 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Company'
+  /inventory:
+    get:
+      tags:
+      - Inventory
+      summary: Stock valuation at a date
+      operationId: stock_valuation
+      description: 'Permission: `inventory.view`.'
+      responses:
+        '200':
+          description: Items with quantity, average cost and value per warehouse, totals and the ledger-against-stock difference
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: warehouse_id
+        in: query
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+  /inventory/export/{format}:
+    parameters:
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+        - pdf
+    get:
+      tags:
+      - Inventory
+      summary: Export the stock valuation
+      operationId: export_stock_valuation
+      description: 'Permission: `inventory.view`.'
+      responses:
+        '200':
+          description: The file
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /inventory/items:
+    post:
+      tags:
+      - Inventory
+      summary: Create an item
+      operationId: create_inventory_item
+      description: 'Permission: `inventory.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InventoryItem'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - sku
+              - name
+              - inventory_account_id
+              - cogs_account_id
+              properties:
+                sku:
+                  type: string
+                name:
+                  type: string
+                unit:
+                  type: string
+                category:
+                  type: string
+                  nullable: true
+                reorder_level:
+                  type: number
+                inventory_account_id:
+                  type: integer
+                cogs_account_id:
+                  type: integer
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /inventory/items/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Inventory
+      summary: An item with its stock card
+      operationId: get_inventory_item
+      description: 'Permission: `inventory.view`.'
+      responses:
+        '200':
+          description: Item and card
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      item:
+                        $ref: '#/components/schemas/InventoryItem'
+                      card:
+                        type: array
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Inventory
+      summary: Change an item (PATCH also accepted)
+      operationId: update_inventory_item
+      description: 'The accounts cannot change once the item has stock movements.
+
+
+        Permission: `inventory.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InventoryItem'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku:
+                  type: string
+                name:
+                  type: string
+                unit:
+                  type: string
+                category:
+                  type: string
+                  nullable: true
+                reorder_level:
+                  type: number
+                inventory_account_id:
+                  type: integer
+                cogs_account_id:
+                  type: integer
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Inventory
+      summary: Delete an item without movements
+      operationId: delete_inventory_item
+      description: 'Permission: `inventory.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /inventory/warehouses:
+    get:
+      tags:
+      - Inventory
+      summary: Warehouses
+      operationId: list_warehouses
+      description: 'Permission: `inventory.view`.'
+      responses:
+        '200':
+          description: Warehouses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Warehouse'
+                required:
+                - data
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Inventory
+      summary: Add a warehouse
+      operationId: create_warehouse
+      description: 'Permission: `inventory.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Warehouse'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                address:
+                  type: string
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /inventory/warehouses/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    put:
+      tags:
+      - Inventory
+      summary: Change a warehouse (PATCH also accepted)
+      operationId: update_warehouse
+      description: 'Permission: `inventory.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Warehouse'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                address:
+                  type: string
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Inventory
+      summary: Delete a warehouse without movements
+      operationId: delete_warehouse
+      description: 'Permission: `inventory.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /inventory/movements:
+    get:
+      tags:
+      - Inventory
+      summary: The latest 200 stock movements
+      operationId: list_stock_movements
+      description: 'Permission: `inventory.view`.'
+      responses:
+        '200':
+          description: Movements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: item_id
+        in: query
+        schema:
+          type: integer
+      - name: warehouse_id
+        in: query
+        schema:
+          type: integer
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum:
+          - receipt
+          - issue
+          - adjustment
+          - transfer_in
+          - transfer_out
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Inventory
+      summary: Receive, issue, adjust or transfer stock
+      operationId: move_stock
+      description: 'Booked with its journal entry in one transaction (not for transfers). Stock never goes negative, in total
+        or in a warehouse; issues leave at the moving average cost.
+
+
+        Permission: `inventory.move`.'
+      responses:
+        '201':
+          description: The movement(s); a transfer returns the out and in lines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - type
+              - item_id
+              - warehouse_id
+              - movement_date
+              - quantity
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - receipt
+                  - issue
+                  - adjustment
+                  - transfer
+                item_id:
+                  type: integer
+                warehouse_id:
+                  type: integer
+                to_warehouse_id:
+                  type: integer
+                  description: Transfers.
+                movement_date:
+                  type: string
+                  format: date
+                quantity:
+                  type: number
+                  description: Negative only for an adjustment that removes stock.
+                unit_cost:
+                  type: number
+                  description: Required for a receipt; an adjustment that adds stock defaults to the average cost.
+                offset_account_id:
+                  type: integer
+                  description: 'Receipt: paid from / owed to. Adjustment: gain/loss account. Issue: cost account (default
+                    the item''s).'
+                reference:
+                  type: string
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /tax/calculate:
     post:
       tags:
@@ -11394,6 +11902,46 @@ components:
         disposal_gain_loss:
           type: string
           nullable: true
+    InventoryItem:
+      type: object
+      properties:
+        sku:
+          type: string
+        name:
+          type: string
+        unit:
+          type: string
+        category:
+          type: string
+          nullable: true
+        reorder_level:
+          type: number
+        inventory_account_id:
+          type: integer
+        cogs_account_id:
+          type: integer
+        is_active:
+          type: boolean
+        id:
+          type: integer
+        on_hand_quantity:
+          type: string
+        on_hand_value:
+          type: string
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
     TaxCalculation:
       type: object
       properties:

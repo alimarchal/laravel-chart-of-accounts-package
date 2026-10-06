@@ -495,6 +495,23 @@ cash and bank, receivables and payables with ageing, income vs expense by month,
 needing attention, each linking to the page that deals with it. Sections are filtered by the user's permissions. The existing
 `/accounting` page remains the module hub.
 
+## Inventory
+
+`/accounting/inventory` (and `/api/v1/accounting/inventory`) keeps stock and its value at **moving average cost**: items with the
+inventory and cost-of-goods-sold accounts they post to, warehouses, and a stock ledger of movements.
+
+- **Receive** (quantity, unit cost, the account that paid or owes): debits inventory. **Issue**: leaves at the current average
+  and debits cost of goods sold (or the account you choose); the last unit out takes whatever value is left, so no cent is lost.
+  **Adjust** a count difference: gains come in at the average (or a cost you give), losses go to a gain/loss account.
+  **Transfer** between warehouses moves quantity only.
+- Each movement and its journal entry are made in one transaction (origin `inventory`, so it may post to inventory control
+  accounts); a closed period stops the stock change too. Stock never goes negative, in total or in a warehouse.
+- The valuation report shows quantity, average cost and value per item and warehouse at any date, flags items at or below their
+  reorder level, checks the stock ledger against the inventory accounts, and exports to CSV, Excel and PDF. Each item has a stock
+  card with the running balance.
+- An item's accounts are locked once it has movements; items and warehouses with movements cannot be deleted, only deactivated.
+  Permissions `inventory.view/manage/move`; audited (`INVENTORY_ITEM_*`, `STOCK_*`).
+
 ## Fixed assets
 
 `/accounting/fixed-assets` (and `/api/v1/accounting/fixed-assets`) is the asset register: code, cost, salvage value, useful life,
@@ -1329,6 +1346,9 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `fixed-assets.delete` | ✔ |  | ✔ |  |  |  |
 | `fixed-assets.depreciate` | ✔ |  | ✔ |  |  |  |
 | `fixed-assets.dispose` | ✔ |  | ✔ |  |  |  |
+| `inventory.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `inventory.manage` | ✔ |  | ✔ |  |  |  |
+| `inventory.move` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `bank-statements.import` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.match` | ✔ |  | ✔ |  |  |  |
