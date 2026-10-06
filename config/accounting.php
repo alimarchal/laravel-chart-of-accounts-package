@@ -119,6 +119,25 @@ return [
         'gain_loss_account' => env('ACCOUNTING_FX_GAIN_LOSS_ACCOUNT'),
     ],
 
+    // Payroll: the accounts (by code) salaries are booked to — basic pay to salary_expense_account, income tax
+    // withheld to income_tax_account, and the net pay owed to employees to net_payable_account — and the annual
+    // income tax slabs used for employees flagged "withhold tax": tax = fixed + (income - from) × rate%, taken from the
+    // last slab whose "from" is below the annual taxable income. The defaults are illustrative salaried-individual
+    // slabs for Pakistan; check them against the current rules and replace them with your own.
+    'payroll' => [
+        'salary_expense_account' => env('ACCOUNTING_PAYROLL_SALARY_EXPENSE', '5101'),
+        'income_tax_account' => env('ACCOUNTING_PAYROLL_INCOME_TAX', '2104'),
+        'net_payable_account' => env('ACCOUNTING_PAYROLL_NET_PAYABLE', '2103'),
+        'tax_slabs' => [
+            ['from' => 0, 'rate' => 0, 'fixed' => 0],
+            ['from' => 600000, 'rate' => 1, 'fixed' => 0],
+            ['from' => 1200000, 'rate' => 11, 'fixed' => 6000],
+            ['from' => 2200000, 'rate' => 23, 'fixed' => 116000],
+            ['from' => 3200000, 'rate' => 30, 'fixed' => 346000],
+            ['from' => 4100000, 'rate' => 35, 'fixed' => 616000],
+        ],
+    ],
+
     // Budgets: control = block refuses a posting that takes a budgeted expense account past its cumulative budget in
     // the approved budget covering the entry date (users with budgets.override may still post). warn_percent: the
     // share of the budget used from which a line shows a warning.
@@ -241,6 +260,11 @@ return [
         'inventory.view',
         'inventory.manage',
         'inventory.move',
+        'payroll.view',
+        'payroll.manage',
+        'payroll.run',
+        'payroll.post',
+        'payroll.void',
         'tax-returns.view',
         'tax-returns.file',
         'tax-entries.create',
@@ -378,6 +402,9 @@ return [
             'inventory.view',
             'inventory.manage',
             'inventory.move',
+            'payroll.view',
+            'payroll.manage',
+            'payroll.run',
             'tax-returns.view',
             'tax-returns.file',
             'tax-entries.create',
@@ -445,6 +472,9 @@ return [
             'budgets.view',
             'fixed-assets.view',
             'inventory.view',
+            'payroll.view',
+            'payroll.post',
+            'payroll.void',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',
@@ -480,6 +510,7 @@ return [
             'budgets.view',
             'fixed-assets.view',
             'inventory.view',
+            'payroll.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',
@@ -516,6 +547,7 @@ return [
             'budgets.view',
             'fixed-assets.view',
             'inventory.view',
+            'payroll.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',

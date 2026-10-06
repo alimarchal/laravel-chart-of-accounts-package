@@ -631,6 +631,42 @@ paths["/inventory/movements"] = {
     "get": op("Inventory", "The latest 200 stock movements", "inventory.view", {"200": resp("Movements", data({"type": "array", "items": {"type": "object"}})), **E422}, params=[{"name": "item_id", "in": "query", "schema": {"type": "integer"}}, {"name": "warehouse_id", "in": "query", "schema": {"type": "integer"}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["receipt", "issue", "adjustment", "transfer_in", "transfer_out"]}}], opid="list_stock_movements"),
     "post": op("Inventory", "Receive, issue, adjust or transfer stock", "inventory.move", {"201": resp("The movement(s); a transfer returns the out and in lines", data({"type": "array", "items": {"type": "object"}})), **E422}, body={"type": "object", "required": ["type", "item_id", "warehouse_id", "movement_date", "quantity"], "properties": {"type": {"type": "string", "enum": ["receipt", "issue", "adjustment", "transfer"]}, "item_id": {"type": "integer"}, "warehouse_id": {"type": "integer"}, "to_warehouse_id": {"type": "integer", "description": "Transfers."}, "movement_date": {"type": "string", "format": "date"}, "quantity": {"type": "number", "description": "Negative only for an adjustment that removes stock."}, "unit_cost": {"type": "number", "description": "Required for a receipt; an adjustment that adds stock defaults to the average cost."}, "offset_account_id": {"type": "integer", "description": "Receipt: paid from / owed to. Adjustment: gain/loss account. Issue: cost account (default the item's)."}, "reference": {"type": "string"}, "notes": {"type": "string"}}}, desc="Booked with its journal entry in one transaction (not for transfers). Stock never goes negative, in total or in a warehouse; issues leave at the moving average cost.", opid="move_stock")}
 
+# Payroll.
+emp_props = {"code": {"type": "string"}, "name": {"type": "string"}, "national_id": {"type": "string", "nullable": True}, "designation": {"type": "string", "nullable": True}, "cost_center_id": {"type": "integer", "nullable": True},
+             "join_date": {"type": "string", "format": "date"}, "leave_date": {"type": "string", "format": "date", "nullable": True}, "base_salary": {"type": "number", "description": "Monthly basic salary."}, "withhold_tax": {"type": "boolean"},
+             "bank_name": {"type": "string"}, "bank_account": {"type": "string"}, "is_active": {"type": "boolean"},
+             "components": {"type": "array", "description": "Replaces the allowances and deductions of the employee when sent.", "items": {"type": "object", "required": ["pay_component_id"], "properties": {"pay_component_id": {"type": "integer"}, "value": {"type": "number", "nullable": True, "description": "Overrides the component's value."}}}}}
+comp_props = {"code": {"type": "string"}, "name": {"type": "string"}, "kind": {"type": "string", "enum": ["earning", "deduction"]}, "method": {"type": "string", "enum": ["fixed", "percent_of_basic"]}, "value": {"type": "number"},
+              "taxable": {"type": "boolean"}, "account_id": {"type": "integer", "description": "An expense account for an earning, a liability account for a deduction."}, "is_active": {"type": "boolean"}}
+schemas["Employee"] = {"type": "object", "properties": {**emp_props, "id": {"type": "integer"}}}
+schemas["PayComponent"] = {"type": "object", "properties": {**comp_props, "id": {"type": "integer"}}}
+schemas["PayrollRun"] = {"type": "object", "properties": {"id": {"type": "integer"}, "period_month": {"type": "string", "example": "2026-10"}, "status": {"type": "string", "enum": ["draft", "posted", "paid", "void"]}, "gross": {"type": "string"}, "deductions": {"type": "string"}, "tax": {"type": "string"}, "net": {"type": "string"},
+                                          "journal_entry_id": {"type": "integer", "nullable": True}, "payment_entry_id": {"type": "integer", "nullable": True}, "posted_on": {"type": "string", "format": "date", "nullable": True}, "paid_on": {"type": "string", "format": "date", "nullable": True}, "employees": {"type": "integer"}}}
+run_ok = lambda text: {"200": resp(text, data(ref("PayrollRun"))), **E404_422}
+paths["/payroll"] = {"get": op("Payroll", "Payroll runs, newest first", "payroll.view", {"200": resp("Runs", data({"type": "array", "items": ref("PayrollRun")})), **E}, opid="list_payroll_runs")}
+paths["/payroll/runs"] = {"post": op("Payroll", "Start a payroll run for a month", "payroll.run", {"201": resp("Created with payslips worked out", data(ref("PayrollRun"))), **E422}, body={"type": "object", "required": ["period_month"], "properties": {"period_month": {"type": "string", "format": "date"}, "notes": {"type": "string"}}}, desc="One run per month (a voided run does not count). Joiners and leavers are paid for the days employed; flagged employees have income tax withheld from the configured slabs.", opid="create_payroll_run")}
+paths["/payroll/runs/{id}"] = {"parameters": [ID],
+    "get": op("Payroll", "A run with its payslips and their lines", "payroll.view", {"200": resp("The run", data({"type": "object", "properties": {"run": ref("PayrollRun"), "payslips": {"type": "array", "items": {"type": "object"}}}})), **E404}, opid="get_payroll_run"),
+    "delete": op("Payroll", "Delete a draft run", "payroll.run", {"204": resp("Deleted"), **E404_422}, opid="delete_payroll_run")}
+paths["/payroll/runs/{id}/recalculate"] = {"parameters": [ID], "post": op("Payroll", "Work the payslips out again (draft runs)", "payroll.run", run_ok("Recalculated"), opid="recalculate_payroll_run")}
+paths["/payroll/runs/{id}/post"] = {"parameters": [ID], "post": op("Payroll", "Post the run to the books", "payroll.post", run_ok("Posted"), body={"type": "object", "properties": {"payable_account_id": {"type": "integer", "description": "Default: the net payable account in config."}, "date": {"type": "string", "format": "date", "description": "Default: the month's last day."}}}, desc="One entry in the payroll module: expense for basic pay and earnings, liabilities for deductions and tax, and the net pay owed to employees.", opid="post_payroll_run")}
+paths["/payroll/runs/{id}/pay"] = {"parameters": [ID], "post": op("Payroll", "Pay the net salaries", "payroll.post", run_ok("Paid"), body={"type": "object", "required": ["account_id"], "properties": {"account_id": {"type": "integer", "description": "The bank or cash account paid from."}, "date": {"type": "string", "format": "date"}}}, opid="pay_payroll_run")}
+paths["/payroll/runs/{id}/void"] = {"parameters": [ID], "post": op("Payroll", "Void a posted or paid run", "payroll.void", run_ok("Voided"), desc="Reverses the payment and the salary entry.", opid="void_payroll_run")}
+paths["/payroll/runs/{id}/payslips/{payslip}"] = {"parameters": [ID, {"name": "payslip", "in": "path", "required": True, "schema": {"type": "integer"}}], "get": op("Payroll", "One payslip", "payroll.view", {"200": resp("Payslip with the employee and lines", data({"type": "object"})), **E404}, opid="get_payslip")}
+paths["/payroll/employees"] = {
+    "get": op("Payroll", "Employees", "payroll.view", {"200": resp("Employees", data({"type": "array", "items": ref("Employee")})), **E}, opid="list_employees"),
+    "post": op("Payroll", "Add an employee", "payroll.manage", {"201": resp("Created", data(ref("Employee"))), **E422}, body={"type": "object", "required": ["code", "name", "join_date", "base_salary"], "properties": emp_props}, opid="create_employee")}
+paths["/payroll/employees/{id}"] = {"parameters": [ID],
+    "get": op("Payroll", "An employee with their allowances and deductions", "payroll.view", {"200": resp("The employee", data(ref("Employee"))), **E404}, opid="get_employee"),
+    "put": op("Payroll", "Change an employee (PATCH also accepted)", "payroll.manage", {"200": resp("Updated", data(ref("Employee"))), **E404_422}, body={"type": "object", "required": ["code", "name", "join_date", "base_salary"], "properties": emp_props}, opid="update_employee"),
+    "delete": op("Payroll", "Delete an employee without payslips", "payroll.manage", {"204": resp("Deleted"), **E404_422}, opid="delete_employee")}
+paths["/payroll/components"] = {
+    "get": op("Payroll", "Allowances and deductions", "payroll.view", {"200": resp("Components", data({"type": "array", "items": ref("PayComponent")})), **E}, opid="list_pay_components"),
+    "post": op("Payroll", "Add an allowance or deduction", "payroll.manage", {"201": resp("Created", data(ref("PayComponent"))), **E422}, body={"type": "object", "required": ["code", "name", "kind", "method", "value", "account_id"], "properties": comp_props}, opid="create_pay_component")}
+paths["/payroll/components/{id}"] = {"parameters": [ID],
+    "put": op("Payroll", "Change a component (PATCH also accepted)", "payroll.manage", {"200": resp("Updated", data(ref("PayComponent"))), **E404_422}, body={"type": "object", "required": ["code", "name", "kind", "method", "value", "account_id"], "properties": comp_props}, opid="update_pay_component"),
+    "delete": op("Payroll", "Delete a component that is not in use", "payroll.manage", {"204": resp("Deleted"), **E404_422}, opid="delete_pay_component")}
+
 # Tax engine.
 TAX_TYPES = ["sale", "sale_return", "purchase", "purchase_return", "withholding_payment", "withholding_receipt"]
 schemas["TaxCalculation"] = {"type": "object", "properties": {"code": {"type": "string"}, "kind": {"type": "string"}, "rate": {"type": "string", "description": "Percent, four decimals"}, "inclusive": {"type": "boolean"}, "base": ref("Money"), "tax": ref("Money"), "gross": ref("Money")}}
@@ -732,7 +768,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.23.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.24.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"

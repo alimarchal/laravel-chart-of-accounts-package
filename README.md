@@ -495,6 +495,23 @@ cash and bank, receivables and payables with ageing, income vs expense by month,
 needing attention, each linking to the page that deals with it. Sections are filtered by the user's permissions. The existing
 `/accounting` page remains the module hub.
 
+## Payroll
+
+`/accounting/payroll` (and `/api/v1/accounting/payroll`) runs the monthly salaries:
+
+- **Employees** with a monthly basic salary, join and leave dates, cost center, bank details and a "withhold income tax" flag;
+  **allowances and deductions** (a fixed amount or a percent of basic, per employee overridable), where earnings are booked to an
+  expense account and deductions to the liability they are owed to.
+- A **payroll run** for a month works out every payslip: new joiners and leavers are paid for the days employed, percent
+  components follow the prorated basic, and flagged employees have **income tax withheld** from the slabs in
+  `accounting.payroll.tax_slabs` (annualised taxable pay; the defaults are illustrative Pakistani salaried-individual slabs, so
+  check them against the current rules). A negative net salary is refused. One run per month; a draft can be recalculated or deleted.
+- **Post** books one entry in the payroll module: basic pay and earnings as expense (by account and cost center), deductions and
+  tax as liabilities, and the net pay owed to employees (`ACCOUNTING_PAYROLL_NET_PAYABLE`, default 2103). **Pay** clears that
+  liability against a bank or cash account. **Void** reverses the payment and the salary entry; the month can then be run again.
+- Printable payslips. Permissions `payroll.view/manage/run/post/void`: the accountant prepares (`manage`, `run`), the approver
+  posts, pays and voids, so one person cannot do both. Audited (`PAYROLL_RUN_*`, `EMPLOYEE_SAVED`).
+
 ## Inventory
 
 `/accounting/inventory` (and `/api/v1/accounting/inventory`) keeps stock and its value at **moving average cost**: items with the
@@ -1349,6 +1366,11 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `inventory.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `inventory.manage` | ✔ |  | ✔ |  |  |  |
 | `inventory.move` | ✔ |  | ✔ |  |  |  |
+| `payroll.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `payroll.manage` | ✔ |  | ✔ |  |  |  |
+| `payroll.run` | ✔ |  | ✔ |  |  |  |
+| `payroll.post` | ✔ |  |  | ✔ |  |  |
+| `payroll.void` | ✔ |  |  | ✔ |  |  |
 | `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `bank-statements.import` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.match` | ✔ |  | ✔ |  |  |  |

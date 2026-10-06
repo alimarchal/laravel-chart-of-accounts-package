@@ -2,6 +2,19 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.24.0] - 2026-10-26
+
+Payroll release.
+
+### Added
+- **Employees, allowances and deductions** and a **monthly payroll run**: payslips with basic pay, earnings, deductions and income
+  tax withheld from configurable slabs, proration for joiners and leavers, negative net pay refused, one run per month.
+- **Posting, payment and void**: one salary entry in the payroll module (expense by account and cost center, liabilities for
+  deductions and tax, net pay owed), payment against a bank or cash account, void by reversing both entries.
+- Printable payslips; React and Blade screens (runs, run, payslip, employees, employee form, components), API (`/payroll/...`),
+  permissions `payroll.view/manage/run/post/void` (the accountant prepares, the approver posts and pays), config
+  `accounting.payroll`, OpenAPI and Postman.
+
 ## [2.23.0] - 2026-10-25
 
 Inventory release.
