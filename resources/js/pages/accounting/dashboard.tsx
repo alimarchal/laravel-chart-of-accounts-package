@@ -169,6 +169,15 @@ export default function AccountingDashboard({ summary }: Props) {
                   },
               ]
             : []),
+        ...(permissions['fixed-assets.view']
+            ? [
+                  {
+                      title: 'Fixed Assets',
+                      href: '/accounting/fixed-assets',
+                      icon: Landmark,
+                  },
+              ]
+            : []),
         ...(permissions['bank-statements.view']
             ? [
                   {

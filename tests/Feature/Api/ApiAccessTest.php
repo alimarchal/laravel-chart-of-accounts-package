@@ -14,6 +14,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
+use Alimarchal\LaravelChartOfAccounts\Models\FixedAsset;
 use Alimarchal\LaravelChartOfAccounts\Models\FxRevaluation;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Party;
@@ -58,7 +59,7 @@ function apiRoutes(): array
 function concreteUri(Route $route): string
 {
     return '/'.preg_replace_callback('/\{([^}]+)\}/', function (array $match) use ($route): string {
-        if ($match[1] === 'format' && str_contains($route->uri(), 'budgets/')) {
+        if ($match[1] === 'format' && (str_contains($route->uri(), 'budgets/') || str_contains($route->uri(), 'fixed-assets/'))) {
             return 'csv';
         }
 
@@ -105,6 +106,7 @@ function concreteUri(Route $route): string
             'recurring-entries' => RecurringEntry::class,
             'rates' => ExchangeRate::class,
             'budgets' => Budget::class,
+            'fixed-assets' => FixedAsset::class,
             'returns' => TaxReturn::class,
             'parties' => Party::class,
             'party-documents' => PartyDocument::class,
@@ -154,6 +156,7 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
     PartyAllocation::query()->create(['party_id' => $party->id, 'document_id' => $partyDocument->id, 'payment_id' => $partyPayment->id, 'amount' => 1, 'allocated_on' => now()->toDateString()]);
     TaxReturn::query()->create(['period_from' => now()->startOfYear()->toDateString(), 'period_to' => now()->startOfYear()->addDays(5)->toDateString(), 'payable_account_id' => account('2101')->id]);
     Budget::query()->create(['name' => 'Plan', 'start_date' => now()->startOfYear()->toDateString(), 'end_date' => now()->endOfYear()->toDateString()]);
+    FixedAsset::query()->create(['code' => 'FA1', 'name' => 'Asset', 'acquisition_date' => now()->toDateString(), 'in_service_date' => now()->toDateString(), 'cost' => 100, 'useful_life_months' => 12, 'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => account('5114')->id]);
     $bankAccount = BankAccount::factory()->create();
     $statement = BankStatement::query()->create(['bank_account_id' => $bankAccount->id, 'file_name' => 's.csv', 'lines_count' => 1]);
     BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bankAccount->id, 'line_no' => 1, 'txn_date' => now()->toDateString(), 'deposit' => 1, 'hash' => 'x']);
