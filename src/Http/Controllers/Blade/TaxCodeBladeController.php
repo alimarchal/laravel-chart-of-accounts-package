@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -80,6 +81,9 @@ class TaxCodeBladeController extends Controller
         return [
             'code' => ['required', 'string', 'max:50', CompanyRule::unique('accounting_tax_codes', 'code')->ignore($record?->id)],
             'name' => ['required', 'string', 'max:255'],
+            'kind' => ['sometimes', Rule::in(TaxCode::KINDS)],
+            'tax_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
+            'jurisdiction' => ['nullable', 'string', 'max:60'],
             'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
         ];

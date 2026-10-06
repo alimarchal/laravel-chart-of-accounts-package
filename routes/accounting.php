@@ -40,6 +40,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\TrialBalanceController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\RoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxCodeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxRateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\UserController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
@@ -121,6 +122,14 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::get('reports/financial-statements', [FinancialStatementController::class, 'show'])->name('reports.financial-statements')->middleware('can:reports.financial-statements.view');
         Route::get('chart-templates', [ChartTemplateController::class, 'index'])->name('chart-templates.index')->middleware('can:chart-templates.apply');
         Route::post('chart-templates/{template}/apply', [ChartTemplateController::class, 'apply'])->name('chart-templates.apply')->middleware('can:chart-templates.apply');
+        Route::get('tax', [TaxController::class, 'index'])->name('tax.index')->middleware('can:tax-returns.view');
+        Route::post('tax/calculate', [TaxController::class, 'calculate'])->name('tax.calculate')->middleware('can:tax-codes.view');
+        Route::get('tax/entries/create', [TaxController::class, 'createEntry'])->name('tax.entries.create')->middleware('can:tax-entries.create');
+        Route::post('tax/entries', [TaxController::class, 'storeEntry'])->name('tax.entries.store')->middleware('can:tax-entries.create');
+        Route::get('tax/returns/report', [TaxController::class, 'report'])->name('tax.returns.report')->middleware('can:tax-returns.view');
+        Route::get('tax/returns/report/export/{format}', [TaxController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('tax.returns.export')->middleware('can:tax-returns.view');
+        Route::post('tax/returns', [TaxController::class, 'fileReturn'])->name('tax.returns.store')->middleware('can:tax-returns.file');
+        Route::delete('tax/returns/{taxReturn}', [TaxController::class, 'destroyReturn'])->name('tax.returns.destroy')->middleware('can:tax-returns.file');
         Route::get('budgets', [BudgetController::class, 'index'])->name('budgets.index')->middleware('can:budgets.view');
         Route::get('budgets/create', [BudgetController::class, 'create'])->name('budgets.create')->middleware('can:budgets.create');
         Route::post('budgets', [BudgetController::class, 'store'])->name('budgets.store')->middleware('can:budgets.create');

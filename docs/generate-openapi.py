@@ -136,7 +136,7 @@ crud = {
  "cost-centers": ("Cost centers", "CostCenter", "cost-centers", {"code": {"type": "string"}, "name": {"type": "string"}, "type": {"type": "string", "enum": ["cost_center", "project"]}, "description": {"type": ["string", "null"]}, "is_active": {"type": "boolean"}}, ["code", "name", "type"]),
  "bank-accounts": ("Bank accounts", "BankAccount", "bank-accounts", {"chart_of_account_id": {"type": ["integer", "null"], "description": "Posting (non-group) GL account, e.g. 1108."}, "account_name": {"type": "string"}, "account_number": {"type": "string"}, "bank_name": {"type": ["string", "null"]}, "branch": {"type": ["string", "null"]}, "iban": {"type": ["string", "null"]}, "swift_code": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]}, "is_active": {"type": "boolean"}}, ["account_name", "account_number"]),
  "reconciliations": ("Reconciliations", "Reconciliation", "reconciliations", {"bank_account_id": {"type": "integer"}, "statement_date": {"type": "string", "format": "date"}, "statement_balance": {"type": "number"}, "book_balance": {"type": "number"}, "status": {"type": "string", "enum": ["draft", "completed", "void"]}}, ["bank_account_id", "statement_date", "statement_balance", "book_balance", "status"]),
- "tax-codes": ("Tax", "TaxCode", "tax-codes", {"code": {"type": "string"}, "name": {"type": "string"}, "description": {"type": ["string", "null"]}, "is_active": {"type": "boolean"}}, ["code", "name"]),
+ "tax-codes": ("Tax", "TaxCode", "tax-codes", {"code": {"type": "string"}, "name": {"type": "string"}, "kind": {"type": "string", "enum": ["output", "input", "withheld", "advance"], "description": "output: collected on sales; input: paid on purchases; withheld: deducted from payments we make; advance: deducted from payments to us"}, "tax_account_id": {"type": ["integer", "null"], "description": "The account the tax is booked to"}, "jurisdiction": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]}, "is_active": {"type": "boolean"}}, ["code", "name", "kind"]),
  "tax-rates": ("Tax", "TaxRate", "tax-rates", {"tax_code_id": {"type": "integer"}, "rate": {"type": "number", "minimum": 0, "maximum": 100}, "effective_from": {"type": "string", "format": "date", "description": "Unique per tax code."}, "effective_to": {"type": ["string", "null"], "format": "date"}, "is_active": {"type": "boolean"}}, ["tax_code_id", "rate", "effective_from"]),
 }
 for uri, (tag, schema_name, perm, props, req) in crud.items():
@@ -586,6 +586,38 @@ paths["/budgets/{id}/copy"] = {"parameters": [ID], "post": op("Budgets", "Copy a
     body={"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "start_date": {"type": "string", "format": "date", "description": "New first month (the budget is shifted)"}, "uplift_percent": {"type": "number"}}}, opid="copy_budget")}
 paths["/budgets/{id}/export/{format}"] = {"parameters": [ID, {"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Budgets", "Export budget against actual", "budgets.view", {"200": {"description": "The file"}, **E404}, opid="export_budget")}
 
+# Tax engine.
+TAX_TYPES = ["sale", "sale_return", "purchase", "purchase_return", "withholding_payment", "withholding_receipt"]
+schemas["TaxCalculation"] = {"type": "object", "properties": {"code": {"type": "string"}, "kind": {"type": "string"}, "rate": {"type": "string", "description": "Percent, four decimals"}, "inclusive": {"type": "boolean"}, "base": ref("Money"), "tax": ref("Money"), "gross": ref("Money")}}
+schemas["TaxReturn"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "period_from": {"type": "string", "format": "date"}, "period_to": {"type": "string", "format": "date"}, "output_tax": ref("Money"), "input_tax": ref("Money"),
+    "net_payable": {"type": "string", "description": "Negative when a refund is due"}, "journal_entry_id": {"type": ["integer", "null"]}, "voucher_number": {"type": ["string", "null"]}, "reference": {"type": ["string", "null"]}, "notes": {"type": ["string", "null"]}}}
+schemas["TaxReport"] = {"type": "object", "properties": {"date_from": {"type": "string", "format": "date"}, "date_to": {"type": "string", "format": "date"},
+    "rows": {"type": "array", "items": {"type": "object", "properties": {"tax_code_id": {"type": "integer"}, "code": {"type": "string"}, "name": {"type": "string"}, "kind": {"type": "string", "enum": ["output", "input", "withheld", "advance"]}, "base": ref("Money"), "tax": ref("Money"), "documents": {"type": "integer"}}}},
+    "totals": {"type": "object", "properties": {"output_tax": ref("Money"), "input_tax": ref("Money"), "net_payable": {"type": "string"}, "withheld": ref("Money"), "advance": ref("Money")}}}}
+paths["/tax/calculate"] = {"post": op("Tax", "Tax on an amount", "tax-codes.view", {"200": resp("Calculation", data(ref("TaxCalculation"))), **E422},
+    body={"type": "object", "required": ["tax_code_id", "amount"], "properties": {"tax_code_id": {"type": "integer"}, "amount": {"type": "number"}, "inclusive": {"type": "boolean", "default": False, "description": "The amount already contains the tax"}, "date": {"type": "string", "format": "date", "description": "The rate in force on this date (default today)"}}},
+    desc="Rounded to the cent, half away from zero; for an inclusive amount base + tax equals the amount exactly.", opid="calculate_tax")}
+paths["/tax/entries"] = {"post": op("Tax", "Book a taxed document as a journal entry", "tax-entries.create", {"201": resp("Created", data({"type": "object", "properties": {"id": {"type": "integer"}, "status": {"type": "string"}, "voucher_number": {"type": ["string", "null"]}}})), **E422},
+    body={"type": "object", "required": ["type", "entry_date", "amount", "tax_code_id", "account_id", "counter_account_id"], "properties": {
+        "type": {"type": "string", "enum": TAX_TYPES, "description": "sale / sale_return need an output code, purchase / purchase_return an input code, withholding_payment a withheld code, withholding_receipt an advance code"},
+        "entry_date": {"type": "string", "format": "date"}, "amount": {"type": "number"}, "tax_inclusive": {"type": "boolean"}, "tax_code_id": {"type": "integer"},
+        "account_id": {"type": "integer", "description": "Revenue / expense account (the party account for withholding)"}, "counter_account_id": {"type": "integer", "description": "Customer / supplier / bank account"},
+        "cost_center_id": {"type": "integer"}, "reference": {"type": "string"}, "description": {"type": "string"}, "auto_post": {"type": "boolean", "default": False}}},
+    desc="Journal entry lines may also carry `tax_code_id` (+ `tax_inclusive`): such a line is split into its taxable amount and a tax line to the code's tax account, marked for the tax report.", opid="create_taxed_entry")}
+paths["/tax/returns/report"] = {"get": op("Tax", "The tax ledger of a period", "tax-returns.view", {"200": resp("Report", data(ref("TaxReport")))},
+    params=[{"name": "date_from", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "date_to", "in": "query", "schema": {"type": "string", "format": "date"}}, {"name": "tax_code_id", "in": "query", "schema": {"type": "integer"}}],
+    desc="Per tax code: taxable base and tax from posted entries in base currency (default: this month).", opid="tax_report")}
+paths["/tax/returns/report/export/{format}"] = {"parameters": [{"name": "format", "in": "path", "required": True, "schema": {"type": "string", "enum": ["csv", "xlsx", "pdf"]}}], "get": op("Tax", "Export the tax report", "tax-returns.view", {"200": {"description": "The file"}}, opid="export_tax_report")}
+paths["/tax/returns"] = {
+    "get": op("Tax", "Filed tax returns", "tax-returns.view", {"200": resp("Returns, newest period first", data({"type": "array", "items": ref("TaxReturn")}))}, opid="list_tax_returns"),
+    "post": op("Tax", "File a return for a period", "tax-returns.file", {"201": resp("Filed", data(ref("TaxReturn"))), **E422},
+        body={"type": "object", "required": ["period_from", "period_to", "payable_account_id"], "properties": {"period_from": {"type": "string", "format": "date"}, "period_to": {"type": "string", "format": "date"}, "payable_account_id": {"type": "integer", "description": "An active liability (or asset) posting account"}, "reference": {"type": "string"}, "notes": {"type": "string"}}},
+        desc="Posts one entry dated at the period end: output tax debited and input tax credited on their tax accounts, the difference on the payable account (a refund debits it). 422 when the period overlaps a filed return or there is no output or input tax.", opid="file_tax_return")}
+paths["/tax/returns/{id}"] = {"parameters": [ID],
+    "get": op("Tax", "A filed return", "tax-returns.view", {"200": resp("Return", data(ref("TaxReturn"))), **E404}, opid="show_tax_return"),
+    "delete": op("Tax", "Void a return (its entry is reversed)", "tax-returns.file", {"204": resp("Voided"), **E404_422}, opid="void_tax_return")}
+
 # Every operation can name its company.
 for path_item in paths.values():
     for method, operation in path_item.items():
@@ -594,7 +626,7 @@ for path_item in paths.values():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.18.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.19.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
