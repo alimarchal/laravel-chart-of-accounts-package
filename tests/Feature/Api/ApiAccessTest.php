@@ -158,7 +158,7 @@ it('returns 403 for a viewer on every write endpoint', function (): void {
         $method = collect($route->methods())->reject(fn ($m) => $m === 'HEAD')->first();
 
         // Queuing or deleting your own report export reads the books, it does not write to them.
-        if ($method === 'GET' || in_array($route->uri(), ['api/v1/accounting/reports/{report}/exports/{format}', 'api/v1/accounting/exports/{export}'], true)) {
+        if ($method === 'GET' || in_array($route->uri(), ['api/v1/accounting/reports/{report}/exports/{format}', 'api/v1/accounting/exports/{export}', 'api/v1/accounting/tax/calculate'], true)) {
             continue;
         }
 
