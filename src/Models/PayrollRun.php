@@ -15,6 +15,7 @@ use Carbon\CarbonInterface;
  * @property string $deductions
  * @property string $tax
  * @property string $net
+ * @property string $employer
  * @property int|null $payable_account_id
  * @property int|null $journal_entry_id
  * @property int|null $payment_entry_id
@@ -32,6 +33,6 @@ class PayrollRun extends AccountingModel
 
     protected function casts(): array
     {
-        return ['period_month' => 'date', 'posted_on' => 'date', 'paid_on' => 'date', 'gross' => 'decimal:2', 'deductions' => 'decimal:2', 'tax' => 'decimal:2', 'net' => 'decimal:2'];
+        return ['period_month' => 'date', 'posted_on' => 'date', 'paid_on' => 'date', 'gross' => 'decimal:2', 'deductions' => 'decimal:2', 'tax' => 'decimal:2', 'net' => 'decimal:2', 'employer' => 'decimal:2'];
     }
 }

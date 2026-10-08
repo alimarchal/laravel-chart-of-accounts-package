@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\EmployeeComponent;
+use Alimarchal\LaravelChartOfAccounts\Models\EmployeeScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollArrear;
@@ -89,12 +90,15 @@ class PayrollService
             'effective_from' => ['nullable', 'date'],
             'reason' => ['nullable', 'string', 'max:200'],
             'withhold_tax' => ['nullable', 'boolean'],
+            'overtime_eligible' => ['nullable', 'boolean'],
             'bank_name' => ['nullable', 'string', 'max:120'],
             'bank_account' => ['nullable', 'string', 'max:60'],
             'is_active' => ['nullable', 'boolean'],
             'components' => ['nullable', 'array', 'max:50'],
             'components.*.pay_component_id' => ['required', 'integer', 'distinct', CompanyRule::exists('accounting_pay_components', 'id')],
             'components.*.value' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
+            'schemes' => ['nullable', 'array', 'max:50'],
+            'schemes.*' => ['integer', 'distinct', CompanyRule::exists('accounting_contribution_schemes', 'id')],
         ])->validate();
     }
 
@@ -104,7 +108,7 @@ class PayrollService
     public function saveEmployee(array $data, ?Employee $employee = null): Employee
     {
         return DB::transaction(function () use ($data, $employee): Employee {
-            $fields = collect($data)->except(['components', 'effective_from', 'reason'])->all();
+            $fields = collect($data)->except(['components', 'schemes', 'effective_from', 'reason'])->all();
 
             if (($fields['base_salary'] ?? null) === null || $fields['base_salary'] === '') {
                 $fields['base_salary'] = SalaryGrade::query()->findOrFail($fields['salary_grade_id'])->base_salary;
@@ -128,6 +132,14 @@ class PayrollService
                 }
             }
 
+            if (array_key_exists('schemes', $data)) {
+                EmployeeScheme::query()->where('employee_id', $employee->id)->delete();
+
+                foreach (array_unique((array) ($data['schemes'] ?? [])) as $schemeId) {
+                    EmployeeScheme::query()->create(['employee_id' => $employee->id, 'contribution_scheme_id' => $schemeId]);
+                }
+            }
+
             AccountingAuditLog::record($employee, 'EMPLOYEE_SAVED', null, null, ['code' => $employee->code]);
 
             return $employee->refresh();
@@ -145,6 +157,7 @@ class PayrollService
         }
 
         EmployeeComponent::query()->where('employee_id', $employee->id)->delete();
+        EmployeeScheme::query()->where('employee_id', $employee->id)->delete();
         $employee->delete();
     }
 
@@ -246,16 +259,32 @@ class PayrollService
         $assigned = EmployeeComponent::query()->get()->groupBy('employee_id');
         $gradeLinks = SalaryGradeComponent::query()->get()->groupBy('salary_grade_id');
         $revisions = SalaryRevision::query()->orderBy('effective_from')->orderBy('id')->get()->groupBy('employee_id');
+        $facts = app(PayrollAttendanceService::class)->monthFacts($period);
+        $loans = app(PayrollLoanService::class);
+        $loansDue = $loans->dueFor($end);
+        $contributions = app(PayrollContributionService::class);
+        $schemes = $contributions->schemesByEmployee();
+        $overtime = (array) config('accounting.payroll.overtime', []);
+        $overtimeCode = $overtime['account'] ?? null;
+        $overtimeAccount = $overtimeCode ? $this->accountByCode((string) $overtimeCode, 'overtime expense') : $salaryAccount;
         $arrears = PayrollArrear::query()->where('status', 'approved')->whereNull('payroll_run_id')->whereDate('payment_month', '<=', $end->toDateString())->get()->groupBy('employee_id');
-        $totals = ['gross' => 0, 'deductions' => 0, 'tax' => 0, 'net' => 0];
+        $totals = ['gross' => 0, 'deductions' => 0, 'tax' => 0, 'net' => 0, 'employer' => 0];
         $lineRows = [];
         $included = [];
+        $installments = [];
         $stamp = now();
 
         foreach (Employee::query()->where('is_active', true)->whereDate('join_date', '<=', $end->toDateString())
             ->where(fn ($query) => $query->whereNull('leave_date')->orWhereDate('leave_date', '>=', $period->toDateString()))->orderBy('code')->get() as $employee) {
             ['cents' => $basic, 'worked' => $worked, 'days' => $days] = SalaryHistory::basicForMonth($employee, $period, $revisions[$employee->id] ?? collect());
-            $factor = $worked / $days;
+            $unpaid = min((float) $worked, (float) ($facts[$employee->id]['unpaid'] ?? 0));
+
+            if ($unpaid > 0 && $worked > 0) {
+                $basic = (int) round($basic * ($worked - $unpaid) / $worked);
+            }
+
+            $paidDays = $worked - $unpaid;
+            $factor = $paidDays / $days;
             $lines = [['pay_component_id' => null, 'kind' => 'basic', 'description' => 'Basic salary', 'cents' => $basic, 'account_id' => $salaryAccount->id, 'taxable' => true]];
 
             // The employee's own components first, then what the grade brings that the employee does not carry.
@@ -280,6 +309,16 @@ class PayrollService
                 $lines[] = ['pay_component_id' => $component->id, 'kind' => $component->kind, 'description' => $component->name, 'cents' => $cents, 'account_id' => $component->account_id, 'taxable' => $component->taxable];
             }
 
+            $hours = $facts[$employee->id] ?? null;
+
+            if ($employee->overtime_eligible && $hours !== null && ($hours['overtime'] > 0 || $hours['holiday_overtime'] > 0)) {
+                $monthly = SalaryHistory::salaryOn($employee, $end, $revisions[$employee->id] ?? collect());
+                $hourly = $monthly / max(1.0, (float) ($overtime['hours_per_month'] ?? 208));
+                $cents = (int) round($hourly * ($hours['overtime'] * (float) ($overtime['multiplier'] ?? 2) + $hours['holiday_overtime'] * (float) ($overtime['holiday_multiplier'] ?? 2)));
+                $label = rtrim(rtrim(number_format($hours['overtime'], 2, '.', ''), '0'), '.').' h'.($hours['holiday_overtime'] > 0 ? ' + '.rtrim(rtrim(number_format($hours['holiday_overtime'], 2, '.', ''), '0'), '.').' h holiday' : '');
+                $lines[] = ['pay_component_id' => null, 'kind' => 'earning', 'description' => "Overtime ({$label})", 'cents' => $cents, 'account_id' => $overtimeAccount->id, 'taxable' => true];
+            }
+
             $taxable = collect($lines)->whereIn('kind', ['basic', 'earning'])->where('taxable', true)->sum('cents');
             $tax = $employee->withhold_tax ? $this->monthlyTax($taxable) : 0;
             $arrearsCents = 0;
@@ -294,6 +333,34 @@ class PayrollService
                 $lines[] = ['pay_component_id' => null, 'kind' => 'arrears', 'description' => "Arrears ({$label})", 'cents' => $arrearsCents, 'account_id' => $arrearsAccount->id, 'taxable' => true];
                 $arrearsTax = $employee->withhold_tax ? $owed->sum(fn (PayrollArrear $row): int => $this->arrearsTax($row)) : 0;
                 $included = array_merge($included, $owed->pluck('id')->all());
+            }
+
+            $earned = collect($lines)->whereIn('kind', ['basic', 'earning'])->sum('cents');
+            $employer = 0;
+
+            foreach ($schemes[$employee->id] ?? [] as $scheme) {
+                $parts = [[$contributions->amounts($scheme, $basic, $earned), $scheme->name]];
+
+                if ($scheme->on_arrears && $arrearsCents > 0 && $scheme->base !== 'fixed') {
+                    $parts[] = [['employee' => (int) round($arrearsCents * (float) $scheme->employee_rate / 100), 'employer' => (int) round($arrearsCents * (float) $scheme->employer_rate / 100)], $scheme->name.' on arrears'];
+                }
+
+                foreach ($parts as [$amount, $label]) {
+                    if ($amount['employee'] > 0 && $scheme->employee_account_id) {
+                        $lines[] = ['pay_component_id' => null, 'kind' => 'deduction', 'description' => $label, 'cents' => $amount['employee'], 'account_id' => $scheme->employee_account_id, 'taxable' => false];
+                    }
+
+                    if ($amount['employer'] > 0 && $scheme->employer_expense_account_id && $scheme->employer_liability_account_id) {
+                        $lines[] = ['pay_component_id' => null, 'kind' => 'employer', 'description' => $label.' (employer)', 'cents' => $amount['employer'], 'account_id' => $scheme->employer_expense_account_id, 'taxable' => false];
+                        $lines[] = ['pay_component_id' => null, 'kind' => 'employer_due', 'description' => $label.' (employer, owed)', 'cents' => $amount['employer'], 'account_id' => $scheme->employer_liability_account_id, 'taxable' => false];
+                        $employer += $amount['employer'];
+                    }
+                }
+            }
+
+            foreach ($loansDue[$employee->id] ?? [] as $due) {
+                $lines[] = ['pay_component_id' => null, 'kind' => 'deduction', 'description' => ($due['kind'] === 'advance' ? 'Advance recovery' : "Loan instalment {$due['number']}/{$due['of']}"), 'cents' => Money::toCents($due['installment']->amount), 'account_id' => $loans->accountId(), 'taxable' => false];
+                $installments[] = $due['installment']->id;
             }
 
             $gross = collect($lines)->whereIn('kind', ['basic', 'earning', 'arrears'])->sum('cents');
@@ -314,7 +381,7 @@ class PayrollService
 
             $slip = Payslip::query()->create([
                 'payroll_run_id' => $run->id, 'employee_id' => $employee->id, 'basic' => Money::fromCents($basic), 'gross' => Money::fromCents($gross), 'deductions' => Money::fromCents($deductions),
-                'tax' => Money::fromCents($tax + $arrearsTax), 'net' => Money::fromCents($net), 'days_paid' => $worked, 'days_in_month' => $days,
+                'tax' => Money::fromCents($tax + $arrearsTax), 'net' => Money::fromCents($net), 'employer' => Money::fromCents($employer), 'days_paid' => $paidDays, 'days_in_month' => $days,
             ]);
 
             foreach ($lines as $line) {
@@ -327,11 +394,14 @@ class PayrollService
             $totals['deductions'] += $deductions;
             $totals['tax'] += $tax + $arrearsTax;
             $totals['net'] += $net;
+            $totals['employer'] += $employer;
         }
 
         foreach (array_chunk($lineRows, 500) as $chunk) {
             PayslipLine::query()->insert($chunk);
         }
+
+        $loans->attach($installments, $run);
 
         if ($included !== []) {
             PayrollArrear::query()->whereIn('id', $included)->update(['payroll_run_id' => $run->id, 'status' => 'included']);
@@ -361,6 +431,7 @@ class PayrollService
     private function releaseArrears(PayrollRun $run): void
     {
         PayrollArrear::query()->where('payroll_run_id', $run->id)->update(['payroll_run_id' => null, 'status' => 'approved']);
+        app(PayrollLoanService::class)->release($run);
     }
 
     /**
@@ -388,7 +459,7 @@ class PayrollService
             foreach (PayslipLine::query()->whereIn('payslip_id', $slips->pluck('id'))->get() as $line) {
                 $cents = Money::toCents($line->amount);
 
-                if (in_array($line->kind, ['basic', 'earning', 'arrears'], true)) {
+                if (in_array($line->kind, ['basic', 'earning', 'arrears', 'employer'], true)) {
                     $center = (int) ($costCenters[$slips->firstWhere('id', $line->payslip_id)->employee_id] ?? 0);
                     $debits[$line->account_id.'|'.$center] = ($debits[$line->account_id.'|'.$center] ?? 0) + $cents;
                 } else {
@@ -421,6 +492,7 @@ class PayrollService
                 'system_generated' => true,
             ]);
             $run->forceFill(['status' => 'posted', 'payable_account_id' => $payable->id, 'journal_entry_id' => $entry->id, 'posted_on' => $posted])->save();
+            app(PayrollLoanService::class)->closeRecovered($run);
             AccountingAuditLog::record($run, 'PAYROLL_RUN_POSTED', null, null, ['month' => $month->format('Y-m'), 'net' => $run->net, 'journal_entry_id' => $entry->id]);
 
             return $run->refresh();
@@ -505,7 +577,7 @@ class PayrollService
     public function summary(int $year): array
     {
         return PayrollRun::query()->whereYear('period_month', $year)->where('status', '<>', 'void')->orderBy('period_month')->get()
-            ->map(fn (PayrollRun $run): array => ['id' => $run->id, 'month' => Carbon::parse($run->period_month)->format('Y-m'), 'status' => $run->status, 'gross' => $run->gross, 'deductions' => $run->deductions, 'tax' => $run->tax, 'net' => $run->net])->all();
+            ->map(fn (PayrollRun $run): array => ['id' => $run->id, 'month' => Carbon::parse($run->period_month)->format('Y-m'), 'status' => $run->status, 'gross' => $run->gross, 'deductions' => $run->deductions, 'tax' => $run->tax, 'net' => $run->net, 'employer' => $run->employer])->all();
     }
 
     private function assertStatus(PayrollRun $run, string $status, string $message): void

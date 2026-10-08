@@ -130,6 +130,25 @@ return [
         'net_payable_account' => env('ACCOUNTING_PAYROLL_NET_PAYABLE', '2103'),
         // Arrears (back pay of a late raise) are booked to this account code; empty = the salary expense account.
         'arrears_account' => env('ACCOUNTING_PAYROLL_ARREARS'),
+        // Loans and salary advances to employees are an asset: paid out to, and recovered from salary by, this account code.
+        'employee_loans_account' => env('ACCOUNTING_PAYROLL_EMPLOYEE_LOANS', '1105'),
+        // Overtime for employees flagged "overtime": hourly pay = monthly salary / hours_per_month, times the multiplier
+        // (holiday_multiplier on holidays and rest days). account: the expense account code (empty = the salary expense account).
+        'overtime' => [
+            'hours_per_month' => (float) env('ACCOUNTING_PAYROLL_OVERTIME_HOURS', 208),
+            'multiplier' => (float) env('ACCOUNTING_PAYROLL_OVERTIME_MULTIPLIER', 2),
+            'holiday_multiplier' => (float) env('ACCOUNTING_PAYROLL_OVERTIME_HOLIDAY_MULTIPLIER', 2),
+            'account' => env('ACCOUNTING_PAYROLL_OVERTIME_ACCOUNT'),
+        ],
+        // The bank salary file: layouts are lists of columns (employee_code, employee_name, national_id, bank_name, bank_account,
+        // amount, narration, month); add the layout your bank asks for. :month in the narration becomes e.g. "October 2026".
+        'bank_file' => [
+            'narration' => 'Salary :month',
+            'layouts' => [
+                'standard' => ['employee_code', 'employee_name', 'national_id', 'bank_name', 'bank_account', 'amount', 'narration'],
+                'iban' => ['bank_account', 'employee_name', 'amount', 'narration'],
+            ],
+        ],
         'tax_slabs' => [
             ['from' => 0, 'rate' => 0, 'fixed' => 0],
             ['from' => 600000, 'rate' => 1, 'fixed' => 0],

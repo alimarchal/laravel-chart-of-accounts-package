@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Models\ContributionScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
 use Alimarchal\LaravelChartOfAccounts\Models\FixedAsset;
@@ -23,6 +24,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
+use Alimarchal\LaravelChartOfAccounts\Models\Leave;
+use Alimarchal\LaravelChartOfAccounts\Models\LeaveType;
+use Alimarchal\LaravelChartOfAccounts\Models\Loan;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollArrear;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
@@ -68,7 +72,7 @@ function apiRoutes(): array
 function concreteUri(Route $route, ?string &$modelResource = null): string
 {
     return '/'.preg_replace_callback('/\{([^}]+)\}/', function (array $match) use ($route, &$modelResource): string {
-        if ($match[1] === 'format' && (str_contains($route->uri(), 'budgets/') || str_contains($route->uri(), 'fixed-assets/') || str_contains($route->uri(), 'inventory/'))) {
+        if ($match[1] === 'format' && (str_contains($route->uri(), 'budgets/') || str_contains($route->uri(), 'fixed-assets/') || str_contains($route->uri(), 'inventory/') || str_contains($route->uri(), 'bank-file'))) {
             return 'csv';
         }
 
@@ -123,6 +127,10 @@ function concreteUri(Route $route, ?string &$modelResource = null): string
             'employees' => Employee::class,
             'components' => PayComponent::class,
             'grades' => SalaryGrade::class,
+            'leave-types' => LeaveType::class,
+            'leaves' => Leave::class,
+            'loans' => Loan::class,
+            'schemes' => ContributionScheme::class,
             'arrears' => PayrollArrear::class,
             'warehouses' => Warehouse::class,
             'returns' => TaxReturn::class,
@@ -163,6 +171,10 @@ function createEveryResource(): void
     Warehouse::query()->create(['code' => 'W1', 'name' => 'Main']);
     $employee = Employee::query()->create(['code' => 'E1', 'name' => 'Emp', 'join_date' => now()->toDateString(), 'base_salary' => 1]);
     PayComponent::query()->create(['code' => 'C1', 'name' => 'Comp', 'kind' => 'earning', 'account_id' => account('5102')->id]);
+    $leaveType = LeaveType::query()->create(['code' => 'ANN', 'name' => 'Annual']);
+    Leave::query()->create(['employee_id' => $employee->id, 'leave_type_id' => $leaveType->id, 'from_date' => now()->toDateString(), 'to_date' => now()->toDateString(), 'days' => 1]);
+    Loan::query()->create(['employee_id' => $employee->id, 'principal' => 100, 'installments' => 1, 'start_month' => now()->startOfMonth()->toDateString()]);
+    ContributionScheme::query()->create(['code' => 'PF', 'name' => 'Provident fund']);
     SalaryGrade::query()->create(['code' => 'G1', 'name' => 'Grade', 'base_salary' => 1]);
     PayrollArrear::query()->create(['employee_id' => $employee->id, 'from_month' => now()->startOfMonth()->toDateString(), 'to_month' => now()->startOfMonth()->toDateString(), 'payment_month' => now()->startOfMonth()->toDateString(), 'amount' => 1, 'breakdown' => '[]']);
     $payrollRun = PayrollRun::query()->create(['period_month' => now()->startOfMonth()->toDateString()]);

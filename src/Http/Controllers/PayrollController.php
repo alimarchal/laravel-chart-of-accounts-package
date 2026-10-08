@@ -4,14 +4,17 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\ContributionScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\EmployeeComponent;
+use Alimarchal\LaravelChartOfAccounts\Models\EmployeeScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Models\Payslip;
 use Alimarchal\LaravelChartOfAccounts\Models\PayslipLine;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
+use Alimarchal\LaravelChartOfAccounts\Services\PayrollBankFileService;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollStructureService;
 use Illuminate\Contracts\View\View;
@@ -28,7 +31,7 @@ use Inertia\Response;
  */
 class PayrollController extends Controller
 {
-    public function __construct(private readonly PayrollService $payroll) {}
+    public function __construct(private readonly PayrollService $payroll, private readonly PayrollBankFileService $bankFile) {}
 
     // -- runs --------------------------------------------------------------------------------------------------
 
@@ -61,6 +64,7 @@ class PayrollController extends Controller
             'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->with('accountType:id,code')->orderBy('account_code')->get(['id', 'account_code', 'account_name', 'account_type_id'])
                 ->map(fn (ChartOfAccount $account): array => ['id' => $account->id, 'account_code' => $account->account_code, 'account_name' => $account->account_name, 'type' => $account->accountType->code])->values(),
             'today' => now()->toDateString(),
+            'bank' => in_array($run->status, ['posted', 'paid'], true) ? ['missing' => $this->bankFile->missingAccounts($run), 'layouts' => $this->bankFile->layouts()] : null,
         ];
 
         return $request->expectsJson() ? response()->json(['data' => ['run' => $props['run'], 'payslips' => $slips]]) : $this->render('run-show', $props);
@@ -238,6 +242,7 @@ class PayrollController extends Controller
         return [
             'employee' => $employee ? $this->presentEmployee($employee, true) : null,
             'components' => PayComponent::query()->where('is_active', true)->orderBy('kind')->orderBy('code')->get()->map(fn (PayComponent $component): array => $this->presentComponent($component))->values(),
+            'schemes' => ContributionScheme::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'applies_to_all']),
             'grades' => SalaryGrade::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'base_salary']),
             'history' => $employee ? app(PayrollStructureService::class)->history($employee) : [],
             'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
@@ -251,7 +256,7 @@ class PayrollController extends Controller
     private function presentRun(PayrollRun $run): array
     {
         return [
-            'id' => $run->id, 'period_month' => Carbon::parse($run->period_month)->format('Y-m'), 'status' => $run->status, 'gross' => $run->gross, 'deductions' => $run->deductions, 'tax' => $run->tax, 'net' => $run->net,
+            'id' => $run->id, 'period_month' => Carbon::parse($run->period_month)->format('Y-m'), 'status' => $run->status, 'gross' => $run->gross, 'deductions' => $run->deductions, 'tax' => $run->tax, 'net' => $run->net, 'employer' => $run->employer,
             'journal_entry_id' => $run->journal_entry_id, 'payment_entry_id' => $run->payment_entry_id, 'posted_on' => $run->posted_on?->toDateString(), 'paid_on' => $run->paid_on?->toDateString(), 'notes' => $run->notes,
             'employees' => Payslip::query()->where('payroll_run_id', $run->id)->count(),
         ];
@@ -269,7 +274,7 @@ class PayrollController extends Controller
 
         return $slips->map(fn (Payslip $slip): array => [
             'id' => $slip->id, 'employee_id' => $slip->employee_id, 'employee_code' => $codes[$slip->employee_id] ?? '', 'employee_name' => $employees[$slip->employee_id] ?? '',
-            'basic' => $slip->basic, 'gross' => $slip->gross, 'deductions' => $slip->deductions, 'tax' => $slip->tax, 'net' => $slip->net, 'days_paid' => $slip->days_paid, 'days_in_month' => $slip->days_in_month,
+            'basic' => $slip->basic, 'gross' => $slip->gross, 'deductions' => $slip->deductions, 'tax' => $slip->tax, 'net' => $slip->net, 'employer' => $slip->employer, 'days_paid' => $slip->days_paid, 'days_in_month' => $slip->days_in_month,
             'lines' => collect($lines[$slip->id] ?? [])->map(fn (PayslipLine $line): array => ['kind' => $line->kind, 'description' => $line->description, 'amount' => $line->amount])->values()->all(),
         ])->values()->all();
     }
@@ -281,11 +286,12 @@ class PayrollController extends Controller
     {
         $data = [
             'id' => $employee->id, 'code' => $employee->code, 'name' => $employee->name, 'national_id' => $employee->national_id, 'designation' => $employee->designation, 'cost_center_id' => $employee->cost_center_id, 'salary_grade_id' => $employee->salary_grade_id,
-            'join_date' => $employee->join_date->toDateString(), 'leave_date' => $employee->leave_date?->toDateString(), 'base_salary' => $employee->base_salary, 'withhold_tax' => $employee->withhold_tax,
+            'join_date' => $employee->join_date->toDateString(), 'leave_date' => $employee->leave_date?->toDateString(), 'base_salary' => $employee->base_salary, 'withhold_tax' => $employee->withhold_tax, 'overtime_eligible' => $employee->overtime_eligible,
             'bank_name' => $employee->bank_name, 'bank_account' => $employee->bank_account, 'is_active' => $employee->is_active,
         ];
 
         if ($withComponents) {
+            $data['schemes'] = EmployeeScheme::query()->where('employee_id', $employee->id)->pluck('contribution_scheme_id')->values()->all();
             $data['components'] = EmployeeComponent::query()->where('employee_id', $employee->id)->get(['pay_component_id', 'value'])->map(fn (EmployeeComponent $link): array => ['pay_component_id' => $link->pay_component_id, 'value' => $link->value])->values()->all();
         }
 

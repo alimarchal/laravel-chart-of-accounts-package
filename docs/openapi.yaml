@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.29.0
+  version: 2.30.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -8826,6 +8826,15 @@ paths:
                   type: string
                 withhold_tax:
                   type: boolean
+                overtime_eligible:
+                  type: boolean
+                  description: Paid overtime hours from the attendance sheet.
+                schemes:
+                  type: array
+                  items:
+                    type: integer
+                  description: Replaces the contribution schemes of the employee when sent (schemes that apply to all need
+                    not be listed).
                 bank_name:
                   type: string
                 bank_account:
@@ -8954,6 +8963,15 @@ paths:
                   type: string
                 withhold_tax:
                   type: boolean
+                overtime_eligible:
+                  type: boolean
+                  description: Paid overtime hours from the attendance sheet.
+                schemes:
+                  type: array
+                  items:
+                    type: integer
+                  description: Replaces the contribution schemes of the employee when sent (schemes that apply to all need
+                    not be listed).
                 bank_name:
                   type: string
                 bank_account:
@@ -10066,6 +10084,1083 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/attendance:
+    get:
+      tags:
+      - Payroll
+      summary: The attendance sheet of a month
+      operationId: get_attendance_sheet
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Every active employee employed in the month with absent days, overtime hours and the unpaid leave that
+            counts too
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  month:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - name: month
+        in: query
+        schema:
+          type: string
+          example: 2026-10
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Save the attendance sheet of a month
+      operationId: save_attendance_sheet
+      description: 'Absent days and unpaid leave come off the basic and the fixed allowances by the day (percent allowances
+        follow the basic); overtime hours are paid at salary / hours_per_month x multiplier to employees flagged overtime_eligible.
+        A row of zeros clears the entry. A month with a posted payroll is refused.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - month
+              - rows
+              properties:
+                month:
+                  type: string
+                  format: date
+                rows:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - employee_id
+                    properties:
+                      employee_id:
+                        type: integer
+                      absent_days:
+                        type: number
+                      overtime_hours:
+                        type: number
+                      holiday_overtime_hours:
+                        type: number
+                      notes:
+                        type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/leave-types:
+    get:
+      tags:
+      - Payroll
+      summary: Leave types
+      operationId: list_leave_types
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Leave types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LeaveType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Add a leave type
+      operationId: create_leave_type
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LeaveType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                is_paid:
+                  type: boolean
+                  description: Unpaid leave comes off the salary by the day.
+                annual_days:
+                  type: number
+                  description: Yearly entitlement; 0 = not limited.
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/leave-types/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      tags:
+      - Payroll
+      summary: Change a leave type (PATCH also accepted)
+      operationId: update_leave_type
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LeaveType'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                is_paid:
+                  type: boolean
+                  description: Unpaid leave comes off the salary by the day.
+                annual_days:
+                  type: number
+                  description: Yearly entitlement; 0 = not limited.
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Payroll
+      summary: Delete a leave type nobody took
+      operationId: delete_leave_type
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/leaves:
+    get:
+      tags:
+      - Payroll
+      summary: Leaves, newest first
+      operationId: list_leaves
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Leaves
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Record leave
+      operationId: create_leave
+      description: 'Refused when the dates overlap other leave or the leave type''s yearly entitlement cannot cover it.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - employee_id
+              - leave_type_id
+              - from_date
+              - to_date
+              properties:
+                employee_id:
+                  type: integer
+                leave_type_id:
+                  type: integer
+                from_date:
+                  type: string
+                  format: date
+                to_date:
+                  type: string
+                  format: date
+                days:
+                  type: number
+                  description: 'Default: the calendar days of the dates; 0.5 for half a day.'
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/leaves/balances:
+    get:
+      tags:
+      - Payroll
+      summary: Leave balances of a year
+      operationId: leave_balances
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Entitlement, taken and balance of every active employee for every active leave type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - name: year
+        in: query
+        schema:
+          type: integer
+      - name: employee_id
+        in: query
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+  /payroll/leaves/{id}/cancel:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Cancel a leave
+      operationId: cancel_leave
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/loans:
+    get:
+      tags:
+      - Payroll
+      summary: Loans and advances
+      operationId: list_loans
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Loans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Loan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Record a loan or advance with its instalment schedule
+      operationId: create_loan
+      description: 'Equal instalments from start_month, the last one takes the rounding. Nothing is recovered until the loan
+        is paid out.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created as a draft
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - employee_id
+              - kind
+              - principal
+              - installments
+              - start_month
+              properties:
+                employee_id:
+                  type: integer
+                kind:
+                  type: string
+                  enum:
+                  - loan
+                  - advance
+                principal:
+                  type: number
+                installments:
+                  type: integer
+                start_month:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/loans/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Payroll
+      summary: A loan with its schedule
+      operationId: get_loan
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The loan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/loans/{id}/disburse:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Pay the loan out
+      operationId: disburse_loan
+      description: 'Debits the employee loans account (accounting.payroll.employee_loans_account), credits the bank.
+
+
+        Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Paid out; recovery from salary starts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - account_id
+              properties:
+                account_id:
+                  type: integer
+                  description: The bank or cash account paid from.
+                date:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/loans/{id}/settle:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: The employee pays back what is left in cash
+      operationId: settle_loan
+      description: 'Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Settled and closed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - account_id
+              properties:
+                account_id:
+                  type: integer
+                  description: The bank or cash account received into.
+                date:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/loans/{id}/skip:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Move the next instalment to the end of the schedule
+      operationId: skip_loan_installment
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Skipped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/loans/{id}/cancel:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Cancel a loan not yet paid out
+      operationId: cancel_loan
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Loan'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/schemes:
+    get:
+      tags:
+      - Payroll
+      summary: Contribution schemes (EOBI, PESSI/SESSI, provident fund)
+      operationId: list_contribution_schemes
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Schemes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContributionScheme'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Add a contribution scheme
+      operationId: create_contribution_scheme
+      description: 'The employee''s share is a deduction from pay owed to employee_account_id; the employer''s share is an
+        expense (employer_expense_account_id) owed to employer_liability_account_id and is not part of the net pay.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContributionScheme'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - base
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                base:
+                  type: string
+                  enum:
+                  - basic
+                  - gross
+                  - fixed
+                employee_rate:
+                  type: number
+                  description: Percent taken from the employee.
+                employer_rate:
+                  type: number
+                  description: Percent the employer adds.
+                employee_fixed:
+                  type: number
+                employer_fixed:
+                  type: number
+                ceiling:
+                  type: number
+                  nullable: true
+                  description: The most of the base that counts each month.
+                employee_account_id:
+                  type: integer
+                  nullable: true
+                  description: Liability account the employees' share is owed to.
+                employer_expense_account_id:
+                  type: integer
+                  nullable: true
+                employer_liability_account_id:
+                  type: integer
+                  nullable: true
+                on_arrears:
+                  type: boolean
+                  description: Also take it on arrears paid in a run.
+                applies_to_all:
+                  type: boolean
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/schemes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Payroll
+      summary: A scheme
+      operationId: get_contribution_scheme
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The scheme
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContributionScheme'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Payroll
+      summary: Change a scheme (PATCH also accepted)
+      operationId: update_contribution_scheme
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContributionScheme'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - base
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                base:
+                  type: string
+                  enum:
+                  - basic
+                  - gross
+                  - fixed
+                employee_rate:
+                  type: number
+                  description: Percent taken from the employee.
+                employer_rate:
+                  type: number
+                  description: Percent the employer adds.
+                employee_fixed:
+                  type: number
+                employer_fixed:
+                  type: number
+                ceiling:
+                  type: number
+                  nullable: true
+                  description: The most of the base that counts each month.
+                employee_account_id:
+                  type: integer
+                  nullable: true
+                  description: Liability account the employees' share is owed to.
+                employer_expense_account_id:
+                  type: integer
+                  nullable: true
+                employer_liability_account_id:
+                  type: integer
+                  nullable: true
+                on_arrears:
+                  type: boolean
+                  description: Also take it on arrears paid in a run.
+                applies_to_all:
+                  type: boolean
+                is_active:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Payroll
+      summary: Delete a scheme
+      operationId: delete_contribution_scheme
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/schemes/{id}/assign:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Give a scheme to employees or take it away
+      operationId: assign_contribution_scheme
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      changed:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode:
+                  type: string
+                  enum:
+                  - assign
+                  - remove
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: 'Default: every active employee.'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/bank-file/{format}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+    get:
+      tags:
+      - Payroll
+      summary: The bank salary file of a posted run
+      operationId: payroll_bank_file
+      description: 'Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: The file, or with preview=1 the rows, the employees left out for want of a bank account, and the total
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: layout
+        in: query
+        schema:
+          type: string
+          default: standard
+        description: A layout of accounting.payroll.bank_file.layouts.
+      - name: preview
+        in: query
+        schema:
+          type: boolean
       - $ref: '#/components/parameters/Company'
   /fbr:
     get:
@@ -13747,6 +14842,15 @@ components:
           type: string
         withhold_tax:
           type: boolean
+        overtime_eligible:
+          type: boolean
+          description: Paid overtime hours from the attendance sheet.
+        schemes:
+          type: array
+          items:
+            type: integer
+          description: Replaces the contribution schemes of the employee when sent (schemes that apply to all need not be
+            listed).
         bank_name:
           type: string
         bank_account:
@@ -13919,6 +15023,133 @@ components:
                 type: string
               difference:
                 type: string
+    LeaveType:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        is_paid:
+          type: boolean
+          description: Unpaid leave comes off the salary by the day.
+        annual_days:
+          type: number
+          description: Yearly entitlement; 0 = not limited.
+        is_active:
+          type: boolean
+        id:
+          type: integer
+    Loan:
+      type: object
+      properties:
+        id:
+          type: integer
+        employee_id:
+          type: integer
+        employee_code:
+          type: string
+        employee_name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - loan
+          - advance
+        principal:
+          type: string
+        installments:
+          type: integer
+        start_month:
+          type: string
+          example: 2026-10
+        issued_on:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum:
+          - draft
+          - active
+          - closed
+          - cancelled
+        outstanding:
+          type: string
+        journal_entry_id:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        schedule:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              due_month:
+                type: string
+              amount:
+                type: string
+              status:
+                type: string
+                enum:
+                - scheduled
+                - included
+                - cancelled
+              payroll_run_id:
+                type: integer
+                nullable: true
+    ContributionScheme:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        base:
+          type: string
+          enum:
+          - basic
+          - gross
+          - fixed
+        employee_rate:
+          type: number
+          description: Percent taken from the employee.
+        employer_rate:
+          type: number
+          description: Percent the employer adds.
+        employee_fixed:
+          type: number
+        employer_fixed:
+          type: number
+        ceiling:
+          type: number
+          nullable: true
+          description: The most of the base that counts each month.
+        employee_account_id:
+          type: integer
+          nullable: true
+          description: Liability account the employees' share is owed to.
+        employer_expense_account_id:
+          type: integer
+          nullable: true
+        employer_liability_account_id:
+          type: integer
+          nullable: true
+        on_arrears:
+          type: boolean
+          description: Also take it on arrears paid in a run.
+        applies_to_all:
+          type: boolean
+        is_active:
+          type: boolean
+        id:
+          type: integer
+        employees:
+          type: integer
     FbrSubmission:
       type: object
       properties:
