@@ -54,7 +54,7 @@ class PayrollService
     {
         $kind = $input['kind'] ?? null;
 
-        return Validator::make($input, [
+        $data = Validator::make($input, [
             'code' => ['required', 'string', 'max:30', CompanyRule::unique('accounting_pay_components', 'code')->ignore($component?->id)],
             'name' => ['required', 'string', 'max:120'],
             'kind' => ['required', Rule::in(PayComponent::KINDS)],
@@ -67,6 +67,11 @@ class PayrollService
                 ->whereIn('account_type_id', DB::table('accounting_account_types')->where('code', $kind === 'deduction' ? 'LIABILITY' : 'EXPENSE')->select('id')))],
             'is_active' => ['nullable', 'boolean'],
         ], ['account_id.exists' => $kind === 'deduction' ? 'A deduction is owed to a liability account.' : 'An earning is booked to an expense account.'])->validate();
+
+        // A rate left blank means none (the screens send an empty field).
+        $data['rate'] = $data['rate'] ?? 0;
+
+        return $data;
     }
 
     /**

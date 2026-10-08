@@ -49,6 +49,11 @@ class PayrollContributionService
             'is_active' => ['nullable', 'boolean'],
         ])->validate();
 
+        // Amounts left blank mean none (the screens send empty fields).
+        foreach (['employee_rate', 'employer_rate', 'employee_fixed', 'employer_fixed'] as $key) {
+            $data[$key] = $data[$key] ?? 0;
+        }
+
         $fixed = $data['base'] === 'fixed';
         $employee = (float) ($fixed ? ($data['employee_fixed'] ?? 0) : ($data['employee_rate'] ?? 0));
         $employer = (float) ($fixed ? ($data['employer_fixed'] ?? 0) : ($data['employer_rate'] ?? 0));
@@ -138,19 +143,21 @@ class PayrollContributionService
             return [];
         }
 
-        $everyone = $schemes->where('applies_to_all', true);
+        $everyone = $schemes->where('applies_to_all', true)->all();
         $given = EmployeeScheme::query()->whereIn('contribution_scheme_id', $schemes->keys())->get()->groupBy('employee_id');
         $result = [];
 
         foreach (Employee::query()->where('is_active', true)->pluck('id') as $id) {
-            $mine = $everyone->keyBy('id');
+            $mine = $everyone;
 
             foreach ($given[$id] ?? [] as $link) {
-                $mine[$link->contribution_scheme_id] = $schemes[$link->contribution_scheme_id];
+                if (isset($schemes[$link->contribution_scheme_id])) {
+                    $mine[$link->contribution_scheme_id] = $schemes[$link->contribution_scheme_id];
+                }
             }
 
-            if ($mine->isNotEmpty()) {
-                $result[$id] = $mine->values();
+            if ($mine !== []) {
+                $result[$id] = collect(array_values($mine));
             }
         }
 

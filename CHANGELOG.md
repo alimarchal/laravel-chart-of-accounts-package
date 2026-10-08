@@ -2,6 +2,26 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.30.0] - 2026-11-01
+
+Payroll operations release.
+
+### Added
+- **Attendance sheet and leave:** absent days and unpaid leave are taken off the salary by the day; leave types (paid/unpaid, yearly entitlement),
+  leaves with overlap and balance checks, half days, yearly balances.
+- **Overtime** for flagged employees (hourly rate x multiplier, config `accounting.payroll.overtime`).
+- **Loans and salary advances:** schedule, payout entry, recovery from salary by the payroll run, skip, cash settlement, closing.
+  Config `accounting.payroll.employee_loans_account`.
+- **Contribution schemes** (EOBI, PESSI/SESSI, provident fund): employee share deducted, employer share booked as a cost owed to the fund,
+  optional on arrears; employer contributions shown on payslips and totalled on runs.
+- **Bank salary file** (CSV/Excel) with configurable layouts and a list of employees without a bank account.
+- React and Blade screens (attendance, leave, loans, contributions; employee, run and payslip screens updated) and API endpoints under
+  `/payroll/attendance`, `/payroll/leave-types`, `/payroll/leaves`, `/payroll/loans`, `/payroll/schemes` and `/payroll/runs/{id}/bank-file/{format}`.
+
+### Fixed
+- Adding a fixed or percent pay component from the React or Blade screen failed (the screens send a blank rate, which reached the database as
+  null; 2.29.0 only). Blank numbers on pay components, leave types and contribution schemes now mean none.
+
 ## [2.29.0] - 2026-10-31
 
 Payroll pay structure release.

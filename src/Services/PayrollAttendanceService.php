@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Attendance;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\Leave;
 use Alimarchal\LaravelChartOfAccounts\Models\LeaveType;
+use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
@@ -31,13 +32,16 @@ class PayrollAttendanceService
      */
     public function validateLeaveType(array $input, ?LeaveType $type = null): array
     {
-        return Validator::make($input, [
+        $data = Validator::make($input, [
             'code' => ['required', 'string', 'max:30', CompanyRule::unique('accounting_leave_types', 'code')->ignore($type?->id)],
             'name' => ['required', 'string', 'max:120'],
             'is_paid' => ['nullable', 'boolean'],
             'annual_days' => ['nullable', 'numeric', 'min:0', 'max:366'],
             'is_active' => ['nullable', 'boolean'],
         ])->validate();
+        $data['annual_days'] = $data['annual_days'] ?? 0;
+
+        return $data;
     }
 
     public function deleteLeaveType(LeaveType $type): void
@@ -221,7 +225,7 @@ class PayrollAttendanceService
     public function saveSheet(array $data): int
     {
         $month = Carbon::parse($data['month'])->startOfMonth();
-        $closed = \Alimarchal\LaravelChartOfAccounts\Models\PayrollRun::query()->whereDate('period_month', $month->toDateString())->whereIn('status', ['posted', 'paid'])->exists();
+        $closed = PayrollRun::query()->whereDate('period_month', $month->toDateString())->whereIn('status', ['posted', 'paid'])->exists();
 
         if ($closed) {
             throw new AccountingException('Payroll of '.$month->format('F Y').' is already posted: void it before changing the attendance.');

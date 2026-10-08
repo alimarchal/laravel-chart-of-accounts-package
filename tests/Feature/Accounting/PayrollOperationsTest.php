@@ -4,11 +4,13 @@ use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\Attendance;
+use Alimarchal\LaravelChartOfAccounts\Models\ContributionScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\LeaveType;
 use Alimarchal\LaravelChartOfAccounts\Models\Loan;
 use Alimarchal\LaravelChartOfAccounts\Models\LoanInstallment;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
+use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Models\Payslip;
 use Alimarchal\LaravelChartOfAccounts\Models\PayslipLine;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollArrearsService;
@@ -20,6 +22,7 @@ use Alimarchal\LaravelChartOfAccounts\Services\PayrollStructureService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
@@ -123,7 +126,7 @@ it('schedules a loan, pays it out, recovers instalments from salary and closes i
 
     expect(LoanInstallment::query()->orderBy('id')->pluck('amount')->all())->toBe(['3333.33', '3333.33', '3333.34'])->and($loan->status)->toBe('draft');
     expect(($this->slip)($employee, ($this->run)())->deductions)->toBe('0.00');      // a draft loan is not recovered
-    ($this->payroll)()->deleteRun(Alimarchal\LaravelChartOfAccounts\Models\PayrollRun::query()->firstOrFail());
+    ($this->payroll)()->deleteRun(PayrollRun::query()->firstOrFail());
 
     $loan = $service->disburse($loan, account('1101')->id, $this->month->toDateString());
     expect($loan->status)->toBe('active')->and(($this->balance)('1105'))->toBe(10000.0)->and(($this->balance)('1101'))->toBe(-10000.0)
@@ -213,4 +216,76 @@ it('also takes contributions on arrears when the scheme says so', function (): v
     // 10% of the new 110,000 basic, plus 10% of the 10,000 arrears.
     expect($lines['Provident fund'])->toBe('11000.00')->and($lines['Provident fund on arrears'])->toBe('1000.00')->and($lines['Provident fund (employer)'])->toBe('11000.00')->and($lines['Provident fund on arrears (employer)'])->toBe('1000.00')
         ->and($slip->deductions)->toBe('12000.00')->and($slip->employer)->toBe('12000.00');
+});
+
+it('serves the attendance, leave, loan and contribution screens and the API', function (): void {
+    $employee = ($this->employee)(['bank_name' => 'HBL', 'bank_account' => 'PK36HABB0000000123456702']);
+    ($this->employee)(['code' => 'E2', 'name' => 'No bank']);
+    $annual = ($this->leaveType)();
+
+    $this->get('/accounting/payroll/attendance')->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/attendance')->has('rows'));
+    $this->get('/accounting/payroll/leaves')->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/leaves')->has('types', 1));
+    $this->get('/accounting/payroll/loans')->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/loans'));
+    $this->get('/accounting/payroll/schemes')->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/schemes')->has('accounts'));
+    $this->get("/accounting/payroll/employees/{$employee->id}/edit")->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/employee-form')->has('schemes'));
+
+    Sanctum::actingAs(auth()->user());
+    $month = $this->month->format('Y-m');
+    $this->postJson('/api/v1/accounting/payroll/attendance', ['month' => $this->month->toDateString(), 'rows' => [['employee_id' => $employee->id, 'absent_days' => 2]]])->assertOk()->assertJsonPath('data.0.absent_days', '2.00');
+    $this->getJson("/api/v1/accounting/payroll/attendance?month={$month}")->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('month', $month);
+    $this->postJson('/api/v1/accounting/payroll/leave-types', ['code' => 'UNP', 'name' => 'Unpaid', 'is_paid' => false])->assertCreated()->assertJsonPath('data.is_paid', false);
+    $leave = $this->postJson('/api/v1/accounting/payroll/leaves', ['employee_id' => $employee->id, 'leave_type_id' => $annual->id, 'from_date' => $this->month->toDateString(), 'to_date' => $this->month->copy()->addDay()->toDateString()])->assertCreated()->assertJsonPath('data.days', '2.00')->json('data.id');
+    $this->getJson('/api/v1/accounting/payroll/leaves/balances?year='.$this->month->format('Y'))->assertOk()->assertJsonPath('data.0.taken', 2);
+    $this->postJson("/api/v1/accounting/payroll/leaves/{$leave}/cancel")->assertOk()->assertJsonPath('data.status', 'cancelled');
+    $this->deleteJson('/api/v1/accounting/payroll/leave-types/'.LeaveType::query()->where('code', 'UNP')->value('id'))->assertNoContent();
+
+    $loan = $this->postJson('/api/v1/accounting/payroll/loans', ['employee_id' => $employee->id, 'kind' => 'loan', 'principal' => 6000, 'installments' => 2, 'start_month' => $this->month->toDateString()])->assertCreated()->assertJsonPath('data.status', 'draft')->assertJsonCount(2, 'data.schedule')->json('data.id');
+    $this->getJson("/api/v1/accounting/payroll/loans/{$loan}")->assertOk()->assertJsonPath('data.outstanding', '6000.00');
+    $this->postJson("/api/v1/accounting/payroll/loans/{$loan}/disburse", ['account_id' => account('1101')->id])->assertForbidden();   // paying out is the approver's
+    $scheme = $this->postJson('/api/v1/accounting/payroll/schemes', ['code' => 'PF', 'name' => 'Provident fund', 'base' => 'basic', 'employee_rate' => 5, 'employee_account_id' => account('2102')->id])->assertCreated()->assertJsonPath('data.employees', 0)->json('data.id');
+    $this->postJson('/api/v1/accounting/payroll/schemes', ['code' => 'BAD', 'name' => 'Bad', 'base' => 'basic', 'employee_rate' => 5])->assertUnprocessable();
+    $this->postJson("/api/v1/accounting/payroll/schemes/{$scheme}/assign", ['employee_ids' => [$employee->id]])->assertOk()->assertJsonPath('data.changed', 1);
+    $this->getJson("/api/v1/accounting/payroll/schemes/{$scheme}")->assertOk()->assertJsonPath('data.employees', 1);
+    $this->putJson("/api/v1/accounting/payroll/schemes/{$scheme}", ['code' => 'PF', 'name' => 'PF fund', 'base' => 'basic', 'employee_rate' => 6, 'employee_account_id' => account('2102')->id])->assertOk()->assertJsonPath('data.name', 'PF fund');
+
+    $approver = User::factory()->create();
+    $approver->assignRole('approver');
+    Sanctum::actingAs($approver);
+    $this->postJson("/api/v1/accounting/payroll/loans/{$loan}/disburse", ['account_id' => account('1101')->id, 'date' => $this->month->toDateString()])->assertOk()->assertJsonPath('data.status', 'active');
+    $this->postJson("/api/v1/accounting/payroll/loans/{$loan}/skip")->assertForbidden();   // the accountant manages the schedule
+    $run = ($this->payroll)()->post(($this->run)());
+
+    // 2 absent days of 31 leave 93,548.39; less 6% provident fund (5,612.90) and the first 3,000 instalment.
+    $this->getJson('/api/v1/accounting/payroll/runs/'.$run->id)->assertOk()->assertJsonPath('data.payslips.0.net', '84935.49');
+    $this->getJson("/api/v1/accounting/payroll/runs/{$run->id}/bank-file/csv?preview=1")->assertOk()->assertJsonPath('count', 1)->assertJsonPath('missing.0.code', 'E2')->assertJsonPath('total', '84935.49')->assertJsonPath('data.0.Employee code', 'E1')
+        ->assertJsonPath('data.0.Narration', 'Salary '.$this->month->format('F Y'));
+    $csv = $this->get("/api/v1/accounting/payroll/runs/{$run->id}/bank-file/csv?layout=iban")->assertOk()->streamedContent();
+    expect($csv)->toContain('"Account / IBAN","Employee name",Amount,Narration')->toContain('PK36HABB0000000123456702')->not->toContain('E2');
+    $this->get("/api/v1/accounting/payroll/runs/{$run->id}/bank-file/xlsx")->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $this->getJson("/api/v1/accounting/payroll/runs/{$run->id}/bank-file/csv?layout=nope&preview=1")->assertUnprocessable();
+    $draft = ($this->payroll)()->createRun($this->month->copy()->addMonth()->toDateString());
+    $this->getJson("/api/v1/accounting/payroll/runs/{$draft->id}/bank-file/csv?preview=1")->assertUnprocessable();
+});
+
+it('keeps overtime to flagged employees and the sheet out of reach of viewers', function (): void {
+    ($this->employee)();
+    $viewer = User::factory()->create();
+    $viewer->assignRole('viewer');
+    $this->actingAs($viewer);
+
+    $this->get('/accounting/payroll/attendance')->assertOk();
+    $this->post('/accounting/payroll/attendance', ['month' => $this->month->toDateString(), 'rows' => []])->assertForbidden();
+    $this->post('/accounting/payroll/loans', ['employee_id' => 1])->assertForbidden();
+    $this->post('/accounting/payroll/schemes', ['code' => 'X'])->assertForbidden();
+    $this->get('/accounting/payroll/runs/'.($this->run)()->id.'/bank-file/csv')->assertForbidden();
+});
+
+it('accepts the blank fields the screens send for optional numbers', function (): void {
+    // The screens send "" for fields left empty (turned into null on the way in): they must mean "none", not an error.
+    $this->post('/accounting/payroll/components', ['code' => 'CONV', 'name' => 'Conveyance', 'kind' => 'earning', 'method' => 'fixed', 'value' => 3000, 'rate' => '', 'unit' => '', 'taxable' => 1, 'account_id' => account('5102')->id])->assertRedirect()->assertSessionHasNoErrors();
+    expect(PayComponent::query()->firstOrFail()->rate)->toBe('0.0000');
+    $this->post('/accounting/payroll/leave-types', ['code' => 'UNP', 'name' => 'Unpaid', 'is_paid' => 0, 'annual_days' => ''])->assertRedirect()->assertSessionHasNoErrors();
+    expect(LeaveType::query()->firstOrFail()->annual_days)->toBe('0.00');
+    $this->post('/accounting/payroll/schemes', ['code' => 'EOBI', 'name' => 'EOBI', 'base' => 'basic', 'employee_rate' => 1, 'employer_rate' => '', 'employee_fixed' => '', 'employer_fixed' => '', 'ceiling' => '', 'employee_account_id' => account('2102')->id])->assertRedirect()->assertSessionHasNoErrors();
+    expect(ContributionScheme::query()->firstOrFail()->employer_rate)->toBe('0.0000');
 });

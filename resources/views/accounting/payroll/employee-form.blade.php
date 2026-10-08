@@ -19,6 +19,7 @@
                     <label class="text-sm"><span class="text-gray-700">Reason for the change</span><input name="reason" value="{{ old('reason') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"></label>
                 @endif
                 <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="withhold_tax" value="0"><input type="checkbox" name="withhold_tax" value="1" @checked($v('withhold_tax', false))> Withhold income tax</label>
+                <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="overtime_eligible" value="0"><input type="checkbox" name="overtime_eligible" value="1" @checked($v('overtime_eligible', false))> Paid overtime</label>
                 <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($v('is_active', true))> Active</label>
             </div>
             <div class="bg-white shadow rounded-lg p-5 space-y-2 text-sm"><h3 class="font-semibold text-gray-800">Allowances and deductions</h3>
@@ -34,6 +35,14 @@
                     <p class="text-gray-500">No components defined yet.</p>
                 @endforelse
             </div>
+            @if(count($schemes))
+                <div class="bg-white shadow rounded-lg p-5 space-y-2 text-sm"><h3 class="font-semibold text-gray-800">Contribution schemes</h3>
+                    <input type="hidden" name="schemes" value="">
+                    @foreach ($schemes as $i => $scheme)
+                        <label class="flex items-center gap-2"><input type="checkbox" name="schemes[{{ $i }}]" value="{{ $scheme->id }}" @checked($scheme->applies_to_all || in_array($scheme->id, $employee['schemes'] ?? [], true)) @disabled($scheme->applies_to_all)>{{ $scheme->code }} {{ $scheme->name }} @if($scheme->applies_to_all)<span class="text-gray-500">(applies to everybody)</span>@endif</label>
+                    @endforeach
+                </div>
+            @endif
             @if(! empty($history))
                 <div class="bg-white shadow rounded-lg p-5 text-sm overflow-x-auto"><h3 class="font-semibold text-gray-800 mb-2">Salary history</h3>
                     <table class="w-full"><thead><tr class="text-left text-gray-500"><th class="py-1">From</th><th class="text-right">Was</th><th class="text-right">Now</th><th>Reason</th></tr></thead><tbody>
