@@ -5,8 +5,8 @@ namespace Alimarchal\LaravelChartOfAccounts\Support;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryRevision;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * What an employee earns as basic pay on a day, and for a month, given the history of salary revisions. A revision that
