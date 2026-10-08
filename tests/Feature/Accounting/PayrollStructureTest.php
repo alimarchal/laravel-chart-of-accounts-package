@@ -16,6 +16,7 @@ use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollStructureService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
@@ -216,4 +217,66 @@ it('reports the register with totals and lets arrears be cancelled or approved i
     expect(($this->arrears)()->cancel($created[0])->status)->toBe('cancelled')->and(($this->arrears)()->report()['totals']['count'])->toBe(0);
     // Cancelled months can be claimed again.
     expect(($this->arrears)()->create(($this->arrears)()->validate(['from_month' => $this->month->toDateString(), 'payment_month' => $this->month->copy()->addMonth()->toDateString()])))->toHaveCount(1);
+});
+
+it('serves the grade, bulk and arrears screens and the whole workflow through the API', function (): void {
+    $fuel = ($this->component)(['code' => 'FUEL', 'name' => 'Fuel', 'method' => 'quantity_rate', 'value' => 75, 'rate' => 280, 'unit' => 'litre']);
+    $employee = ($this->employee)();
+    ($this->pay)(0);
+    ($this->pay)(1);
+
+    $this->get('/accounting/payroll/grades')->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/grades')->has('components', 1));
+    $this->get('/accounting/payroll/bulk')->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/bulk')->has('employees', 1));
+    $this->get('/accounting/payroll/arrears')->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/arrears')->where('totals.count', 0));
+    $this->get("/accounting/payroll/employees/{$employee->id}/edit")->assertOk()->assertInertia(fn ($page) => $page->component('accounting/payroll/employee-form')->has('grades')->has('history'));
+
+    Sanctum::actingAs(auth()->user());
+    $grade = $this->postJson('/api/v1/accounting/payroll/grades', ['code' => 'G1', 'name' => 'Grade 1', 'base_salary' => 90000, 'components' => [['pay_component_id' => $fuel->id]]])->assertCreated()->assertJsonPath('data.components.0.pay_component_id', $fuel->id)->json('data.id');
+    $this->getJson('/api/v1/accounting/payroll/grades')->assertOk()->assertJsonPath('data.0.code', 'G1');
+    $this->putJson("/api/v1/accounting/payroll/grades/{$grade}", ['code' => 'G1', 'name' => 'Grade One', 'base_salary' => 90000])->assertOk()->assertJsonPath('data.name', 'Grade One');
+    $this->postJson("/api/v1/accounting/payroll/grades/{$grade}/assign", ['apply_salary' => true, 'effective_from' => $this->month->toDateString()])->assertOk()->assertJsonPath('data.changed', 1);
+    $this->deleteJson("/api/v1/accounting/payroll/grades/{$grade}")->assertUnprocessable();
+    $this->postJson('/api/v1/accounting/payroll/bulk/components', ['pay_component_id' => $fuel->id, 'mode' => 'assign', 'value' => 60])->assertOk()->assertJsonPath('data.changed', 1);
+    $this->postJson('/api/v1/accounting/payroll/bulk/components', ['pay_component_id' => $fuel->id, 'mode' => 'assign', 'salary_grade_id' => 999999])->assertUnprocessable();
+
+    $this->postJson("/api/v1/accounting/payroll/employees/{$employee->id}/revisions", ['new_salary' => 120000, 'effective_from' => $this->month->toDateString(), 'reason' => 'Promotion'])->assertCreated()->assertJsonPath('data.0.new_salary', '120000.00');
+    $this->getJson("/api/v1/accounting/payroll/employees/{$employee->id}/revisions")->assertOk()->assertJsonCount(2, 'data');
+    $this->postJson('/api/v1/accounting/payroll/revisions/preview', ['mode' => 'percent', 'value' => 10, 'effective_from' => $this->month->toDateString()])->assertOk()->assertJsonPath('data.0.new_salary', '132000.00');
+    $this->postJson('/api/v1/accounting/payroll/revisions', ['mode' => 'weird', 'value' => 10, 'effective_from' => $this->month->toDateString()])->assertUnprocessable();
+
+    $input = ['from_month' => $this->month->toDateString(), 'payment_month' => $this->month->copy()->addMonths(2)->toDateString()];
+    $this->postJson('/api/v1/accounting/payroll/arrears/preview', $input)->assertOk()->assertJsonPath('data.0.amount', '40000.00');
+    $id = $this->postJson('/api/v1/accounting/payroll/arrears', $input)->assertCreated()->assertJsonPath('data.0.status', 'draft')->json('data.0.id');
+    $this->getJson("/api/v1/accounting/payroll/arrears/{$id}")->assertOk()->assertJsonCount(2, 'data.months');
+    $this->getJson('/api/v1/accounting/payroll/arrears?status=draft')->assertOk()->assertJsonPath('totals.amount', '40000.00')->assertJsonCount(1, 'data');
+    $this->postJson("/api/v1/accounting/payroll/arrears/{$id}/approve")->assertForbidden();   // approving is the approver's
+
+    $approver = User::factory()->create();
+    $approver->assignRole('approver');
+    Sanctum::actingAs($approver);
+    $this->postJson("/api/v1/accounting/payroll/arrears/{$id}/approve")->assertOk()->assertJsonPath('data.status', 'approved');
+    $this->postJson("/api/v1/accounting/payroll/arrears/{$id}/approve")->assertUnprocessable();
+    $this->postJson('/api/v1/accounting/payroll/arrears/approve-all')->assertOk()->assertJsonPath('data.approved', 0);
+    $this->postJson("/api/v1/accounting/payroll/arrears/{$id}/cancel")->assertOk()->assertJsonPath('data.status', 'cancelled');
+});
+
+it('applies a bulk raise and creates arrears from the screens', function (): void {
+    $employee = ($this->employee)();
+    ($this->pay)(0);
+    $month = $this->month->toDateString();
+
+    $this->post('/accounting/payroll/revisions/preview', ['mode' => 'increase', 'value' => 5000, 'effective_from' => $month])->assertRedirect()->assertSessionHas('revision_preview');
+    $this->post('/accounting/payroll/revisions', ['mode' => 'increase', 'value' => 5000, 'effective_from' => $month])->assertRedirect()->assertSessionHas('success');
+    expect($employee->refresh()->base_salary)->toBe('105000.00');
+    $this->post('/accounting/payroll/arrears/preview', ['from_month' => $month, 'payment_month' => $this->month->copy()->addMonth()->toDateString()])->assertRedirect()->assertSessionHas('arrears_preview');
+    $this->post('/accounting/payroll/arrears', ['from_month' => $month, 'payment_month' => $this->month->copy()->addMonth()->toDateString()])->assertRedirect()->assertSessionHas('success');
+    expect(PayrollArrear::query()->firstOrFail()->amount)->toBe('5000.00');
+    $this->post('/accounting/payroll/arrears', ['from_month' => $month, 'payment_month' => $month])->assertSessionHasErrors('payment_month');
+
+    $viewer = User::factory()->create();
+    $viewer->assignRole('viewer');
+    $this->actingAs($viewer);
+    $this->get('/accounting/payroll/arrears')->assertOk();
+    $this->get('/accounting/payroll/bulk')->assertForbidden();
+    $this->post('/accounting/payroll/arrears/preview', ['from_month' => $month, 'payment_month' => $month])->assertForbidden();
 });

@@ -13,6 +13,11 @@
                     <label class="text-sm"><span class="text-gray-700">{{ $label }}</span><input type="{{ $type }}" step="any" name="{{ $name }}" value="{{ $v($name, $name === 'join_date' ? $today : '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"></label>
                 @endforeach
                 <label class="text-sm"><span class="text-gray-700">Cost center</span><select name="cost_center_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"><option value="">None</option>@foreach ($costCenters as $center)<option value="{{ $center->id }}" @selected((string) $v('cost_center_id') === (string) $center->id)>{{ $center->code }} {{ $center->name }}</option>@endforeach</select></label>
+                <label class="text-sm"><span class="text-gray-700">Salary grade</span><select name="salary_grade_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"><option value="">None</option>@foreach ($grades as $grade)<option value="{{ $grade->id }}" @selected((string) $v('salary_grade_id') === (string) $grade->id)>{{ $grade->code }} {{ $grade->name }}</option>@endforeach</select></label>
+                @if($employee)
+                    <label class="text-sm"><span class="text-gray-700">New salary applies from</span><input type="date" name="effective_from" value="{{ old('effective_from', $today) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"><span class="text-xs text-gray-500">Used only when the salary above changes; a past date is paid with arrears.</span></label>
+                    <label class="text-sm"><span class="text-gray-700">Reason for the change</span><input name="reason" value="{{ old('reason') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"></label>
+                @endif
                 <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="withhold_tax" value="0"><input type="checkbox" name="withhold_tax" value="1" @checked($v('withhold_tax', false))> Withhold income tax</label>
                 <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($v('is_active', true))> Active</label>
             </div>
@@ -23,12 +28,18 @@
                     <div class="flex flex-wrap items-center gap-3" x-data="{ on: {{ $row ? 'true' : 'false' }} }">
                         <label class="flex w-72 items-center gap-2"><input type="checkbox" x-model="on" name="components[{{ $i }}][pay_component_id]" value="{{ $component['id'] }}">{{ $component['name'] }} <span class="text-gray-500">({{ $component['kind'] }})</span></label>
                         <input type="number" step="any" name="components[{{ $i }}][value]" value="{{ $row['value'] ?? '' }}" placeholder="{{ (float) $component['value'] }}" x-show="on" :disabled="!on" class="w-32 border-gray-300 rounded-md shadow-sm text-sm">
-                        <span class="text-gray-500" x-show="on">{{ $component['method'] === 'percent_of_basic' ? '% of basic' : 'per month' }} (blank = {{ (float) $component['value'] }})</span>
+                        <span class="text-gray-500" x-show="on">{{ $component['method'] === 'percent_of_basic' ? '% of basic' : ($component['method'] === 'quantity_rate' ? ($component['unit'] ?? 'units').' x '.(float) $component['rate'] : 'per month') }} (blank = {{ (float) $component['value'] }})</span>
                     </div>
                 @empty
                     <p class="text-gray-500">No components defined yet.</p>
                 @endforelse
             </div>
+            @if(! empty($history))
+                <div class="bg-white shadow rounded-lg p-5 text-sm overflow-x-auto"><h3 class="font-semibold text-gray-800 mb-2">Salary history</h3>
+                    <table class="w-full"><thead><tr class="text-left text-gray-500"><th class="py-1">From</th><th class="text-right">Was</th><th class="text-right">Now</th><th>Reason</th></tr></thead><tbody>
+                        @foreach ($history as $row)<tr class="border-t"><td class="py-1">{{ $row['effective_from'] }}</td><td class="text-right tabular-nums">{{ number_format((float) $row['old_salary'], 2) }}</td><td class="text-right tabular-nums">{{ number_format((float) $row['new_salary'], 2) }}</td><td>{{ $row['reason'] }}</td></tr>@endforeach
+                    </tbody></table></div>
+            @endif
             <div><button class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Save</button> <a href="{{ route('accounting.payroll.employees.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Cancel</a></div>
         </form>
     </div></div>

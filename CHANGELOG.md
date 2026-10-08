@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.29.0] - 2026-10-31
+
+Payroll pay structure release.
+
+### Added
+- **Quantity x rate pay components** (fuel litres at today's price): the rate is kept on the component, the quantity per employee.
+- **Salary grades:** a basic salary with its allowances and deductions; employees on a grade follow it, with their own components overriding.
+- **Bulk changes:** give or take away a component for many employees, move a group to a grade, raise salaries by percent, by an amount or to
+  an amount (with rounding and a preview).
+- **Salary history:** every change of salary is recorded with its effective date and reason; a change in the middle of a month is paid by the day.
+- **Arrears:** back pay of a late raise worked out from the posted payslips, reviewed, approved, and paid with the payroll run as its own line
+  with its own tax (as if paid in the months it belongs to) and a register. New config `accounting.payroll.arrears_account`.
+- React and Blade screens (grades, bulk changes, arrears; component, employee and payslip screens updated) and API endpoints under
+  `/payroll/grades`, `/payroll/bulk/components`, `/payroll/revisions`, `/payroll/employees/{id}/revisions` and `/payroll/arrears`.
+
+### Fixed
+- The payslip screens now list the Arrears line among the earnings; a TypeScript type of the receipt allocations was completed.
+
 ## [2.28.0] - 2026-10-30
 
 Security review release.

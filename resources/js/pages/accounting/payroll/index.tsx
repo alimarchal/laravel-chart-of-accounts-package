@@ -32,6 +32,9 @@ export default function PayrollIndex({ runs, summary, year, defaultMonth }: Prop
                     <div className="flex gap-2">
                         <Button asChild variant="outline"><Link href="/accounting/payroll/employees">Employees</Link></Button>
                         <Button asChild variant="outline"><Link href="/accounting/payroll/components">Allowances &amp; deductions</Link></Button>
+                        <Button asChild variant="outline"><Link href="/accounting/payroll/grades">Grades</Link></Button>
+                        {permissions['payroll.manage'] && <Button asChild variant="outline"><Link href="/accounting/payroll/bulk">Bulk changes</Link></Button>}
+                        <Button asChild variant="outline"><Link href="/accounting/payroll/arrears">Arrears</Link></Button>
                     </div>
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
