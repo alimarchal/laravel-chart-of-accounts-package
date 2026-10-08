@@ -11,7 +11,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Models\Payslip;
 use Alimarchal\LaravelChartOfAccounts\Models\PayslipLine;
+use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
+use Alimarchal\LaravelChartOfAccounts\Services\PayrollStructureService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -236,6 +238,8 @@ class PayrollController extends Controller
         return [
             'employee' => $employee ? $this->presentEmployee($employee, true) : null,
             'components' => PayComponent::query()->where('is_active', true)->orderBy('kind')->orderBy('code')->get()->map(fn (PayComponent $component): array => $this->presentComponent($component))->values(),
+            'grades' => SalaryGrade::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'base_salary']),
+            'history' => $employee ? app(PayrollStructureService::class)->history($employee) : [],
             'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
             'today' => now()->toDateString(),
         ];
@@ -276,7 +280,7 @@ class PayrollController extends Controller
     private function presentEmployee(Employee $employee, bool $withComponents = false): array
     {
         $data = [
-            'id' => $employee->id, 'code' => $employee->code, 'name' => $employee->name, 'national_id' => $employee->national_id, 'designation' => $employee->designation, 'cost_center_id' => $employee->cost_center_id,
+            'id' => $employee->id, 'code' => $employee->code, 'name' => $employee->name, 'national_id' => $employee->national_id, 'designation' => $employee->designation, 'cost_center_id' => $employee->cost_center_id, 'salary_grade_id' => $employee->salary_grade_id,
             'join_date' => $employee->join_date->toDateString(), 'leave_date' => $employee->leave_date?->toDateString(), 'base_salary' => $employee->base_salary, 'withhold_tax' => $employee->withhold_tax,
             'bank_name' => $employee->bank_name, 'bank_account' => $employee->bank_account, 'is_active' => $employee->is_active,
         ];
@@ -293,7 +297,7 @@ class PayrollController extends Controller
      */
     private function presentComponent(PayComponent $component): array
     {
-        return ['id' => $component->id, 'code' => $component->code, 'name' => $component->name, 'kind' => $component->kind, 'method' => $component->method, 'value' => $component->value, 'taxable' => $component->taxable, 'account_id' => $component->account_id, 'is_active' => $component->is_active];
+        return ['id' => $component->id, 'code' => $component->code, 'name' => $component->name, 'kind' => $component->kind, 'method' => $component->method, 'value' => $component->value, 'rate' => $component->rate, 'unit' => $component->unit, 'taxable' => $component->taxable, 'account_id' => $component->account_id, 'is_active' => $component->is_active];
     }
 
     private function routeName(string $name): string

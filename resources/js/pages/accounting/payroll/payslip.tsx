@@ -14,7 +14,7 @@ const money = (value: string) => Number(value).toLocaleString(undefined, { minim
 
 export default function Payslip({ run, employee, payslip }: Props) {
     useAccountingI18n();
-    const earnings = payslip.lines.filter((line) => ['basic', 'earning'].includes(line.kind));
+    const earnings = payslip.lines.filter((line) => ['basic', 'earning', 'arrears'].includes(line.kind));
     const deductions = payslip.lines.filter((line) => ['deduction', 'tax'].includes(line.kind));
 
     return (
@@ -35,9 +35,9 @@ export default function Payslip({ run, employee, payslip }: Props) {
                             <div><span className="text-muted-foreground">Bank</span><p>{employee.bank_name ? `${employee.bank_name} ${employee.bank_account ?? ''}` : '—'}</p></div>
                         </div>
                         <div className="grid gap-6 sm:grid-cols-2">
-                            <div><p className="mb-1 font-medium">Earnings</p>{earnings.map((line, index) => (<div key={index} className="flex justify-between border-t py-1"><span>{line.description}</span><span className="tabular-nums">{money(line.amount)}</span></div>))}
+                            <div><p className="mb-1 font-medium">Earnings</p>{earnings.map((line, index) => (<div key={index} className="flex justify-between gap-3 border-t py-1"><span>{line.description}</span><span className="tabular-nums">{money(line.amount)}</span></div>))}
                                 <div className="flex justify-between border-t py-1 font-medium"><span>Gross</span><span className="tabular-nums">{money(payslip.gross)}</span></div></div>
-                            <div><p className="mb-1 font-medium">Deductions</p>{deductions.map((line, index) => (<div key={index} className="flex justify-between border-t py-1"><span>{line.description}</span><span className="tabular-nums">{money(line.amount)}</span></div>))}
+                            <div><p className="mb-1 font-medium">Deductions</p>{deductions.map((line, index) => (<div key={index} className="flex justify-between gap-3 border-t py-1"><span>{line.description}</span><span className="tabular-nums">{money(line.amount)}</span></div>))}
                                 <div className="flex justify-between border-t py-1 font-medium"><span>Total</span><span className="tabular-nums">{money(String(Number(payslip.deductions) + Number(payslip.tax)))}</span></div></div>
                         </div>
                         <div className="flex justify-between border-t pt-3 text-lg font-semibold"><span>Net pay</span><span className="tabular-nums">{money(payslip.net)}</span></div>

@@ -551,6 +551,24 @@ the invoice number FBR returns.
 - **Post** books one entry in the payroll module: basic pay and earnings as expense (by account and cost center), deductions and
   tax as liabilities, and the net pay owed to employees (`ACCOUNTING_PAYROLL_NET_PAYABLE`, default 2103). **Pay** clears that
   liability against a bank or cash account. **Void** reverses the payment and the salary entry; the month can then be run again.
+- **Quantity x rate components:** an allowance can be a quantity at a rate (fuel: 75 litres x 280). The rate lives on the
+  component, the quantity per employee (or default), so changing the price once changes everybody on the next calculation.
+- **Salary grades** (`/accounting/payroll/grades`): a basic salary with its allowances and deductions. Employees on a grade follow it:
+  change an allowance of the grade and everybody on it is paid the new amount next time; an employee's own components and values
+  override the grade's. Leaving the salary blank on an employee takes the grade's.
+- **Bulk changes** (`/accounting/payroll/bulk`): give or take away a component for many employees, move a group to a grade (optionally
+  moving their salary), or raise salaries (by percent, by an amount, or set to an amount, with rounding) with a preview before it is applied.
+  Who is meant: the employees picked, else everybody on a grade, else every active employee.
+- **Salary history:** every change of an employee's salary is a revision with the date it applies from and a reason. A revision in the
+  middle of a month pays the old salary up to the day before and the new one from that day.
+- **Arrears** (`/accounting/payroll/arrears`): when a raise is applied late (say it is October and the raise was from January), the
+  difference between what the posted payslips paid and what the salary history says was due is worked out month by month (allowances that
+  are a percent of the basic follow). Preview, create (drafts), **approve** (the approver, `payroll.post`), and the payroll run of the
+  payment month pays them as an **Arrears** line, booked to `accounting.payroll.arrears_account` (default: the salary expense account).
+  Income tax on arrears is worked out as if they had been paid in the months they belong to, so one big month does not push the employee
+  into a higher slab; it appears as its own "Income tax on arrears" line. Months already claimed are never claimed twice; a month in which
+  an employee was overpaid is not recovered; a voided or deleted run puts its arrears back in the approved queue. Arrears of an employee who
+  has already left are not paid by a run (they are not in it). A register shows every arrears record with totals by status and by month.
 - Printable payslips. Permissions `payroll.view/manage/run/post/void`: the accountant prepares (`manage`, `run`), the approver
   posts, pays and voids, so one person cannot do both. Audited (`PAYROLL_RUN_*`, `EMPLOYEE_SAVED`).
 

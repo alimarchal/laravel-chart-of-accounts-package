@@ -24,7 +24,7 @@ type Props = {
         status: 'posted' | 'void';
         journal_entry_id: number | null;
         voucher_number: string | null;
-        allocations: Array<{ id: number; document: string; amount: string; allocated_on: string }>;
+        allocations: Array<{ id: number; document_id: number; document: string; amount: string; allocated_on: string }>;
     };
     openDocuments: Array<{ id: number; number: string; due_date: string; open: string }>;
 };

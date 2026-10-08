@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 
 type Props = {
-    components: Array<{ id: number; code: string; name: string; kind: string; method: string; value: string; taxable: boolean; account_id: number; is_active: boolean }>;
+    components: Array<{ id: number; code: string; name: string; kind: string; method: string; value: string; rate: string; unit: string | null; taxable: boolean; account_id: number; is_active: boolean }>;
     accounts: Array<{ id: number; account_code: string; account_name: string; type: string }>;
 };
 
@@ -18,7 +18,7 @@ const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-
 
 export default function PayrollComponents({ components, accounts }: Props) {
     const { permissions, flash } = useAccounting();
-    const form = useForm({ code: '', name: '', kind: 'earning', method: 'fixed', value: '', taxable: true, account_id: '' });
+    const form = useForm({ code: '', name: '', kind: 'earning', method: 'fixed', value: '', rate: '', unit: '', taxable: true, account_id: '' });
     const add = (event: FormEvent) => {
         event.preventDefault();
         form.post('/accounting/payroll/components', { onSuccess: () => form.reset() });
@@ -37,7 +37,7 @@ export default function PayrollComponents({ components, accounts }: Props) {
                         {components.map((row) => (
                             <tr key={row.id} className="border-t">
                                 <td className="py-2 font-medium">{row.code}</td><td>{row.name} {!row.is_active && <Badge variant="outline">inactive</Badge>}</td><td>{row.kind}{row.kind === 'earning' && !row.taxable ? ' (not taxable)' : ''}</td>
-                                <td>{Number(row.value)}{row.method === 'percent_of_basic' ? '% of basic' : ' per month'}</td><td>{label(row.account_id)?.account_code} {label(row.account_id)?.account_name}</td>
+                                <td>{row.method === 'quantity_rate' ? `${Number(row.value)} ${row.unit ?? 'units'} x ${Number(row.rate)} = ${(Number(row.value) * Number(row.rate)).toLocaleString()}` : `${Number(row.value)}${row.method === 'percent_of_basic' ? '% of basic' : ' per month'}`}</td><td>{label(row.account_id)?.account_code} {label(row.account_id)?.account_name}</td>
                                 <td className="text-right">{permissions['payroll.manage'] && <Button variant="ghost" size="sm" onClick={() => confirm('Delete this component?') && router.delete(`/accounting/payroll/components/${row.id}`)}>Delete</Button>}</td>
                             </tr>
                         ))}
@@ -52,8 +52,12 @@ export default function PayrollComponents({ components, accounts }: Props) {
                                 <div className="space-y-1"><Label htmlFor="code">Code</Label><Input id="code" value={form.data.code} onChange={(event) => form.setData('code', event.target.value)} /><InputError message={form.errors.code} /></div>
                                 <div className="space-y-1"><Label htmlFor="name">Name</Label><Input id="name" value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} /><InputError message={form.errors.name} /></div>
                                 <div className="space-y-1"><Label htmlFor="kind">Kind</Label><select id="kind" className={selectClass} value={form.data.kind} onChange={(event) => form.setData('kind', event.target.value)}><option value="earning">Earning (allowance)</option><option value="deduction">Deduction</option></select></div>
-                                <div className="space-y-1"><Label htmlFor="method">Method</Label><select id="method" className={selectClass} value={form.data.method} onChange={(event) => form.setData('method', event.target.value)}><option value="fixed">Fixed amount per month</option><option value="percent_of_basic">Percent of basic</option></select></div>
-                                <div className="space-y-1"><Label htmlFor="value">Default value</Label><Input id="value" type="number" step="any" value={form.data.value} onChange={(event) => form.setData('value', event.target.value)} /><InputError message={form.errors.value} /></div>
+                                <div className="space-y-1"><Label htmlFor="method">Method</Label><select id="method" className={selectClass} value={form.data.method} onChange={(event) => form.setData('method', event.target.value)}><option value="fixed">Fixed amount per month</option><option value="percent_of_basic">Percent of basic</option><option value="quantity_rate">Quantity x rate (fuel litres at today's price)</option></select></div>
+                                <div className="space-y-1"><Label htmlFor="value">{form.data.method === 'quantity_rate' ? 'Default quantity' : 'Default value'}</Label><Input id="value" type="number" step="any" value={form.data.value} onChange={(event) => form.setData('value', event.target.value)} /><InputError message={form.errors.value} /></div>
+                                {form.data.method === 'quantity_rate' && <>
+                                    <div className="space-y-1"><Label htmlFor="rate">Rate per unit</Label><Input id="rate" type="number" step="any" value={form.data.rate} onChange={(event) => form.setData('rate', event.target.value)} /><InputError message={form.errors.rate} /></div>
+                                    <div className="space-y-1"><Label htmlFor="unit">Unit</Label><Input id="unit" placeholder="litre" value={form.data.unit} onChange={(event) => form.setData('unit', event.target.value)} /></div>
+                                </>}
                                 <div className="space-y-1"><Label htmlFor="account_id">{form.data.kind === 'deduction' ? 'Liability account' : 'Expense account'}</Label>
                                     <select id="account_id" className={selectClass} value={form.data.account_id} onChange={(event) => form.setData('account_id', event.target.value)}>
                                         <option value="">Choose…</option>{accounts.filter((account) => account.type === (form.data.kind === 'deduction' ? 'LIABILITY' : 'EXPENSE')).map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}

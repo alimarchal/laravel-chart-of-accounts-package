@@ -128,6 +128,8 @@ return [
         'salary_expense_account' => env('ACCOUNTING_PAYROLL_SALARY_EXPENSE', '5101'),
         'income_tax_account' => env('ACCOUNTING_PAYROLL_INCOME_TAX', '2104'),
         'net_payable_account' => env('ACCOUNTING_PAYROLL_NET_PAYABLE', '2103'),
+        // Arrears (back pay of a late raise) are booked to this account code; empty = the salary expense account.
+        'arrears_account' => env('ACCOUNTING_PAYROLL_ARREARS'),
         'tax_slabs' => [
             ['from' => 0, 'rate' => 0, 'fixed' => 0],
             ['from' => 600000, 'rate' => 1, 'fixed' => 0],

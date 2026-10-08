@@ -14,6 +14,7 @@ use Carbon\CarbonInterface;
  * @property string|null $national_id
  * @property string|null $designation
  * @property int|null $cost_center_id
+ * @property int|null $salary_grade_id
  * @property CarbonInterface $join_date
  * @property CarbonInterface|null $leave_date
  * @property string $base_salary monthly
@@ -28,7 +29,7 @@ class Employee extends AccountingModel
 
     protected $table = 'accounting_employees';
 
-    protected $fillable = ['code', 'name', 'national_id', 'designation', 'cost_center_id', 'join_date', 'leave_date', 'base_salary', 'withhold_tax', 'bank_name', 'bank_account', 'is_active'];
+    protected $fillable = ['code', 'name', 'national_id', 'designation', 'cost_center_id', 'salary_grade_id', 'join_date', 'leave_date', 'base_salary', 'withhold_tax', 'bank_name', 'bank_account', 'is_active'];
 
     protected function casts(): array
     {

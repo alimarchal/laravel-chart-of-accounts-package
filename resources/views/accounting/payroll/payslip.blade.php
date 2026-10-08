@@ -4,7 +4,7 @@
             <div class="flex gap-2"><button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Print</button><a href="{{ route('accounting.payroll.runs.show', $run['id']) }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Back</a></div></div>
     </x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
-    @php($earnings = collect($payslip['lines'])->whereIn('kind', ['basic', 'earning']))
+    @php($earnings = collect($payslip['lines'])->whereIn('kind', ['basic', 'earning', 'arrears']))
     @php($deductions = collect($payslip['lines'])->whereIn('kind', ['deduction', 'tax']))
     <div class="py-6"><div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white shadow rounded-lg p-6 space-y-4 text-sm">

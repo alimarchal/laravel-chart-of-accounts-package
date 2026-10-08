@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.28.0
+  version: 2.29.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -8813,7 +8813,17 @@ paths:
                   nullable: true
                 base_salary:
                   type: number
-                  description: Monthly basic salary.
+                  description: Monthly basic salary; may be left out when salary_grade_id is given (the grade's salary is
+                    used). Changing it records a salary revision (effective_from, reason).
+                salary_grade_id:
+                  type: integer
+                  nullable: true
+                effective_from:
+                  type: string
+                  format: date
+                  description: When a changed base_salary applies from (default today); a date in the past is paid as arrears.
+                reason:
+                  type: string
                 withhold_tax:
                   type: boolean
                 bank_name:
@@ -8931,7 +8941,17 @@ paths:
                   nullable: true
                 base_salary:
                   type: number
-                  description: Monthly basic salary.
+                  description: Monthly basic salary; may be left out when salary_grade_id is given (the grade's salary is
+                    used). Changing it records a salary revision (effective_from, reason).
+                salary_grade_id:
+                  type: integer
+                  nullable: true
+                effective_from:
+                  type: string
+                  format: date
+                  description: When a changed base_salary applies from (default today); a date in the past is paid as arrears.
+                reason:
+                  type: string
                 withhold_tax:
                   type: boolean
                 bank_name:
@@ -9060,8 +9080,17 @@ paths:
                   enum:
                   - fixed
                   - percent_of_basic
+                  - quantity_rate
                 value:
                   type: number
+                  description: An amount, a percent of the basic, or the quantity (litres) for quantity_rate.
+                rate:
+                  type: number
+                  description: 'Price per unit for quantity_rate (required then): amount = quantity x rate. Change it and
+                    everybody follows on the next calculation.'
+                unit:
+                  type: string
+                  nullable: true
                 taxable:
                   type: boolean
                 account_id:
@@ -9130,8 +9159,17 @@ paths:
                   enum:
                   - fixed
                   - percent_of_basic
+                  - quantity_rate
                 value:
                   type: number
+                  description: An amount, a percent of the basic, or the quantity (litres) for quantity_rate.
+                rate:
+                  type: number
+                  description: 'Price per unit for quantity_rate (required then): amount = quantity x rate. Change it and
+                    everybody follows on the next calculation.'
+                unit:
+                  type: string
+                  nullable: true
                 taxable:
                   type: boolean
                 account_id:
@@ -9150,6 +9188,873 @@ paths:
       responses:
         '204':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/grades:
+    get:
+      tags:
+      - Payroll
+      summary: Salary grades
+      operationId: list_salary_grades
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Grades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SalaryGrade'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Add a salary grade
+      operationId: create_salary_grade
+      description: 'A grade is a basic salary with its allowances. Employees on it follow it: change an allowance of the grade
+        and everybody on it is paid the new amount in the next calculation.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SalaryGrade'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - base_salary
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                base_salary:
+                  type: number
+                is_active:
+                  type: boolean
+                components:
+                  type: array
+                  description: Replaces the allowances and deductions of the grade when sent.
+                  items:
+                    type: object
+                    required:
+                    - pay_component_id
+                    properties:
+                      pay_component_id:
+                        type: integer
+                      value:
+                        type: number
+                        nullable: true
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/grades/{grade}:
+    parameters:
+    - name: grade
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Payroll
+      summary: A grade with its allowances
+      operationId: get_salary_grade
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The grade
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SalaryGrade'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Payroll
+      summary: Change a grade (PATCH also accepted)
+      operationId: update_salary_grade
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SalaryGrade'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              - base_salary
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                base_salary:
+                  type: number
+                is_active:
+                  type: boolean
+                components:
+                  type: array
+                  description: Replaces the allowances and deductions of the grade when sent.
+                  items:
+                    type: object
+                    required:
+                    - pay_component_id
+                    properties:
+                      pay_component_id:
+                        type: integer
+                      value:
+                        type: number
+                        nullable: true
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Payroll
+      summary: Delete a grade nobody is on
+      operationId: delete_salary_grade
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/grades/{grade}/assign:
+    parameters:
+    - name: grade
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Put a group of employees on the grade
+      operationId: assign_salary_grade
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Moved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      changed:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Employees to change; when empty, everybody on salary_grade_id, else every active employee.
+                apply_salary:
+                  type: boolean
+                  description: Also move their salary to the grade's (recorded as a revision).
+                effective_from:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/bulk/components:
+    post:
+      tags:
+      - Payroll
+      summary: Give a component to a group of employees, or take it away
+      operationId: bulk_pay_component
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      changed:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - pay_component_id
+              - mode
+              properties:
+                pay_component_id:
+                  type: integer
+                mode:
+                  type: string
+                  enum:
+                  - assign
+                  - remove
+                value:
+                  type: number
+                  description: Employees' own value; blank keeps what they have (or the component's).
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Employees to change; when empty, everybody on salary_grade_id, else every active employee.
+                salary_grade_id:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/employees/{id}/revisions:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Payroll
+      summary: The salary history of an employee
+      operationId: list_salary_revisions
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Revisions, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        effective_from:
+                          type: string
+                          format: date
+                        old_salary:
+                          type: string
+                        new_salary:
+                          type: string
+                        reason:
+                          type: string
+                          nullable: true
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Revise an employee's salary from a date
+      operationId: revise_salary
+      description: 'A date in the middle of a month pays the old salary up to the day before and the new one from that day.
+        A date in the past is paid with arrears.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Revised; returns the history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - new_salary
+              - effective_from
+              properties:
+                new_salary:
+                  type: number
+                effective_from:
+                  type: string
+                  format: date
+                reason:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/revisions/preview:
+    post:
+      tags:
+      - Payroll
+      summary: Preview a raise for a group (nothing is saved)
+      operationId: preview_salary_revisions
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Old and new salary of each employee
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - mode
+              - value
+              - effective_from
+              properties:
+                mode:
+                  type: string
+                  enum:
+                  - percent
+                  - increase
+                  - set
+                  description: percent = raise by value %, increase = add value, set = everybody to value.
+                value:
+                  type: number
+                effective_from:
+                  type: string
+                  format: date
+                reason:
+                  type: string
+                round_to:
+                  type: integer
+                  description: Round new salaries to the nearest multiple (default 1).
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Employees to change; when empty, everybody on salary_grade_id, else every active employee.
+                salary_grade_id:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/revisions:
+    post:
+      tags:
+      - Payroll
+      summary: Apply a raise to a group
+      operationId: apply_salary_revisions
+      description: 'Every employee whose salary changes gets a revision; the salary on the employee becomes the new one.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      changed:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - mode
+              - value
+              - effective_from
+              properties:
+                mode:
+                  type: string
+                  enum:
+                  - percent
+                  - increase
+                  - set
+                  description: percent = raise by value %, increase = add value, set = everybody to value.
+                value:
+                  type: number
+                effective_from:
+                  type: string
+                  format: date
+                reason:
+                  type: string
+                round_to:
+                  type: integer
+                  description: Round new salaries to the nearest multiple (default 1).
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Employees to change; when empty, everybody on salary_grade_id, else every active employee.
+                salary_grade_id:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/arrears:
+    get:
+      tags:
+      - Payroll
+      summary: The arrears register with totals
+      operationId: list_payroll_arrears
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Arrears and totals by status and by month of payment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollArrear'
+                  totals:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - draft
+          - approved
+          - included
+          - cancelled
+      - name: payment_month
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Create arrears (drafts) from the posted payslips
+      operationId: create_payroll_arrears
+      description: 'For each month from from_month to the month before payment_month that has a posted or paid payslip, the
+        basic pay due (from the salary history) less the basic paid; allowances that are a percent of the basic follow. Months
+        already claimed are skipped. Approve them to have the payroll run of payment_month pay them.
+
+
+        Permission: `payroll.run`.'
+      responses:
+        '201':
+          description: Created, one per employee owed something
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollArrear'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - from_month
+              - payment_month
+              properties:
+                from_month:
+                  type: string
+                  format: date
+                  description: First month the arrears cover.
+                payment_month:
+                  type: string
+                  format: date
+                  description: Month of the payroll run that pays them; the arrears cover the months before it.
+                notes:
+                  type: string
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Employees to change; when empty, everybody on salary_grade_id, else every active employee.
+                salary_grade_id:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/arrears/preview:
+    post:
+      tags:
+      - Payroll
+      summary: Work arrears out without saving
+      operationId: preview_payroll_arrears
+      description: 'Permission: `payroll.run`.'
+      responses:
+        '200':
+          description: One row per employee owed something, with the months behind it
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - from_month
+              - payment_month
+              properties:
+                from_month:
+                  type: string
+                  format: date
+                  description: First month the arrears cover.
+                payment_month:
+                  type: string
+                  format: date
+                  description: Month of the payroll run that pays them; the arrears cover the months before it.
+                notes:
+                  type: string
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Employees to change; when empty, everybody on salary_grade_id, else every active employee.
+                salary_grade_id:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/arrears/approve-all:
+    post:
+      tags:
+      - Payroll
+      summary: Approve every arrears draft
+      operationId: approve_all_payroll_arrears
+      description: 'Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      approved:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_month:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/arrears/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Payroll
+      summary: One arrears record with its months
+      operationId: get_payroll_arrear
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The arrears
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollArrear'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/arrears/{id}/approve:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Approve arrears
+      operationId: approve_payroll_arrear
+      description: 'Approved arrears are paid by the next payroll run of the payment month (or later) as an Arrears line,
+        taxed as if paid in the months they belong to.
+
+
+        Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollArrear'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/arrears/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Cancel arrears not yet in a run
+      operationId: cancel_payroll_arrear
+      description: 'Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollArrear'
+                required:
+                - data
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -12829,7 +13734,17 @@ components:
           nullable: true
         base_salary:
           type: number
-          description: Monthly basic salary.
+          description: Monthly basic salary; may be left out when salary_grade_id is given (the grade's salary is used). Changing
+            it records a salary revision (effective_from, reason).
+        salary_grade_id:
+          type: integer
+          nullable: true
+        effective_from:
+          type: string
+          format: date
+          description: When a changed base_salary applies from (default today); a date in the past is paid as arrears.
+        reason:
+          type: string
         withhold_tax:
           type: boolean
         bank_name:
@@ -12871,8 +13786,17 @@ components:
           enum:
           - fixed
           - percent_of_basic
+          - quantity_rate
         value:
           type: number
+          description: An amount, a percent of the basic, or the quantity (litres) for quantity_rate.
+        rate:
+          type: number
+          description: 'Price per unit for quantity_rate (required then): amount = quantity x rate. Change it and everybody
+            follows on the next calculation.'
+        unit:
+          type: string
+          nullable: true
         taxable:
           type: boolean
         account_id:
@@ -12921,6 +13845,80 @@ components:
           nullable: true
         employees:
           type: integer
+    SalaryGrade:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        base_salary:
+          type: number
+        is_active:
+          type: boolean
+        components:
+          type: array
+          description: Replaces the allowances and deductions of the grade when sent.
+          items:
+            type: object
+            required:
+            - pay_component_id
+            properties:
+              pay_component_id:
+                type: integer
+              value:
+                type: number
+                nullable: true
+        id:
+          type: integer
+        employees:
+          type: integer
+    PayrollArrear:
+      type: object
+      properties:
+        id:
+          type: integer
+        employee_id:
+          type: integer
+        employee_code:
+          type: string
+        employee_name:
+          type: string
+        from_month:
+          type: string
+          example: 2026-01
+        to_month:
+          type: string
+        payment_month:
+          type: string
+        amount:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - approved
+          - included
+          - cancelled
+        payroll_run_id:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        months:
+          type: array
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+              paid:
+                type: string
+              due:
+                type: string
+              difference:
+                type: string
     FbrSubmission:
       type: object
       properties:
