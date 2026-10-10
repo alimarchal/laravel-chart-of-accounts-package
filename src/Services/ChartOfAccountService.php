@@ -124,7 +124,7 @@ class ChartOfAccountService
         $marked = [];
 
         DB::transaction(function () use (&$marked): void {
-            foreach ((array) config('accounting.control_accounts.recommended', []) as $code => $type) {
+            foreach (ControlAccounts::recommended() as $code => $type) {
                 $account = ChartOfAccount::query()->where('account_code', (string) $code)->lockForUpdate()->first();
 
                 if (! $account || $account->is_group || $account->control_type !== null || ! array_key_exists($type, ControlAccounts::types())) {

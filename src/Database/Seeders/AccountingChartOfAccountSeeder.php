@@ -5,6 +5,8 @@ namespace Alimarchal\LaravelChartOfAccounts\Database\Seeders;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
+use Alimarchal\LaravelChartOfAccounts\Support\Charts\ErpNextChart;
 use Illuminate\Database\Seeder;
 
 class AccountingChartOfAccountSeeder extends Seeder
@@ -13,8 +15,9 @@ class AccountingChartOfAccountSeeder extends Seeder
     {
         $baseCurrency = Currency::query()->where('is_base', true)->firstOrFail();
         $types = AccountType::query()->pluck('id', 'code');
+        $preset = AccountRoles::preset();
 
-        foreach ($this->accounts() as $account) {
+        foreach ($this->accounts($preset) as $account) {
             // Never overwrite an existing account: users may have renamed, moved or deactivated it.
             if (ChartOfAccount::query()->where('account_code', $account['account_code'])->exists()) {
                 continue;
@@ -41,18 +44,27 @@ class AccountingChartOfAccountSeeder extends Seeder
                 'is_system' => true,
             ]);
         }
+
+        // Which account plays which part (cash, bank, retained earnings ...) in this chart; the company's chart is remembered.
+        AccountRoles::seedDefaults($preset);
     }
 
     /**
-     * The seeded chart for a preset ('general' or 'school'; default: the configured one).
+     * The seeded chart for a preset ('erpnext', 'general' or 'school'; default: the company's).
      *
      * @return array<int, array<string, mixed>>
      */
     public function accounts(?string $preset = null): array
     {
+        $preset ??= AccountRoles::preset();
+
+        if ($preset === 'erpnext') {
+            return ErpNextChart::accounts();
+        }
+
         $accounts = $this->schoolChart();
 
-        if (($preset ?? config('accounting.chart_preset', 'general')) === 'school') {
+        if ($preset === 'school') {
             return $accounts;
         }
 

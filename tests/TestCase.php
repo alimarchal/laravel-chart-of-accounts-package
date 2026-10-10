@@ -62,6 +62,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('view.paths', array_merge([__DIR__.'/Fixtures/views'], $app['config']->get('view.paths', [])));
         $app['config']->set('inertia.testing.ensure_pages_exist', false);
         $app['config']->set('accounting.ui_driver', getenv('ACCOUNTING_UI_DRIVER') ?: 'inertia');
+        $app['config']->set('accounting.chart_preset', getenv('ACCOUNTING_CHART_PRESET') ?: 'general');
     }
 
     protected function defineDatabaseMigrations(): void

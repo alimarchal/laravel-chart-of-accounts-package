@@ -21,7 +21,7 @@ class ControlAccountBladeController extends ControlAccountController
         return view('accounting::control-accounts.index', [
             'controlAccounts' => $controls->overview(),
             'types' => ControlAccounts::types(),
-            'recommended' => (array) config('accounting.control_accounts.recommended', []),
+            'recommended' => ControlAccounts::recommended(),
             'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->orderBy('account_code')
                 ->get(['id', 'account_code', 'account_name', 'control_type']),
             'selected' => $selected,

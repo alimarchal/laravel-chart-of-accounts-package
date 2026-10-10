@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Loan;
 use Alimarchal\LaravelChartOfAccounts\Models\LoanInstallment;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Carbon;
@@ -333,9 +334,9 @@ class PayrollLoanService
 
     private function loanAccount(): ChartOfAccount
     {
-        $code = (string) config('accounting.payroll.employee_loans_account', '1105');
+        $code = (string) AccountRoles::code('employee_advances');
 
         return ChartOfAccount::query()->where('account_code', $code)->where('is_group', false)->first()
-            ?? throw new AccountingException("The employee loans account ({$code}) does not exist: set it in accounting.payroll.employee_loans_account.");
+            ?? throw new AccountingException("The employee loans account ({$code}) does not exist: set it in Account roles (employee_advances) or accounting.payroll.employee_loans_account.");
     }
 }

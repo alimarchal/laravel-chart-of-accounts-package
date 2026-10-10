@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
@@ -74,7 +75,7 @@ class CloseFiscalYearAction
     public function preview(AccountingPeriod $period): array
     {
         $retainedEarnings = ChartOfAccount::query()
-            ->where('account_code', config('accounting.defaults.retained_earnings_account_code'))
+            ->where('account_code', AccountRoles::code('retained_earnings'))
             ->where('is_group', false)
             ->where('is_active', true)
             ->first();

@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollAdjustment;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryRevision;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
@@ -211,7 +212,7 @@ class PayrollAdjustmentService
             }
 
             if ($data['kind'] === 'earning' && empty($data['account_id'])) {
-                $code = (string) (config('accounting.payroll.bonus_account') ?: config('accounting.payroll.salary_expense_account'));
+                $code = (string) (AccountRoles::code('bonus_expense') ?: AccountRoles::code('salary_expense'));
                 $data['account_id'] = ChartOfAccount::query()->where('account_code', $code)->where('is_group', false)->value('id')
                     ?? throw ValidationException::withMessages(['account_id' => "The bonus account ({$code}) does not exist: choose an account or set accounting.payroll.bonus_account."]);
             }

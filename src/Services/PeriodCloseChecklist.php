@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Actions\CloseAccountingPeriodAction;
 use Alimarchal\LaravelChartOfAccounts\Actions\CloseFiscalYearAction;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Facades\DB;
@@ -68,7 +69,7 @@ class PeriodCloseChecklist
             $preview = $this->yearEnd->preview($period);
             $checks[] = $preview['retained_earnings'] !== null
                 ? $this->check('retained_earnings', 'Retained earnings account is set up', 'pass', "{$preview['retained_earnings']['account_code']} {$preview['retained_earnings']['account_name']}")
-                : $this->check('retained_earnings', 'Retained earnings account is set up', 'fail', 'Account '.config('accounting.defaults.retained_earnings_account_code').' is missing, inactive or a group account (ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE).', null, 'chart-of-accounts');
+                : $this->check('retained_earnings', 'Retained earnings account is set up', 'fail', 'Account '.AccountRoles::code('retained_earnings').' is missing, inactive or a group account (ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE).', null, 'chart-of-accounts');
             $closingEntry = $preview;
         }
 
@@ -124,7 +125,7 @@ class PeriodCloseChecklist
             ->pluck('chart_of_account_id');
 
         if ($bankAccountIds->isEmpty()) {
-            $bankAccountIds = collect(app(ChartOfAccountService::class)->idsWithDescendants([(string) config('accounting.defaults.bank_account_code')]));
+            $bankAccountIds = collect(app(ChartOfAccountService::class)->idsWithDescendants(array_filter([AccountRoles::code('bank')])));
         }
 
         return DB::table('accounting_journal_entry_lines as line')

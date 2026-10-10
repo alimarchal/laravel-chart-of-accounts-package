@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
@@ -12,7 +13,8 @@ class AccountingInstallCommand extends Command
 {
     protected $signature = 'accounting:install
         {--admin-email= : Email of the user to receive the super-admin role (defaults to the first user)}
-        {--views : Also publish the Blade views for customisation (not needed otherwise)}';
+        {--views : Also publish the Blade views for customisation (not needed otherwise)}
+        {--chart= : Chart of accounts to start from: erpnext (default), general or school}';
 
     protected $description = 'Full setup: publish assets, run migrations (including Spatie), seed master data, and verify.';
 
@@ -62,8 +64,14 @@ class AccountingInstallCommand extends Command
         $this->info('Running all migrations...');
         Artisan::call('migrate', ['--force' => true, '--no-interaction' => true], $this->output);
 
-        $this->info('Seeding accounting master data...');
-        Artisan::call('accounting:seed', [], $this->output);
+        $chart = $this->chosenChart();
+
+        if ($chart === null) {
+            return self::INVALID;
+        }
+
+        $this->info('Seeding accounting master data ('.(AccountRoles::presets()[$chart] ?? $chart).')...');
+        Artisan::call('accounting:seed', ['--chart' => $chart], $this->output);
 
         $this->info('Syncing database objects...');
         Artisan::call('accounting:sync-db-objects', [], $this->output);
@@ -93,6 +101,37 @@ class AccountingInstallCommand extends Command
         $this->line('   Run "php artisan accounting:update" after future package upgrades.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The chart the company starts from: --chart, else (asked when there is a person to ask) a choice that defaults to the ERPNext standard
+     * chart, else accounting.chart_preset. A company that already has its chart keeps it (the seeder never replaces accounts).
+     */
+    private function chosenChart(): ?string
+    {
+        $presets = AccountRoles::presets();
+        $chart = $this->option('chart');
+
+        if ($chart !== null && $chart !== '') {
+            if (! array_key_exists((string) $chart, $presets)) {
+                $this->error("Unknown chart \"{$chart}\": use ".implode(', ', array_keys($presets)).'.');
+
+                return null;
+            }
+
+            return (string) $chart;
+        }
+
+        $configured = (string) config('accounting.chart_preset', 'erpnext');
+        $default = array_key_exists($configured, $presets) ? $configured : 'erpnext';
+
+        if (! $this->input->isInteractive()) {
+            return $default;
+        }
+
+        $label = $this->choice('Which chart of accounts should the company start with?', array_values($presets), $presets[$default]);
+
+        return (string) array_search($label, $presets, true);
     }
 
     /**

@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportLine;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\ChartTemplates;
 use Illuminate\Support\Facades\DB;
 
@@ -72,7 +73,7 @@ class ChartTemplateService
                 'extra' => $row['extra'],
                 'status' => $status,
                 'existing_name' => $status === 'different' ? $current : null,
-                'line' => $this->lineCode($row),
+                'line' => $this->lineCode($row, $template['base']),
             ];
         }
 
@@ -85,13 +86,14 @@ class ChartTemplateService
     public function apply(string $key): array
     {
         $template = $this->template($key);
+        $this->assertFitsChart($template);
         $rows = $this->rows($template);
 
         if ($rows === []) {
             return ['created' => [], 'skipped' => 0];
         }
 
-        return DB::transaction(function () use ($key, $rows): array {
+        return DB::transaction(function () use ($key, $rows, $template): array {
             $types = AccountType::query()->get()->keyBy('code');
             $currency = Currency::query()->where('is_base', true)->first();
 
@@ -120,7 +122,7 @@ class ChartTemplateService
                     continue;
                 }
 
-                $lineCode = $this->lineCode($row);
+                $lineCode = $this->lineCode($row, $template['base']);
                 $line = $lineCode ? $lines->get($lineCode) : null;
                 $account = new ChartOfAccount([
                     'account_code' => $row['account_code'],
@@ -147,8 +149,33 @@ class ChartTemplateService
                 AccountingAuditLog::record((new ChartOfAccount)->forceFill(['id' => 0]), 'CHART_TEMPLATE_APPLIED', null, null, ['template' => $key, 'created' => $created]);
             }
 
+            AccountRoles::seedDefaults($template['base']);
+
             return ['created' => $created, 'skipped' => $skipped];
         });
+    }
+
+    /**
+     * The ERPNext chart starts a company, and the industry templates extend the general chart: mixing them in one chart would
+     * leave accounts under the wrong parents.
+     *
+     * @param  array{name: string, description: string, base: string, extras: list<array<int, mixed>>}  $template
+     */
+    private function assertFitsChart(array $template): void
+    {
+        if (! ChartOfAccount::query()->exists()) {
+            return;
+        }
+
+        $company = AccountRoles::preset();
+
+        if ($template['base'] === 'erpnext' && $company !== 'erpnext') {
+            throw new AccountingException('The ERPNext chart starts a new company: this company already has its own chart of accounts.');
+        }
+
+        if ($template['base'] !== 'erpnext' && $company === 'erpnext') {
+            throw new AccountingException('This company uses the ERPNext chart: the industry templates extend the general chart and cannot be added to it.');
+        }
     }
 
     /**
@@ -181,7 +208,7 @@ class ChartTemplateService
                 'is_group' => (bool) $account['is_group'],
                 'contra' => $type !== null && $type->normal_balance !== $account['normal_balance'],
                 'extra' => false,
-                'line' => null,
+                'line' => $account['line'] ?? null,
             ];
         }
 
@@ -212,9 +239,9 @@ class ChartTemplateService
      *
      * @param  array{account_code: string, line: string|null}  $row
      */
-    private function lineCode(array $row): ?string
+    private function lineCode(array $row, string $base): ?string
     {
-        return $row['line'] ?? ((array) config('accounting.reporting.recommended', ReportMappingService::RECOMMENDED))[$row['account_code']] ?? null;
+        return $row['line'] ?? ReportMappingService::recommended($base)[$row['account_code']] ?? null;
     }
 
     /**

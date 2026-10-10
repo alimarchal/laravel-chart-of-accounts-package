@@ -8,6 +8,8 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportLine;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
+use Alimarchal\LaravelChartOfAccounts\Support\Charts\ErpNextChart;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +38,22 @@ class ReportMappingService
         '5100' => 'IS-ADMIN', '5113' => 'IS-FINANCE', '5114' => 'IS-DEPRECIATION',
         '5200' => 'IS-OTHER-EXPENSES', '5202' => 'IS-COST-OF-SALES', '5203' => 'IS-COST-OF-SALES', '5204' => 'IS-COST-OF-SALES',
     ];
+
+    /**
+     * Account code => line code: the application's accounting.reporting.recommended if it set one, else the lines of the company's chart.
+     *
+     * @return array<string, string>
+     */
+    public static function recommended(?string $preset = null): array
+    {
+        $configured = config('accounting.reporting.recommended');
+
+        if (is_array($configured) && $configured !== []) {
+            return $configured;
+        }
+
+        return ($preset ?? AccountRoles::preset()) === 'erpnext' ? ErpNextChart::lines() : self::RECOMMENDED;
+    }
 
     /** @var array<int, array{line_id: int|null, cash_flow_category: string|null, inherited: bool}>|null */
     private ?array $resolved = null;
@@ -142,7 +160,7 @@ class ReportMappingService
      */
     public function applyRecommended(bool $onlySeeded = false): array
     {
-        $recommended = (array) config('accounting.reporting.recommended', self::RECOMMENDED);
+        $recommended = self::recommended();
         $lines = ReportLine::query()->get()->keyBy('code');
         $seededNames = $onlySeeded ? $this->seededNames() : [];
         $applied = [];

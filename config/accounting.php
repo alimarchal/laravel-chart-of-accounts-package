@@ -33,12 +33,14 @@ return [
         'pdf' => (int) env('ACCOUNTING_EXPORT_MAX_PDF_ROWS', 2000),
     ],
 
+    // The account codes below are optional overrides: leave them out and the accounts that play each role in the company's chart
+    // (Account roles, filled in when the chart is seeded) are used.
     'defaults' => [
         'currency_code' => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
-        'cash_account_code' => env('ACCOUNTING_CASH_ACCOUNT_CODE', '1101'),
-        'bank_account_code' => env('ACCOUNTING_BANK_ACCOUNT_CODE', '1102'),
-        'retained_earnings_account_code' => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE', '3101'),
-        'rounding_account_code' => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
+        'cash_account_code' => env('ACCOUNTING_CASH_ACCOUNT_CODE'),
+        'bank_account_code' => env('ACCOUNTING_BANK_ACCOUNT_CODE'),
+        'retained_earnings_account_code' => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE'),
+        'rounding_account_code' => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE'),
     ],
 
     // Maker-checker. When enabled, entries whose total (in base currency) is at or above the threshold
@@ -69,8 +71,8 @@ return [
     ],
 
     // Control accounts summarise a sub-ledger (customers, suppliers, stock, …). Only entries of that module may
-    // post to them; a manual entry needs the control-accounts.post-manual permission. "recommended" maps the
-    // seeded chart (account code => type) for the Recommended setup action.
+    // post to them; a manual entry needs the control-accounts.post-manual permission. "recommended" maps account code => type
+    // for the Recommended setup action; leave it null to follow the chart (see "Account roles" in the README).
     'control_accounts' => [
         'types' => [
             'receivables' => 'Accounts receivable (customers)',
@@ -80,16 +82,7 @@ return [
             'payroll' => 'Payroll',
             'tax' => 'Tax',
         ],
-        'recommended' => [
-            '1103' => 'receivables',
-            '2101' => 'payables',
-            '1151' => 'inventory',
-            '1152' => 'inventory',
-            '1153' => 'inventory',
-            '2103' => 'payroll',
-            '1107' => 'tax',
-            '2104' => 'tax',
-        ],
+        'recommended' => null, // null: the accounts that play the control.* roles of the company's chart (Account roles)
     ],
 
     // PDF reports and printed vouchers. engine: auto (dompdf when installed, else the built-in renderer),
@@ -125,17 +118,17 @@ return [
     // last slab whose "from" is below the annual taxable income. The defaults are illustrative salaried-individual
     // slabs for Pakistan; check them against the current rules and replace them with your own.
     'payroll' => [
-        'salary_expense_account' => env('ACCOUNTING_PAYROLL_SALARY_EXPENSE', '5101'),
-        'income_tax_account' => env('ACCOUNTING_PAYROLL_INCOME_TAX', '2104'),
+        'salary_expense_account' => env('ACCOUNTING_PAYROLL_SALARY_EXPENSE'),
+        'income_tax_account' => env('ACCOUNTING_PAYROLL_INCOME_TAX'),
         // true: HR submits a run and finance (payroll.approve, never the submitter) approves it before it can be posted. Also a switch on the Features screen.
         'require_approval' => (bool) env('ACCOUNTING_PAYROLL_REQUIRE_APPROVAL', false),
         // Where one-off earnings without a pay component (bonuses) are booked; default: the salary expense account.
         'bonus_account' => env('ACCOUNTING_PAYROLL_BONUS_ACCOUNT'),
-        'net_payable_account' => env('ACCOUNTING_PAYROLL_NET_PAYABLE', '2103'),
+        'net_payable_account' => env('ACCOUNTING_PAYROLL_NET_PAYABLE'),
         // Arrears (back pay of a late raise) are booked to this account code; empty = the salary expense account.
         'arrears_account' => env('ACCOUNTING_PAYROLL_ARREARS'),
         // Loans and salary advances to employees are an asset: paid out to, and recovered from salary by, this account code.
-        'employee_loans_account' => env('ACCOUNTING_PAYROLL_EMPLOYEE_LOANS', '1105'),
+        'employee_loans_account' => env('ACCOUNTING_PAYROLL_EMPLOYEE_LOANS'),
         // Overtime for employees flagged "overtime": hourly pay = monthly salary / hours_per_month, times the multiplier
         // (holiday_multiplier on holidays and rest days). account: the expense account code (empty = the salary expense account).
         'overtime' => [
@@ -288,13 +281,14 @@ return [
 
     // Accounts (and their child accounts) included in the aged receivables / payables reports.
     'aging' => [
-        'receivable_account_codes' => ['1103', '1104'],
-        'payable_account_codes' => ['2101', '2102', '2103', '2104'],
+        'receivable_account_codes' => null,
+        'payable_account_codes' => null,
     ],
 
-    // Chart of accounts seeded by accounting:seed for NEW accounts: 'general' or 'school'.
-    // Existing accounts are never overwritten by the seeder.
-    'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'general'),
+    // The chart of accounts a new company starts from: 'erpnext' (the ERPNext standard chart with account numbers, the default),
+    // 'general' (the package's own business chart) or 'school'. `php artisan accounting:install --chart=general` picks one at install
+    // time. Existing accounts are never overwritten by the seeder.
+    'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'erpnext'),
 
     // Your own industry chart templates, in the shape of Support/ChartTemplates:
     // 'key' => ['name' => '…', 'description' => '…', 'base' => 'general', 'extras' => [['6001', '5100', 'EXPENSE', 'Name', false, ['line' => 'IS-ADMIN']]]]

@@ -112,6 +112,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         }
 
         $this->app->scoped(FeatureManager::class);
+        $this->app->scoped('accounting.account-roles', fn () => new \ArrayObject);
         Blade::if('accountingFeature', fn (string $feature): bool => app(FeatureManager::class)->enabled($feature));
 
         $driver = config('accounting.ui_driver', 'inertia');

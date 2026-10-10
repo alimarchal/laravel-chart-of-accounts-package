@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
 use Alimarchal\LaravelChartOfAccounts\Models\FxRevaluation;
 use Alimarchal\LaravelChartOfAccounts\Services\FxRevaluationService;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Contracts\View\View;
@@ -65,7 +66,7 @@ class FxRevaluationController extends Controller
             'revaluations' => $revaluations,
             'rates' => $rates,
             'today' => now()->toDateString(),
-            'defaultAccountCode' => config('accounting.fx.gain_loss_account'),
+            'defaultAccountCode' => AccountRoles::code('fx_gain_loss'),
         ];
 
         if ($request->expectsJson()) {
