@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Services\PartyDocumentService;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyPaymentService;
 use Alimarchal\LaravelChartOfAccounts\Services\TaxService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -30,17 +31,28 @@ class PartyDocumentController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $filters = $request->validate(['kind' => ['nullable', 'in:invoice,bill,credit_note,debit_note'], 'status' => ['nullable', 'in:draft,posted,void'], 'party_id' => ['nullable', 'integer']]);
-        $documents = PartyDocument::query()->with('party:id,code,name')
-            ->when($filters['kind'] ?? null, fn ($query, $kind) => $query->where('kind', $kind))
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->when($filters['party_id'] ?? null, fn ($query, $party) => $query->where('party_id', $party))
-            ->orderByDesc('issue_date')->orderByDesc('id')->limit(500)->get()
+        $request->validate([
+            'kind' => ['nullable', 'in:invoice,bill,credit_note,debit_note'], 'status' => ['nullable', 'in:draft,posted,void'], 'party_id' => ['nullable', 'integer'],
+            'search' => ['nullable', 'string', 'max:100'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date'],
+        ]);
+        $names = ['kind', 'status', 'party_id', 'search', 'date_from', 'date_to', 'due_from', 'due_to', 'min_total', 'max_total'];
+        $documents = ListFilters::for(PartyDocument::query()->with('party:id,code,name'), $request, [
+            ListFilters::exact('kind'),
+            ListFilters::exact('status'),
+            ListFilters::exact('party_id'),
+            ListFilters::search('search', ['number', 'reference', 'notes']),
+            ListFilters::from('date_from', 'issue_date'),
+            ListFilters::to('date_to', 'issue_date'),
+            ListFilters::from('due_from', 'due_date'),
+            ListFilters::to('due_to', 'due_date'),
+            ListFilters::min('min_total', 'total'),
+            ListFilters::max('max_total', 'total'),
+        ], sorts: ['issue_date', 'due_date', 'number', 'total', 'id'], defaultSort: '-issue_date')->orderByDesc('id')->limit(500)->get()
             ->map(fn (PartyDocument $document): array => $this->present($document))->values();
 
         return $request->expectsJson()
             ? response()->json(['data' => $documents])
-            : $this->render('index', ['documents' => $documents, 'filters' => ['kind' => $filters['kind'] ?? null, 'status' => $filters['status'] ?? null, 'party_id' => $filters['party_id'] ?? null]]);
+            : $this->render('index', ['documents' => $documents, 'filters' => ListFilters::current($request, $names)]);
     }
 
     public function create(Request $request): Response|View

@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingReportExporter;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyLedgerService;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,14 +29,18 @@ class PartyController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $filters = $request->validate(['type' => ['nullable', 'in:customer,supplier,both'], 'search' => ['nullable', 'string', 'max:100'], 'active' => ['nullable', 'boolean']]);
-        $parties = Party::query()
-            ->when($filters['type'] ?? null, fn ($query, $type) => $type === 'both' ? $query->where('type', 'both') : $query->whereIn('type', [$type, 'both']))
-            ->when($filters['search'] ?? null, fn ($query, $search) => $query->where(fn ($inner) => $inner->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")))
-            ->when(isset($filters['active']), fn ($query) => $query->where('is_active', (bool) $filters['active']))
-            ->orderBy('name')->get()->map(fn (Party $party): array => $this->present($party))->values();
+        $request->validate(['filter.type' => ['nullable', 'string'], 'type' => ['nullable', 'in:customer,supplier,both'], 'search' => ['nullable', 'string', 'max:100'], 'active' => ['nullable', 'boolean']]);
+        $names = ['type', 'search', 'email', 'tax_number', 'active'];
+        $parties = ListFilters::for(Party::query(), $request, [
+            ListFilters::custom('type', fn ($query, string $type) => $type === 'both' ? $query->where('type', 'both') : $query->whereIn('type', [$type, 'both'])),
+            ListFilters::search('search', ['name', 'code', 'email', 'phone', 'tax_number']),
+            ListFilters::search('email', ['email']),
+            ListFilters::search('tax_number', ['tax_number']),
+            ListFilters::bool('active', 'is_active'),
+        ], sorts: ['name', 'code', 'created_at'], defaultSort: 'name')->get()
+            ->map(fn (Party $party): array => $this->present($party))->values();
 
-        return $request->expectsJson() ? response()->json(['data' => $parties]) : $this->render('index', ['parties' => $parties, 'filters' => ['type' => $filters['type'] ?? null, 'search' => $filters['search'] ?? null]]);
+        return $request->expectsJson() ? response()->json(['data' => $parties]) : $this->render('index', ['parties' => $parties, 'filters' => ListFilters::current($request, $names)]);
     }
 
     public function create(): Response|View
