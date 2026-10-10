@@ -14,7 +14,6 @@ use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SalaryHistory;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -146,11 +145,11 @@ class PayrollAdjustmentService
     /**
      * The open adjustments of a month by employee, for the run to take up.
      *
-     * @return Collection<int|string, Collection<int, PayrollAdjustment>>
+     * @return array<int, list<PayrollAdjustment>>
      */
-    public function openFor(Carbon $month): Collection
+    public function openFor(Carbon $month): array
     {
-        return PayrollAdjustment::query()->where('status', 'open')->whereDate('month', $month->copy()->startOfMonth()->toDateString())->orderBy('id')->get()->groupBy('employee_id');
+        return PayrollAdjustment::query()->where('status', 'open')->whereDate('month', $month->copy()->startOfMonth()->toDateString())->orderBy('id')->get()->groupBy('employee_id')->map(fn ($rows): array => $rows->values()->all())->all();
     }
 
     /**

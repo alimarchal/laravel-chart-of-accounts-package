@@ -278,7 +278,7 @@ class PayrollService
         $overtimeCode = $overtime['account'] ?? null;
         $overtimeAccount = $overtimeCode ? $this->accountByCode((string) $overtimeCode, 'overtime expense') : $salaryAccount;
         $arrears = $features->enabled('payroll_arrears') ? PayrollArrear::query()->where('status', 'approved')->whereNull('payroll_run_id')->whereDate('payment_month', '<=', $end->toDateString())->get()->groupBy('employee_id') : collect();
-        $adjustments = $features->enabled('payroll_adjustments') ? app(PayrollAdjustmentService::class)->openFor($period) : collect();
+        $adjustments = $features->enabled('payroll_adjustments') ? app(PayrollAdjustmentService::class)->openFor($period) : [];
         $includedAdjustments = [];
         $totals = ['gross' => 0, 'deductions' => 0, 'tax' => 0, 'net' => 0, 'employer' => 0];
         $lineRows = [];
