@@ -22,6 +22,7 @@ class AccountRole extends Model
 
     protected $fillable = ['role', 'chart_of_account_id', 'position'];
 
+    /** @return BelongsTo<ChartOfAccount, $this> */
     public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'chart_of_account_id');

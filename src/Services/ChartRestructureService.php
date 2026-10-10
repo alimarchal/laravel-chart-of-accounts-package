@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -337,7 +338,7 @@ class ChartRestructureService
     private function configuredCode(string $code): bool
     {
         return in_array($code, array_filter((array) config('accounting.defaults', []), fn ($value, $key) => str_ends_with((string) $key, '_account_code'), ARRAY_FILTER_USE_BOTH), true)
-            || in_array($code, \Alimarchal\LaravelChartOfAccounts\Support\AccountRoles::protectedCodes(), true);
+            || in_array($code, AccountRoles::protectedCodes(), true);
     }
 
     private function assertNotConfigured(string $code, string $what): void

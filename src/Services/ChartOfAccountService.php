@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Services;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
 use Illuminate\Database\Eloquent\Collection;
@@ -348,6 +349,6 @@ class ChartOfAccountService
             ->filter(fn ($value, $key) => str_ends_with((string) $key, '_account_code') && is_scalar($value))
             ->map(fn ($value) => (string) $value);
 
-        return $codes->contains($code) || in_array($code, \Alimarchal\LaravelChartOfAccounts\Support\AccountRoles::protectedCodes(), true);
+        return $codes->contains($code) || in_array($code, AccountRoles::protectedCodes(), true);
     }
 }
