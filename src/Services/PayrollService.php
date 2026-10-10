@@ -86,6 +86,7 @@ class PayrollService
             'code' => ['required', 'string', 'max:30', CompanyRule::unique('accounting_employees', 'code')->ignore($employee?->id)],
             'name' => ['required', 'string', 'max:160'],
             'national_id' => ['nullable', 'string', 'max:40'],
+            'email' => ['nullable', 'email', 'max:160'],
             'designation' => ['nullable', 'string', 'max:120'],
             'cost_center_id' => ['nullable', 'integer', CompanyRule::exists('accounting_cost_centers', 'id')],
             'join_date' => ['required', 'date'],

@@ -1,19 +1,22 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAccounting } from '@/lib/accounting';
 import { useAccountingI18n } from '@/lib/i18n';
 
 type Props = {
     run: { id: number; period_month: string; status: string };
     employee: { code: string; name: string; designation: string | null; national_id: string | null; bank_name: string | null; bank_account: string | null };
-    payslip: { basic: string; gross: string; deductions: string; tax: string; net: string; employer: string; days_paid: string; days_in_month: string; lines: Array<{ kind: string; description: string; amount: string }> };
+    payslip: { id: number; basic: string; gross: string; deductions: string; tax: string; net: string; employer: string; days_paid: string; days_in_month: string; lines: Array<{ kind: string; description: string; amount: string }> };
 };
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
 export default function Payslip({ run, employee, payslip }: Props) {
     useAccountingI18n();
+    const { permissions, flash } = useAccounting();
+    const base = `/accounting/payroll/runs/${run.id}/payslips/${payslip.id}`;
     const earnings = payslip.lines.filter((line) => ['basic', 'earning', 'arrears'].includes(line.kind));
     const deductions = payslip.lines.filter((line) => ['deduction', 'tax'].includes(line.kind));
     const employer = payslip.lines.filter((line) => line.kind === 'employer');
@@ -24,8 +27,10 @@ export default function Payslip({ run, employee, payslip }: Props) {
             <div className="mx-auto max-w-3xl space-y-4 p-4">
                 <div className="flex items-end justify-between print:hidden">
                     <Heading title={`Payslip ${run.period_month}`} description={`${employee.code} · ${employee.name}`} />
-                    <div className="flex gap-2"><Button variant="outline" onClick={() => window.print()}>Print</Button><Button asChild variant="outline"><Link href={`/accounting/payroll/runs/${run.id}`}>Back</Link></Button></div>
+                    <div className="flex gap-2"><Button asChild variant="outline"><a href={`${base}/print`} target="_blank" rel="noreferrer">Print</a></Button><Button asChild variant="outline"><a href={`${base}/pdf`} target="_blank" rel="noreferrer">PDF</a></Button>{permissions['payroll.manage'] && ['posted', 'paid'].includes(run.status) && <Button variant="outline" onClick={() => confirm('E-mail this payslip to the employee?') && router.post(`${base}/email`, {}, { preserveScroll: true })}>E-mail</Button>}<Button asChild variant="outline"><Link href={`/accounting/payroll/runs/${run.id}`}>Back</Link></Button></div>
                 </div>
+                {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 print:hidden">{flash.success}</p>}
+                {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 print:hidden">{flash.error}</p>}
                 <Card>
                     <CardContent className="space-y-4 pt-6 text-sm">
                         <div className="grid gap-2 sm:grid-cols-2">

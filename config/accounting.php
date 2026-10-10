@@ -140,6 +140,32 @@ return [
             'holiday_multiplier' => (float) env('ACCOUNTING_PAYROLL_OVERTIME_HOLIDAY_MULTIPLIER', 2),
             'account' => env('ACCOUNTING_PAYROLL_OVERTIME_ACCOUNT'),
         ],
+        // Final settlement of a leaver: gratuity = monthly basic / 30 x days_per_year x years of service (nothing under min_years);
+        // unused leave of the leave type with this code is paid at basic / days_per_month a day. Accounts are codes (empty = the
+        // salary expense and the net salary payable accounts).
+        'gratuity' => [
+            'days_per_year' => (float) env('ACCOUNTING_PAYROLL_GRATUITY_DAYS', 30),
+            'min_years' => (float) env('ACCOUNTING_PAYROLL_GRATUITY_MIN_YEARS', 1),
+            'expense_account' => env('ACCOUNTING_PAYROLL_GRATUITY_EXPENSE'),
+            'payable_account' => env('ACCOUNTING_PAYROLL_SETTLEMENT_PAYABLE'),
+            'leave_type' => env('ACCOUNTING_PAYROLL_ENCASH_LEAVE_TYPE'),
+            'days_per_month' => (float) env('ACCOUNTING_PAYROLL_DAYS_PER_MONTH', 30),
+        ],
+        // The tax year used by the tax certificate starts in this month (7 = July, as in Pakistan).
+        'tax_year_start_month' => (int) env('ACCOUNTING_PAYROLL_TAX_YEAR_START', 7),
+        // Payslips by e-mail: :month in the subject becomes e.g. "October 2026". queue: a queue name, or empty to send at once.
+        'payslip_mail' => [
+            'subject' => 'Payslip for :month',
+            'queue' => env('ACCOUNTING_PAYROLL_MAIL_QUEUE'),
+        ],
+        // Draft payroll run created by the scheduler (php artisan schedule:run): on this day of the month at this time, for the
+        // "previous" month (salaries are run after the month) or the "current" one. Off by default.
+        'auto_run' => [
+            'enabled' => (bool) env('ACCOUNTING_PAYROLL_AUTO_RUN', false),
+            'day' => (int) env('ACCOUNTING_PAYROLL_AUTO_RUN_DAY', 1),
+            'time' => env('ACCOUNTING_PAYROLL_AUTO_RUN_TIME', '03:00'),
+            'month' => env('ACCOUNTING_PAYROLL_AUTO_RUN_MONTH', 'previous'),
+        ],
         // The bank salary file: layouts are lists of columns (employee_code, employee_name, national_id, bank_name, bank_account,
         // amount, narration, month); add the layout your bank asks for. :month in the narration becomes e.g. "October 2026".
         'bank_file' => [

@@ -11,7 +11,7 @@ import { useAccountingI18n } from '@/lib/i18n';
 type Component = { id: number; code: string; name: string; kind: string; method: string; value: string; rate: string; unit: string | null };
 type Props = {
     employee: {
-        id: number; code: string; name: string; national_id: string | null; designation: string | null; cost_center_id: number | null; salary_grade_id: number | null; join_date: string; leave_date: string | null; base_salary: string;
+        id: number; code: string; name: string; national_id: string | null; email: string | null; designation: string | null; cost_center_id: number | null; salary_grade_id: number | null; join_date: string; leave_date: string | null; base_salary: string;
         withhold_tax: boolean; overtime_eligible: boolean; schemes: number[]; bank_name: string | null; bank_account: string | null; is_active: boolean; components: Array<{ pay_component_id: number; value: string | null }>;
     } | null;
     components: Component[];
@@ -27,7 +27,7 @@ const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-
 export default function PayrollEmployeeForm({ employee, components, schemes, grades, history, costCenters, today }: Props) {
     useAccountingI18n();
     const form = useForm({
-        code: employee?.code ?? '', name: employee?.name ?? '', national_id: employee?.national_id ?? '', designation: employee?.designation ?? '', cost_center_id: employee?.cost_center_id ? String(employee.cost_center_id) : '', salary_grade_id: employee?.salary_grade_id ? String(employee.salary_grade_id) : '', effective_from: today, reason: '',
+        code: employee?.code ?? '', name: employee?.name ?? '', national_id: employee?.national_id ?? '', email: employee?.email ?? '', designation: employee?.designation ?? '', cost_center_id: employee?.cost_center_id ? String(employee.cost_center_id) : '', salary_grade_id: employee?.salary_grade_id ? String(employee.salary_grade_id) : '', effective_from: today, reason: '',
         join_date: employee?.join_date ?? today, leave_date: employee?.leave_date ?? '', base_salary: employee?.base_salary ?? '', withhold_tax: employee?.withhold_tax ?? false, overtime_eligible: employee?.overtime_eligible ?? false, schemes: employee?.schemes ?? ([] as number[]),
         bank_name: employee?.bank_name ?? '', bank_account: employee?.bank_account ?? '', is_active: employee?.is_active ?? true,
         components: (employee?.components ?? []).map((row) => ({ pay_component_id: row.pay_component_id, value: row.value ?? '' })),
@@ -37,7 +37,7 @@ export default function PayrollEmployeeForm({ employee, components, schemes, gra
         if (employee) form.put(`/accounting/payroll/employees/${employee.id}`);
         else form.post('/accounting/payroll/employees');
     };
-    const field = (name: 'code' | 'name' | 'national_id' | 'designation' | 'join_date' | 'leave_date' | 'base_salary' | 'bank_name' | 'bank_account', label: string, type = 'text') => (
+    const field = (name: 'code' | 'name' | 'national_id' | 'email' | 'designation' | 'join_date' | 'leave_date' | 'base_salary' | 'bank_name' | 'bank_account', label: string, type = 'text') => (
         <div className="space-y-1"><Label htmlFor={name}>{label}</Label><Input id={name} type={type} step="any" value={form.data[name]} onChange={(event) => form.setData(name, event.target.value)} /><InputError message={form.errors[name]} /></div>
     );
     const linked = (id: number) => form.data.components.find((row) => row.pay_component_id === id);
@@ -52,7 +52,7 @@ export default function PayrollEmployeeForm({ employee, components, schemes, gra
                 <Card>
                     <CardHeader><CardTitle>Employee</CardTitle></CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-3">
-                        {field('code', 'Code')}{field('name', 'Name')}{field('national_id', 'National ID')}{field('designation', 'Designation')}{field('join_date', 'Joined', 'date')}{field('leave_date', 'Left (if so)', 'date')}
+                        {field('code', 'Code')}{field('name', 'Name')}{field('national_id', 'National ID')}{field('email', 'E-mail (payslips are sent here)', 'email')}{field('designation', 'Designation')}{field('join_date', 'Joined', 'date')}{field('leave_date', 'Left (if so)', 'date')}
                         {field('base_salary', 'Monthly basic salary', 'number')}{field('bank_name', 'Bank')}{field('bank_account', 'Bank account')}
                         <div className="space-y-1"><Label htmlFor="cost_center_id">Cost center</Label>
                             <select id="cost_center_id" className={selectClass} value={form.data.cost_center_id} onChange={(event) => form.setData('cost_center_id', event.target.value)}>
