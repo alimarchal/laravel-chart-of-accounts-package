@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +38,7 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
             <div className="space-y-6 p-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title="Arrears" description="Back pay of a raise: worked out from the payslips already posted, approved, and paid with a payroll run" />
-                    <div className="flex gap-2"><Button asChild variant="outline"><Link href="/accounting/payroll/bulk">Bulk changes</Link></Button><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
+                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/bulk">Bulk changes</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}

@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -57,7 +58,7 @@ export default function PayrollBulk({ employees, components, grades, preview, to
             <div className="space-y-6 p-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title="Bulk changes" description="Set pay up for many employees at once: allowances, grades and raises" />
-                    <div className="flex gap-2"><Button asChild variant="outline"><Link href="/accounting/payroll/arrears">Arrears</Link></Button><Button asChild variant="outline"><Link href="/accounting/payroll/grades">Grades</Link></Button><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
+                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/arrears">Arrears</FeatureLink><FeatureLink href="/accounting/payroll/grades">Grades</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}

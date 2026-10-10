@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +24,7 @@ export default function PayrollTaxCertificate({ certificate }: Props) {
             <div className="mx-auto max-w-3xl space-y-4 p-4">
                 <div className="flex items-end justify-between print:hidden">
                     <Heading title="Salary tax certificate" description={`${employee.code} · ${employee.name} · ${certificate.label}`} />
-                    <div className="flex gap-2"><Button variant="outline" onClick={() => window.print()}>Print</Button><Button asChild variant="outline"><Link href="/accounting/payroll/tax">Back</Link></Button></div>
+                    <div className="flex gap-2"><Button variant="outline" onClick={() => window.print()}>Print</Button><FeatureLink href="/accounting/payroll/tax">Back</FeatureLink></div>
                 </div>
                 <Card><CardContent className="space-y-4 pt-6 text-sm">
                     <h2 className="hidden text-lg font-semibold print:block">Salary tax certificate — tax year {certificate.label}</h2>

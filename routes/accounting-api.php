@@ -26,6 +26,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FbrController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FeatureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
@@ -50,6 +51,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +80,7 @@ if ((int) config('accounting.api_rate_limit', 120) > 0) {
 }
 
 $apiMiddleware[] = EnsureAccountingCompanyAccess::class;
+$apiMiddleware[] = EnsureAccountingFeatureEnabled::class;
 
 Route::middleware($apiMiddleware)
     ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
@@ -335,6 +338,8 @@ Route::middleware($apiMiddleware)
         Route::put('users/{user}/roles', [UserApiController::class, 'syncRoles'])->name('users.roles')->middleware('can:user.assign-role');
         Route::put('users/{user}/permissions', [UserApiController::class, 'syncPermissions'])->name('users.permissions')->middleware('can:user.assign-permission');
         Route::middleware('can:accounting.manage-settings')->group(function (): void {
+            Route::get('features', [FeatureController::class, 'index'])->name('features.index');
+            Route::put('features', [FeatureController::class, 'update'])->name('features.update');
             Route::get('roles', [RoleApiController::class, 'index'])->name('roles.index');
             Route::post('roles', [RoleApiController::class, 'store'])->name('roles.store');
             Route::get('roles/{role}', [RoleApiController::class, 'show'])->name('roles.show');

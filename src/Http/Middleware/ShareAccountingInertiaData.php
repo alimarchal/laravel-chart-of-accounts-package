@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Middleware;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountingPermissions;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -43,6 +44,8 @@ class ShareAccountingInertiaData
                     'error' => $request->session()->get('error'),
                 ],
                 'company' => $this->company($request),
+                'features' => app(FeatureManager::class)->states(),
+                'disabledPaths' => app(FeatureManager::class)->disabledPatterns(),
                 'approvals' => [
                     'enabled' => (bool) config('accounting.approvals.enabled', false),
                     'threshold' => (string) config('accounting.approvals.threshold', '0'),

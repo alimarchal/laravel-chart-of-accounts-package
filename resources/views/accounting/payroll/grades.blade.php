@@ -39,7 +39,7 @@
                         <p class="text-gray-500">No components defined yet.</p>
                     @endforelse
                 </div>
-                <div><button class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">{{ $editing ? 'Save' : 'Add' }}</button>@if($editing) <a href="{{ route('accounting.payroll.grades.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Cancel</a>@endif</div>
+                <div><button class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">{{ $editing ? 'Save' : 'Add' }}</button>@if($editing) @accountingFeature('payroll_grades')<a href="{{ route('accounting.payroll.grades.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Cancel</a>@endaccountingFeature@endif</div>
             </form>
         @endcan
     </div></div>

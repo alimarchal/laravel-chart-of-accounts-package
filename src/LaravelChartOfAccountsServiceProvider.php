@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingChartTemplatesC
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCloseFiscalYearCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingClosePeriodCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCreateCompanyCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingFeaturesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingHealthCheckCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingInstallCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodCommand;
@@ -26,6 +27,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedReceivablesLivew
 use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -94,6 +96,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingClosePeriodCommand::class,
                 AccountingOpenPeriodCommand::class,
                 AccountingRolesCommand::class,
+                AccountingFeaturesCommand::class,
             ]);
 
             // Daily, once the app's own scheduler runs (php artisan schedule:run): generate the due recurring entries.
@@ -107,6 +110,9 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 }
             });
         }
+
+        $this->app->scoped(FeatureManager::class);
+        Blade::if('accountingFeature', fn (string $feature): bool => app(FeatureManager::class)->enabled($feature));
 
         $driver = config('accounting.ui_driver', 'inertia');
 

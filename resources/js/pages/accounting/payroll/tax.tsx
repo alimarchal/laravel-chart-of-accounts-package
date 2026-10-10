@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +21,7 @@ export default function PayrollTax({ tax_year, label, rows, employees }: Props) 
             <div className="space-y-6 p-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title="Salary tax statement" description={`Taxable income and income tax withheld, tax year ${label}`} />
-                    <div className="flex gap-2"><Button asChild variant="outline"><Link href="/accounting/payroll/reports">Reports</Link></Button><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
+                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/reports">Reports</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
                 </div>
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="space-y-1"><Label htmlFor="year">Tax year starting in</Label><Input id="year" type="number" className="w-28" defaultValue={tax_year} onBlur={(event) => event.target.value && Number(event.target.value) !== tax_year && router.get('/accounting/payroll/tax', { year: event.target.value })} /></div>

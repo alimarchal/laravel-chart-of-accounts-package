@@ -20,7 +20,7 @@ const money = (value: string) => Number(value).toLocaleString(undefined, { minim
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default function PayrollRunShow({ run, payslips, accounts, today, bank }: Props) {
-    const { permissions, flash } = useAccounting();
+    const { permissions, flash, features } = useAccounting();
     const pay = useForm({ account_id: '', date: today });
     const base = `/accounting/payroll/runs/${run.id}`;
     const act = (action: string, confirmText?: string) => (!confirmText || confirm(confirmText)) && router.post(`${base}/${action}`, {}, { preserveScroll: true });
@@ -36,7 +36,7 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="outline" onClick={() => act('recalculate')}>Recalculate</Button>}
                         {run.status === 'draft' && permissions['payroll.post'] && <Button onClick={() => act('post', 'Post this payroll to the books?')}>Post</Button>}
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="ghost" onClick={() => confirm('Delete this draft run?') && router.delete(base)}>Delete</Button>}
-                        {['posted', 'paid'].includes(run.status) && permissions['payroll.manage'] && <Button variant="outline" onClick={() => confirm('E-mail every payslip to its employee?') && act('email-payslips')}>E-mail payslips</Button>}
+                        {['posted', 'paid'].includes(run.status) && permissions['payroll.manage'] && features.payroll_payslip_mail !== false && <Button variant="outline" onClick={() => confirm('E-mail every payslip to its employee?') && act('email-payslips')}>E-mail payslips</Button>}
                         {['posted', 'paid'].includes(run.status) && permissions['payroll.void'] && <Button variant="ghost" onClick={() => act('void', 'Void this payroll? Its entries will be reversed.')}>Void</Button>}
                     </div>
                 </div>
@@ -64,7 +64,7 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                         </CardContent>
                     </Card>
                 )}
-                {bank && permissions['payroll.post'] && (
+                {bank && permissions['payroll.post'] && features.payroll_bank_file !== false && (
                     <Card>
                         <CardHeader><CardTitle>Bank salary file</CardTitle></CardHeader>
                         <CardContent className="space-y-3 text-sm">

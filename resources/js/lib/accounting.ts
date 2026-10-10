@@ -16,7 +16,18 @@ export type AccountingShared = {
     };
     flash: { success?: string | null; error?: string | null };
     approvals: { enabled: boolean; threshold: string };
+    features: Record<string, boolean>;
+    disabledPaths: string[];
 };
+
+/**
+ * False when the screen at this link belongs to a feature that is switched off (the server shares the switched-off paths as globs).
+ */
+export function linkEnabled(href: string, disabledPaths: string[]): boolean {
+    const path = href.split(/[?#]/)[0].replace(/\/+$/, '');
+
+    return !disabledPaths.some((pattern) => new RegExp('^' + pattern.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$').test(path));
+}
 
 export function useAccounting(): AccountingShared {
     useAccountingI18n();
@@ -25,6 +36,8 @@ export function useAccounting(): AccountingShared {
     return {
         permissions: props.accounting?.permissions ?? {},
         flash: props.accounting?.flash ?? {},
+        features: props.accounting?.features ?? {},
+        disabledPaths: props.accounting?.disabledPaths ?? [],
         approvals: props.accounting?.approvals ?? {
             enabled: false,
             threshold: '0',

@@ -15,7 +15,7 @@ const money = (value: string) => Number(value).toLocaleString(undefined, { minim
 
 export default function Payslip({ run, employee, payslip }: Props) {
     useAccountingI18n();
-    const { permissions, flash } = useAccounting();
+    const { permissions, flash, features } = useAccounting();
     const base = `/accounting/payroll/runs/${run.id}/payslips/${payslip.id}`;
     const earnings = payslip.lines.filter((line) => ['basic', 'earning', 'arrears'].includes(line.kind));
     const deductions = payslip.lines.filter((line) => ['deduction', 'tax'].includes(line.kind));
@@ -27,7 +27,7 @@ export default function Payslip({ run, employee, payslip }: Props) {
             <div className="mx-auto max-w-3xl space-y-4 p-4">
                 <div className="flex items-end justify-between print:hidden">
                     <Heading title={`Payslip ${run.period_month}`} description={`${employee.code} · ${employee.name}`} />
-                    <div className="flex gap-2"><Button asChild variant="outline"><a href={`${base}/print`} target="_blank" rel="noreferrer">Print</a></Button><Button asChild variant="outline"><a href={`${base}/pdf`} target="_blank" rel="noreferrer">PDF</a></Button>{permissions['payroll.manage'] && ['posted', 'paid'].includes(run.status) && <Button variant="outline" onClick={() => confirm('E-mail this payslip to the employee?') && router.post(`${base}/email`, {}, { preserveScroll: true })}>E-mail</Button>}<Button asChild variant="outline"><Link href={`/accounting/payroll/runs/${run.id}`}>Back</Link></Button></div>
+                    <div className="flex gap-2"><Button asChild variant="outline"><a href={`${base}/print`} target="_blank" rel="noreferrer">Print</a></Button><Button asChild variant="outline"><a href={`${base}/pdf`} target="_blank" rel="noreferrer">PDF</a></Button>{permissions['payroll.manage'] && features.payroll_payslip_mail !== false && ['posted', 'paid'].includes(run.status) && <Button variant="outline" onClick={() => confirm('E-mail this payslip to the employee?') && router.post(`${base}/email`, {}, { preserveScroll: true })}>E-mail</Button>}<Button asChild variant="outline"><Link href={`/accounting/payroll/runs/${run.id}`}>Back</Link></Button></div>
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 print:hidden">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 print:hidden">{flash.error}</p>}
