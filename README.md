@@ -569,6 +569,23 @@ the invoice number FBR returns.
   into a higher slab; it appears as its own "Income tax on arrears" line. Months already claimed are never claimed twice; a month in which
   an employee was overpaid is not recovered; a voided or deleted run puts its arrears back in the approved queue. Arrears of an employee who
   has already left are not paid by a run (they are not in it). A register shows every arrears record with totals by status and by month.
+- **Attendance and leave:** a monthly attendance sheet (`/accounting/payroll/attendance`) with absent days and overtime hours per employee, and
+  leave types (paid or unpaid, with a yearly entitlement), leaves and yearly balances (`/accounting/payroll/leaves`). Absent days and unpaid
+  leave come off the basic and the fixed allowances by the day (percent allowances follow the basic); half days are allowed; leave that overlaps
+  other leave, or exceeds a paid type's balance, is refused. A month with a posted payroll cannot be changed.
+- **Overtime:** employees flagged "paid overtime" get hours x (salary / `accounting.payroll.overtime.hours_per_month`) x the multiplier (a
+  separate one for holidays), as a taxable Overtime line on the payslip.
+- **Loans and advances** (`/accounting/payroll/loans`): record the amount, the number of instalments and the first salary it comes out of
+  (equal instalments, the last takes the rounding), then **pay it out** (the approver: debit `accounting.payroll.employee_loans_account`,
+  default 1105, credit the bank). Each payroll run takes the due instalments as a deduction ("Loan instalment 2/12"; the credit goes to the
+  loan account), a voided, deleted or recalculated run gives them back, **skip** moves the next instalment to the end, **settle** takes
+  the rest in cash, and a loan closes when it has been recovered.
+- **Contributions** (EOBI, PESSI/SESSI, provident fund; `/accounting/payroll/schemes`): a rate of the basic or the gross up to a ceiling, or
+  a fixed amount; the employee's share is a deduction owed to a liability account, the employer's share is an expense owed to another
+  liability account and is not part of the net pay (it is booked with the run and shown on the payslip). A scheme applies to everybody or to
+  the employees it is given to, and can also be taken on arrears. The rates are yours to set: check them against the current rules.
+- **Bank salary file:** from a posted run, CSV or Excel in a layout of `accounting.payroll.bank_file.layouts` (standard, IBAN, or your
+  bank's); employees without a bank account are left out and listed on the screen. Needs `payroll.post`.
 - Printable payslips. Permissions `payroll.view/manage/run/post/void`: the accountant prepares (`manage`, `run`), the approver
   posts, pays and voids, so one person cannot do both. Audited (`PAYROLL_RUN_*`, `EMPLOYEE_SAVED`).
 

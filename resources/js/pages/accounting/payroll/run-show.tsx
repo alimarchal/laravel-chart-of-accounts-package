@@ -9,16 +9,17 @@ import { useAccounting } from '@/lib/accounting';
 
 type Slip = { id: number; employee_code: string; employee_name: string; basic: string; gross: string; deductions: string; tax: string; net: string; days_paid: string; days_in_month: string };
 type Props = {
-    run: { id: number; period_month: string; status: string; gross: string; deductions: string; tax: string; net: string; journal_entry_id: number | null; payment_entry_id: number | null; posted_on: string | null; paid_on: string | null; notes: string | null };
+    run: { id: number; period_month: string; status: string; gross: string; deductions: string; tax: string; net: string; employer?: string; journal_entry_id: number | null; payment_entry_id: number | null; posted_on: string | null; paid_on: string | null; notes: string | null };
     payslips: Slip[];
     accounts: Array<{ id: number; account_code: string; account_name: string; type: string }>;
     today: string;
+    bank: { missing: Array<{ code: string; name: string; net: string }>; layouts: string[] } | null;
 };
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function PayrollRunShow({ run, payslips, accounts, today }: Props) {
+export default function PayrollRunShow({ run, payslips, accounts, today, bank }: Props) {
     const { permissions, flash } = useAccounting();
     const pay = useForm({ account_id: '', date: today });
     const base = `/accounting/payroll/runs/${run.id}`;
@@ -59,6 +60,23 @@ export default function PayrollRunShow({ run, payslips, accounts, today }: Props
                                 </select></div>
                             <div className="space-y-1"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={pay.data.date} onChange={(event) => pay.setData('date', event.target.value)} /></div>
                             <Button disabled={!pay.data.account_id} onClick={() => pay.post(`${base}/pay`)}>Pay {money(run.net)}</Button>
+                        </CardContent>
+                    </Card>
+                )}
+                {bank && permissions['payroll.post'] && (
+                    <Card>
+                        <CardHeader><CardTitle>Bank salary file</CardTitle></CardHeader>
+                        <CardContent className="space-y-3 text-sm">
+                            <div className="flex flex-wrap gap-2">
+                                {bank.layouts.map((layout) => (
+                                    <span key={layout} className="flex items-center gap-1 rounded-md border px-2 py-1">
+                                        <span className="font-medium">{layout}</span>
+                                        <Button asChild size="sm" variant="outline"><a href={`${base}/bank-file/csv?layout=${layout}`}>CSV</a></Button>
+                                        <Button asChild size="sm" variant="outline"><a href={`${base}/bank-file/xlsx?layout=${layout}`}>Excel</a></Button>
+                                    </span>
+                                ))}
+                            </div>
+                            {bank.missing.length > 0 && <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-900">Left out for want of a bank account: {bank.missing.map((row) => `${row.code} ${row.name} (${money(row.net)})`).join(', ')}.</p>}
                         </CardContent>
                     </Card>
                 )}

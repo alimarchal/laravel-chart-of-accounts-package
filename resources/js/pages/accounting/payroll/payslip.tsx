@@ -7,7 +7,7 @@ import { useAccountingI18n } from '@/lib/i18n';
 type Props = {
     run: { id: number; period_month: string; status: string };
     employee: { code: string; name: string; designation: string | null; national_id: string | null; bank_name: string | null; bank_account: string | null };
-    payslip: { basic: string; gross: string; deductions: string; tax: string; net: string; days_paid: string; days_in_month: string; lines: Array<{ kind: string; description: string; amount: string }> };
+    payslip: { basic: string; gross: string; deductions: string; tax: string; net: string; employer: string; days_paid: string; days_in_month: string; lines: Array<{ kind: string; description: string; amount: string }> };
 };
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -16,6 +16,7 @@ export default function Payslip({ run, employee, payslip }: Props) {
     useAccountingI18n();
     const earnings = payslip.lines.filter((line) => ['basic', 'earning', 'arrears'].includes(line.kind));
     const deductions = payslip.lines.filter((line) => ['deduction', 'tax'].includes(line.kind));
+    const employer = payslip.lines.filter((line) => line.kind === 'employer');
 
     return (
         <>
@@ -40,6 +41,10 @@ export default function Payslip({ run, employee, payslip }: Props) {
                             <div><p className="mb-1 font-medium">Deductions</p>{deductions.map((line, index) => (<div key={index} className="flex justify-between gap-3 border-t py-1"><span>{line.description}</span><span className="tabular-nums">{money(line.amount)}</span></div>))}
                                 <div className="flex justify-between border-t py-1 font-medium"><span>Total</span><span className="tabular-nums">{money(String(Number(payslip.deductions) + Number(payslip.tax)))}</span></div></div>
                         </div>
+                        {employer.length > 0 && (
+                            <div><p className="mb-1 font-medium">Employer contributions <span className="font-normal text-muted-foreground">(paid by the company, not deducted from pay)</span></p>
+                                {employer.map((line, index) => (<div key={index} className="flex justify-between gap-3 border-t py-1"><span>{line.description}</span><span className="tabular-nums">{money(line.amount)}</span></div>))}</div>
+                        )}
                         <div className="flex justify-between border-t pt-3 text-lg font-semibold"><span>Net pay</span><span className="tabular-nums">{money(payslip.net)}</span></div>
                     </CardContent>
                 </Card>

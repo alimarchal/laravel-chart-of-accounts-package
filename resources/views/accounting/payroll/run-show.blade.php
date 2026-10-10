@@ -30,6 +30,12 @@
                 <button class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">Pay {{ $fmt($run['net']) }}</button>
             </form>
         @endcan @endif
+        @if($bank)@can('payroll.post')
+            <div class="bg-white shadow rounded-lg p-5 space-y-3 text-sm"><h3 class="font-semibold text-gray-800">Bank salary file</h3>
+                <div class="flex flex-wrap gap-2">@foreach ($bank['layouts'] as $layout)<span class="flex items-center gap-1 rounded-md border px-2 py-1"><span class="font-medium">{{ $layout }}</span><a class="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50" href="{{ route('accounting.payroll.runs.bank-file', [$run['id'], 'csv', 'layout' => $layout]) }}">CSV</a><a class="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50" href="{{ route('accounting.payroll.runs.bank-file', [$run['id'], 'xlsx', 'layout' => $layout]) }}">Excel</a></span>@endforeach</div>
+                @if(! empty($bank['missing']))<p class="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-900">Left out for want of a bank account: {{ collect($bank['missing'])->map(fn ($row) => $row['code'].' '.$row['name'].' ('.$fmt($row['net']).')')->implode(', ') }}.</p>@endif
+            </div>
+        @endcan @endif
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Employee</th><th class="py-2 px-3 text-right font-medium text-gray-600">Days</th><th class="py-2 px-3 text-right font-medium text-gray-600">Basic</th><th class="py-2 px-3 text-right font-medium text-gray-600">Gross</th><th class="py-2 px-3 text-right font-medium text-gray-600">Deductions</th><th class="py-2 px-3 text-right font-medium text-gray-600">Tax</th><th class="py-2 px-3 text-right font-medium text-gray-600">Net</th></tr></thead>
             <tbody>

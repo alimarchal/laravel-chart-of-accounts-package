@@ -19,6 +19,10 @@
                 <div><p class="mb-1 font-medium">Earnings</p>@foreach ($earnings as $line)<div class="flex justify-between border-t py-1"><span>{{ $line['description'] }}</span><span class="tabular-nums">{{ $fmt($line['amount']) }}</span></div>@endforeach<div class="flex justify-between border-t py-1 font-medium"><span>Gross</span><span class="tabular-nums">{{ $fmt($payslip['gross']) }}</span></div></div>
                 <div><p class="mb-1 font-medium">Deductions</p>@foreach ($deductions as $line)<div class="flex justify-between border-t py-1"><span>{{ $line['description'] }}</span><span class="tabular-nums">{{ $fmt($line['amount']) }}</span></div>@endforeach<div class="flex justify-between border-t py-1 font-medium"><span>Total</span><span class="tabular-nums">{{ $fmt((float) $payslip['deductions'] + (float) $payslip['tax']) }}</span></div></div>
             </div>
+            @php($employerLines = collect($payslip['lines'])->where('kind', 'employer'))
+            @if($employerLines->isNotEmpty())
+                <div><p class="mb-1 font-medium">Employer contributions <span class="font-normal text-gray-500">(paid by the company, not deducted from pay)</span></p>@foreach ($employerLines as $line)<div class="flex justify-between border-t py-1"><span>{{ $line['description'] }}</span><span class="tabular-nums">{{ $fmt($line['amount']) }}</span></div>@endforeach</div>
+            @endif
             <div class="flex justify-between border-t pt-3 text-lg font-semibold"><span>Net pay</span><span class="tabular-nums">{{ $fmt($payslip['net']) }}</span></div>
         </div>
     </div></div>

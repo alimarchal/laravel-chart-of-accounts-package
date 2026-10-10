@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $deductions
  * @property string $tax
  * @property string $net
+ * @property string $employer
  * @property string $days_paid
  * @property string $days_in_month
  */
@@ -22,10 +23,10 @@ class Payslip extends Model
 {
     protected $table = 'accounting_payslips';
 
-    protected $fillable = ['payroll_run_id', 'employee_id', 'basic', 'gross', 'deductions', 'tax', 'net', 'days_paid', 'days_in_month'];
+    protected $fillable = ['payroll_run_id', 'employee_id', 'basic', 'gross', 'deductions', 'tax', 'net', 'employer', 'days_paid', 'days_in_month'];
 
     protected function casts(): array
     {
-        return ['basic' => 'decimal:2', 'gross' => 'decimal:2', 'deductions' => 'decimal:2', 'tax' => 'decimal:2', 'net' => 'decimal:2'];
+        return ['basic' => 'decimal:2', 'gross' => 'decimal:2', 'deductions' => 'decimal:2', 'tax' => 'decimal:2', 'net' => 'decimal:2', 'employer' => 'decimal:2'];
     }
 }

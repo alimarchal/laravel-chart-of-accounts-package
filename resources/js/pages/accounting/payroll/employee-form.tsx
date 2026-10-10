@@ -12,9 +12,10 @@ type Component = { id: number; code: string; name: string; kind: string; method:
 type Props = {
     employee: {
         id: number; code: string; name: string; national_id: string | null; designation: string | null; cost_center_id: number | null; salary_grade_id: number | null; join_date: string; leave_date: string | null; base_salary: string;
-        withhold_tax: boolean; bank_name: string | null; bank_account: string | null; is_active: boolean; components: Array<{ pay_component_id: number; value: string | null }>;
+        withhold_tax: boolean; overtime_eligible: boolean; schemes: number[]; bank_name: string | null; bank_account: string | null; is_active: boolean; components: Array<{ pay_component_id: number; value: string | null }>;
     } | null;
     components: Component[];
+    schemes: Array<{ id: number; code: string; name: string; applies_to_all: boolean }>;
     grades: Array<{ id: number; code: string; name: string; base_salary: string }>;
     history: Array<{ id: number; effective_from: string; old_salary: string; new_salary: string; reason: string | null }>;
     costCenters: Array<{ id: number; code: string; name: string }>;
@@ -23,11 +24,11 @@ type Props = {
 
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function PayrollEmployeeForm({ employee, components, grades, history, costCenters, today }: Props) {
+export default function PayrollEmployeeForm({ employee, components, schemes, grades, history, costCenters, today }: Props) {
     useAccountingI18n();
     const form = useForm({
         code: employee?.code ?? '', name: employee?.name ?? '', national_id: employee?.national_id ?? '', designation: employee?.designation ?? '', cost_center_id: employee?.cost_center_id ? String(employee.cost_center_id) : '', salary_grade_id: employee?.salary_grade_id ? String(employee.salary_grade_id) : '', effective_from: today, reason: '',
-        join_date: employee?.join_date ?? today, leave_date: employee?.leave_date ?? '', base_salary: employee?.base_salary ?? '', withhold_tax: employee?.withhold_tax ?? false,
+        join_date: employee?.join_date ?? today, leave_date: employee?.leave_date ?? '', base_salary: employee?.base_salary ?? '', withhold_tax: employee?.withhold_tax ?? false, overtime_eligible: employee?.overtime_eligible ?? false, schemes: employee?.schemes ?? ([] as number[]),
         bank_name: employee?.bank_name ?? '', bank_account: employee?.bank_account ?? '', is_active: employee?.is_active ?? true,
         components: (employee?.components ?? []).map((row) => ({ pay_component_id: row.pay_component_id, value: row.value ?? '' })),
     });
@@ -66,6 +67,7 @@ export default function PayrollEmployeeForm({ employee, components, grades, hist
                             <div className="space-y-1"><Label htmlFor="reason">Reason</Label><Input id="reason" value={form.data.reason} onChange={(event) => form.setData('reason', event.target.value)} /></div>
                         </>}
                         <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.withhold_tax} onChange={(event) => form.setData('withhold_tax', event.target.checked)} /> Withhold income tax</label>
+                        <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.overtime_eligible} onChange={(event) => form.setData('overtime_eligible', event.target.checked)} /> Paid overtime</label>
                         <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> Active</label>
                     </CardContent>
                 </Card>
@@ -84,6 +86,19 @@ export default function PayrollEmployeeForm({ employee, components, grades, hist
                         {components.length === 0 && <p className="text-muted-foreground">No components defined yet.</p>}
                     </CardContent>
                 </Card>
+                {schemes.length > 0 && (
+                    <Card>
+                        <CardHeader><CardTitle>Contribution schemes</CardTitle></CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                            {schemes.map((scheme) => (
+                                <label key={scheme.id} className="flex items-center gap-2">
+                                    <input type="checkbox" disabled={scheme.applies_to_all} checked={scheme.applies_to_all || form.data.schemes.includes(scheme.id)} onChange={(event) => form.setData('schemes', event.target.checked ? [...form.data.schemes, scheme.id] : form.data.schemes.filter((id) => id !== scheme.id))} />
+                                    {scheme.code} {scheme.name} {scheme.applies_to_all && <span className="text-muted-foreground">(applies to everybody)</span>}
+                                </label>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
                 {history.length > 0 && (
                     <Card>
                         <CardHeader><CardTitle>Salary history</CardTitle></CardHeader>
