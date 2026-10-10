@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.30.0
+  version: 2.32.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -11162,6 +11162,1280 @@ paths:
         schema:
           type: boolean
       - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/payslips/{id}/print:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Payroll
+      summary: A payslip as a printable page
+      operationId: print_payslip
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: HTML
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/payslips/{id}/pdf:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - Payroll
+      summary: A payslip as a PDF
+      operationId: pdf_payslip
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The PDF (HTML when no PDF library is installed)
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/payslips/{id}/email:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: E-mail one payslip to the employee
+      operationId: email_payslip
+      description: 'The run must be posted and the employee needs an e-mail address.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/email-payslips:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: E-mail every payslip of a posted run
+      operationId: email_run_payslips
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Sent; employees without an e-mail address are listed as skipped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      sent:
+                        type: integer
+                      skipped:
+                        type: array
+                        items:
+                          type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/settlements:
+    get:
+      tags:
+      - Payroll
+      summary: Final settlements
+      operationId: list_settlements
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Settlements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Settlement'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Save a settlement as a draft
+      operationId: create_settlement
+      description: 'A draft is replaced by a new one; a posted or paid settlement blocks a new one.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Settlement'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - employee_id
+              - leave_date
+              properties:
+                employee_id:
+                  type: integer
+                leave_date:
+                  type: string
+                  format: date
+                gratuity:
+                  type: number
+                  description: Blank = days_per_year x basic/30 x years served.
+                leave_days:
+                  type: number
+                  description: Blank = the unused balance of accounting.payroll.gratuity.leave_type.
+                adjustment:
+                  type: number
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/settlements/preview:
+    post:
+      tags:
+      - Payroll
+      summary: Work a settlement out without saving
+      operationId: preview_settlement
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Gratuity, leave pay, loans owed and the net
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - employee_id
+              - leave_date
+              properties:
+                employee_id:
+                  type: integer
+                leave_date:
+                  type: string
+                  format: date
+                gratuity:
+                  type: number
+                  description: Blank = days_per_year x basic/30 x years served.
+                leave_days:
+                  type: number
+                  description: Blank = the unused balance of accounting.payroll.gratuity.leave_type.
+                adjustment:
+                  type: number
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/settlements/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Payroll
+      summary: One settlement
+      operationId: get_settlement
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The settlement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Settlement'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Payroll
+      summary: Delete a draft settlement
+      operationId: delete_settlement
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/settlements/{id}/post:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Post a settlement to the books
+      operationId: post_settlement
+      description: 'Debits gratuity and leave expense, credits the amount owed and the employee loans account; recovered loans
+        are closed.
+
+
+        Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Posted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Settlement'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payable_account_id:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/settlements/{id}/pay:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Pay a posted settlement
+      operationId: pay_settlement
+      description: 'Permission: `payroll.post`.'
+      responses:
+        '200':
+          description: Paid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Settlement'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - account_id
+              properties:
+                account_id:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/settlements/{id}/void:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Payroll
+      summary: Void a settlement
+      operationId: void_settlement
+      description: 'Permission: `payroll.void`.'
+      responses:
+        '200':
+          description: Voided; its entries are reversed and the loans it recovered open again
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Settlement'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/reports:
+    get:
+      tags:
+      - Payroll
+      summary: Month comparison, cost centers and headcount
+      operationId: payroll_reports
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The three reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      year:
+                        type: integer
+                      comparison:
+                        type: array
+                        items:
+                          type: object
+                      cost_centers:
+                        type: array
+                        items:
+                          type: object
+                      headcount:
+                        type: array
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: year
+        in: query
+        schema:
+          type: integer
+      - name: from
+        in: query
+        schema:
+          type: string
+          example: 2026-01
+      - name: to
+        in: query
+        schema:
+          type: string
+          example: 2026-12
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+  /payroll/reports/{report}/export/{format}:
+    parameters:
+    - name: report
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - comparison
+        - cost-centers
+        - headcount
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+        - pdf
+    get:
+      tags:
+      - Payroll
+      summary: Download a payroll report
+      operationId: export_payroll_report
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: year
+        in: query
+        schema:
+          type: integer
+      - name: from
+        in: query
+        schema:
+          type: string
+          example: 2026-01
+      - name: to
+        in: query
+        schema:
+          type: string
+          example: 2026-12
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+  /payroll/tax:
+    get:
+      tags:
+      - Payroll
+      summary: Salary and tax withheld per employee for a tax year
+      operationId: payroll_tax_statement
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Rows, one per employee
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tax_year:
+                        type: integer
+                      label:
+                        type: string
+                      rows:
+                        type: array
+                        items:
+                          type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: year
+        in: query
+        description: The calendar year the tax year starts in (accounting.payroll.tax_year_start_month).
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+  /payroll/tax/annual/{format}:
+    parameters:
+    - name: format
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - csv
+        - xlsx
+        - pdf
+    get:
+      tags:
+      - Payroll
+      summary: Download the annual salary tax statement
+      operationId: export_payroll_tax_statement
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: The file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: year
+        in: query
+        description: The calendar year the tax year starts in (accounting.payroll.tax_year_start_month).
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+  /payroll/tax/certificate/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Payroll
+      summary: An employee's salary tax certificate
+      operationId: payroll_tax_certificate
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Month by month taxable income and tax withheld, with totals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: year
+        in: query
+        description: The calendar year the tax year starts in (accounting.payroll.tax_year_start_month).
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+  /payroll/adjustments:
+    get:
+      tags:
+      - Payroll
+      summary: Bonuses and other one-off pay of a month
+      operationId: list_payroll_adjustments
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Adjustments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollAdjustment'
+                  month:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: month
+        in: query
+        schema:
+          type: string
+          example: 2026-12
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - open
+          - included
+          - cancelled
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Add a bonus, extra allowance or fine for one employee and month
+      operationId: create_payroll_adjustment
+      description: 'The month''s payroll run takes it up as an earning or deduction line. A month whose run is submitted,
+        approved or posted is closed to new adjustments.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  data:
+                    $ref: '#/components/schemas/PayrollAdjustment'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - employee_id
+              - month
+              - description
+              - amount
+              properties:
+                employee_id:
+                  type: integer
+                amount:
+                  type: number
+                month:
+                  type: string
+                  format: date
+                description:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - earning
+                  - deduction
+                  description: Taken from the pay component when one is given.
+                pay_component_id:
+                  type: integer
+                account_id:
+                  type: integer
+                  description: A deduction without a component needs it; an earning defaults to accounting.payroll.bonus_account.
+                taxable:
+                  type: boolean
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/adjustments/bulk:
+    post:
+      tags:
+      - Payroll
+      summary: The same bonus for every active employee (or the ones named)
+      operationId: bulk_payroll_adjustments
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      created:
+                        type: integer
+                      total:
+                        type: string
+                      skipped:
+                        type: array
+                        items:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - month
+              - description
+              - method
+              - value
+              properties:
+                method:
+                  type: string
+                  enum:
+                  - fixed
+                  - percent_of_basic
+                value:
+                  type: number
+                  description: An amount, or a percent of each employee's basic salary of the month.
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: 'Default: every active employee employed in the month.'
+                month:
+                  type: string
+                  format: date
+                description:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - earning
+                  - deduction
+                  description: Taken from the pay component when one is given.
+                pay_component_id:
+                  type: integer
+                account_id:
+                  type: integer
+                  description: A deduction without a component needs it; an earning defaults to accounting.payroll.bonus_account.
+                taxable:
+                  type: boolean
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/adjustments/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Cancel an adjustment no run has taken up
+      operationId: cancel_payroll_adjustment
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: HR submits a draft run to finance
+      operationId: submit_payroll_run
+      description: 'Locks the run (no recalculation or deletion). Needed only when approval is on (accounting.payroll.require_approval
+        or the payroll_approval feature), but always allowed.
+
+
+        Permission: `payroll.run`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/withdraw:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Take a submitted or approved run back to draft
+      operationId: withdraw_payroll_run
+      description: 'Permission: `payroll.run`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/approve:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Finance approves a submitted run
+      operationId: approve_payroll_run
+      description: 'Nobody approves a run they submitted themselves. An approved run can be posted.
+
+
+        Permission: `payroll.approve`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/reject:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Finance sends a submitted run back to HR
+      operationId: reject_payroll_run
+      description: 'Permission: `payroll.approve`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+                  maxLength: 300
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /features:
+    get:
+      tags:
+      - Settings
+      summary: Every optional module and payroll feature with its switch
+      operationId: list_features
+      description: 'Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Features
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Feature'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Settings
+      summary: Switch features on or off
+      operationId: update_features
+      description: 'A feature that is off hides its screens and answers its web and API routes with 404; its data is kept.
+        A child (payroll_loans) is off whenever its parent (payroll) is off. The core cannot be switched. Changes are audited
+        (FEATURE_ENABLED / FEATURE_DISABLED).
+
+
+        Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Feature'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - features
+              properties:
+                features:
+                  type: object
+                  additionalProperties:
+                    type: boolean
+                  example:
+                    inventory: false
+                    payroll_loans: false
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /fbr:
     get:
       tags:
@@ -15150,6 +16424,129 @@ components:
           type: integer
         employees:
           type: integer
+    Settlement:
+      type: object
+      properties:
+        id:
+          type: integer
+        employee_id:
+          type: integer
+        employee_code:
+          type: string
+        employee_name:
+          type: string
+        leave_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - draft
+          - posted
+          - paid
+          - void
+        service_years:
+          type: string
+        basic:
+          type: string
+        gratuity:
+          type: string
+        leave_days:
+          type: string
+        leave_encashment:
+          type: string
+        adjustment:
+          type: string
+          description: 'Signed: + pay, - recover'
+        loan_recovery:
+          type: string
+        net:
+          type: string
+        journal_entry_id:
+          type: integer
+          nullable: true
+        posted_on:
+          type: string
+          nullable: true
+        paid_on:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    PayrollAdjustment:
+      type: object
+      properties:
+        id:
+          type: integer
+        employee_id:
+          type: integer
+        employee_code:
+          type: string
+        employee_name:
+          type: string
+        month:
+          type: string
+          example: 2026-12
+        kind:
+          type: string
+          enum:
+          - earning
+          - deduction
+        pay_component_id:
+          type: integer
+          nullable: true
+        description:
+          type: string
+        amount:
+          type: string
+        taxable:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - open
+          - included
+          - cancelled
+        payroll_run_id:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    Feature:
+      type: object
+      properties:
+        key:
+          type: string
+          example: payroll_loans
+        label:
+          type: string
+        description:
+          type: string
+        group:
+          type: string
+          enum:
+          - Modules
+          - Payroll
+        parent:
+          type: string
+          nullable: true
+          description: A feature is only on while its parent is on.
+        enabled:
+          type: boolean
+          description: 'Effective state: its own switch and its parent''s.'
+        own:
+          type: boolean
+          description: The switch itself.
+        default:
+          type: boolean
+          description: The config default (accounting.features.disabled).
+        source:
+          type: string
+          enum:
+          - config
+          - database
     FbrSubmission:
       type: object
       properties:

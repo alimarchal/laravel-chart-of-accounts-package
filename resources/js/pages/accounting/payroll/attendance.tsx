@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,7 +27,7 @@ export default function PayrollAttendance({ rows, month }: Props) {
             <div className="space-y-6 p-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title="Attendance" description="Absent days come off the salary by the day; overtime hours are paid to employees flagged for overtime" />
-                    <div className="flex gap-2"><Button asChild variant="outline"><Link href="/accounting/payroll/leaves">Leave</Link></Button><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
+                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/leaves">Leave</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}

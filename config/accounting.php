@@ -127,6 +127,10 @@ return [
     'payroll' => [
         'salary_expense_account' => env('ACCOUNTING_PAYROLL_SALARY_EXPENSE', '5101'),
         'income_tax_account' => env('ACCOUNTING_PAYROLL_INCOME_TAX', '2104'),
+        // true: HR submits a run and finance (payroll.approve, never the submitter) approves it before it can be posted. Also a switch on the Features screen.
+        'require_approval' => (bool) env('ACCOUNTING_PAYROLL_REQUIRE_APPROVAL', false),
+        // Where one-off earnings without a pay component (bonuses) are booked; default: the salary expense account.
+        'bonus_account' => env('ACCOUNTING_PAYROLL_BONUS_ACCOUNT'),
         'net_payable_account' => env('ACCOUNTING_PAYROLL_NET_PAYABLE', '2103'),
         // Arrears (back pay of a late raise) are booked to this account code; empty = the salary expense account.
         'arrears_account' => env('ACCOUNTING_PAYROLL_ARREARS'),
@@ -139,6 +143,32 @@ return [
             'multiplier' => (float) env('ACCOUNTING_PAYROLL_OVERTIME_MULTIPLIER', 2),
             'holiday_multiplier' => (float) env('ACCOUNTING_PAYROLL_OVERTIME_HOLIDAY_MULTIPLIER', 2),
             'account' => env('ACCOUNTING_PAYROLL_OVERTIME_ACCOUNT'),
+        ],
+        // Final settlement of a leaver: gratuity = monthly basic / 30 x days_per_year x years of service (nothing under min_years);
+        // unused leave of the leave type with this code is paid at basic / days_per_month a day. Accounts are codes (empty = the
+        // salary expense and the net salary payable accounts).
+        'gratuity' => [
+            'days_per_year' => (float) env('ACCOUNTING_PAYROLL_GRATUITY_DAYS', 30),
+            'min_years' => (float) env('ACCOUNTING_PAYROLL_GRATUITY_MIN_YEARS', 1),
+            'expense_account' => env('ACCOUNTING_PAYROLL_GRATUITY_EXPENSE'),
+            'payable_account' => env('ACCOUNTING_PAYROLL_SETTLEMENT_PAYABLE'),
+            'leave_type' => env('ACCOUNTING_PAYROLL_ENCASH_LEAVE_TYPE'),
+            'days_per_month' => (float) env('ACCOUNTING_PAYROLL_DAYS_PER_MONTH', 30),
+        ],
+        // The tax year used by the tax certificate starts in this month (7 = July, as in Pakistan).
+        'tax_year_start_month' => (int) env('ACCOUNTING_PAYROLL_TAX_YEAR_START', 7),
+        // Payslips by e-mail: :month in the subject becomes e.g. "October 2026". queue: a queue name, or empty to send at once.
+        'payslip_mail' => [
+            'subject' => 'Payslip for :month',
+            'queue' => env('ACCOUNTING_PAYROLL_MAIL_QUEUE'),
+        ],
+        // Draft payroll run created by the scheduler (php artisan schedule:run): on this day of the month at this time, for the
+        // "previous" month (salaries are run after the month) or the "current" one. Off by default.
+        'auto_run' => [
+            'enabled' => (bool) env('ACCOUNTING_PAYROLL_AUTO_RUN', false),
+            'day' => (int) env('ACCOUNTING_PAYROLL_AUTO_RUN_DAY', 1),
+            'time' => env('ACCOUNTING_PAYROLL_AUTO_RUN_TIME', '03:00'),
+            'month' => env('ACCOUNTING_PAYROLL_AUTO_RUN_MONTH', 'previous'),
         ],
         // The bank salary file: layouts are lists of columns (employee_code, employee_name, national_id, bank_name, bank_account,
         // amount, narration, month); add the layout your bank asks for. :month in the narration becomes e.g. "October 2026".
@@ -164,6 +194,18 @@ return [
     // token to url; the invoice number is read from the response key invoice_number_key). seller and defaults fill what
     // the books do not hold; auto_submit sends an invoice on a queue as soon as it is posted. Bind your own
     // Alimarchal\LaravelChartOfAccounts\Contracts\FbrGateway to integrate differently.
+    /*
+    | Feature switches. Every optional module and payroll sub-feature is on unless it is listed here; an administrator can also switch
+    | them from the settings screen (/accounting/settings/features), the API or `php artisan accounting:features`, and what is saved
+    | there wins over this list. Keys: parties, tax, banking, budgets, fixed_assets, inventory, recurring_entries, fx_revaluation, fbr,
+    | attachments, report_mapping, chart_templates, control_accounts, snapshots, audit_log, payroll, payroll_grades, payroll_arrears,
+    | payroll_attendance, payroll_loans, payroll_contributions, payroll_bank_file, payroll_payslip_mail, payroll_settlements, payroll_reports.
+    | ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets" turns those off by default.
+    */
+    'features' => [
+        'disabled' => array_values(array_filter(array_map('trim', explode(',', (string) env('ACCOUNTING_FEATURES_DISABLED', ''))))),
+    ],
+
     'fbr' => [
         'enabled' => (bool) env('ACCOUNTING_FBR_ENABLED', false),
         'mode' => env('ACCOUNTING_FBR_MODE', 'fake'),
@@ -320,6 +362,7 @@ return [
         'payroll.manage',
         'payroll.run',
         'payroll.post',
+        'payroll.approve',
         'payroll.void',
         'fbr.view',
         'fbr.submit',
@@ -534,6 +577,7 @@ return [
             'inventory.view',
             'payroll.view',
             'payroll.post',
+            'payroll.approve',
             'payroll.void',
             'fbr.view',
             'tax-returns.view',

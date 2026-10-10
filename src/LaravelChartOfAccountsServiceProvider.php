@@ -6,9 +6,11 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingChartTemplatesC
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCloseFiscalYearCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingClosePeriodCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCreateCompanyCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingFeaturesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingHealthCheckCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingInstallCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingPayrollRunCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingPruneExportsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRebuildSnapshotsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRolesCommand;
@@ -25,6 +27,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedReceivablesLivew
 use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -85,6 +88,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingPruneExportsCommand::class,
                 AccountingChartTemplatesCommand::class,
                 AccountingRunRecurringCommand::class,
+                AccountingPayrollRunCommand::class,
                 AccountingCreateCompanyCommand::class,
                 AccountingHealthCheckCommand::class,
                 AccountingRebuildSnapshotsCommand::class,
@@ -92,6 +96,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingClosePeriodCommand::class,
                 AccountingOpenPeriodCommand::class,
                 AccountingRolesCommand::class,
+                AccountingFeaturesCommand::class,
             ]);
 
             // Daily, once the app's own scheduler runs (php artisan schedule:run): generate the due recurring entries.
@@ -99,8 +104,15 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 if (config('accounting.recurring.schedule', true)) {
                     $schedule->command('accounting:run-recurring')->dailyAt((string) config('accounting.recurring.time', '02:00'))->withoutOverlapping()->onOneServer();
                 }
+
+                if (config('accounting.payroll.auto_run.enabled', false)) {
+                    $schedule->command('accounting:payroll-run')->monthlyOn(max(1, min(28, (int) config('accounting.payroll.auto_run.day', 1))), (string) config('accounting.payroll.auto_run.time', '03:00'))->withoutOverlapping()->onOneServer();
+                }
             });
         }
+
+        $this->app->scoped(FeatureManager::class);
+        Blade::if('accountingFeature', fn (string $feature): bool => app(FeatureManager::class)->enabled($feature));
 
         $driver = config('accounting.ui_driver', 'inertia');
 

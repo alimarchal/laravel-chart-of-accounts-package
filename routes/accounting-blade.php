@@ -38,6 +38,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureControlle
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FbrController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FeatureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
@@ -46,12 +47,17 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\LocaleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyDocumentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PartyPaymentController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollAdjustmentController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollApprovalController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollArrearsController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollAttendanceController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollBankFileController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollLoanController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollPayslipController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollReportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollSchemeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollSettlementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\PayrollStructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\RecurringEntryController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportExportListController;
@@ -60,6 +66,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\SetAccountingLocale;
 use Illuminate\Support\Facades\Route;
 
@@ -88,7 +95,7 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
 };
 
 // ── Accounting routes ─────────────────────────────────────────────────────────
-Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, SetAccountingLocale::class])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, EnsureAccountingFeatureEnabled::class, SetAccountingLocale::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name(config('accounting.route_name_prefix', 'accounting').'.')
     ->group(function () use ($resourceRoutes): void {
@@ -228,6 +235,31 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::delete('payroll/schemes/{scheme}', [PayrollSchemeController::class, 'destroy'])->name('payroll.schemes.destroy')->middleware('can:payroll.manage');
         Route::post('payroll/schemes/{scheme}/assign', [PayrollSchemeController::class, 'assign'])->name('payroll.schemes.assign')->middleware('can:payroll.manage');
         Route::get('payroll/runs/{run}/bank-file/{format}', [PayrollBankFileController::class, 'show'])->whereIn('format', ['csv', 'xlsx'])->name('payroll.runs.bank-file')->middleware('can:payroll.post');
+        Route::get('payroll/runs/{run}/payslips/{payslip}/print', [PayrollPayslipController::class, 'print'])->name('payroll.payslips.print')->middleware('can:payroll.view');
+        Route::get('payroll/runs/{run}/payslips/{payslip}/pdf', [PayrollPayslipController::class, 'pdf'])->name('payroll.payslips.pdf')->middleware('can:payroll.view');
+        Route::post('payroll/runs/{run}/payslips/{payslip}/email', [PayrollPayslipController::class, 'email'])->name('payroll.payslips.email')->middleware('can:payroll.manage');
+        Route::post('payroll/runs/{run}/email-payslips', [PayrollPayslipController::class, 'emailAll'])->name('payroll.runs.email')->middleware('can:payroll.manage');
+        Route::post('payroll/runs/{run}/submit', [PayrollApprovalController::class, 'submit'])->name('payroll.runs.submit')->middleware('can:payroll.run');
+        Route::post('payroll/runs/{run}/withdraw', [PayrollApprovalController::class, 'withdraw'])->name('payroll.runs.withdraw')->middleware('can:payroll.run');
+        Route::post('payroll/runs/{run}/approve', [PayrollApprovalController::class, 'approve'])->name('payroll.runs.approve')->middleware('can:payroll.approve');
+        Route::post('payroll/runs/{run}/reject', [PayrollApprovalController::class, 'reject'])->name('payroll.runs.reject')->middleware('can:payroll.approve');
+        Route::get('payroll/adjustments', [PayrollAdjustmentController::class, 'index'])->name('payroll.adjustments.index')->middleware('can:payroll.view');
+        Route::post('payroll/adjustments', [PayrollAdjustmentController::class, 'store'])->name('payroll.adjustments.store')->middleware('can:payroll.manage');
+        Route::post('payroll/adjustments/bulk', [PayrollAdjustmentController::class, 'bulk'])->name('payroll.adjustments.bulk')->middleware('can:payroll.manage');
+        Route::post('payroll/adjustments/{adjustment}/cancel', [PayrollAdjustmentController::class, 'cancel'])->name('payroll.adjustments.cancel')->middleware('can:payroll.manage');
+        Route::get('payroll/settlements', [PayrollSettlementController::class, 'index'])->name('payroll.settlements.index')->middleware('can:payroll.view');
+        Route::post('payroll/settlements/preview', [PayrollSettlementController::class, 'preview'])->name('payroll.settlements.preview')->middleware('can:payroll.manage');
+        Route::post('payroll/settlements', [PayrollSettlementController::class, 'store'])->name('payroll.settlements.store')->middleware('can:payroll.manage');
+        Route::get('payroll/settlements/{settlement}', [PayrollSettlementController::class, 'show'])->name('payroll.settlements.show')->middleware('can:payroll.view');
+        Route::delete('payroll/settlements/{settlement}', [PayrollSettlementController::class, 'destroy'])->name('payroll.settlements.destroy')->middleware('can:payroll.manage');
+        Route::post('payroll/settlements/{settlement}/post', [PayrollSettlementController::class, 'post'])->name('payroll.settlements.post')->middleware('can:payroll.post');
+        Route::post('payroll/settlements/{settlement}/pay', [PayrollSettlementController::class, 'pay'])->name('payroll.settlements.pay')->middleware('can:payroll.post');
+        Route::post('payroll/settlements/{settlement}/void', [PayrollSettlementController::class, 'void'])->name('payroll.settlements.void')->middleware('can:payroll.void');
+        Route::get('payroll/reports', [PayrollReportController::class, 'index'])->name('payroll.reports.index')->middleware('can:payroll.view');
+        Route::get('payroll/reports/{report}/export/{format}', [PayrollReportController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('payroll.reports.export')->middleware('can:payroll.view');
+        Route::get('payroll/tax', [PayrollReportController::class, 'tax'])->name('payroll.tax.index')->middleware('can:payroll.view');
+        Route::get('payroll/tax/annual/{format}', [PayrollReportController::class, 'taxExport'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('payroll.tax.export')->middleware('can:payroll.view');
+        Route::get('payroll/tax/certificate/{employee}', [PayrollReportController::class, 'certificate'])->name('payroll.tax.certificate')->middleware('can:payroll.view');
         Route::get('payroll/bulk', [PayrollStructureController::class, 'bulk'])->name('payroll.bulk')->middleware('can:payroll.manage');
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index')->middleware('can:inventory.view');
         Route::get('inventory/export/{format}', [InventoryController::class, 'export'])->whereIn('format', ['csv', 'xlsx', 'pdf'])->name('inventory.export')->middleware('can:inventory.view');
@@ -433,6 +465,8 @@ Route::middleware(['web', 'auth', 'verified'])
             ->middleware('can:user.assign-permission');
         // Role management is guarded by a single ability (there are no roles.* permissions).
         Route::middleware('can:accounting.manage-settings')->group(function (): void {
+            Route::get('features', [FeatureController::class, 'index'])->name('features.index');
+            Route::put('features', [FeatureController::class, 'update'])->name('features.update');
             Route::get('roles', [RoleBladeController::class, 'index'])->name('roles.index');
             Route::get('roles/create', [RoleBladeController::class, 'create'])->name('roles.create');
             Route::post('roles', [RoleBladeController::class, 'store'])->name('roles.store');

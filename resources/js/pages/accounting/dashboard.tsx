@@ -20,15 +20,15 @@ import Heading from '@/components/heading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAccounting } from '@/lib/accounting';
+import { linkEnabled, useAccounting } from '@/lib/accounting';
 
 type Props = {
     summary: Record<string, number>;
 };
 
 export default function AccountingDashboard({ summary }: Props) {
-    const { company, permissions, flash } = useAccounting();
-    const sections = [
+    const { company, permissions, flash, disabledPaths } = useAccounting();
+    const allSections = [
         {
             title: 'Chart of Accounts',
             href: '/accounting/chart-of-accounts',
@@ -232,7 +232,10 @@ export default function AccountingDashboard({ summary }: Props) {
             ? [{ title: 'Users', href: '/accounting/users', icon: Users }]
             : []),
         ...(permissions['accounting.manage-settings']
-            ? [{ title: 'Roles', href: '/accounting/roles', icon: KeyRound }]
+            ? [
+                  { title: 'Roles', href: '/accounting/roles', icon: KeyRound },
+                  { title: 'Features', href: '/accounting/features', icon: ShieldCheck },
+              ]
             : []),
         ...(company.enabled && permissions['companies.manage']
             ? [
@@ -244,6 +247,7 @@ export default function AccountingDashboard({ summary }: Props) {
               ]
             : []),
     ];
+    const sections = allSections.filter((section) => linkEnabled(section.href, disabledPaths));
 
     return (
         <>

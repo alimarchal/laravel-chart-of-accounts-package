@@ -193,6 +193,49 @@ class PayrollLoanService
     }
 
     /**
+     * A leaver's final settlement recovers what is left of an active loan: the loan closes and its instalments are cancelled.
+     * Returns what is needed to put it back if the settlement is voided.
+     *
+     * @return array{loan_id: int, amount: string, installments: list<int>}
+     */
+    public function recoverFromSettlement(Loan $loan): array
+    {
+        $amount = $this->outstanding($loan);
+        $ids = LoanInstallment::query()->where('loan_id', $loan->id)->where('status', 'scheduled')->pluck('id')->all();
+        LoanInstallment::query()->whereIn('id', $ids)->update(['status' => 'cancelled']);
+        $loan->forceFill(['status' => 'closed', 'settled_amount' => Money::fromCents(Money::toCents($loan->settled_amount) + Money::toCents($amount))])->save();
+        AccountingAuditLog::record($loan, 'LOAN_RECOVERED_IN_SETTLEMENT', null, null, ['amount' => $amount]);
+
+        return ['loan_id' => $loan->id, 'amount' => $amount, 'installments' => $ids];
+    }
+
+    /**
+     * @param  array{loan_id: int, amount: string, installments: list<int>}  $recovered
+     */
+    public function restoreRecovery(array $recovered): void
+    {
+        $loan = Loan::query()->find($recovered['loan_id']);
+
+        if ($loan === null) {
+            return;
+        }
+
+        LoanInstallment::query()->whereIn('id', $recovered['installments'])->update(['status' => 'scheduled']);
+        $loan->forceFill(['status' => 'active', 'settled_amount' => Money::fromCents(max(0, Money::toCents($loan->settled_amount) - Money::toCents($recovered['amount'])))])->save();
+    }
+
+    /**
+     * The active loans of an employee with what is left of each.
+     *
+     * @return list<array{loan: Loan, outstanding: string}>
+     */
+    public function activeOf(int $employeeId): array
+    {
+        return Loan::query()->where('employee_id', $employeeId)->where('status', 'active')->get()
+            ->map(fn (Loan $loan): array => ['loan' => $loan, 'outstanding' => $this->outstanding($loan)])->all();
+    }
+
+    /**
      * Principal less what salary has recovered (instalments in a posted or paid run) and what was settled in cash.
      */
     public function outstanding(Loan $loan): string

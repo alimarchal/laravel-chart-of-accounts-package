@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Services\RecurringEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
@@ -19,6 +20,12 @@ class AccountingRunRecurringCommand extends Command
 
     public function handle(RecurringEntryService $recurring, CurrentCompany $companies): int
     {
+        if (! app(FeatureManager::class)->enabled('recurring_entries')) {
+            $this->info('The Recurring entries feature is turned off: nothing to do.');
+
+            return self::SUCCESS;
+        }
+
         $asOf = $this->option('date') ? Carbon::parse((string) $this->option('date')) : now();
         $query = Company::query()->orderBy('id');
 

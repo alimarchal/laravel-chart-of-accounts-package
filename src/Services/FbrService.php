@@ -11,6 +11,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocumentLine;
 use Alimarchal\LaravelChartOfAccounts\Support\Fbr\FakeFbrGateway;
 use Alimarchal\LaravelChartOfAccounts\Support\Fbr\HttpFbrGateway;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class FbrService
 
     public function enabled(): bool
     {
-        return (bool) config('accounting.fbr.enabled', false);
+        return (bool) config('accounting.fbr.enabled', false) && app(FeatureManager::class)->enabled('fbr');
     }
 
     /**
@@ -117,7 +118,7 @@ class FbrService
     public function submit(PartyDocument $document): FbrSubmission
     {
         if (! $this->enabled()) {
-            throw new AccountingException('FBR integration is switched off (accounting.fbr.enabled).');
+            throw new AccountingException('FBR integration is switched off (the fbr feature, or accounting.fbr.enabled).');
         }
 
         if ($reason = $this->blocker($document)) {
