@@ -285,7 +285,7 @@ class PayrollController extends Controller
     private function presentEmployee(Employee $employee, bool $withComponents = false): array
     {
         $data = [
-            'id' => $employee->id, 'code' => $employee->code, 'name' => $employee->name, 'national_id' => $employee->national_id, 'designation' => $employee->designation, 'cost_center_id' => $employee->cost_center_id, 'salary_grade_id' => $employee->salary_grade_id,
+            'id' => $employee->id, 'code' => $employee->code, 'name' => $employee->name, 'national_id' => $employee->national_id, 'email' => $employee->email, 'designation' => $employee->designation, 'cost_center_id' => $employee->cost_center_id, 'salary_grade_id' => $employee->salary_grade_id,
             'join_date' => $employee->join_date->toDateString(), 'leave_date' => $employee->leave_date?->toDateString(), 'base_salary' => $employee->base_salary, 'withhold_tax' => $employee->withhold_tax, 'overtime_eligible' => $employee->overtime_eligible,
             'bank_name' => $employee->bank_name, 'bank_account' => $employee->bank_account, 'is_active' => $employee->is_active,
         ];

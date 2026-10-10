@@ -36,6 +36,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportExport;
 use Alimarchal\LaravelChartOfAccounts\Models\ReportLine;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
+use Alimarchal\LaravelChartOfAccounts\Models\Settlement;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
@@ -91,6 +92,14 @@ function concreteUri(Route $route, ?string &$modelResource = null): string
             return 'balance-sheet';
         }
 
+        if ($resource === 'annual') {
+            return 'csv';
+        }
+
+        if ($resource === 'reports' && str_contains($route->uri(), 'payroll/')) {
+            return $match[1] === 'format' ? 'csv' : 'comparison';
+        }
+
         if (in_array($resource, ['export', 'template'], true)) {
             return 'csv';
         }
@@ -131,6 +140,8 @@ function concreteUri(Route $route, ?string &$modelResource = null): string
             'leaves' => Leave::class,
             'loans' => Loan::class,
             'schemes' => ContributionScheme::class,
+            'settlements' => Settlement::class,
+            'certificate' => Employee::class,
             'arrears' => PayrollArrear::class,
             'warehouses' => Warehouse::class,
             'returns' => TaxReturn::class,
@@ -175,6 +186,7 @@ function createEveryResource(): void
     Leave::query()->create(['employee_id' => $employee->id, 'leave_type_id' => $leaveType->id, 'from_date' => now()->toDateString(), 'to_date' => now()->toDateString(), 'days' => 1]);
     Loan::query()->create(['employee_id' => $employee->id, 'principal' => 100, 'installments' => 1, 'start_month' => now()->startOfMonth()->toDateString()]);
     ContributionScheme::query()->create(['code' => 'PF', 'name' => 'Provident fund']);
+    Settlement::query()->create(['employee_id' => $employee->id, 'leave_date' => now()->toDateString()]);
     SalaryGrade::query()->create(['code' => 'G1', 'name' => 'Grade', 'base_salary' => 1]);
     PayrollArrear::query()->create(['employee_id' => $employee->id, 'from_month' => now()->startOfMonth()->toDateString(), 'to_month' => now()->startOfMonth()->toDateString(), 'payment_month' => now()->startOfMonth()->toDateString(), 'amount' => 1, 'breakdown' => '[]']);
     $payrollRun = PayrollRun::query()->create(['period_month' => now()->startOfMonth()->toDateString()]);

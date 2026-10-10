@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.31.0] - 2026-11-02
+
+Payroll output release.
+
+### Added
+- **Payslip files:** a printable page and a PDF for every payslip; e-mail one payslip or every payslip of a posted run (queued when
+  `accounting.payroll.payslip_mail.queue` is on). Employees now have an e-mail address.
+- **Automatic payroll run:** `php artisan accounting:payroll-run` creates the draft run of a month (default: the previous one) for one company or all;
+  scheduled monthly when `accounting.payroll.auto_run.enabled` is on (day and time configurable).
+- **Final settlement:** gratuity (days per year x basic/30 x years served, after a minimum service), pay for unused leave, a signed adjustment and the
+  loans the employee still owes, worked out in a preview, saved as a draft, posted, paid and voidable (a void gives the loans back).
+  Config `accounting.payroll.gratuity`.
+- **Tax:** the annual salary tax statement for every employee (CSV, Excel, PDF) and a printable tax certificate per employee; the tax year starts
+  in `accounting.payroll.tax_year_start_month` (default July).
+- **Payroll reports:** month-by-month comparison with change, cost by cost center, and headcount (joined, left, on the payroll), each as CSV, Excel or PDF.
+- React and Blade screens (settlements, reports, tax, tax certificate; employee, run and payslip screens updated) and API endpoints under
+  `/payroll/settlements`, `/payroll/reports`, `/payroll/tax` and `/payroll/runs/{id}/payslips/{id}/(print|pdf|email)`.
+
 ## [2.30.0] - 2026-11-01
 
 Payroll operations release.

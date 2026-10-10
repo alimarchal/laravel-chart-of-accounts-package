@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCreateCompanyCo
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingHealthCheckCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingInstallCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingOpenPeriodCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingPayrollRunCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingPruneExportsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRebuildSnapshotsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingRolesCommand;
@@ -85,6 +86,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingPruneExportsCommand::class,
                 AccountingChartTemplatesCommand::class,
                 AccountingRunRecurringCommand::class,
+                AccountingPayrollRunCommand::class,
                 AccountingCreateCompanyCommand::class,
                 AccountingHealthCheckCommand::class,
                 AccountingRebuildSnapshotsCommand::class,
@@ -98,6 +100,10 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
             $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
                 if (config('accounting.recurring.schedule', true)) {
                     $schedule->command('accounting:run-recurring')->dailyAt((string) config('accounting.recurring.time', '02:00'))->withoutOverlapping()->onOneServer();
+                }
+
+                if (config('accounting.payroll.auto_run.enabled', false)) {
+                    $schedule->command('accounting:payroll-run')->monthlyOn(max(1, min(28, (int) config('accounting.payroll.auto_run.day', 1))), (string) config('accounting.payroll.auto_run.time', '03:00'))->withoutOverlapping()->onOneServer();
                 }
             });
         }

@@ -36,6 +36,7 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="outline" onClick={() => act('recalculate')}>Recalculate</Button>}
                         {run.status === 'draft' && permissions['payroll.post'] && <Button onClick={() => act('post', 'Post this payroll to the books?')}>Post</Button>}
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="ghost" onClick={() => confirm('Delete this draft run?') && router.delete(base)}>Delete</Button>}
+                        {['posted', 'paid'].includes(run.status) && permissions['payroll.manage'] && <Button variant="outline" onClick={() => confirm('E-mail every payslip to its employee?') && act('email-payslips')}>E-mail payslips</Button>}
                         {['posted', 'paid'].includes(run.status) && permissions['payroll.void'] && <Button variant="ghost" onClick={() => act('void', 'Void this payroll? Its entries will be reversed.')}>Void</Button>}
                     </div>
                 </div>

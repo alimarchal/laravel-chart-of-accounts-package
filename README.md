@@ -586,6 +586,16 @@ the invoice number FBR returns.
   the employees it is given to, and can also be taken on arrears. The rates are yours to set: check them against the current rules.
 - **Bank salary file:** from a posted run, CSV or Excel in a layout of `accounting.payroll.bank_file.layouts` (standard, IBAN, or your
   bank's); employees without a bank account are left out and listed on the screen. Needs `payroll.post`.
+- **Payslip files** (print, PDF, e-mail): every payslip opens as a printable page and a PDF, and goes by e-mail to the employee's address
+  (one, or the whole posted run: `accounting.payroll.payslip_mail`). Employees without an address are listed as skipped.
+- **Automatic run:** `php artisan accounting:payroll-run [--month=2026-10] [--company=1]` creates the draft run (default: last month; skips a
+  month that already has one). Turn on `accounting.payroll.auto_run` to have the scheduler do it every month.
+- **Final settlement** (`/accounting/payroll/settlements`): when an employee leaves, preview and save the gratuity (days per year x
+  basic/30 x years served, after a minimum service), pay for unused leave of one leave type, a signed adjustment and the loans still
+  owed; post it (the approver), pay it, or void it (the loans open again). Rules in `accounting.payroll.gratuity`.
+- **Tax** (`/accounting/payroll/tax`): the salary tax statement of a tax year for every employee (CSV, Excel, PDF) and a printable
+  certificate per employee, from the posted payroll. The tax year starts in `accounting.payroll.tax_year_start_month` (7 = July).
+- **Payroll reports** (`/accounting/payroll/reports`): month by month with the change, cost by cost center, and headcount; CSV, Excel, PDF.
 - Printable payslips. Permissions `payroll.view/manage/run/post/void`: the accountant prepares (`manage`, `run`), the approver
   posts, pays and voids, so one person cannot do both. Audited (`PAYROLL_RUN_*`, `EMPLOYEE_SAVED`).
 
