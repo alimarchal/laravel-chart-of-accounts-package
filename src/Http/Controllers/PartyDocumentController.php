@@ -40,7 +40,7 @@ class PartyDocumentController extends Controller
             ListFilters::exact('kind'),
             ListFilters::exact('status'),
             ListFilters::exact('party_id'),
-            ListFilters::search('search', ['number', 'reference', 'notes']),
+            ListFilters::search('search', ['number', 'reference', 'notes'], ['party' => ['name', 'code']]),
             ListFilters::from('date_from', 'issue_date'),
             ListFilters::to('date_to', 'issue_date'),
             ListFilters::from('due_from', 'due_date'),

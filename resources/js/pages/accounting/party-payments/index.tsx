@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { Banknote, Plus } from 'lucide-react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,7 @@ type Payment = { id: number; kind: 'receipt' | 'payment'; number: string | null;
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
-export default function PartyPayments({ payments }: { payments: Payment[] }) {
+export default function PartyPayments({ payments, filters }: { payments: Payment[]; filters: Record<string, string | null> }) {
     const { permissions, flash } = useAccounting();
 
     return (
@@ -43,6 +44,21 @@ export default function PartyPayments({ payments }: { payments: Payment[] }) {
                         <AlertDescription>{flash.success}</AlertDescription>
                     </Alert>
                 ) : null}
+
+                <FilterBar
+                    path="/accounting/party-payments"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Number, reference or party' },
+                        { name: 'kind', label: 'Kind', type: 'select', options: { receipt: 'Receipts', payment: 'Payments' } },
+                        { name: 'status', label: 'Status', type: 'select', options: { posted: 'Posted', void: 'Void' } },
+                        { name: 'method', label: 'Method', placeholder: 'cash, bank, cheque…' },
+                        { name: 'date_from', label: 'Paid from', type: 'date' },
+                        { name: 'date_to', label: 'Paid to', type: 'date' },
+                        { name: 'min_amount', label: 'Amount from', type: 'number' },
+                        { name: 'max_amount', label: 'Amount up to', type: 'number' },
+                    ]}
+                />
 
                 <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">

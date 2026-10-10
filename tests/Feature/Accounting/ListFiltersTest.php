@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Services\PartyDocumentService;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyPaymentService;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
+use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 
@@ -38,7 +39,7 @@ beforeEach(function (): void {
 });
 
 /** @return list<string> */
-function codes(Illuminate\Testing\TestResponse $response, string $key = 'code'): array
+function codes(TestResponse $response, string $key = 'code'): array
 {
     return collect($response->assertOk()->json('data'))->pluck($key)->all();
 }

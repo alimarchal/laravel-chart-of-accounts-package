@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { FileText, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -32,14 +33,8 @@ const selectClass =
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 const label = (kind: string) => kind.replace('_', ' ');
 
-export default function PartyDocuments({ documents, filters }: { documents: Document[]; filters: { kind: string | null; status: string | null } }) {
+export default function PartyDocuments({ documents, filters }: { documents: Document[]; filters: Record<string, string | null> }) {
     const { permissions, flash } = useAccounting();
-    const [kind, setKind] = useState(filters.kind ?? '');
-    const [status, setStatus] = useState(filters.status ?? '');
-    const apply = (event: FormEvent) => {
-        event.preventDefault();
-        router.get('/accounting/party-documents', { kind: kind || undefined, status: status || undefined }, { preserveScroll: true });
-    };
 
     return (
         <>
@@ -73,22 +68,21 @@ export default function PartyDocuments({ documents, filters }: { documents: Docu
                     </Alert>
                 ) : null}
 
-                <form onSubmit={apply} className="flex flex-wrap items-end gap-3">
-                    <select className={selectClass} value={kind} onChange={(event) => setKind(event.target.value)} aria-label="Kind">
-                        <option value="">All kinds</option>
-                        <option value="invoice">Invoices</option>
-                        <option value="bill">Bills</option>
-                        <option value="credit_note">Credit notes</option>
-                        <option value="debit_note">Debit notes</option>
-                    </select>
-                    <select className={selectClass} value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Status">
-                        <option value="">Any status</option>
-                        <option value="draft">Draft</option>
-                        <option value="posted">Posted</option>
-                        <option value="void">Void</option>
-                    </select>
-                    <Button type="submit" variant="outline">Filter</Button>
-                </form>
+                <FilterBar
+                    path="/accounting/party-documents"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Number, reference or party' },
+                        { name: 'kind', label: 'Kind', type: 'select', options: { invoice: 'Invoices', bill: 'Bills', credit_note: 'Credit notes', debit_note: 'Debit notes' } },
+                        { name: 'status', label: 'Status', type: 'select', options: { draft: 'Draft', posted: 'Posted', void: 'Void' } },
+                        { name: 'date_from', label: 'Issued from', type: 'date' },
+                        { name: 'date_to', label: 'Issued to', type: 'date' },
+                        { name: 'due_from', label: 'Due from', type: 'date' },
+                        { name: 'due_to', label: 'Due to', type: 'date' },
+                        { name: 'min_total', label: 'Total from', type: 'number' },
+                        { name: 'max_total', label: 'Total up to', type: 'number' },
+                    ]}
+                />
 
                 <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">

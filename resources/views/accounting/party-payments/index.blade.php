@@ -10,6 +10,16 @@
     </x-slot>
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
+        <x-accounting::list-filters :action="route('accounting.party-payments.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Number, reference or party'],
+            ['name' => 'kind', 'label' => 'Kind', 'type' => 'select', 'options' => ['receipt' => 'Receipts', 'payment' => 'Payments']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['posted' => 'Posted', 'void' => 'Void']],
+            ['name' => 'method', 'label' => 'Method', 'placeholder' => 'cash, bank, cheque…'],
+            ['name' => 'date_from', 'label' => 'Paid from', 'type' => 'date'],
+            ['name' => 'date_to', 'label' => 'Paid to', 'type' => 'date'],
+            ['name' => 'min_amount', 'label' => 'Amount from', 'type' => 'number'],
+            ['name' => 'max_amount', 'label' => 'Amount up to', 'type' => 'number'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Number</th><th class="py-2 px-3 text-left font-medium text-gray-600">Party</th><th class="py-2 px-3 text-left font-medium text-gray-600">Date</th><th class="py-2 px-3 text-left font-medium text-gray-600">Method</th><th class="py-2 px-3 text-right font-medium text-gray-600">Amount</th><th class="py-2 px-3 text-right font-medium text-gray-600">Not applied</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th></tr></thead>
             <tbody>

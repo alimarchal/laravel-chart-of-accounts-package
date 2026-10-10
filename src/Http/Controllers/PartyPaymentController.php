@@ -36,7 +36,7 @@ class PartyPaymentController extends Controller
             ListFilters::exact('party_id'),
             ListFilters::exact('status'),
             ListFilters::exact('method'),
-            ListFilters::search('search', ['number', 'reference', 'notes']),
+            ListFilters::search('search', ['number', 'reference', 'notes'], ['party' => ['name', 'code']]),
             ListFilters::from('date_from', 'payment_date'),
             ListFilters::to('date_to', 'payment_date'),
             ListFilters::min('min_amount', 'amount'),

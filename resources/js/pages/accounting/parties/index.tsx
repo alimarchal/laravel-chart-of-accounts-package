@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -20,19 +21,13 @@ type Party = {
     credit_limit: string | null;
     is_active: boolean;
 };
-type Props = { parties: Party[]; filters: { type: string | null; search: string | null } };
+type Props = { parties: Party[]; filters: Record<string, string | null> };
 
 const selectClass =
     'h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default function Parties({ parties, filters }: Props) {
     const { permissions, flash } = useAccounting();
-    const [search, setSearch] = useState(filters.search ?? '');
-    const [type, setType] = useState(filters.type ?? '');
-    const apply = (event: FormEvent) => {
-        event.preventDefault();
-        router.get('/accounting/parties', { type: type || undefined, search: search || undefined }, { preserveScroll: true });
-    };
 
     return (
         <>
@@ -74,16 +69,15 @@ export default function Parties({ parties, filters }: Props) {
                     </Alert>
                 ) : null}
 
-                <form onSubmit={apply} className="flex flex-wrap items-end gap-3">
-                    <Input className="w-64" placeholder="Search by name or code" value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Search" />
-                    <select className={selectClass} value={type} onChange={(event) => setType(event.target.value)} aria-label="Type">
-                        <option value="">All</option>
-                        <option value="customer">Customers</option>
-                        <option value="supplier">Suppliers</option>
-                        <option value="both">Both</option>
-                    </select>
-                    <Button type="submit" variant="outline">Filter</Button>
-                </form>
+                <FilterBar
+                    path="/accounting/parties"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Name, code, e-mail, tax number' },
+                        { name: 'type', label: 'Type', type: 'select', options: { customer: 'Customers', supplier: 'Suppliers', both: 'Both' } },
+                        { name: 'active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                    ]}
+                />
 
                 <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">

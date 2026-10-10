@@ -66,10 +66,11 @@ final class ListFilters
      * Free-text search over several columns (any word part, % and _ are matched literally).
      *
      * @param  list<string>  $columns
+     * @param  array<string, list<string>>  $relations  relation => columns searched on the related rows too
      */
-    public static function search(string $name, array $columns): AllowedFilter
+    public static function search(string $name, array $columns, array $relations = []): AllowedFilter
     {
-        return AllowedFilter::callback($name, function ($query, $value) use ($columns): void {
+        return AllowedFilter::callback($name, function ($query, $value) use ($columns, $relations): void {
             $term = self::like(self::text($value));
 
             if ($term === '') {
@@ -78,9 +79,21 @@ final class ListFilters
 
             $grammar = $query->getQuery()->getGrammar();
 
-            $query->where(function ($inner) use ($columns, $term, $grammar): void {
+            $query->where(function ($inner) use ($columns, $relations, $term, $grammar): void {
                 foreach ($columns as $column) {
                     $inner->orWhereRaw($grammar->wrap($column)." like ? escape '!'", ["%{$term}%"]);
+                }
+
+                foreach ($relations as $relation => $related) {
+                    $inner->orWhereHas($relation, function ($sub) use ($related, $term): void {
+                        $sub->where(function ($match) use ($related, $term): void {
+                            $grammar = $match->getQuery()->getGrammar();
+
+                            foreach ($related as $column) {
+                                $match->orWhereRaw($grammar->wrap($column)." like ? escape '!'", ["%{$term}%"]);
+                            }
+                        });
+                    });
                 }
             });
         });
