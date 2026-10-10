@@ -51,12 +51,14 @@ class PayrollContributionService
 
         // Amounts left blank mean none (the screens send empty fields).
         foreach (['employee_rate', 'employer_rate', 'employee_fixed', 'employer_fixed'] as $key) {
-            $data[$key] = $data[$key] ?? 0;
+            if (blank($data[$key] ?? null)) {
+                $data[$key] = 0;
+            }
         }
 
         $fixed = $data['base'] === 'fixed';
-        $employee = (float) ($fixed ? ($data['employee_fixed'] ?? 0) : ($data['employee_rate'] ?? 0));
-        $employer = (float) ($fixed ? ($data['employer_fixed'] ?? 0) : ($data['employer_rate'] ?? 0));
+        $employee = (float) ($fixed ? $data['employee_fixed'] : $data['employee_rate']);
+        $employer = (float) ($fixed ? $data['employer_fixed'] : $data['employer_rate']);
         $errors = [];
 
         if ($employee <= 0 && $employer <= 0) {
