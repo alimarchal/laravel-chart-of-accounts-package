@@ -12,6 +12,10 @@
 > **Package:** [alimarchal/laravel-chart-of-accounts](https://packagist.org/packages/alimarchal/laravel-chart-of-accounts)
 > **Source:** [github.com/alimarchal/laravel-chart-of-accounts-package](https://github.com/alimarchal/laravel-chart-of-accounts-package)
 
+> **Help & guides:** [Help catalog — every screen and API endpoint with its permission](docs/help-catalog.md) ·
+> [اردو استعمال گائیڈ (Urdu user guide with screenshots, right-to-left)](docs/guide/ur/README.md) ·
+> [OpenAPI](docs/openapi.yaml) · [Postman](docs/postman_collection.json) · [UAT checklist](docs/uat.md)
+
 ---
 
 ## Highlights
@@ -37,7 +41,10 @@
 - **REST API** (OpenAPI 3.1 + Postman), **React** (Inertia) and **Blade/Livewire** UIs — or API only
 - **Events & signed webhooks** for every ledger action (posted, reversed, approved, period closed, …)
 - **Proven at scale** — 400,000 journal lines: trial balance 0.77 s, account statement 0.1 s, 46 concurrent postings/s with zero imbalance ([performance report](docs/performance.md))
-- **Tested** — 390+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+- **Payroll** — employees, grades, quantity x rate pay, arrears, attendance and leave, loans, EOBI/PESSI/PF, bank file, payslip PDF/e-mail, settlements, tax certificates, HR-to-finance approval, bonuses
+- **Feature switches** — turn any module or payroll feature off and on from a screen, the API or `php artisan accounting:features`; menus and routes follow, data stays
+- **Help catalog and Urdu guide** — every screen and endpoint listed, plus a right-to-left Urdu manual with screenshots of every screen
+- **Tested** — 590+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
 
 ---
 

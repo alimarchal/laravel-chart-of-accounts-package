@@ -2,6 +2,22 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.33.0] - 2026-11-04
+
+Help catalog, Urdu guide and screen audit release.
+
+### Added
+- **Help catalog** (`docs/help-catalog.md`): every web screen and every API endpoint with the permission it needs and what it does, generated from
+  the registered routes by `python3 docs/generate-route-catalog.py`; the README's API reference is generated from the same routes (311 endpoints).
+- **Urdu user guide** (`docs/guide/ur/`): 13 right-to-left chapters with 140+ screenshots (every screen), the monthly payroll workflow, the API,
+  commands, FAQ and a glossary; `docs/guide/ur/guide.html` is the same guide as one offline page (`python3 docs/guide/build.py`).
+- A test that compiles every Blade view and keeps directives apart (`@endcan@can` is printed as text without Livewire's precompiler).
+
+### Fixed
+- The Blade payroll pages did not compile in an application without Livewire (a directive right after the end of another); the Blade
+  permission page (`/settings/permissions/{id}`) had no view and answered 500.
+- A few payroll and approval phrases were missing from the Urdu dictionary.
+
 ## [2.32.0] - 2026-11-03
 
 Payroll control and feature switches release.
