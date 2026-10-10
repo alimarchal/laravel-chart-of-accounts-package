@@ -336,7 +336,8 @@ class ChartRestructureService
 
     private function configuredCode(string $code): bool
     {
-        return in_array($code, array_filter((array) config('accounting.defaults', []), fn ($value, $key) => str_ends_with((string) $key, '_account_code'), ARRAY_FILTER_USE_BOTH), true);
+        return in_array($code, array_filter((array) config('accounting.defaults', []), fn ($value, $key) => str_ends_with((string) $key, '_account_code'), ARRAY_FILTER_USE_BOTH), true)
+            || in_array($code, \Alimarchal\LaravelChartOfAccounts\Support\AccountRoles::protectedCodes(), true);
     }
 
     private function assertNotConfigured(string $code, string $what): void

@@ -348,6 +348,6 @@ class ChartOfAccountService
             ->filter(fn ($value, $key) => str_ends_with((string) $key, '_account_code') && is_scalar($value))
             ->map(fn ($value) => (string) $value);
 
-        return $codes->contains($code);
+        return $codes->contains($code) || in_array($code, \Alimarchal\LaravelChartOfAccounts\Support\AccountRoles::protectedCodes(), true);
     }
 }

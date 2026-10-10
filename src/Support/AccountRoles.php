@@ -129,6 +129,29 @@ final class AccountRoles
         return $entry['defaults']['general'];
     }
 
+    /**
+     * The account codes that core guards depend on: cash, bank, retained earnings and rounding (config override or the company's saved roles):
+     * those accounts may not be renumbered, deactivated, merged away or deleted.
+     *
+     * @return list<string>
+     */
+    public static function protectedCodes(): array
+    {
+        $codes = [];
+
+        foreach (['cash', 'bank', 'retained_earnings', 'rounding'] as $role) {
+            $entry = self::registry()[$role];
+            $configured = $entry['config'] === null ? null : config($entry['config']);
+            $own = ($configured !== null && $configured !== '' && $configured !== [])
+                ? array_map('strval', (array) $configured)
+                : self::saved($role);
+
+            array_push($codes, ...$own);
+        }
+
+        return array_values(array_unique($codes));
+    }
+
     public static function account(string $role): ?ChartOfAccount
     {
         $code = self::code($role);
