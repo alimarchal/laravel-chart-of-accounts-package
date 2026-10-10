@@ -64,4 +64,22 @@
 - **ایکسپورٹ:** رپورٹوں اور کئی فہرستوں پر `CSV`، `Excel`، `PDF` کے بٹن ہوتے ہیں۔
 - **آڈٹ:** ہر اہم تبدیلی (کس نے، کب، کیا بدلا) Audit Log میں محفوظ ہوتی ہے۔
 
+## 1.7 دو انٹرفیس: React اور Blade
+
+یہ پیکیج دو طرح کی اسکرینیں فراہم کرتا ہے: **React (Inertia)** — جدید، تیز، ایک صفحے کی ایپ کی طرح؛ اور **Blade/Livewire** — روایتی سرور سے بننے والے صفحات (Laravel Jetstream کے ساتھ)۔ دونوں میں **ہر اسکرین، ہر بٹن اور ہر قاعدہ ایک جیسا** ہے؛ فرق صرف ظاہری شکل کا ہے۔ آپ کے ادارے میں کون سا انٹرفیس چل رہا ہے یہ آپ کے ڈویلپر نے `ACCOUNTING_UI_DRIVER` (`inertia` یا `blade`) میں طے کیا ہوتا ہے۔ اس گائیڈ کے اسکرین شاٹس React کے ہیں؛ Blade کی چند مثالیں:
+
+![Blade — مرکزی صفحہ](../images/blade-accounting-dashboard.jpg)
+
+![Blade — واؤچروں کی فہرست](../images/blade-accounting-journal-entries-index.jpg)
+
+![Blade — ٹرائل بیلنس](../images/blade-accounting-reports-trial-balance.jpg)
+
+![Blade — پے رول](../images/blade-accounting-payroll-index.jpg)
+
+![Blade — پے رول Run](../images/blade-accounting-payroll-runs-show.jpg)
+
+![Blade — Features](../images/blade-accounting-features-index.jpg)
+
+Blade میں صارفین، رولز، Permissions اور Features کے صفحات `/settings/...` کے تحت ہوتے ہیں (مثلاً `/settings/users`، `/settings/roles`، `/settings/features`)؛ باقی سب `/accounting/...` کے تحت۔ مکمل فہرست [Help Catalog](../../help-catalog.md) میں "Blade driver" کے کالم میں ہے۔
+
 </div>

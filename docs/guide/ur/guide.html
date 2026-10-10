@@ -191,6 +191,15 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <li><strong>ایکسپورٹ:</strong> رپورٹوں اور کئی فہرستوں پر <code>CSV</code>، <code>Excel</code>، <code>PDF</code> کے بٹن ہوتے ہیں۔</li>
 <li><strong>آڈٹ:</strong> ہر اہم تبدیلی (کس نے، کب، کیا بدلا) Audit Log میں محفوظ ہوتی ہے۔</li>
 </ul>
+<h2 id="17-react-blade">1.7 دو انٹرفیس: React اور Blade</h2>
+<p>یہ پیکیج دو طرح کی اسکرینیں فراہم کرتا ہے: <strong>React (Inertia)</strong> — جدید، تیز، ایک صفحے کی ایپ کی طرح؛ اور <strong>Blade/Livewire</strong> — روایتی سرور سے بننے والے صفحات (Laravel Jetstream کے ساتھ)۔ دونوں میں <strong>ہر اسکرین، ہر بٹن اور ہر قاعدہ ایک جیسا</strong> ہے؛ فرق صرف ظاہری شکل کا ہے۔ آپ کے ادارے میں کون سا انٹرفیس چل رہا ہے یہ آپ کے ڈویلپر نے <code>ACCOUNTING_UI_DRIVER</code> (<code>inertia</code> یا <code>blade</code>) میں طے کیا ہوتا ہے۔ اس گائیڈ کے اسکرین شاٹس React کے ہیں؛ Blade کی چند مثالیں:</p>
+<p><img alt="Blade — مرکزی صفحہ" src="../images/blade-accounting-dashboard.jpg" /></p>
+<p><img alt="Blade — واؤچروں کی فہرست" src="../images/blade-accounting-journal-entries-index.jpg" /></p>
+<p><img alt="Blade — ٹرائل بیلنس" src="../images/blade-accounting-reports-trial-balance.jpg" /></p>
+<p><img alt="Blade — پے رول" src="../images/blade-accounting-payroll-index.jpg" /></p>
+<p><img alt="Blade — پے رول Run" src="../images/blade-accounting-payroll-runs-show.jpg" /></p>
+<p><img alt="Blade — Features" src="../images/blade-accounting-features-index.jpg" /></p>
+<p>Blade میں صارفین، رولز، Permissions اور Features کے صفحات <code>/settings/...</code> کے تحت ہوتے ہیں (مثلاً <code>/settings/users</code>، <code>/settings/roles</code>، <code>/settings/features</code>)؛ باقی سب <code>/accounting/...</code> کے تحت۔ مکمل فہرست <a href="../help-catalog.md">Help Catalog</a> میں "Blade driver" کے کالم میں ہے۔</p>
 </section>
 <section id="02-buniyadi">
 <h1 id="2">باب 2: بنیادی ڈیٹا — کھاتوں کا چارٹ، کرنسی، پیرئیڈ اور دیگر</h1>
