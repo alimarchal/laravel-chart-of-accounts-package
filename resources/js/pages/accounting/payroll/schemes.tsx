@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -70,7 +71,7 @@ export default function PayrollSchemes({ schemes, editing, employees, accounts }
                             <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.applies_to_all} onChange={(event) => form.setData('applies_to_all', event.target.checked)} /> Applies to every employee</label>
                             <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.on_arrears} onChange={(event) => form.setData('on_arrears', event.target.checked)} /> Also on arrears</label>
                             <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> Active</label>
-                            <div className="flex gap-2 pt-6"><Button type="submit" disabled={form.processing}>{editing ? 'Save' : 'Add'}</Button>{editing && <Button asChild variant="outline"><Link href="/accounting/payroll/schemes">Cancel</Link></Button>}</div>
+                            <div className="flex gap-2 pt-6"><Button type="submit" disabled={form.processing}>{editing ? 'Save' : 'Add'}</Button>{editing && <FeatureLink href="/accounting/payroll/schemes">Cancel</FeatureLink>}</div>
                         </CardContent>
                     </Card></form>
                 )}

@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -32,16 +33,16 @@ export default function PayrollIndex({ runs, summary, year, defaultMonth }: Prop
                     <div className="flex gap-2">
                         <Button asChild variant="outline"><Link href="/accounting/payroll/employees">Employees</Link></Button>
                         <Button asChild variant="outline"><Link href="/accounting/payroll/components">Allowances &amp; deductions</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/grades">Grades</Link></Button>
-                        {permissions['payroll.manage'] && <Button asChild variant="outline"><Link href="/accounting/payroll/bulk">Bulk changes</Link></Button>}
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/arrears">Arrears</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/attendance">Attendance</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/leaves">Leave</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/loans">Loans</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/schemes">Contributions</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/settlements">Settlements</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/reports">Reports</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/tax">Tax</Link></Button>
+                        <FeatureLink href="/accounting/payroll/grades">Grades</FeatureLink>
+                        {permissions['payroll.manage'] && <FeatureLink href="/accounting/payroll/bulk">Bulk changes</FeatureLink>}
+                        <FeatureLink href="/accounting/payroll/arrears">Arrears</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/attendance">Attendance</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/leaves">Leave</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/loans">Loans</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/schemes">Contributions</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/settlements">Settlements</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/reports">Reports</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/tax">Tax</FeatureLink>
                     </div>
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}

@@ -11895,6 +11895,86 @@ paths:
       - $ref: '#/components/parameters/Company'
       - $ref: '#/components/parameters/Company'
       - $ref: '#/components/parameters/Company'
+  /features:
+    get:
+      tags:
+      - Settings
+      summary: Every optional module and payroll feature with its switch
+      operationId: list_features
+      description: 'Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Features
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Feature'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Settings
+      summary: Switch features on or off
+      operationId: update_features
+      description: 'A feature that is off hides its screens and answers its web and API routes with 404; its data is kept.
+        A child (payroll_loans) is off whenever its parent (payroll) is off. The core cannot be switched. Changes are audited
+        (FEATURE_ENABLED / FEATURE_DISABLED).
+
+
+        Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Feature'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - features
+              properties:
+                features:
+                  type: object
+                  additionalProperties:
+                    type: boolean
+                  example:
+                    inventory: false
+                    payroll_loans: false
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /fbr:
     get:
       tags:
@@ -15933,6 +16013,39 @@ components:
         notes:
           type: string
           nullable: true
+    Feature:
+      type: object
+      properties:
+        key:
+          type: string
+          example: payroll_loans
+        label:
+          type: string
+        description:
+          type: string
+        group:
+          type: string
+          enum:
+          - Modules
+          - Payroll
+        parent:
+          type: string
+          nullable: true
+          description: A feature is only on while its parent is on.
+        enabled:
+          type: boolean
+          description: 'Effective state: its own switch and its parent''s.'
+        own:
+          type: boolean
+          description: The switch itself.
+        default:
+          type: boolean
+          description: The config default (accounting.features.disabled).
+        source:
+          type: string
+          enum:
+          - config
+          - database
     FbrSubmission:
       type: object
       properties:

@@ -20,6 +20,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ControlAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CostCenterController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CurrencyController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FbrController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FeatureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
@@ -64,6 +65,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\UserController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\SetAccountingLocale;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\ShareAccountingInertiaData;
 use Illuminate\Support\Facades\Route;
@@ -92,7 +94,7 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
         ->middleware("can:{$permissionPrefix}.delete");
 };
 
-Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, ShareAccountingInertiaData::class, SetAccountingLocale::class])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, EnsureAccountingFeatureEnabled::class, ShareAccountingInertiaData::class, SetAccountingLocale::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name('accounting.')
     ->group(function () use ($resourceRoutes): void {
@@ -375,6 +377,8 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::put('users/{user}/permissions', [UserController::class, 'permissions'])->name('users.permissions')->middleware('can:user.assign-permission');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('can:user.delete');
         Route::middleware('can:accounting.manage-settings')->group(function (): void {
+            Route::get('features', [FeatureController::class, 'index'])->name('features.index');
+            Route::put('features', [FeatureController::class, 'update'])->name('features.update');
             Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
             Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
             Route::post('roles', [RoleController::class, 'store'])->name('roles.store');

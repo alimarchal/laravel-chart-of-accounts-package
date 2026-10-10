@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Throwable;
@@ -20,6 +21,12 @@ class AccountingPayrollRunCommand extends Command
 
     public function handle(PayrollService $payroll, CurrentCompany $companies): int
     {
+        if (! app(FeatureManager::class)->enabled('payroll')) {
+            $this->info('The Payroll feature is turned off: nothing to do.');
+
+            return self::SUCCESS;
+        }
+
         $month = $this->option('month')
             ? Carbon::parse($this->option('month').'-01')->startOfMonth()
             : (config('accounting.payroll.auto_run.month', 'previous') === 'current' ? now()->startOfMonth() : now()->subMonthNoOverflow()->startOfMonth());

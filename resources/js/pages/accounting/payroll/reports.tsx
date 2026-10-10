@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { FeatureLink } from '@/components/accounting/feature-link';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,7 @@ export default function PayrollReports({ year, from, to, comparison, cost_center
             <div className="space-y-6 p-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title="Payroll reports" description="What payroll cost, month by month and by cost center, and how many people were paid" />
-                    <div className="flex gap-2"><Button asChild variant="outline"><Link href="/accounting/payroll/tax">Tax</Link></Button><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
+                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/tax">Tax</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
                 </div>
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="space-y-1"><Label htmlFor="year">Year</Label><Input id="year" type="number" className="w-28" defaultValue={year} onBlur={(event) => event.target.value && Number(event.target.value) !== year && router.get('/accounting/payroll/reports', { year: event.target.value })} /></div>

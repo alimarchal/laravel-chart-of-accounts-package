@@ -38,6 +38,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureControlle
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\CompanySwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FbrController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FeatureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
@@ -63,6 +64,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\SetAccountingLocale;
 use Illuminate\Support\Facades\Route;
 
@@ -91,7 +93,7 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
 };
 
 // ── Accounting routes ─────────────────────────────────────────────────────────
-Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, SetAccountingLocale::class])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, EnsureAccountingFeatureEnabled::class, SetAccountingLocale::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name(config('accounting.route_name_prefix', 'accounting').'.')
     ->group(function () use ($resourceRoutes): void {
@@ -453,6 +455,8 @@ Route::middleware(['web', 'auth', 'verified'])
             ->middleware('can:user.assign-permission');
         // Role management is guarded by a single ability (there are no roles.* permissions).
         Route::middleware('can:accounting.manage-settings')->group(function (): void {
+            Route::get('features', [FeatureController::class, 'index'])->name('features.index');
+            Route::put('features', [FeatureController::class, 'update'])->name('features.update');
             Route::get('roles', [RoleBladeController::class, 'index'])->name('roles.index');
             Route::get('roles/create', [RoleBladeController::class, 'create'])->name('roles.create');
             Route::post('roles', [RoleBladeController::class, 'store'])->name('roles.store');

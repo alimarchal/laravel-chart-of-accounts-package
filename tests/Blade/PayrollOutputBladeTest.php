@@ -48,3 +48,20 @@ it('prints payslips, settles an employee, and shows the reports and tax screens 
     $this->get('/accounting/payroll/tax?year='.$month->year)->assertOk()->assertSee('Salary tax statement')->assertSee('Open certificate');
     $this->get("/accounting/payroll/tax/certificate/{$employee->id}?year=".$month->year)->assertOk()->assertSee('Salary tax certificate')->assertSee('Amina Khan');
 });
+
+it('hides a switched-off feature from the menus and shows the switches screen in Blade', function (): void {
+    $this->seed(AccountingDatabaseSeeder::class);
+    $admin = User::factory()->create();
+    $admin->assignRole('super-admin');
+    $this->actingAs($admin);
+
+    $this->get('/accounting')->assertOk()->assertSee('Inventory')->assertSee('Features');
+    $this->get('/settings/features')->assertOk()->assertSee('Loans &amp; advances', false)->assertSee('Final settlements')->assertSee('Payroll');
+
+    $this->put('/settings/features', ['features' => ['inventory' => '0', 'payroll_loans' => '0']])->assertRedirect()->assertSessionHas('success');
+    $this->get('/accounting')->assertOk()->assertDontSee('Items, warehouses, stock movements');
+    $this->get('/accounting/inventory')->assertNotFound();
+    $this->get('/accounting/payroll')->assertOk()->assertDontSee('/accounting/payroll/loans');
+    $this->get('/accounting/payroll/loans')->assertNotFound();
+    $this->get('/settings/features')->assertOk();
+});
