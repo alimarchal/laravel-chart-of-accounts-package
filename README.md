@@ -596,8 +596,38 @@ the invoice number FBR returns.
 - **Tax** (`/accounting/payroll/tax`): the salary tax statement of a tax year for every employee (CSV, Excel, PDF) and a printable
   certificate per employee, from the posted payroll. The tax year starts in `accounting.payroll.tax_year_start_month` (7 = July).
 - **Payroll reports** (`/accounting/payroll/reports`): month by month with the change, cost by cost center, and headcount; CSV, Excel, PDF.
+- **Run approval:** with `accounting.payroll.require_approval` (or the *Run approval* switch on the Features screen) HR (`payroll.run`)
+  submits a draft run, which is locked, and finance (`payroll.approve`, never the person who submitted it) approves it or sends it back with
+  a reason; only an approved run can be posted. Submitted, approved and returned runs are audited.
+- **Bonuses and one-off pay** (`/accounting/payroll/adjustments`): an earning (bonus, extra allowance) or a deduction (fine) for an employee
+  and month, or for every active employee at once as a fixed amount or a percent of each basic salary; taxable or not, with or without a pay
+  component (a plain bonus goes to `accounting.payroll.bonus_account`, default the salary expense account). The month's run takes the open
+  ones up; a recalculated, deleted or voided run gives them back; a month whose run is already submitted or posted is closed to new ones.
 - Printable payslips. Permissions `payroll.view/manage/run/post/void`: the accountant prepares (`manage`, `run`), the approver
   posts, pays and voids, so one person cannot do both. Audited (`PAYROLL_RUN_*`, `EMPLOYEE_SAVED`).
+
+## Feature switches
+
+Everything beyond the core (chart of accounts, journal entries, periods, reports, users and roles) is optional. An administrator
+(`accounting.manage-settings`) turns modules and payroll features off and on from **Features** (`/accounting/features`; `/settings/features` with
+Blade), the API (`GET /api/v1/accounting/features`, `PUT` with `{"features": {"inventory": false}}`) or the command line:
+
+```bash
+php artisan accounting:features                       # the list, with state and source
+php artisan accounting:features disable inventory fixed_assets
+php artisan accounting:features enable payroll_loans
+php artisan accounting:features reset budgets          # back to the config default
+```
+
+A feature that is off disappears from the menus and its web and API routes answer **404**; nothing is deleted, and turning it on again brings it
+back. A sub-feature (`payroll_loans`) is off whenever its parent (`payroll`) is off, the payroll engine skips what is off (loans, attendance,
+contributions, arrears, bonuses), and the schedulers of recurring entries and payroll do nothing while their module is off. The defaults come from
+`accounting.features.disabled` (`ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets"`); what is saved from the screen, API or command wins. Every
+change is in the audit trail (`FEATURE_ENABLED`, `FEATURE_DISABLED`). Keys: `parties`, `tax`, `banking`, `budgets`, `fixed_assets`, `inventory`,
+`recurring_entries`, `fx_revaluation`, `fbr`, `attachments`, `report_mapping`, `chart_templates`, `control_accounts`, `snapshots`, `audit_log`,
+`payroll`, `payroll_grades`, `payroll_arrears`, `payroll_attendance`, `payroll_loans`, `payroll_contributions`, `payroll_bank_file`,
+`payroll_payslip_mail`, `payroll_adjustments`, `payroll_approval`, `payroll_settlements`, `payroll_reports`. Multi-company and maker-checker
+approvals of journal entries keep their own switches (`accounting.multi_company.enabled`, `accounting.approvals.enabled`).
 
 ## Inventory
 

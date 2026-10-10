@@ -10,7 +10,7 @@ use Carbon\CarbonInterface;
  *
  * @property int $id
  * @property CarbonInterface $period_month
- * @property string $status draft|posted|paid|void
+ * @property string $status draft|submitted|approved|posted|paid|void
  * @property string $gross
  * @property string $deductions
  * @property string $tax
@@ -22,6 +22,11 @@ use Carbon\CarbonInterface;
  * @property CarbonInterface|null $posted_on
  * @property CarbonInterface|null $paid_on
  * @property string|null $notes
+ * @property int|null $submitted_by
+ * @property CarbonInterface|null $submitted_at
+ * @property int|null $approved_by
+ * @property CarbonInterface|null $approved_at
+ * @property string|null $rejection_reason
  */
 class PayrollRun extends AccountingModel
 {
@@ -33,6 +38,6 @@ class PayrollRun extends AccountingModel
 
     protected function casts(): array
     {
-        return ['period_month' => 'date', 'posted_on' => 'date', 'paid_on' => 'date', 'gross' => 'decimal:2', 'deductions' => 'decimal:2', 'tax' => 'decimal:2', 'net' => 'decimal:2', 'employer' => 'decimal:2'];
+        return ['period_month' => 'date', 'posted_on' => 'date', 'paid_on' => 'date', 'submitted_at' => 'datetime', 'approved_at' => 'datetime', 'gross' => 'decimal:2', 'deductions' => 'decimal:2', 'tax' => 'decimal:2', 'net' => 'decimal:2', 'employer' => 'decimal:2'];
     }
 }

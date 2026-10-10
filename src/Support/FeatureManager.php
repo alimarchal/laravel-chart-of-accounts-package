@@ -23,7 +23,7 @@ class FeatureManager
     private ?array $stored = null;
 
     /**
-     * Every switch: label, description, group, the parent it depends on, and the route paths it owns (relative to the web or API prefix;
+     * Every switch: label, description, group, the parent it depends on, and the route paths it owns (relative to the web or API prefix; none for a switch that changes behaviour rather than screens;
      * the most specific pattern wins, so a payroll sub-feature takes its paths from payroll itself).
      *
      * @return array<string, array{label: string, description: string, group: string, parent: string|null, paths: list<string>}>
@@ -54,6 +54,8 @@ class FeatureManager
             'payroll_contributions' => ['label' => 'Contributions (EOBI, PESSI, provident fund)', 'description' => 'Employee and employer contribution schemes.', 'group' => 'Payroll', 'parent' => 'payroll', 'paths' => ['payroll/schemes*']],
             'payroll_bank_file' => ['label' => 'Bank salary file', 'description' => 'CSV or Excel salary file for the bank.', 'group' => 'Payroll', 'parent' => 'payroll', 'paths' => ['payroll/runs/*/bank-file/*']],
             'payroll_payslip_mail' => ['label' => 'Payslip e-mail', 'description' => 'E-mail payslips to the employees.', 'group' => 'Payroll', 'parent' => 'payroll', 'paths' => ['payroll/runs/*/email-payslips', 'payroll/runs/*/payslips/*/email']],
+            'payroll_adjustments' => ['label' => 'Bonuses & one-off pay', 'description' => 'One-off earnings and deductions for an employee or for many at once, taken up by the month\'s run.', 'group' => 'Payroll', 'parent' => 'payroll', 'paths' => ['payroll/adjustments*']],
+            'payroll_approval' => ['label' => 'Run approval (HR to finance)', 'description' => 'A run must be submitted by HR and approved by finance before it can be posted. Off by default (accounting.payroll.require_approval).', 'group' => 'Payroll', 'parent' => 'payroll', 'paths' => []],
             'payroll_settlements' => ['label' => 'Final settlements', 'description' => 'Gratuity, unused leave and loans owed when an employee leaves.', 'group' => 'Payroll', 'parent' => 'payroll', 'paths' => ['payroll/settlements*']],
             'payroll_reports' => ['label' => 'Payroll reports & salary tax', 'description' => 'Month comparison, cost centers, headcount, tax statement and certificates.', 'group' => 'Payroll', 'parent' => 'payroll', 'paths' => ['payroll/reports*', 'payroll/tax*']],
         ];
@@ -88,6 +90,10 @@ class FeatureManager
 
     public function default(string $feature): bool
     {
+        if ($feature === 'payroll_approval') {
+            return (bool) config('accounting.payroll.require_approval', false) && ! $this->configuredOff($feature);
+        }
+
         return ! $this->configuredOff($feature);
     }
 

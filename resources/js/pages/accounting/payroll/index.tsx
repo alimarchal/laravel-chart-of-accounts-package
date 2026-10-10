@@ -40,6 +40,7 @@ export default function PayrollIndex({ runs, summary, year, defaultMonth }: Prop
                         <FeatureLink href="/accounting/payroll/leaves">Leave</FeatureLink>
                         <FeatureLink href="/accounting/payroll/loans">Loans</FeatureLink>
                         <FeatureLink href="/accounting/payroll/schemes">Contributions</FeatureLink>
+                        <FeatureLink href="/accounting/payroll/adjustments">Bonuses</FeatureLink>
                         <FeatureLink href="/accounting/payroll/settlements">Settlements</FeatureLink>
                         <FeatureLink href="/accounting/payroll/reports">Reports</FeatureLink>
                         <FeatureLink href="/accounting/payroll/tax">Tax</FeatureLink>

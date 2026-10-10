@@ -127,6 +127,10 @@ return [
     'payroll' => [
         'salary_expense_account' => env('ACCOUNTING_PAYROLL_SALARY_EXPENSE', '5101'),
         'income_tax_account' => env('ACCOUNTING_PAYROLL_INCOME_TAX', '2104'),
+        // true: HR submits a run and finance (payroll.approve, never the submitter) approves it before it can be posted. Also a switch on the Features screen.
+        'require_approval' => (bool) env('ACCOUNTING_PAYROLL_REQUIRE_APPROVAL', false),
+        // Where one-off earnings without a pay component (bonuses) are booked; default: the salary expense account.
+        'bonus_account' => env('ACCOUNTING_PAYROLL_BONUS_ACCOUNT'),
         'net_payable_account' => env('ACCOUNTING_PAYROLL_NET_PAYABLE', '2103'),
         // Arrears (back pay of a late raise) are booked to this account code; empty = the salary expense account.
         'arrears_account' => env('ACCOUNTING_PAYROLL_ARREARS'),
@@ -358,6 +362,7 @@ return [
         'payroll.manage',
         'payroll.run',
         'payroll.post',
+        'payroll.approve',
         'payroll.void',
         'fbr.view',
         'fbr.submit',
@@ -572,6 +577,7 @@ return [
             'inventory.view',
             'payroll.view',
             'payroll.post',
+            'payroll.approve',
             'payroll.void',
             'fbr.view',
             'tax-returns.view',

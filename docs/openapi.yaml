@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.31.0
+  version: 2.32.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -11895,6 +11895,467 @@ paths:
       - $ref: '#/components/parameters/Company'
       - $ref: '#/components/parameters/Company'
       - $ref: '#/components/parameters/Company'
+  /payroll/adjustments:
+    get:
+      tags:
+      - Payroll
+      summary: Bonuses and other one-off pay of a month
+      operationId: list_payroll_adjustments
+      description: 'Permission: `payroll.view`.'
+      responses:
+        '200':
+          description: Adjustments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollAdjustment'
+                  month:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: month
+        in: query
+        schema:
+          type: string
+          example: 2026-12
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - open
+          - included
+          - cancelled
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Payroll
+      summary: Add a bonus, extra allowance or fine for one employee and month
+      operationId: create_payroll_adjustment
+      description: 'The month''s payroll run takes it up as an earning or deduction line. A month whose run is submitted,
+        approved or posted is closed to new adjustments.
+
+
+        Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  data:
+                    $ref: '#/components/schemas/PayrollAdjustment'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - employee_id
+              - month
+              - description
+              - amount
+              properties:
+                employee_id:
+                  type: integer
+                amount:
+                  type: number
+                month:
+                  type: string
+                  format: date
+                description:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - earning
+                  - deduction
+                  description: Taken from the pay component when one is given.
+                pay_component_id:
+                  type: integer
+                account_id:
+                  type: integer
+                  description: A deduction without a component needs it; an earning defaults to accounting.payroll.bonus_account.
+                taxable:
+                  type: boolean
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/adjustments/bulk:
+    post:
+      tags:
+      - Payroll
+      summary: The same bonus for every active employee (or the ones named)
+      operationId: bulk_payroll_adjustments
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      created:
+                        type: integer
+                      total:
+                        type: string
+                      skipped:
+                        type: array
+                        items:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - month
+              - description
+              - method
+              - value
+              properties:
+                method:
+                  type: string
+                  enum:
+                  - fixed
+                  - percent_of_basic
+                value:
+                  type: number
+                  description: An amount, or a percent of each employee's basic salary of the month.
+                employee_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: 'Default: every active employee employed in the month.'
+                month:
+                  type: string
+                  format: date
+                description:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - earning
+                  - deduction
+                  description: Taken from the pay component when one is given.
+                pay_component_id:
+                  type: integer
+                account_id:
+                  type: integer
+                  description: A deduction without a component needs it; an earning defaults to accounting.payroll.bonus_account.
+                taxable:
+                  type: boolean
+                notes:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/adjustments/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Cancel an adjustment no run has taken up
+      operationId: cancel_payroll_adjustment
+      description: 'Permission: `payroll.manage`.'
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: HR submits a draft run to finance
+      operationId: submit_payroll_run
+      description: 'Locks the run (no recalculation or deletion). Needed only when approval is on (accounting.payroll.require_approval
+        or the payroll_approval feature), but always allowed.
+
+
+        Permission: `payroll.run`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/withdraw:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Take a submitted or approved run back to draft
+      operationId: withdraw_payroll_run
+      description: 'Permission: `payroll.run`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/approve:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Finance approves a submitted run
+      operationId: approve_payroll_run
+      description: 'Nobody approves a run they submitted themselves. An approved run can be posted.
+
+
+        Permission: `payroll.approve`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /payroll/runs/{id}/reject:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - Payroll
+      summary: Finance sends a submitted run back to HR
+      operationId: reject_payroll_run
+      description: 'Permission: `payroll.approve`.'
+      responses:
+        '200':
+          description: The run's new state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                        enum:
+                        - draft
+                        - submitted
+                        - approved
+                        - posted
+                        - paid
+                        - void
+                      submitted_at:
+                        type: string
+                        nullable: true
+                      approved_at:
+                        type: string
+                        nullable: true
+                      rejection_reason:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+                  maxLength: 300
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /features:
     get:
       tags:
@@ -16009,6 +16470,46 @@ components:
           nullable: true
         paid_on:
           type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    PayrollAdjustment:
+      type: object
+      properties:
+        id:
+          type: integer
+        employee_id:
+          type: integer
+        employee_code:
+          type: string
+        employee_name:
+          type: string
+        month:
+          type: string
+          example: 2026-12
+        kind:
+          type: string
+          enum:
+          - earning
+          - deduction
+        pay_component_id:
+          type: integer
+          nullable: true
+        description:
+          type: string
+        amount:
+          type: string
+        taxable:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - open
+          - included
+          - cancelled
+        payroll_run_id:
+          type: integer
           nullable: true
         notes:
           type: string

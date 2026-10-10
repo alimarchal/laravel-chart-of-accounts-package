@@ -9,7 +9,7 @@ import { useAccounting } from '@/lib/accounting';
 
 type Slip = { id: number; employee_code: string; employee_name: string; basic: string; gross: string; deductions: string; tax: string; net: string; days_paid: string; days_in_month: string };
 type Props = {
-    run: { id: number; period_month: string; status: string; gross: string; deductions: string; tax: string; net: string; employer?: string; journal_entry_id: number | null; payment_entry_id: number | null; posted_on: string | null; paid_on: string | null; notes: string | null };
+    run: { id: number; period_month: string; status: string; gross: string; deductions: string; tax: string; net: string; employer?: string; journal_entry_id: number | null; payment_entry_id: number | null; posted_on: string | null; paid_on: string | null; notes: string | null; approval_required?: boolean; submitted_by?: string | null; submitted_at?: string | null; approved_by?: string | null; approved_at?: string | null; rejection_reason?: string | null };
     payslips: Slip[];
     accounts: Array<{ id: number; account_code: string; account_name: string; type: string }>;
     today: string;
@@ -34,7 +34,11 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                     <div className="flex items-center gap-2">
                         <Badge variant="outline">{run.status}</Badge>
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="outline" onClick={() => act('recalculate')}>Recalculate</Button>}
-                        {run.status === 'draft' && permissions['payroll.post'] && <Button onClick={() => act('post', 'Post this payroll to the books?')}>Post</Button>}
+                        {run.status === 'draft' && run.approval_required && permissions['payroll.run'] && <Button onClick={() => act('submit', 'Submit this payroll to finance for approval? It is locked until they answer.')}>Submit for approval</Button>}
+                        {run.status === 'submitted' && permissions['payroll.approve'] && <Button onClick={() => act('approve', 'Approve this payroll?')}>Approve</Button>}
+                        {run.status === 'submitted' && permissions['payroll.approve'] && <Button variant="outline" onClick={() => { const reason = prompt('Why is it sent back to HR?'); if (reason) router.post(`${base}/reject`, { reason }, { preserveScroll: true }); }}>Send back</Button>}
+                        {['submitted', 'approved'].includes(run.status) && permissions['payroll.run'] && <Button variant="outline" onClick={() => act('withdraw', 'Take this payroll back to draft?')}>Withdraw</Button>}
+                        {((run.status === 'draft' && !run.approval_required) || run.status === 'approved') && permissions['payroll.post'] && <Button onClick={() => act('post', 'Post this payroll to the books?')}>Post</Button>}
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="ghost" onClick={() => confirm('Delete this draft run?') && router.delete(base)}>Delete</Button>}
                         {['posted', 'paid'].includes(run.status) && permissions['payroll.manage'] && features.payroll_payslip_mail !== false && <Button variant="outline" onClick={() => confirm('E-mail every payslip to its employee?') && act('email-payslips')}>E-mail payslips</Button>}
                         {['posted', 'paid'].includes(run.status) && permissions['payroll.void'] && <Button variant="ghost" onClick={() => act('void', 'Void this payroll? Its entries will be reversed.')}>Void</Button>}
@@ -42,6 +46,8 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
+                {run.status === 'draft' && run.rejection_reason && <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Sent back by finance: {run.rejection_reason}</p>}
+                {(run.submitted_by || run.approved_by) && <p className="text-sm text-muted-foreground">{run.submitted_by && <>Submitted by {run.submitted_by} on {run.submitted_at}. </>}{run.approved_by && <>Approved by {run.approved_by} on {run.approved_at}.</>}</p>}
                 <div className="grid gap-4 sm:grid-cols-4">
                     {([['Gross', run.gross], ['Deductions', run.deductions], ['Income tax', run.tax], ['Net pay', run.net]] as const).map(([label, value]) => (
                         <Card key={label}><CardContent className="pt-6"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-semibold tabular-nums">{money(value)}</p></CardContent></Card>

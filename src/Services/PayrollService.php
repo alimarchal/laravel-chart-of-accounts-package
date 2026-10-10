@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\EmployeeComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\EmployeeScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
+use Alimarchal\LaravelChartOfAccounts\Models\PayrollAdjustment;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollArrear;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Models\Payslip;
@@ -23,6 +24,7 @@ use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SalaryHistory;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -223,7 +225,7 @@ class PayrollService
      */
     public function recalculate(PayrollRun $run): PayrollRun
     {
-        $this->assertStatus($run, 'draft', 'Only a draft run can be recalculated.');
+        $this->assertStatus($run->refresh(), 'draft', 'Only a draft run can be recalculated.');
         DB::transaction(fn () => $this->calculate($run));
 
         return $run->refresh();
@@ -276,6 +278,8 @@ class PayrollService
         $overtimeCode = $overtime['account'] ?? null;
         $overtimeAccount = $overtimeCode ? $this->accountByCode((string) $overtimeCode, 'overtime expense') : $salaryAccount;
         $arrears = $features->enabled('payroll_arrears') ? PayrollArrear::query()->where('status', 'approved')->whereNull('payroll_run_id')->whereDate('payment_month', '<=', $end->toDateString())->get()->groupBy('employee_id') : collect();
+        $adjustments = $features->enabled('payroll_adjustments') ? app(PayrollAdjustmentService::class)->openFor($period) : collect();
+        $includedAdjustments = [];
         $totals = ['gross' => 0, 'deductions' => 0, 'tax' => 0, 'net' => 0, 'employer' => 0];
         $lineRows = [];
         $included = [];
@@ -325,6 +329,11 @@ class PayrollService
                 $cents = (int) round($hourly * ($hours['overtime'] * (float) ($overtime['multiplier'] ?? 2) + $hours['holiday_overtime'] * (float) ($overtime['holiday_multiplier'] ?? 2)));
                 $label = rtrim(rtrim(number_format($hours['overtime'], 2, '.', ''), '0'), '.').' h'.($hours['holiday_overtime'] > 0 ? ' + '.rtrim(rtrim(number_format($hours['holiday_overtime'], 2, '.', ''), '0'), '.').' h holiday' : '');
                 $lines[] = ['pay_component_id' => null, 'kind' => 'earning', 'description' => "Overtime ({$label})", 'cents' => $cents, 'account_id' => $overtimeAccount->id, 'taxable' => true];
+            }
+
+            foreach ($adjustments[$employee->id] ?? [] as $adjustment) {
+                $lines[] = ['pay_component_id' => $adjustment->pay_component_id, 'kind' => $adjustment->kind, 'description' => $adjustment->description, 'cents' => Money::toCents($adjustment->amount), 'account_id' => $adjustment->account_id, 'taxable' => $adjustment->taxable];
+                $includedAdjustments[] = $adjustment->id;
             }
 
             $taxable = collect($lines)->whereIn('kind', ['basic', 'earning'])->where('taxable', true)->sum('cents');
@@ -415,6 +424,10 @@ class PayrollService
             PayrollArrear::query()->whereIn('id', $included)->update(['payroll_run_id' => $run->id, 'status' => 'included']);
         }
 
+        if ($includedAdjustments !== []) {
+            PayrollAdjustment::query()->whereIn('id', $includedAdjustments)->update(['payroll_run_id' => $run->id, 'status' => 'included']);
+        }
+
         $run->forceFill(array_map(fn (int $cents) => Money::fromCents($cents), $totals))->save();
     }
 
@@ -439,6 +452,7 @@ class PayrollService
     private function releaseArrears(PayrollRun $run): void
     {
         PayrollArrear::query()->where('payroll_run_id', $run->id)->update(['payroll_run_id' => null, 'status' => 'approved']);
+        PayrollAdjustment::query()->where('payroll_run_id', $run->id)->update(['payroll_run_id' => null, 'status' => 'open']);
         app(PayrollLoanService::class)->release($run);
     }
 
@@ -450,7 +464,12 @@ class PayrollService
     {
         return DB::transaction(function () use ($run, $payableAccountId, $date): PayrollRun {
             $run = PayrollRun::query()->lockForUpdate()->findOrFail($run->id);
-            $this->assertStatus($run, 'draft', 'Only a draft run can be posted.');
+            if ($this->approvalRequired()) {
+                $this->assertStatus($run, 'approved', $run->status === 'draft' ? 'This run must be submitted and approved before it is posted.' : 'Only an approved run can be posted.');
+            } elseif (! in_array($run->status, ['draft', 'approved'], true)) {
+                throw new AccountingException('Only a draft run can be posted.');
+            }
+
             $slips = Payslip::query()->where('payroll_run_id', $run->id)->get();
 
             if ($slips->isEmpty() || Money::toCents($run->net) === 0 && Money::toCents($run->gross) === 0) {
@@ -566,9 +585,95 @@ class PayrollService
         });
     }
 
+    /**
+     * Whether a run must be approved (HR submits, finance approves) before it can be posted.
+     */
+    public function approvalRequired(): bool
+    {
+        return app(FeatureManager::class)->enabled('payroll_approval');
+    }
+
+    /**
+     * HR hands a finished draft to finance: it is locked (no recalculation, no deletion) until finance approves or sends it back.
+     */
+    public function submit(PayrollRun $run): PayrollRun
+    {
+        return DB::transaction(function () use ($run): PayrollRun {
+            $run = PayrollRun::query()->lockForUpdate()->findOrFail($run->id);
+            $this->assertStatus($run, 'draft', 'Only a draft run can be submitted for approval.');
+
+            if (! Payslip::query()->where('payroll_run_id', $run->id)->exists()) {
+                throw new AccountingException('The run has no payslips to submit.');
+            }
+
+            $run->forceFill(['status' => 'submitted', 'submitted_by' => Auth::id(), 'submitted_at' => now(), 'approved_by' => null, 'approved_at' => null, 'rejection_reason' => null])->save();
+            AccountingAuditLog::record($run, 'PAYROLL_RUN_SUBMITTED', null, null, ['month' => Carbon::parse($run->period_month)->format('Y-m'), 'net' => $run->net]);
+
+            return $run->refresh();
+        });
+    }
+
+    /**
+     * Take a submitted run back to draft (HR changes their mind).
+     */
+    public function withdraw(PayrollRun $run): PayrollRun
+    {
+        return $this->backToDraft($run, 'PAYROLL_RUN_WITHDRAWN', null);
+    }
+
+    /**
+     * Finance sends a submitted run back with the reason.
+     */
+    public function reject(PayrollRun $run, string $reason): PayrollRun
+    {
+        $reason = trim($reason);
+
+        if ($reason === '') {
+            throw ValidationException::withMessages(['reason' => 'Say why the run is sent back.']);
+        }
+
+        return $this->backToDraft($run, 'PAYROLL_RUN_REJECTED', mb_substr($reason, 0, 300));
+    }
+
+    /**
+     * Finance approves a submitted run; it can then be posted. Nobody approves what they submitted themselves.
+     */
+    public function approve(PayrollRun $run): PayrollRun
+    {
+        return DB::transaction(function () use ($run): PayrollRun {
+            $run = PayrollRun::query()->lockForUpdate()->findOrFail($run->id);
+            $this->assertStatus($run, 'submitted', 'Only a submitted run can be approved.');
+
+            if ($run->submitted_by !== null && $run->submitted_by === Auth::id()) {
+                throw new AccountingException('You submitted this run: someone else has to approve it.');
+            }
+
+            $run->forceFill(['status' => 'approved', 'approved_by' => Auth::id(), 'approved_at' => now(), 'rejection_reason' => null])->save();
+            AccountingAuditLog::record($run, 'PAYROLL_RUN_APPROVED', null, null, ['month' => Carbon::parse($run->period_month)->format('Y-m'), 'net' => $run->net]);
+
+            return $run->refresh();
+        });
+    }
+
+    private function backToDraft(PayrollRun $run, string $action, ?string $reason): PayrollRun
+    {
+        return DB::transaction(function () use ($run, $action, $reason): PayrollRun {
+            $run = PayrollRun::query()->lockForUpdate()->findOrFail($run->id);
+
+            if (! in_array($run->status, ['submitted', 'approved'], true)) {
+                throw new AccountingException('Only a submitted or approved run can go back to draft.');
+            }
+
+            $run->forceFill(['status' => 'draft', 'submitted_by' => null, 'submitted_at' => null, 'approved_by' => null, 'approved_at' => null, 'rejection_reason' => $reason])->save();
+            AccountingAuditLog::record($run, $action, null, null, ['month' => Carbon::parse($run->period_month)->format('Y-m'), 'reason' => $reason]);
+
+            return $run->refresh();
+        });
+    }
+
     public function deleteRun(PayrollRun $run): void
     {
-        $this->assertStatus($run, 'draft', 'Only a draft run can be deleted; void a posted run instead.');
+        $this->assertStatus($run->refresh(), 'draft', 'Only a draft run can be deleted; void a posted run instead.');
         DB::transaction(function () use ($run): void {
             $this->releaseArrears($run);
             PayslipLine::query()->whereIn('payslip_id', Payslip::query()->where('payroll_run_id', $run->id)->select('id'))->delete();

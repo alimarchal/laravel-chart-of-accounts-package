@@ -2,6 +2,26 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.32.0] - 2026-11-03
+
+Payroll control and feature switches release.
+
+### Added
+- **Feature switches:** every optional module (customers & suppliers, tax, banking, budgets, fixed assets, inventory, recurring entries, currency
+  revaluation, FBR, attachments, statement layout, chart templates, control accounts, snapshots, audit log screen, payroll) and every payroll
+  feature (grades, arrears, attendance & leave, loans, contributions, bank file, payslip e-mail, settlements, reports & tax, bonuses, run approval)
+  can be turned off and on again from **Features** (`/accounting/features`, `/settings/features` with Blade), the API (`GET/PUT /features`) or
+  `php artisan accounting:features [list|enable|disable|reset] {features...}`. A feature that is off disappears from the menus and its
+  web and API routes answer 404; its data is kept; a sub-feature is off whenever its parent is off; the payroll engine skips what is off (loans,
+  attendance, contributions, arrears, bonuses). `ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets"` sets the defaults, changes are audited.
+- **Payroll run approval (HR to finance):** with `accounting.payroll.require_approval` (or the *Run approval* switch) HR submits a draft run, it
+  is locked, and finance (new permission `payroll.approve`, never the submitter) approves it or sends it back with a reason before it can be posted.
+- **Bonuses and one-off pay:** a bonus, extra allowance or fine for one employee and month, or for everybody at once (a fixed amount or a percent
+  of each basic salary), taxable or not, taken up as a line of that month's run; a recalculated, deleted or voided run gives them back.
+  Config `accounting.payroll.bonus_account`.
+- React and Blade screens (Features, Bonuses; run, payroll menu updated) and API endpoints `/features`, `/payroll/adjustments`,
+  `/payroll/runs/{id}/(submit|withdraw|approve|reject)`.
+
 ## [2.31.0] - 2026-11-02
 
 Payroll output release.

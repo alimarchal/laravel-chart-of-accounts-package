@@ -21,9 +21,9 @@ beforeEach(function (): void {
 
 it('has every feature on by default and describes each one', function (): void {
     foreach (FeatureManager::catalog() as $key => $entry) {
-        expect(($this->features)()->enabled($key))->toBeTrue()
+        expect(($this->features)()->enabled($key))->toBe($key !== 'payroll_approval')
             ->and($entry['parent'] === null || array_key_exists($entry['parent'], FeatureManager::catalog()))->toBeTrue()
-            ->and($entry['paths'])->not->toBe([]);
+            ->and($key === 'payroll_approval' || $entry['paths'] !== [])->toBeTrue();
     }
 });
 

@@ -28,6 +28,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
+use Alimarchal\LaravelChartOfAccounts\Models\PayrollAdjustment;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollArrear;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Models\Payslip;
@@ -141,6 +142,7 @@ function concreteUri(Route $route, ?string &$modelResource = null): string
             'loans' => Loan::class,
             'schemes' => ContributionScheme::class,
             'settlements' => Settlement::class,
+            'adjustments' => PayrollAdjustment::class,
             'certificate' => Employee::class,
             'arrears' => PayrollArrear::class,
             'warehouses' => Warehouse::class,
@@ -187,6 +189,7 @@ function createEveryResource(): void
     Loan::query()->create(['employee_id' => $employee->id, 'principal' => 100, 'installments' => 1, 'start_month' => now()->startOfMonth()->toDateString()]);
     ContributionScheme::query()->create(['code' => 'PF', 'name' => 'Provident fund']);
     Settlement::query()->create(['employee_id' => $employee->id, 'leave_date' => now()->toDateString()]);
+    PayrollAdjustment::query()->create(['employee_id' => $employee->id, 'month' => now()->startOfMonth()->toDateString(), 'kind' => 'earning', 'description' => 'Bonus', 'amount' => 1, 'account_id' => account('5101')->id]);
     SalaryGrade::query()->create(['code' => 'G1', 'name' => 'Grade', 'base_salary' => 1]);
     PayrollArrear::query()->create(['employee_id' => $employee->id, 'from_month' => now()->startOfMonth()->toDateString(), 'to_month' => now()->startOfMonth()->toDateString(), 'payment_month' => now()->startOfMonth()->toDateString(), 'amount' => 1, 'breakdown' => '[]']);
     $payrollRun = PayrollRun::query()->create(['period_month' => now()->startOfMonth()->toDateString()]);
