@@ -192,3 +192,14 @@ it('keeps the roles with the money: refuses to delete or deactivate a role accou
         ->and(AccountRoles::code('employee_advances'))->toBe('1612')
         ->and($old->refresh()->is_active)->toBeFalse();
 });
+
+it('starts a company from a chart with create-company --template and fills its roles', function (): void {
+    config(['accounting.multi_company.enabled' => true]);
+
+    expect(Artisan::call('accounting:create-company', ['code' => 'ERP2', 'name' => 'Second ERP Co', '--template' => 'erpnext']))->toBe(0);
+
+    $second = Company::query()->where('code', 'ERP2')->firstOrFail();
+    app(CurrentCompany::class)->runAs($second, function (): void {
+        expect(account('1310')->account_name)->toBe('Debtors')->and(AccountRoles::code('cash'))->toBe('1100')->and(AccountRoles::codes('aging.receivables'))->toBe(['1310'])->and(AccountRoles::preset())->toBe('erpnext');
+    });
+});

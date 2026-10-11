@@ -2,6 +2,45 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.34.0] - 2026-11-05
+
+Final audit release: the ERPNext chart on a fresh install, account roles, one filter language on every list, and the bugs a logical review found.
+
+### Added
+- **ERPNext standard chart of accounts** (with account numbers) is the chart a new installation starts with, mapped to the financial statements
+  and wired to every module. `php artisan accounting:install --chart=erpnext|general|school` (asks when run interactively),
+  `accounting:seed --chart=`, `accounting:create-company --template=erpnext`, `ACCOUNTING_CHART_PRESET` (default `erpnext`). The chart is chosen
+  per company; mixing the ERPNext and the general chart in one company is refused. `NOTICE.md` records where the chart comes from (ERPNext is GPL-3.0).
+- **Account roles** (`accounting_account_roles`, `accounting_settings`): which account is cash, bank, retained earnings, rounding, exchange
+  gain/loss, the ageing receivables/payables, the control accounts, salary expense, net salary payable, income tax payable and employee advances
+  is a setting per company, filled in from the chart. Screen (`/accounting/account-roles`, React and Blade), API (`GET/PUT /account-roles`),
+  `php artisan accounting:account-roles [list|set|seed]`. The fixed codes in `config/accounting.php` (`defaults.*`, `aging.*`, `payroll.*`) are
+  now optional overrides; a company that already has a chart keeps behaving as before.
+- **One filter language on every list** (`Alimarchal\LaravelChartOfAccounts\Support\ListFilters`, on Spatie Laravel Query Builder): `?filter[search]=…` or the short
+  `?search=…`, several values with commas, case-insensitive text search (`%` and `_` are literal), date ranges, amount ranges, yes/no and
+  `sort`, on customers/suppliers, invoices and bills, receipts and payments, fixed assets, inventory (valuation, movements, warehouses), budgets,
+  bank statements, recurring entries, payroll (runs, employees, loans, arrears, adjustments, settlements, components, grades, schemes), users,
+  roles, permissions, voucher types, companies, control accounts, tax returns, exchange rates, revaluations, FBR and periods. Every one of these
+  screens has a filter bar in React and in Blade (the same names as the API, a reset link, and sibling bars on one page do not drop each other).
+- **Trial balance by date and period:** `as_of_date`, `date_from` (the movement of a period), `search`, `account_type`, `report_group`,
+  `hide_zero` on the API, the React screen and the Blade screen (which now lists the accounts, not only the totals); date pickers on the balance
+  sheet, income statement and aged receivables/payables React pages.
+- OpenAPI 2.34.0 documents every list filter and the two account-role endpoints; the help catalog, Postman collection and README are regenerated.
+
+### Fixed
+- **Exports ignored the filters on screen:** the CSV/Excel/PDF of the trial balance, balance sheet, income statement and the aged reports always
+  used today's date while their header claimed the date you had chosen. They now use the same filters (and the Blade screens' period).
+- **FBR list hid old failures:** the status filter was applied after the list had been cut to the 300 newest documents, so a failed submission
+  older than that could not be found by filtering on "failed". The filter now runs in the query.
+- **Stock valuation by warehouse** listed every item, with zero quantity, for a warehouse that held none of it; it now lists only what the
+  warehouse holds.
+- The accounts that play cash, bank, retained earnings or rounding are protected whichever way they are chosen (role or config), and an account
+  that plays any role cannot be deleted or deactivated; merging an account moves its roles to the account that keeps the balance.
+- The aged receivables/payables React pages ignored `as_of_date`.
+
+### Upgrading
+Run `php artisan accounting:update` (two new tables). Existing companies are untouched. See the README, "Upgrading to 2.34".
+
 ## [2.33.0] - 2026-11-04
 
 Help catalog, Urdu guide and screen audit release.
