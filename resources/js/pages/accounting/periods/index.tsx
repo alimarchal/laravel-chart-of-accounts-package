@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { CalendarPlus, Lock, LockOpen, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { money } from '@/components/accounting/ledger';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -60,9 +61,11 @@ function StatusBadge({ status }: { status: Period['status'] }) {
 
 export default function Periods({
     periods,
+    filters,
     fiscalYearStartMonth,
 }: {
     periods: Period[];
+    filters: Record<string, string | null>;
     fiscalYearStartMonth: number;
 }) {
     const { permissions, flash } = useAccounting();
@@ -149,6 +152,17 @@ export default function Periods({
                         </p>
                     </form>
                 ) : null}
+
+                <FilterBar
+                    path="/accounting/periods"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Period name' },
+                        { name: 'status', label: 'Status', type: 'select', options: { open: 'Open', closed: 'Closed', archived: 'Archived' } },
+                        { name: 'date_from', label: 'Ends on or after', type: 'date' },
+                        { name: 'date_to', label: 'Starts on or before', type: 'date' },
+                    ]}
+                />
 
                 <div className="overflow-x-auto rounded-lg border">
                     <table className="w-full min-w-[760px] text-sm">

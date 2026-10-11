@@ -152,6 +152,7 @@ it('keeps the active filters on the React list screens', function (): void {
         ['/accounting/voucher-types?active=1', 'accounting/voucher-types/index', ['filters.active' => '1']],
         ['/accounting/control-accounts?control_type=payables', 'accounting/control-accounts/index', ['filters.control_type' => 'payables']],
         ['/accounting/companies?is_active=1', 'accounting/companies/index', ['filters.is_active' => '1']],
+        ['/accounting/periods?status=closed&search=x', 'accounting/periods/index', ['filters.status' => 'closed', 'filters.search' => 'x']],
         ['/accounting/payroll/employees?active=0', 'accounting/payroll/employees', ['filters.active' => '0']],
     ] as [$url, $component, $expected]) {
         $this->get($url)->assertInertia(function (AssertableInertia $page) use ($component, $expected): void {
