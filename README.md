@@ -153,7 +153,7 @@ or the ones above; `.env` keys that are not asked keep their documented defaults
 
 Your answers are written to `.env`. Then the installer publishes the config and migrations, migrates, seeds the chart of accounts,
 currencies, the current fiscal year, roles and tax codes, creates the database views and triggers, and verifies everything. It adds
-the **Accounting** link next to **Dashboard** in the menu of your starter kit (Livewire/Flux: `resources/views/layouts/app/sidebar.blade.php`;
+the **Accounting** and **Accounting settings** links next to **Dashboard** in the menu of your starter kit (Livewire/Flux: `resources/views/layouts/app/sidebar.blade.php`;
 Jetstream: `resources/views/navigation-menu.blade.php`; Breeze: `resources/views/layouts/navigation.blade.php`; React: `resources/js/components/app-sidebar.tsx`
 and `app-header.tsx`) and, for Blade, adds the package's screens to the Tailwind sources (`resources/css/app.css` for Tailwind 4, `tailwind.config.js`
 for Tailwind 3 as in Jetstream and Breeze; run `npm run build` once). It is safe to re-run.
@@ -593,6 +593,26 @@ in Blade, a small selector in the corner in React); the choice is kept for the s
   first render, texts that include data (for example "Last 6 months, closing entries excluded"), and the host application's own
   menus. The Urdu terms were written without review by an accountant: have yours check them and override what they would say
   differently.
+
+## Accounting and Settings (the two parts of the area)
+
+The accounting area has two parts, with tabs at the top of each and **one link each in your starter kit's menu** (*Accounting* and *Accounting settings*; the
+installer adds both, and `accounting:install` adds the missing one to an installation that has only *Accounting*):
+
+| Part | URL / route | What is in it |
+|---|---|---|
+| **Accounting** | `/accounting` · `accounting.dashboard` | the daily work: journal entries, chart of accounts, recurring entries, reports (overview, ledger, trial balance, balance sheet, income statement, cash flow, statements, ageing), customers and suppliers, invoices/bills, receipts/payments, tax, banking, payroll, inventory, fixed assets, budgets, FBR, WhatsApp |
+| **Settings** | `/accounting/settings` · `accounting.settings` | **Users & access** (users with their roles, direct permissions and branches; roles and what each may do; permissions; features; account roles; branches; companies), **Setup** (currencies, periods, account types, cost centers, tax codes and rates, voucher types, control accounts, report mapping) and **Audit** |
+
+Only the cards and links the signed-in person's permissions allow are shown, and a route without the permission answers 403; the Settings tab appears only for
+people who may open something in it. Roles are created and changed in **Settings → Users & access → Roles** (React `/accounting/roles`, Blade `/settings/roles`):
+tick the permissions a role has; give a user extra permissions on the user's own screen; remove them the same way.
+
+| Accounting | Settings |
+|---|---|
+| ![The Accounting tab in the Livewire 4 starter kit](docs/images/kit-lw4-tab-accounting.jpg) | ![The Settings tab: Users & access, Setup, Audit](docs/images/kit-lw4-tab-settings.jpg) |
+
+---
 
 ## Dashboard
 
@@ -1718,6 +1738,18 @@ _327 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | DELETE | `/voucher-types/{record}` | Delete an unused voucher type | `voucher-types.delete` |
 | GET | `/voucher-types/{record}/next-number` | Preview the next number | `voucher-types.view` |
 
+### Branches
+
+| Method | Endpoint | What it does | Permission |
+|--------|----------|--------------|------------|
+| GET | `/branches` | Branches of the company | `branches.view` |
+| POST | `/branches` | Create a branch | `branches.create` |
+| GET | `/branches/{branch}` | Show a branch with the people who work in it | `branches.view` |
+| PUT | `/branches/{branch}` | Update a branch | `branches.update` |
+| DELETE | `/branches/{branch}` | Delete a branch | `branches.delete` |
+| POST | `/branches/{branch}/users` | Limit a user to this branch (add) | `branches.update` |
+| DELETE | `/branches/{branch}/users/{user}` | Remove a user from this branch | `branches.update` |
+
 ### Companies
 
 | Method | Endpoint | What it does | Permission |
@@ -1770,18 +1802,6 @@ _327 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | POST | `/bank-statement-lines/{bankStatementLine}/unmatch` | Release a matched or booked transaction | `bank-statements.match` |
 | POST | `/bank-statement-lines/{bankStatementLine}/ignore` | Ignore (or restore) a transaction | `bank-statements.match` |
 | POST | `/bank-statement-lines/{bankStatementLine}/create-entry` | Book a transaction as a journal entry | `bank-statements.match` |
-
-### Branches
-
-| Method | Endpoint | What it does | Permission |
-|--------|----------|--------------|------------|
-| GET | `/branches` | Branches of the company | `branches.view` |
-| POST | `/branches` | Create a branch | `branches.create` |
-| GET | `/branches/{branch}` | Show a branch with the people who work in it | `branches.view` |
-| PUT | `/branches/{branch}` | Update a branch | `branches.update` |
-| DELETE | `/branches/{branch}` | Delete a branch | `branches.delete` |
-| POST | `/branches/{branch}/users` | Limit a user to this branch (add) | `branches.update` |
-| DELETE | `/branches/{branch}/users/{user}` | Remove a user from this branch | `branches.update` |
 
 ### Budgets
 

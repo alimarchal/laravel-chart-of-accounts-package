@@ -35,6 +35,11 @@ def norm(uri):
 def humanize(name, uri):
     name = re.sub(r"^(api\.)?accounting\.", "", name or "")
     name = re.sub(r"^settings\.", "", name)
+    special = {"dashboard": "Accounting hub: the daily work (journal, reports, customers and suppliers, banking, payroll …)",
+               "settings": "Settings hub: Users & access (users, roles, permissions, branches), Setup of the books, Audit",
+               "overview": "Overview: KPIs and charts"}
+    if name in special:
+        return special[name]
     parts = [p.replace("-", " ") for p in name.split(".") if p]
     if not parts:
         return uri.strip("/").replace("-", " ")

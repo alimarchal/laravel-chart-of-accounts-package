@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountBalanceSnaps
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingDashboardBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingOverviewBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingPeriodBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingSettingsBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountTypeBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AuditLogBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\BankAccountBladeController;
@@ -106,6 +107,9 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardBladeController::class)
             ->name('dashboard')
+            ->middleware('can:accounting.view');
+        Route::get('settings', AccountingSettingsBladeController::class)
+            ->name('settings')
             ->middleware('can:accounting.view');
         Route::get('overview', AccountingOverviewBladeController::class)
             ->name('overview')

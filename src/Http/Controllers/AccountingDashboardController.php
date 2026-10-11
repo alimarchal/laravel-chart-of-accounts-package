@@ -21,6 +21,7 @@ class AccountingDashboardController extends Controller
 
         // A card only for what the user may open; the journal count follows the working branch.
         return Inertia::render('accounting/dashboard', [
+            'section' => 'accounting',
             'summary' => array_filter([
                 'accountTypes' => $can('account-types.view') ? AccountType::query()->count() : null,
                 'currencies' => $can('currencies.view') ? Currency::query()->count() : null,

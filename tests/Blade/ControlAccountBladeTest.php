@@ -23,5 +23,5 @@ it('sets up and shows control accounts from the Blade screen', function (): void
 
     $this->put('/accounting/chart-of-accounts/'.account('1103')->id.'/control-type', ['control_type' => ''])->assertSessionHas('success');
     expect(account('1103')->control_type)->toBeNull();
-    $this->get('/accounting')->assertSee('Control Accounts');
+    $this->get('/accounting/settings')->assertSee('Control Accounts');
 });

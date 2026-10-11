@@ -1761,6 +1761,15 @@ class User extends Authenticatable
 </ul>
 <p><img alt="Delete پر ڈائیلاگ" src="../images/kit-jetstream-delete-modal.jpg" /></p>
 <p><img alt="فلٹر لگانے کے بعد فہرست" src="../images/kit-livewire4-filter-applied.jpg" /></p>
+<h2 id="171_2">17.1 ج: اکاؤنٹنگ اور سیٹنگز: دو حصے</h2>
+<p>اسٹارٹر کٹ کے مینو میں اب دو لنک ہیں: <strong>Accounting</strong> اور <strong>Accounting settings</strong>۔ دونوں صفحات پر اوپر دو ٹیب ہیں۔</p>
+<ul>
+<li><strong>Accounting</strong>: روزمرہ کام: جرنل انٹریاں، رپورٹیں (ٹرائل بیلنس، بیلنس شیٹ، آمدنی و اخراجات، کیش فلو…)، کسٹمر/سپلائر، انوائس اور ادائیگیاں، بینک، تنخواہ، اسٹاک، فکسڈ اثاثے، بجٹ۔</li>
+<li><strong>Settings</strong>: <strong>Users &amp; access</strong> (یوزر، ان کے رول، اضافی permissions اور برانچیں؛ رول بنانا اور permissions لگانا/ہٹانا؛ Features؛ برانچیں)، <strong>Setup</strong> (کرنسی، پیریڈ، ٹیکس، ووچر ٹائپ…) اور <strong>Audit</strong>۔</li>
+<li>ہر شخص کو صرف وہی کارڈ اور لنک ملتے ہیں جن کی اجازت اس کے پاس ہو؛ باقی راستے 403 دیتے ہیں۔ جس کے پاس Settings میں کھولنے کو کچھ نہ ہو اسے Settings ٹیب نظر ہی نہیں آتا۔</li>
+</ul>
+<p><img alt="Accounting ٹیب" src="../images/kit-lw4-tab-accounting.jpg" /></p>
+<p><img alt="Settings ٹیب: Users &amp; access، Setup، Audit" src="../images/kit-lw4-tab-settings.jpg" /></p>
 <h2 id="172">17.2 ایک کمپنی، کئی برانچیں</h2>
 <p><code>.env</code> میں <code>ACCOUNTING_BRANCHES=true</code> لکھیں (انسٹالر بھی پوچھتا ہے)۔ پھر <strong>Accounting ← Branches</strong> میں برانچیں بنائیں: ہیڈ آفس، لاہور کیمپس، کراچی کیمپس وغیرہ۔</p>
 <ul>

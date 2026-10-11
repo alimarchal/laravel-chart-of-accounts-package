@@ -7,6 +7,11 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 Branches: one company, several places of business.
 
 ### Also in this release
+- **The accounting area is split into two parts, "Accounting" and "Settings"**, with tabs on both and one link each in the starter kit's menu (*Accounting*, *Accounting settings*; the
+  installer adds the second one to existing installations too). *Accounting* holds the daily work (journal, reports, customers and suppliers, banking, payroll, inventory …);
+  *Settings* (`/accounting/settings`, route `accounting.settings`, React, Blade) holds **Users & access** (users with roles, direct permissions and branches; roles and their permissions;
+  permissions; features; account roles; branches; companies), **Setup** (currencies, periods, account types, cost centers, tax codes and rates, voucher types, control accounts, report mapping) and
+  **Audit**. The React dashboard is now grouped with headings instead of one flat list of buttons.
 - **A confirm dialog instead of the browser's `confirm()`** for delete, void, post, reverse … in the Blade screens (any `onsubmit="return confirm('…')"` or `data-confirm`) and the React screens (`confirmThen()` in `lib/confirm.ts`): an icon, the question, *Cancel* and a red *Delete* (or *Confirm*) button; Esc cancels.
 - **A sound for every result**: a rising chime on success, a lower falling one on an error or a validation error, in Blade (also after a page reload; if the browser keeps audio locked the sound plays with the first click) and React (every flash message once).
 - **People of a branch**: the user form (React, Blade, API) has the branches the user works in; admins and super-admins always work in all branches; customers/suppliers, bank accounts, employees, fixed assets and warehouses belong to a branch too; users created by an administrator are marked verified (starter kits with e-mail verification would otherwise lock them out).

@@ -101,7 +101,8 @@ it('adds the Accounting link to mainNavItems of the React starter kit, with its 
 
     expect($first[0]['status'])->toBe('added')->and($second[0]['status'])->toBe('present')
         ->and($result)->toContain("{ title: 'Accounting', href: '/settings-config', icon: Calculator }")
-        ->toContain("import { BookOpen, Calculator, Folder, LayoutGrid } from 'lucide-react';")
+        ->toContain("import { BookOpen, Calculator, Folder, LayoutGrid, Settings2 } from 'lucide-react';")
+        ->toContain("{ title: 'Accounting settings', href: '/settings-config/settings', icon: Settings2 }")
         ->and(substr_count($result, 'Calculator'))->toBe(2)
         ->and(strpos($result, 'icon: LayoutGrid'))->toBeLessThan(strpos($result, "title: 'Accounting'"))
         ->and(strpos($result, "title: 'Accounting'"))->toBeLessThan(strpos($result, 'const footerNavItems'));
@@ -418,4 +419,34 @@ it('writes no kit for React', function (): void {
     $this->artisan('accounting:install', ['--setup-only' => true, '--no-interaction' => true, '--no-menu' => true, '--ui' => 'react', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])->assertSuccessful();
 
     expect((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_UI_DRIVER'))->toBe('inertia')->and((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_BLADE_KIT'))->toBeNull();
+});
+
+it('adds an Accounting settings link next to Accounting, and to an installation that only has Accounting', function (): void {
+    $kits = __DIR__.'/../../Fixtures/starter-kits';
+    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', (string) file_get_contents($kits.'/livewire-sidebar.blade.php'));
+    writeFile($this->project.'/resources/views/navigation-menu.blade.php', (string) file_get_contents($kits.'/jetstream-navigation-menu.blade.php'));
+    writeFile($this->project.'/resources/js/components/app-sidebar.tsx', (string) file_get_contents($kits.'/react-app-sidebar.tsx'));
+    $menu = new StarterKitMenu;
+
+    $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $menu->apply('inertia', $this->project, '/accounting', 'accounting.dashboard');
+    $again = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $sidebar = (string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php');
+    $jetstream = (string) file_get_contents($this->project.'/resources/views/navigation-menu.blade.php');
+
+    expect(array_column($again, 'status'))->each->toBe('present')
+        ->and(substr_count($sidebar, "route('accounting.settings')"))->toBe(1)->and($sidebar)->toContain('icon="cog-6-tooth"')->toContain("__('Accounting settings')")
+        ->and($sidebar)->toContain("routeIs('accounting.*') && ! request()->routeIs('accounting.settings')")
+        ->and(substr_count($jetstream, "route('accounting.settings')"))->toBe(2)                    // top bar and mobile menu
+        ->and($jetstream)->toContain("routeIs('accounting.settings')");
+
+    // An installation from before the Settings part: the Accounting block is there, the settings one is not.
+    $old = str_replace(" && ! request()->routeIs('accounting.settings')", '', (string) preg_replace('/\n[ \t]*\{\{-- accounting:menu-settings --\}\}.*?@endif/s', '', $sidebar));
+    expect($old)->not->toContain('accounting.settings');
+    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', $old);
+    $upgrade = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+
+    expect($upgrade[0]['status'])->toBe('added')
+        ->and(substr_count((string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php'), "route('accounting.settings')"))->toBe(1)
+        ->and((string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php'))->toContain("routeIs('accounting.*') && ! request()->routeIs('accounting.settings')");
 });

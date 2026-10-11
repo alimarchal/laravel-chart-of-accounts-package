@@ -11,6 +11,8 @@ final class StarterKitMenu
 {
     public const MARKER = 'accounting:menu';
 
+    public const SETTINGS_MARKER = 'accounting:menu-settings';
+
     /**
      * @return list<array{file: string, status: 'added'|'present'|'manual', message: string}>
      */
@@ -114,7 +116,20 @@ final class StarterKitMenu
         $path = $basePath.'/'.$file;
         $source = (string) file_get_contents($path);
 
-        if (str_contains($source, self::MARKER) || str_contains($source, $routeName)) {
+        if (str_contains($source, self::MARKER)) {
+            // An earlier install added Accounting only: add the Settings link next to it.
+            $with = $this->withSettings($source, $routeName);
+
+            if ($with === $source) {
+                return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting links'];
+            }
+
+            file_put_contents($path, $with);
+
+            return ['file' => $file, 'status' => 'added', 'message' => 'Accounting settings link added next to Accounting'];
+        }
+
+        if (str_contains($source, $routeName)) {
             return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting link'];
         }
 
@@ -135,7 +150,7 @@ final class StarterKitMenu
             $item = $match[2][0];
             $item = (string) preg_replace('/\s+wire:navigate(?:\.hover)?\b/', '', $item);                   // the accounting pages are ordinary pages
             $item = str_replace(["route('dashboard')", 'route("dashboard")'], "route('{$routeName}')", $item);
-            $item = (string) preg_replace('/routeIs\(\s*[\'"]dashboard[\'"]\s*\)/', "routeIs('".preg_replace('/\.dashboard$/', '.*', $routeName)."')", $item);
+            $item = (string) preg_replace('/routeIs\(\s*[\'"]dashboard[\'"]\s*\)/', "routeIs('".preg_replace('/\.dashboard$/', '.*', $routeName)."') && ! request()->routeIs('".preg_replace('/\.dashboard$/', '.settings', $routeName)."')", $item);
             $item = (string) preg_replace('/\bicon="[^"]*"/', 'icon="calculator"', $item);
             $item = (string) preg_replace('/__\(\s*[\'"]Dashboard[\'"]\s*\)/', "__('Accounting')", $item);
             $item = (string) preg_replace('/>\s*Dashboard\s*</', '>Accounting<', $item);
@@ -149,9 +164,32 @@ final class StarterKitMenu
             $updated = substr_replace($updated, $whole."\n".$block, $at, strlen($whole));
         }
 
-        file_put_contents($path, $updated);
+        file_put_contents($path, $this->withSettings($updated, $routeName));
 
-        return ['file' => $file, 'status' => 'added', 'message' => 'Accounting link added next to Dashboard'];
+        return ['file' => $file, 'status' => 'added', 'message' => 'Accounting and Accounting settings links added next to Dashboard'];
+    }
+
+    /**
+     * Next to every Accounting link (the block after the marker comment) a copy for the Settings part of the accounting area: users, roles,
+     * permissions and the set-up of the books.
+     */
+    private function withSettings(string $source, string $routeName): string
+    {
+        if (str_contains($source, self::SETTINGS_MARKER)) {
+            return $source;
+        }
+
+        $settingsRoute = (string) preg_replace('/\.dashboard$/', '.settings', $routeName);
+
+        return (string) preg_replace_callback('/^([ \t]*)\{\{-- '.preg_quote(self::MARKER, '/').' --\}\}\n(.*?)\n\1@endif/ms', function (array $match) use ($routeName, $settingsRoute): string {
+            $copy = str_replace([self::MARKER, "'{$routeName}'", "__('Accounting')", 'icon="calculator"', '>Accounting<'], [self::SETTINGS_MARKER, "'{$settingsRoute}'", "__('Accounting settings')", 'icon="cog-6-tooth"', '>Accounting settings<'], $match[0]);
+            $copy = (string) preg_replace("/routeIs\\('[^']*'\\)[^\"]*\"/", "routeIs('{$settingsRoute}')\"", $copy);
+
+            $all = (string) preg_replace('/\.dashboard$/', '.*', $routeName);
+            $main = str_contains($match[0], $settingsRoute) ? $match[0] : str_replace("routeIs('{$all}')", "routeIs('{$all}') && ! request()->routeIs('{$settingsRoute}')", $match[0]);
+
+            return $main."\n".$copy;
+        }, $source);
     }
 
     /**
@@ -163,7 +201,15 @@ final class StarterKitMenu
         $source = (string) file_get_contents($path);
 
         if (str_contains($source, self::MARKER) || preg_match('/title:\s*[\'"]Accounting[\'"]/', $source) === 1) {
-            return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting link'];
+            if (str_contains($source, self::SETTINGS_MARKER) || preg_match('/\n([ \t]*)\{[^\n]*title:\s*[\'"]Accounting[\'"][^\n]*\},?[^\n]*\n/', $source, $line) !== 1) {
+                return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting links'];
+            }
+
+            // An earlier install added Accounting only: add Accounting settings after it.
+            $updated = str_replace($line[0], $line[0].$line[1]."{ title: 'Accounting settings', href: '".$url."/settings', icon: Settings2 }, // ".self::SETTINGS_MARKER."\n", $source);
+            file_put_contents($path, $this->lucideIcon($updated, 'Settings2'));
+
+            return ['file' => $file, 'status' => 'added', 'message' => 'Accounting settings link added to mainNavItems'];
         }
 
         if (preg_match('/(const\s+mainNavItems(?:\s*:\s*NavItem\[\])?\s*=\s*\[)(.*?)(\n[ \t]*\];)/s', $source, $array) !== 1
@@ -173,22 +219,35 @@ final class StarterKitMenu
 
         $indent = preg_match('/\n([ \t]+)\{/', $array[2], $found) === 1 ? $found[1] : '    ';
         $body = rtrim($array[2]);
-        $body .= ($body !== '' && ! str_ends_with($body, ',') && ! str_ends_with($body, '[') ? ',' : '')."\n".$indent."{ title: 'Accounting', href: '".$url."', icon: Calculator }, // ".self::MARKER;
+        $body .= ($body !== '' && ! str_ends_with($body, ',') && ! str_ends_with($body, '[') ? ',' : '')."\n".$indent."{ title: 'Accounting', href: '".$url."', icon: Calculator }, // ".self::MARKER
+            ."\n".$indent."{ title: 'Accounting settings', href: '".$url."/settings', icon: Settings2 }, // ".self::SETTINGS_MARKER;
 
         $source = str_replace($array[0], $array[1].$body.$array[3], $source);
 
-        $members = array_values(array_filter(array_map('trim', explode(',', $icons[1])), fn (string $name) => $name !== ''));
-
-        if (! in_array('Calculator', $members, true)) {
-            $members[] = 'Calculator';
-            sort($members);
-            $multiline = str_contains($icons[1], "\n");
-            $list = $multiline ? "\n    ".implode(",\n    ", $members).",\n" : ' '.implode(', ', $members).' ';
-            $source = str_replace($icons[0], 'import {'.$list.'} from \'lucide-react\';', $source);
-        }
+        $source = $this->lucideIcon($this->lucideIcon($source, 'Calculator'), 'Settings2');
 
         file_put_contents($path, $source);
 
-        return ['file' => $file, 'status' => 'added', 'message' => 'Accounting link added to mainNavItems'];
+        return ['file' => $file, 'status' => 'added', 'message' => 'Accounting and Accounting settings links added to mainNavItems'];
+    }
+
+    /** Add an icon to the lucide-react import of a React file (once). */
+    private function lucideIcon(string $source, string $icon): string
+    {
+        if (preg_match('/import\s*\{([^}]*)\}\s*from\s*[\'"]lucide-react[\'"];?/s', $source, $icons) !== 1) {
+            return $source;
+        }
+
+        $members = array_values(array_filter(array_map('trim', explode(',', $icons[1])), fn (string $name) => $name !== ''));
+
+        if (in_array($icon, $members, true)) {
+            return $source;
+        }
+
+        $members[] = $icon;
+        sort($members);
+        $list = str_contains($icons[1], "\n") ? "\n    ".implode(",\n    ", $members).",\n" : ' '.implode(', ', $members).' ';
+
+        return str_replace($icons[0], 'import {'.$list.'} from \'lucide-react\';', $source);
     }
 }

@@ -2,14 +2,14 @@
 
 Generated from the routes the package registers (`python3 docs/generate-route-catalog.py`); do not edit by hand.
 
-- **398 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **327 API endpoints**.
+- **399 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **327 API endpoints**.
 - Web screens live under `/accounting` (users, roles and the feature switches under `/settings` with the Blade driver); the API under `/api/v1/accounting` (see the prefixes in `config/accounting.php`).
 - *Permission* is the Spatie permission a user needs; a user without it gets 403. A feature that is switched off answers 404 (see *Feature switches* in the README).
 - The API is described in full in [`openapi.yaml`](openapi.yaml) and the [Postman collection](postman_collection.json).
 
 ## Contents
 
-- [Home and overview](#home-and-overview) (2)
+- [Home and overview](#home-and-overview) (3)
 - [Chart of accounts](#chart-of-accounts) (19)
 - [Account types](#account-types) (8)
 - [Currencies and exchange rates](#currencies-and-exchange-rates) (8)
@@ -51,8 +51,9 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 
 | Method | Screen or action (React) | Blade driver | What it does | Permission |
 |--------|--------|--------------|--------------|------------|
-| GET | `/accounting` |  | dashboard | `accounting.view` |
-| GET | `/accounting/overview` |  | overview | `accounting.view` |
+| GET | `/accounting` |  | Accounting hub: the daily work (journal, reports, customers and suppliers, banking, payroll …) | `accounting.view` |
+| GET | `/accounting/overview` |  | Overview: KPIs and charts | `reports.trial-balance.view` |
+| GET | `/accounting/settings` |  | Settings hub: Users & access (users, roles, permissions, branches), Setup of the books, Audit | `accounting.view` |
 
 ## Chart of accounts
 
@@ -818,6 +819,18 @@ Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorizati
 | DELETE | `/voucher-types/{record}` | Delete an unused voucher type | `voucher-types.delete` |
 | GET | `/voucher-types/{record}/next-number` | Preview the next number | `voucher-types.view` |
 
+### Branches
+
+| Method | Endpoint | What it does | Permission |
+|--------|----------|--------------|------------|
+| GET | `/branches` | Branches of the company | `branches.view` |
+| POST | `/branches` | Create a branch | `branches.create` |
+| GET | `/branches/{branch}` | Show a branch with the people who work in it | `branches.view` |
+| PUT | `/branches/{branch}` | Update a branch | `branches.update` |
+| DELETE | `/branches/{branch}` | Delete a branch | `branches.delete` |
+| POST | `/branches/{branch}/users` | Limit a user to this branch (add) | `branches.update` |
+| DELETE | `/branches/{branch}/users/{user}` | Remove a user from this branch | `branches.update` |
+
 ### Companies
 
 | Method | Endpoint | What it does | Permission |
@@ -870,18 +883,6 @@ Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorizati
 | POST | `/bank-statement-lines/{bankStatementLine}/unmatch` | Release a matched or booked transaction | `bank-statements.match` |
 | POST | `/bank-statement-lines/{bankStatementLine}/ignore` | Ignore (or restore) a transaction | `bank-statements.match` |
 | POST | `/bank-statement-lines/{bankStatementLine}/create-entry` | Book a transaction as a journal entry | `bank-statements.match` |
-
-### Branches
-
-| Method | Endpoint | What it does | Permission |
-|--------|----------|--------------|------------|
-| GET | `/branches` | Branches of the company | `branches.view` |
-| POST | `/branches` | Create a branch | `branches.create` |
-| GET | `/branches/{branch}` | Show a branch with the people who work in it | `branches.view` |
-| PUT | `/branches/{branch}` | Update a branch | `branches.update` |
-| DELETE | `/branches/{branch}` | Delete a branch | `branches.delete` |
-| POST | `/branches/{branch}/users` | Limit a user to this branch (add) | `branches.update` |
-| DELETE | `/branches/{branch}/users/{user}` | Remove a user from this branch | `branches.update` |
 
 ### Budgets
 
