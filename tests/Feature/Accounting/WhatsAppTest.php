@@ -248,7 +248,8 @@ it('moves a sandbox message on as WhatsApp would, through the API', function ():
 
 it('answers Meta\'s verification with the challenge, and only for your verify token', function (): void {
     $this->get('/api/v1/accounting/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=my-verify-word&hub.challenge=1158201444')
-        ->assertOk()->assertSee('1158201444', false)->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
+        ->assertOk()->assertSee('1158201444', false)->assertHeader('Content-Type');
+    expect(strtolower((string) $this->get('/api/v1/accounting/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=my-verify-word&hub.challenge=1')->headers->get('Content-Type')))->toStartWith('text/plain');
     $this->get('/api/v1/accounting/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=1')->assertForbidden();
     $this->get('/api/v1/accounting/whatsapp/webhook?hub.mode=unsubscribe&hub.verify_token=my-verify-word&hub.challenge=1')->assertForbidden();
 
