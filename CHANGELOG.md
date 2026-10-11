@@ -2,6 +2,29 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.35.0] - 2026-11-12
+
+WhatsApp: one call sends a message through the WhatsApp Cloud API, with everything in `.env`.
+
+### Added
+- **`WhatsApp::template($to, $template, $parameters, related: $model)`**, `WhatsApp::text()`, `queueTemplate()` and `queueText()`: numbers as people write them
+  (`0300-1234567`, `+92 …`) become digits with the country code; template parameters are checked against the template and cleaned the way WhatsApp requires;
+  a message is saved as `accounting_whatsapp_messages` (queued → sent → delivered → read, or failed with Meta's code and a sentence to act on).
+- **School-fee example:** with `WHATSAPP_NOTIFY_RECEIPT=fee_received` the customer's WhatsApp gets a message when a receipt is recorded; a WhatsApp problem never
+  stops the receipt.
+- **Cloud API gateway** (Graph `v25.0`, configurable): `https` only, retries only a dropped connection, 5xx and rate limits, error codes explained
+  (24-hour window 131047, 131026, 131030, 132000/132001/132018, expired token …).
+- **Webhook** `GET/POST /api/v1/accounting/whatsapp/webhook`: verify-token handshake, `X-Hub-Signature-256` check, delivery and read statuses that never move
+  backwards, customer replies stored once, other phone numbers ignored.
+- **Sandbox** (`ACCOUNTING_WHATSAPP_MODE=fake`, the default): behaves like WhatsApp (24-hour rule, parameter checks) without Meta; messages can be marked
+  delivered/read/failed and a customer reply simulated, from the screen or the API.
+- Screen `/accounting/whatsapp` (React and Blade) with set-up checks, a send form, filters, retry; API `/whatsapp`; `php artisan accounting:whatsapp status|test|templates`;
+  permissions `whatsapp.view` / `whatsapp.send`; feature switch `whatsapp`; queue job `SendWhatsAppMessage` (retries after 30 s, 2 min, 10 min).
+- README (set-up, school-fee example, going live, troubleshooting), Urdu guide chapter 15, process flowcharts, OpenAPI 2.35.0.
+
+Meta's own documentation could not be read when this was written and nothing has been run against Meta's servers: follow *Going live* in the README and run
+`accounting:whatsapp test` with your credentials before relying on it.
+
 ## [2.34.0] - 2026-11-05
 
 Final audit release: the ERPNext chart on a fresh install, account roles, one filter language on every list, and the bugs a logical review found.

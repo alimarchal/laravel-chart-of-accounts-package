@@ -8,6 +8,7 @@ import {
     Hash,
     KeyRound,
     Landmark,
+    MessageCircle,
     Percent,
     ReceiptText,
     ShieldCheck,
@@ -175,6 +176,15 @@ export default function AccountingDashboard({ summary }: Props) {
                       title: 'FBR Invoices',
                       href: '/accounting/fbr',
                       icon: ReceiptText,
+                  },
+              ]
+            : []),
+        ...(permissions['whatsapp.view']
+            ? [
+                  {
+                      title: 'WhatsApp',
+                      href: '/accounting/whatsapp',
+                      icon: MessageCircle,
                   },
               ]
             : []),

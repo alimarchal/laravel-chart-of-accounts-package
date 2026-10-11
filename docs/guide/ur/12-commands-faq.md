@@ -24,6 +24,7 @@
 | `php artisan accounting:run-recurring` | دہرائے جانے والے واؤچر بنانا (شیڈولر روزانہ خود چلاتا ہے) |
 | `php artisan accounting:payroll-run` | پچھلے مہینے کا پے رول Run (Draft) بنانا |
 | `php artisan accounting:account-roles` | کون سا کھاتہ کس کام (کیش، بینک، تنخواہ ...) کے لیے ہے: فہرست، `set`، `seed` (باب 14) |
+| `php artisan accounting:whatsapp` | WhatsApp کی سیٹنگ دیکھیں (`status`)، آزمائشی پیغام (`test +92300…`)، ٹیمپلیٹ فہرست (`templates`) (باب 15) |
 | `php artisan accounting:features` | فیچرز کی فہرست / `enable` / `disable` / `reset` |
 | `php artisan accounting:chart-templates` | صنعتی چارٹ ٹیمپلیٹ لگانا |
 | `php artisan accounting:prune-exports` | پرانی ایکسپورٹ فائلیں صاف کرنا |

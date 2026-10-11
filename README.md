@@ -553,6 +553,110 @@ the invoice number FBR returns.
   invoices through their sandbox, and adjust the defaults, the response key or the gateway to what they require.
 - Permissions `fbr.view` and `fbr.submit`; audited (`FBR_INVOICE_ACCEPTED`, `FBR_INVOICE_FAILED`).
 
+## WhatsApp (Cloud API)
+
+Send a WhatsApp message from anywhere in your application with one call, and see on `/accounting/whatsapp` (and `/api/v1/accounting/whatsapp`)
+what was sent and how far each message got: **sent → delivered → read**, or **failed** with the reason in plain words. Everything you set is in `.env`.
+
+```php
+use Alimarchal\LaravelChartOfAccounts\Support\WhatsApp;
+
+// A school fee has been received: tell the parent (an approved template, which is how a business starts a conversation)
+WhatsApp::template('0300-1234567', 'fee_received', [
+    'student' => 'Ali Raza', 'amount' => 'Rs 5,000', 'receipt' => 'RV-2026-00012', 'date' => '10 Oct 2026',
+], related: $payment);
+
+WhatsApp::text('+92 300 1234567', 'Your receipt is ready.');   // free text: only within 24 hours of the person's last message
+WhatsApp::queueTemplate(...);                                   // the same, sent by a queue worker
+```
+
+`template()` and `text()` return the saved `WhatsAppMessage` (`status` `sent`: Meta accepted it) and throw an `AccountingException` with a
+message you can show when WhatsApp refuses (a wrong number, the 24-hour window, parameters that do not match the template). Numbers may be written
+as people write them (`+92 300 1234567`, `0300-1234567`, `0092 300 …`); they are turned into digits with the country code.
+
+![The WhatsApp screen](docs/guide/images/whatsapp-react.jpg)
+
+### The school-fee example, end to end
+
+1. Add the parent as a customer with a **phone number** (`/accounting/parties`), and the **fee template** to Meta (below).
+2. In `.env`: `ACCOUNTING_WHATSAPP_ENABLED=true` and `WHATSAPP_NOTIFY_RECEIPT=fee_received`.
+3. Record the fee as a **receipt** from that customer (`/accounting/party-payments`, or `POST /api/v1/accounting/party-payments`). The moment it is saved the
+   parent gets *"Dear parent, we received Rs 5,000 for Ali Raza. Receipt RCT-2026-00002 dated 10 Oct 2026. Thank you."* The template parameters are filled
+   from the receipt (`student`/`party`/`name` = the customer, `amount`, `receipt`, `date`, `reference`, `method`; the order is the one in
+   `accounting.whatsapp.templates.fee_received.parameters`).
+4. A problem with WhatsApp **never stops the receipt**: it is saved, and the message shows as *failed* on the WhatsApp screen with a **Retry** button.
+
+To send from your own code (for example a fee voucher in your school app), call `WhatsApp::template()` as shown above.
+
+### Set-up in `.env`
+
+| Key | What it is |
+|-----|------------|
+| `ACCOUNTING_WHATSAPP_ENABLED` | `true` switches the module on (default `false`) |
+| `ACCOUNTING_WHATSAPP_MODE` | `fake` (default, the sandbox: nothing leaves your server) or `live` (Meta's Graph API) |
+| `WHATSAPP_TOKEN` | Access token of a **system user** (a permanent token) with `whatsapp_business_messaging` |
+| `WHATSAPP_PHONE_NUMBER_ID` | The ID of the sending number (WhatsApp Manager → API Setup); not the phone number itself |
+| `WHATSAPP_BUSINESS_ACCOUNT_ID` | WhatsApp Business Account ID (optional: lists the approved templates) |
+| `WHATSAPP_VERIFY_TOKEN` | A word you choose; you type the same word into Meta's webhook settings |
+| `WHATSAPP_APP_SECRET` | Meta app → Settings → Basic; proves a webhook call really comes from Meta |
+| `WHATSAPP_API_VERSION` | Graph API version, default `v25.0` (a version lives about two years: check Meta's changelog) |
+| `WHATSAPP_DEFAULT_COUNTRY_CODE` | `92`: `0300 1234567` becomes `92 300 1234567` (empty = always require `+country code`) |
+| `WHATSAPP_DEFAULT_LANGUAGE` | Language code of your templates (`en`, `en_US`, `ur` …) |
+| `WHATSAPP_USE_QUEUE` / `WHATSAPP_QUEUE` | Send the automatic messages through the queue |
+| `WHATSAPP_NOTIFY_RECEIPT` | Template key sent to the customer when a receipt is recorded (empty = none) |
+| `WHATSAPP_TIMEOUT` / `WHATSAPP_RETRIES` / `WHATSAPP_BASE_URL` | Timeout (15 s), quick retries of a dropped connection or a 5xx answer (2), base URL (`https://` only) |
+
+Your templates are listed in `config/accounting.php` → `whatsapp.templates` (key, name as in WhatsApp Manager, language, and the **order of the parameters**
+`{{1}}`, `{{2}}` …; set `'format' => 'named'` for templates with named parameters). A template you did not list is sent under its own name with the parameters you pass.
+
+`php artisan accounting:whatsapp status` shows what is set and what is missing; `accounting:whatsapp test +923001234567` sends Meta's `hello_world`
+(`--template=fee_received --param=Ali --param=…`, or `--text="…"`); `accounting:whatsapp templates` lists the templates Meta has approved (live mode).
+
+### Try it first: the sandbox (`mode=fake`)
+
+With `ACCOUNTING_WHATSAPP_MODE=fake` nothing is sent and no Meta account is needed, but the rules of the real thing apply: a template is accepted,
+**free text to someone who has not written to you in the last 24 hours is refused (error 131047)**, and parameters are checked. On the WhatsApp screen use
+**Mark delivered / Mark read** (what Meta's webhook does later) and **Customer replies** (which opens the 24-hour window), or the API:
+`POST /whatsapp/messages/{id}/simulate {"status": "delivered|read|failed"}`, `POST /whatsapp/simulate-reply {"from": "0300…"}`. These answer 404 in live mode.
+
+### Going live, step by step
+
+![Going live](docs/images/10-whatsapp-setup.png)
+
+1. **Meta:** create a developer account and an app of type *Business*, add the **WhatsApp** product. Meta gives a free **test number** and the
+   `hello_world` template; a test number only sends to the recipients you add in *WhatsApp Manager → API Setup* (otherwise error 131030).
+2. **Token:** create a **system user** in Business settings, give it the app and `whatsapp_business_messaging`, generate a token that does not expire. Put it,
+   the *Phone number ID*, the *WhatsApp Business Account ID* and the app secret into `.env` and run `php artisan accounting:whatsapp status`.
+3. **Test:** `php artisan accounting:whatsapp test +92XXXXXXXXXX` (set `ACCOUNTING_WHATSAPP_MODE=live` first). The message should reach the phone.
+4. **Webhook:** in *WhatsApp → Configuration* enter the callback URL shown on the WhatsApp screen
+   (`https://your-domain/api/v1/accounting/whatsapp/webhook`, it must be public https) and your `WHATSAPP_VERIFY_TOKEN`, then subscribe to **messages**.
+   Without the webhook messages stay *sent* and never turn *delivered* or *read*.
+5. **Templates:** a business starts a conversation only with an **approved template** (WhatsApp Manager → Message templates, category *Utility* for
+   receipts; approval usually takes minutes to a day). Create `fee_received` with four body parameters in the order listed in the config, using the same name and language.
+6. **Go live:** a real business number needs a verified business and a payment method; then set `WHATSAPP_NOTIFY_RECEIPT=fee_received`.
+
+![The process](docs/images/09-whatsapp-flow.png)
+
+### What the integration does for you
+
+- **Request** (`POST {base}/{version}/{phone-number-id}/messages`, `Authorization: Bearer`, JSON `messaging_product: whatsapp`, `to`, `type: template|text`).
+  `https` only; the token is never sent over plain http.
+- **Parameters** are cleaned the way WhatsApp requires (no line breaks, tabs or runs of spaces, never empty, at most 1024 characters) and checked against the
+  template (count, names) *before* anything is sent.
+- **Errors** are kept on the record with Meta's code and a sentence you can act on (131047 the 24-hour window, 131026 not on WhatsApp, 131030 not on the test list,
+  132000/132001 template mismatch, 132018 bad parameter, 190 token expired, rate limits …). Only a dropped connection, HTTP 5xx and "too many requests" are retried (quickly in
+  the request, and with 30 s / 2 min / 10 min pauses on the queue); a 4xx never is.
+- **Webhook** (`GET` verification, `POST` events, no login): verified by the verify token and by the `X-Hub-Signature-256` HMAC of the raw body with your app secret
+  (in live mode a call without a valid signature is refused). A status never moves backwards, a reply from a customer is stored once however often Meta repeats it, and
+  events of another phone number of the same app are ignored.
+- **Scope:** every message belongs to the company that sent it and is listed with its filters (`search`, `status`, `direction`, `template`, `number`, `date_from`, `date_to`).
+- Permissions `whatsapp.view` and `whatsapp.send`; the feature switch `whatsapp`. To use another provider, bind your own
+  `Alimarchal\LaravelChartOfAccounts\Contracts\WhatsAppGateway`.
+- **Check before going live:** this was written from Meta's published WhatsApp Business Platform (Cloud API) documentation as understood when written (Meta's own pages could not
+  be read from the build environment, so details come from secondary summaries of them); the package has not been exercised against Meta's servers (no credentials were
+  available), only against the request and response shapes. Meta changes versions, fees and template rules: check the current documentation and changelog at
+  developers.facebook.com/docs/whatsapp and run the `test` command before relying on it.
+
 ## Payroll
 
 `/accounting/payroll` (and `/api/v1/accounting/payroll`) runs the monthly salaries:
@@ -640,7 +744,7 @@ back. A sub-feature (`payroll_loans`) is off whenever its parent (`payroll`) is 
 contributions, arrears, bonuses), and the schedulers of recurring entries and payroll do nothing while their module is off. The defaults come from
 `accounting.features.disabled` (`ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets"`); what is saved from the screen, API or command wins. Every
 change is in the audit trail (`FEATURE_ENABLED`, `FEATURE_DISABLED`). Keys: `parties`, `tax`, `banking`, `budgets`, `fixed_assets`, `inventory`,
-`recurring_entries`, `fx_revaluation`, `fbr`, `attachments`, `report_mapping`, `chart_templates`, `control_accounts`, `snapshots`, `audit_log`,
+`recurring_entries`, `fx_revaluation`, `fbr`, `whatsapp`, `attachments`, `report_mapping`, `chart_templates`, `control_accounts`, `snapshots`, `audit_log`,
 `payroll`, `payroll_grades`, `payroll_arrears`, `payroll_attendance`, `payroll_loans`, `payroll_contributions`, `payroll_bank_file`,
 `payroll_payslip_mail`, `payroll_adjustments`, `payroll_approval`, `payroll_settlements`, `payroll_reports`. Multi-company and maker-checker
 approvals of journal entries keep their own switches (`accounting.multi_company.enabled`, `accounting.approvals.enabled`).
@@ -1323,7 +1427,7 @@ plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->
-_313 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
+_320 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
 
 ### Journal entries
 
@@ -1758,6 +1862,18 @@ _313 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | GET | `/account-roles` | Which account plays which part for the modules (cash, bank, salary expense, receivables …) | `accounting.manage-settings` |
 | PUT | `/account-roles` | Give roles other accounts | `accounting.manage-settings` |
 
+### WhatsApp
+
+| Method | Endpoint | What it does | Permission |
+|--------|----------|--------------|------------|
+| GET | `/whatsapp/webhook` | Meta's webhook verification |  |
+| POST | `/whatsapp/webhook` | Meta's events: message statuses (sent, delivered, read, failed) and customer replies |  |
+| GET | `/whatsapp` | Messages, the set-up checks (what is set in .env and what is missing) and the configured templates | `whatsapp.view` |
+| POST | `/whatsapp/messages` | Send a message: an approved template with its parameters, or free text | `whatsapp.send` |
+| POST | `/whatsapp/messages/{message}/retry` | Send a failed message again | `whatsapp.send` |
+| POST | `/whatsapp/messages/{message}/simulate` | Sandbox only: move a message on as WhatsApp would | `whatsapp.send` |
+| POST | `/whatsapp/simulate-reply` | Sandbox only: a customer writes back (opens the 24-hour window for free text) | `whatsapp.send` |
+
 <!-- api-reference:end -->
 
 List endpoints support `?filter[field]=value` (or the short `?field=value`; see [Filtering and searching lists](#filtering-and-searching-lists)), `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
@@ -1978,6 +2094,8 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `payroll.void` | ✔ |  |  | ✔ |  |  |
 | `fbr.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `fbr.submit` | ✔ |  | ✔ |  |  |  |
+| `whatsapp.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
+| `whatsapp.send` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `bank-statements.import` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.match` | ✔ |  | ✔ |  |  |  |

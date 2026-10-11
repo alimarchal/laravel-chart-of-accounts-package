@@ -53,6 +53,8 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ReportMappingController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppWebhookController;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
@@ -75,6 +77,15 @@ $apiResourceRoutes = function (string $uri, string $controller, string $routeNam
         ->name("{$routeName}.destroy")
         ->middleware("can:{$permissionPrefix}.delete");
 };
+
+// The address Meta calls: no login (Meta has none), proven by the verify token and the X-Hub-Signature-256 signature instead.
+Route::middleware(['api', 'throttle:120,1'])
+    ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
+    ->name('api.accounting.')
+    ->group(function (): void {
+        Route::get('whatsapp/webhook', [WhatsAppWebhookController::class, 'verify'])->name('whatsapp.webhook.verify');
+        Route::post('whatsapp/webhook', [WhatsAppWebhookController::class, 'receive'])->name('whatsapp.webhook.receive');
+    });
 
 $apiMiddleware = config('accounting.api_middleware', ['api', 'auth:sanctum']);
 
@@ -171,6 +182,11 @@ Route::middleware($apiMiddleware)
         Route::delete('tax/returns/{taxReturn}', [TaxController::class, 'destroyReturn'])->name('tax.returns.destroy')->middleware('can:tax-returns.file');
         Route::get('fbr', [FbrController::class, 'index'])->name('fbr.index')->middleware('can:fbr.view');
         Route::post('fbr/documents/{document}/submit', [FbrController::class, 'submit'])->name('fbr.submit')->middleware('can:fbr.submit');
+        Route::get('whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp.index')->middleware('can:whatsapp.view');
+        Route::post('whatsapp/messages', [WhatsAppController::class, 'send'])->name('whatsapp.send')->middleware('can:whatsapp.send');
+        Route::post('whatsapp/messages/{message}/retry', [WhatsAppController::class, 'retry'])->name('whatsapp.retry')->middleware('can:whatsapp.send');
+        Route::post('whatsapp/messages/{message}/simulate', [WhatsAppController::class, 'simulate'])->name('whatsapp.simulate')->middleware('can:whatsapp.send');
+        Route::post('whatsapp/simulate-reply', [WhatsAppController::class, 'simulateReply'])->name('whatsapp.simulate-reply')->middleware('can:whatsapp.send');
         Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index')->middleware('can:payroll.view');
         Route::post('payroll/runs', [PayrollController::class, 'runStore'])->name('payroll.runs.store')->middleware('can:payroll.run');
         Route::get('payroll/runs/{run}', [PayrollController::class, 'runShow'])->name('payroll.runs.show')->middleware('can:payroll.view');

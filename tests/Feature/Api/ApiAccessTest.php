@@ -43,6 +43,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
+use Alimarchal\LaravelChartOfAccounts\Models\WhatsAppMessage;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Services\CompanyService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
@@ -63,7 +64,7 @@ beforeEach(function (): void {
 function apiRoutes(): array
 {
     return collect(RouteFacade::getRoutes()->getRoutes())
-        ->filter(fn (Route $route) => str_starts_with((string) $route->getName(), 'api.accounting.'))
+        ->filter(fn (Route $route) => str_starts_with((string) $route->getName(), 'api.accounting.') && ! str_starts_with((string) $route->getName(), 'api.accounting.whatsapp.webhook.'))   // Meta's callback has no login (WhatsAppTest)
         ->values()
         ->all();
 }
@@ -157,6 +158,7 @@ function concreteUri(Route $route, ?string &$modelResource = null): string
             'report-lines' => ReportLine::class,
             'account-balance-snapshots' => AccountBalanceSnapshot::class,
             'journal-entries' => JournalEntry::class,
+            'messages' => WhatsAppMessage::class,
         };
 
         $modelResource = $resource;
@@ -182,6 +184,7 @@ function createEveryResource(): void
     FixedAsset::query()->create(['code' => 'FA1', 'name' => 'Asset', 'acquisition_date' => now()->toDateString(), 'in_service_date' => now()->toDateString(), 'cost' => 100, 'useful_life_months' => 12, 'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => account('5114')->id]);
     InventoryItem::query()->create(['sku' => 'SKU1', 'name' => 'Item', 'inventory_account_id' => account('1151')->id, 'cogs_account_id' => account('5202')->id]);
     Warehouse::query()->create(['code' => 'W1', 'name' => 'Main']);
+    WhatsAppMessage::query()->create(['direction' => 'out', 'to_number' => '923001234567', 'type' => 'template', 'template' => 'hello_world', 'payload' => '{}', 'status' => 'failed', 'mode' => 'fake']);
     $employee = Employee::query()->create(['code' => 'E1', 'name' => 'Emp', 'join_date' => now()->toDateString(), 'base_salary' => 1]);
     PayComponent::query()->create(['code' => 'C1', 'name' => 'Comp', 'kind' => 'earning', 'account_id' => account('5102')->id]);
     $leaveType = LeaveType::query()->create(['code' => 'ANN', 'name' => 'Annual']);

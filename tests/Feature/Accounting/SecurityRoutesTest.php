@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route as RouteFacade;
  * Every route the package registers must say who may call it: a "can:" ability on top of authentication. A route added later
  * without one (a forgotten middleware) is the commonest way for a screen or an endpoint to end up open to every signed-in user.
  */
+const WEBHOOK_ROUTES = ['api.accounting.whatsapp.webhook.verify', 'api.accounting.whatsapp.webhook.receive'];
+
 function packageRoutes(): array
 {
     $names = ['accounting.', 'api.accounting.', 'settings.'];
@@ -14,6 +16,7 @@ function packageRoutes(): array
 
     // By name and by address, so a route that was given no name cannot slip through.
     return collect(RouteFacade::getRoutes()->getRoutes())
+        ->reject(fn (Route $route) => in_array($route->getName(), WEBHOOK_ROUTES, true))   // Meta's callback: no login, proven by the verify token and the signature (WhatsAppTest)
         ->filter(fn (Route $route) => collect($names)->contains(fn (string $prefix) => str_starts_with((string) $route->getName(), $prefix))
             || collect($uris)->contains(fn (string $prefix) => str_starts_with($route->uri().'/', $prefix) || $route->uri() === rtrim($prefix, '/')))
         ->values()

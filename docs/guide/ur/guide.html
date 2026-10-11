@@ -108,6 +108,11 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <td>فلٹر، چارٹ اور Account Roles</td>
 <td>ہر فہرست میں فلٹر/تلاش، ERPNext چارٹ، کھاتوں کے رول</td>
 </tr>
+<tr>
+<td><a href="#15-whatsapp">15</a></td>
+<td>WhatsApp</td>
+<td>ایک فنکشن کال سے پیغام، اسکول فیس کی مثال، سینڈ باکس، اصل نمبر پر لے جانا</td>
+</tr>
 </tbody>
 </table>
 <h2 id="_3">مزید وسائل</h2>
@@ -1216,6 +1221,10 @@ curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;i
 <td>کون سا کھاتہ کس کام (کیش، بینک، تنخواہ ...) کے لیے ہے: فہرست، <code>set</code>، <code>seed</code> (باب 14)</td>
 </tr>
 <tr>
+<td><code>php artisan accounting:whatsapp</code></td>
+<td>WhatsApp کی سیٹنگ دیکھیں (<code>status</code>)، آزمائشی پیغام (<code>test +92300…</code>)، ٹیمپلیٹ فہرست (<code>templates</code>) (باب 15)</td>
+</tr>
+<tr>
 <td><code>php artisan accounting:features</code></td>
 <td>فیچرز کی فہرست / <code>enable</code> / <code>disable</code> / <code>reset</code></td>
 </tr>
@@ -1474,5 +1483,145 @@ php artisan accounting:account-roles set cash 1110
 php artisan accounting:account-roles seed erpnext --overwrite
 </code></pre>
 <p>API: <code>GET /api/v1/accounting/account-roles</code> اور <code>PUT /api/v1/accounting/account-roles</code> (<code>{"roles": {"cash": [12]}}</code>)۔</p>
+<p><a href="#15-whatsapp">اگلا باب: WhatsApp →</a></p>
+</section>
+<section id="15-whatsapp">
+<h1 id="15-whatsapp">باب 15: WhatsApp — ایک فنکشن کال سے پیغام</h1>
+<p><a href="#14-filter-chart-roles">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
+<h2 id="151">15.1 یہ کیا کرتا ہے</h2>
+<p>سسٹم سے کسی کو بھی WhatsApp پیغام <strong>ایک سطر</strong> میں بھیجا جا سکتا ہے، اور سارے سیٹنگز <code>.env</code> میں ہیں۔ مثال: اسکول میں کسی بچے کی فیس جمع ہو تو والدین کو فوراً پیغام جائے۔ ہر پیغام کی حالت <strong>sent ← delivered ← read</strong> (یا <strong>failed</strong> وجہ کے ساتھ) <code>/accounting/whatsapp</code> پر نظر آتی ہے۔</p>
+<blockquote>
+<p><strong>ضروری نوٹ:</strong> Meta کی اپنی ڈاکیومنٹیشن اس بلڈ ماحول سے براہِ راست نہیں کھل سکی اور نہ ہی اصل API کنجی تھی، اس لیے ٹیسٹ <strong>سینڈ باکس (fake) موڈ</strong> میں ہوا ہے۔ اصل نمبر لگانے سے پہلے Meta کی تازہ ڈاکیومنٹیشن (developers.facebook.com/docs/whatsapp) دیکھ لیں اور <code>accounting:whatsapp test</code> چلا لیں۔</p>
+</blockquote>
+<p><img alt="WhatsApp اسکرین (React)" src="../images/whatsapp-react.jpg" /></p>
+<p>اسکرین پر: اوپر <strong>سیٹ اپ کی حالت</strong> (کون سی چیز <code>.env</code> میں لگی ہے، کون سی رہ گئی)، دائیں <strong>پیغام بھیجنے کا فارم</strong>، نیچے <strong>پیغامات کی فہرست</strong> (فلٹر کے ساتھ)۔ ناکام پیغام پر <strong>Retry</strong> کا بٹن ہے۔ Blade ورژن بھی یہی ہے:</p>
+<p><img alt="WhatsApp اسکرین (Blade)" src="../images/whatsapp-blade.jpg" /></p>
+<h2 id="152">15.2 ایک سطر میں پیغام (کوڈ سے)</h2>
+<pre><code class="language-php">use Alimarchal\LaravelChartOfAccounts\Support\WhatsApp;
+
+WhatsApp::template('0300-1234567', 'fee_received', [
+    'student' =&gt; 'Ali Raza', 'amount' =&gt; 'Rs 5,000', 'receipt' =&gt; 'RV-2026-00012', 'date' =&gt; '10 Oct 2026',
+]);
+
+WhatsApp::text('+92 300 1234567', 'آپ کی رسید تیار ہے۔');   // صرف جب اس شخص نے پچھلے 24 گھنٹوں میں آپ کو لکھا ہو
+</code></pre>
+<ul>
+<li>نمبر جیسے بھی لکھیں (<code>+92 300 1234567</code>، <code>0300-1234567</code>) سسٹم خود <code>923001234567</code> بنا لیتا ہے۔</li>
+<li>غلطی ہو (غلط نمبر، 24 گھنٹے کا اصول، پیرامیٹر کم) تو صاف جملے میں غلطی آتی ہے۔</li>
+<li>قطار (queue) سے بھیجنا: <code>WhatsApp::queueTemplate(...)</code>۔</li>
+</ul>
+<h2 id="153">15.3 اسکول فیس کی مثال، شروع سے آخر تک</h2>
+<ol>
+<li>والدین کو <strong>Customer</strong> بنائیں اور <strong>فون نمبر</strong> لکھیں۔</li>
+<li><code>.env</code> میں: <code>ACCOUNTING_WHATSAPP_ENABLED=true</code> اور <code>WHATSAPP_NOTIFY_RECEIPT=fee_received</code>۔</li>
+<li>فیس کو اس Customer کی <strong>Receipt</strong> کے طور پر درج کریں۔ محفوظ ہوتے ہی والدین کو پیغام جاتا ہے: <em>"محترم والدین، Ali Raza کی 5,000 فیس موصول ہوئی۔ رسید RCT-2026-00002، تاریخ 10 Oct 2026۔ شکریہ"</em> (الفاظ آپ کے منظور شدہ ٹیمپلیٹ کے ہوتے ہیں)۔</li>
+<li>WhatsApp میں کوئی بھی مسئلہ ہو تو <strong>رسید پھر بھی محفوظ</strong> ہوتی ہے؛ پیغام فہرست میں <em>failed</em> نظر آتا ہے اور <strong>Retry</strong> سے دوبارہ بھیج سکتے ہیں۔</li>
+</ol>
+<h2 id="154-env">15.4 <code>.env</code> کی چابیاں</h2>
+<table>
+<thead>
+<tr>
+<th>چابی</th>
+<th>مطلب</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ACCOUNTING_WHATSAPP_ENABLED</code></td>
+<td><code>true</code> = چالو</td>
+</tr>
+<tr>
+<td><code>ACCOUNTING_WHATSAPP_MODE</code></td>
+<td><code>fake</code> (آزمائشی، کچھ باہر نہیں جاتا) یا <code>live</code> (اصلی Meta)</td>
+</tr>
+<tr>
+<td><code>WHATSAPP_TOKEN</code></td>
+<td>System User کا مستقل Access Token (<code>whatsapp_business_messaging</code>)</td>
+</tr>
+<tr>
+<td><code>WHATSAPP_PHONE_NUMBER_ID</code></td>
+<td>بھیجنے والے نمبر کی ID (نمبر خود نہیں)</td>
+</tr>
+<tr>
+<td><code>WHATSAPP_BUSINESS_ACCOUNT_ID</code></td>
+<td>WhatsApp Business Account کی ID (ٹیمپلیٹ فہرست کے لیے)</td>
+</tr>
+<tr>
+<td><code>WHATSAPP_VERIFY_TOKEN</code></td>
+<td>آپ کا چنا ہوا کوئی لفظ، Meta کی webhook سیٹنگ میں وہی لکھیں</td>
+</tr>
+<tr>
+<td><code>WHATSAPP_APP_SECRET</code></td>
+<td>Meta ایپ ← Settings ← Basic؛ ثابت کرتا ہے کہ کال Meta ہی کی ہے</td>
+</tr>
+<tr>
+<td><code>WHATSAPP_API_VERSION</code></td>
+<td>Graph API ورژن (ابھی <code>v25.0</code>)</td>
+</tr>
+<tr>
+<td><code>WHATSAPP_DEFAULT_COUNTRY_CODE</code></td>
+<td><code>92</code>: <code>0300…</code> ← <code>92300…</code></td>
+</tr>
+<tr>
+<td><code>WHATSAPP_NOTIFY_RECEIPT</code></td>
+<td>رسید پر خود بخود جانے والے ٹیمپلیٹ کا نام</td>
+</tr>
+</tbody>
+</table>
+<p><code>php artisan accounting:whatsapp status</code> بتاتا ہے کیا لگا ہے اور کیا رہ گیا۔ ٹیمپلیٹ کے نام اور پیرامیٹروں کی ترتیب <code>config/accounting.php</code> ← <code>whatsapp.templates</code> میں ہے۔</p>
+<h2 id="155-meta">15.5 پہلے سینڈ باکس میں آزمائیں (Meta کے بغیر)</h2>
+<p><code>ACCOUNTING_WHATSAPP_MODE=fake</code> میں کچھ باہر نہیں جاتا، مگر اصل جیسے اصول لاگو ہوتے ہیں: ٹیمپلیٹ چل جاتا ہے، جبکہ <strong>عام متن اس نمبر کو نہیں جاتا جس نے 24 گھنٹوں میں آپ کو نہ لکھا ہو</strong> (غلطی 131047)۔ اسکرین پر <strong>Mark delivered / Mark read</strong> (جو بعد میں Meta خود بتاتا ہے) اور <strong>Customer replies</strong> (جواب آنے پر 24 گھنٹے کی کھڑکی کھل جاتی ہے) کے بٹن ہیں۔</p>
+<h2 id="156">15.6 اصلی نمبر پر کیسے لے جائیں</h2>
+<p><img alt="اصل نمبر لگانے کے مراحل" src="../images/10-whatsapp-setup.png" /></p>
+<ol>
+<li><strong>Meta:</strong> developer اکاؤنٹ ← نئی Business ایپ ← WhatsApp پروڈکٹ شامل کریں۔ مفت <strong>ٹیسٹ نمبر</strong> اور <code>hello_world</code> ٹیمپلیٹ ملتا ہے؛ ٹیسٹ نمبر صرف ان نمبروں کو بھیجتا ہے جو آپ WhatsApp Manager میں شامل کریں (ورنہ غلطی 131030)۔</li>
+<li><strong>Token:</strong> Business settings میں System User بنائیں، ایپ اور <code>whatsapp_business_messaging</code> دیں، کبھی ختم نہ ہونے والا token بنائیں، اور <code>.env</code> میں Token، Phone number ID، Business Account ID اور App Secret لکھیں۔</li>
+<li><strong>آزمائش:</strong> <code>ACCOUNTING_WHATSAPP_MODE=live</code> کر کے <code>php artisan accounting:whatsapp test +92XXXXXXXXXX</code>۔</li>
+<li><strong>Webhook:</strong> Meta ← WhatsApp ← Configuration میں اسکرین پر دکھایا گیا پتہ (<code>https://آپ-کا-ڈومین/api/v1/accounting/whatsapp/webhook</code>، عوامی https ہونا لازم) اور اپنا verify token لکھیں، پھر <strong>messages</strong> سبسکرائب کریں۔ webhook کے بغیر پیغام <em>sent</em> ہی رہتا ہے، <em>delivered/read</em> نہیں بنتا۔</li>
+<li><strong>ٹیمپلیٹ:</strong> نئی گفتگو صرف <strong>منظور شدہ ٹیمپلیٹ</strong> سے شروع ہو سکتی ہے (WhatsApp Manager ← Message templates، قسم <em>Utility</em>)۔ <code>fee_received</code> چار پیرامیٹروں کے ساتھ بنائیں: طالب علم، رقم، رسید، تاریخ۔ منظوری میں منٹ سے ایک دن لگ سکتا ہے۔</li>
+<li><strong>لائیو:</strong> حقیقی کاروباری نمبر کے لیے تصدیق شدہ business اور ادائیگی کا طریقہ درکار ہے؛ پھر <code>WHATSAPP_NOTIFY_RECEIPT=fee_received</code> لگا دیں۔</li>
+</ol>
+<h2 id="157-flowchart">15.7 پورا عمل (Flowchart)</h2>
+<p><img alt="WhatsApp پیغام کا مکمل عمل" src="../images/09-whatsapp-flow.png" /></p>
+<h2 id="158">15.8 عام غلطیاں</h2>
+<table>
+<thead>
+<tr>
+<th>غلطی</th>
+<th>مطلب اور حل</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>131047</td>
+<td>24 گھنٹے گزر گئے: عام متن نہیں چلے گا، منظور شدہ ٹیمپلیٹ بھیجیں</td>
+</tr>
+<tr>
+<td>131030</td>
+<td>نمبر ٹیسٹ فہرست میں نہیں: WhatsApp Manager میں شامل کریں</td>
+</tr>
+<tr>
+<td>131026</td>
+<td>نمبر WhatsApp پر نہیں، یا شخص نے نئی شرائط قبول نہیں کیں</td>
+</tr>
+<tr>
+<td>132000 / 132001</td>
+<td>پیرامیٹر کی تعداد غلط، یا ٹیمپلیٹ اس زبان میں موجود/منظور نہیں</td>
+</tr>
+<tr>
+<td>132018</td>
+<td>پیرامیٹر میں نئی سطر، tab یا بہت سی خالی جگہیں (سسٹم خود صاف کرتا ہے)</td>
+</tr>
+<tr>
+<td>190 / 102</td>
+<td>Token ختم یا غلط: نیا System User token بنائیں</td>
+</tr>
+<tr>
+<td>130429 / 131056 / 80007</td>
+<td>بھیجنے کی حد: سسٹم بعد میں خود دوبارہ کوشش کرتا ہے</td>
+</tr>
+</tbody>
+</table>
+<p>API: <code>GET /api/v1/accounting/whatsapp</code>، <code>POST /api/v1/accounting/whatsapp/messages</code> (<code>{"to": "0300-1234567", "template": "fee_received", "parameters": {...}}</code>)، <code>POST .../messages/{id}/retry</code>۔ اجازتیں: <code>whatsapp.view</code> (دیکھنا) اور <code>whatsapp.send</code> (بھیجنا)۔</p>
 </section>
 </main></body></html>

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.34.0
+  version: 2.35.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -13247,6 +13247,351 @@ paths:
                   description: Role → account ids. An empty list puts the role back to the chart's default.
       parameters:
       - $ref: '#/components/parameters/Company'
+  /whatsapp:
+    get:
+      tags:
+      - WhatsApp
+      summary: Messages, the set-up checks (what is set in .env and what is missing) and the configured templates
+      operationId: list_whatsapp_messages
+      description: 'Permission: `whatsapp.view`.'
+      responses:
+        '200':
+          description: data (messages, newest first, at most 200), whatsapp (enabled, mode, api_version, checks, ready, webhook_url)
+            and templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WhatsAppMessage'
+                  whatsapp:
+                    type: object
+                  templates:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+      - name: search
+        in: query
+        description: Text contained in number, text, template, error or message id (case-insensitive; `%` and `_` match themselves).
+          Also accepted as `filter[search]`.
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Also accepted as `filter[status]`.
+        schema:
+          type: string
+          enum:
+          - queued
+          - sent
+          - delivered
+          - read
+          - failed
+          - received
+      - name: direction
+        in: query
+        description: Also accepted as `filter[direction]`.
+        schema:
+          type: string
+          enum:
+          - out
+          - in
+      - name: template
+        in: query
+        description: Template name. Also accepted as `filter[template]`.
+        schema:
+          type: string
+      - name: number
+        in: query
+        description: Part of the phone number. Also accepted as `filter[number]`.
+        schema:
+          type: string
+      - name: date_from
+        in: query
+        description: Created on or after. Also accepted as `filter[date_from]`.
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        description: Created on or before. Also accepted as `filter[date_to]`.
+        schema:
+          type: string
+          format: date
+      - name: sort
+        in: query
+        description: 'Sort column; prefix with `-` for descending. One of: created_at, status, id.'
+        schema:
+          type: string
+  /whatsapp/messages:
+    post:
+      tags:
+      - WhatsApp
+      summary: 'Send a message: an approved template with its parameters, or free text'
+      operationId: send_whatsapp_message
+      description: 'Send either template or text. 422 carries WhatsApp''s refusal in words (wrong number, 24-hour window,
+        parameters that do not match the template). Needs accounting.whatsapp.enabled.
+
+
+        Permission: `whatsapp.send`.'
+      responses:
+        '201':
+          description: 'The saved message (status sent: accepted by WhatsApp; delivered and read follow on the webhook; queued
+            when queue is true)'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WhatsAppMessage'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - to
+              properties:
+                to:
+                  type: string
+                  example: 0300-1234567
+                template:
+                  type: string
+                  example: fee_received
+                parameters:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  example:
+                    student: Ali Raza
+                    amount: 5,000
+                    receipt: RV-1
+                    date: 10 Oct 2026
+                language:
+                  type: string
+                  example: en
+                text:
+                  type: string
+                  description: Free text; only within 24 hours of the person's last message (error 131047 otherwise).
+                queue:
+                  type: boolean
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /whatsapp/messages/{id}/retry:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - WhatsApp
+      summary: Send a failed message again
+      operationId: retry_whatsapp_message
+      description: 'Permission: `whatsapp.send`.'
+      responses:
+        '200':
+          description: The message after the new attempt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WhatsAppMessage'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /whatsapp/messages/{id}/simulate:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - WhatsApp
+      summary: 'Sandbox only: move a message on as WhatsApp would'
+      operationId: simulate_whatsapp_status
+      description: 'Only in mode fake (404 in live mode).
+
+
+        Permission: `whatsapp.send`.'
+      responses:
+        '200':
+          description: The message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WhatsAppMessage'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - delivered
+                  - read
+                  - failed
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /whatsapp/simulate-reply:
+    post:
+      tags:
+      - WhatsApp
+      summary: 'Sandbox only: a customer writes back (opens the 24-hour window for free text)'
+      operationId: simulate_whatsapp_reply
+      description: 'Only in mode fake (404 in live mode).
+
+
+        Permission: `whatsapp.send`.'
+      responses:
+        '201':
+          description: The stored reply
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WhatsAppMessage'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - from
+              properties:
+                from:
+                  type: string
+                text:
+                  type: string
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /whatsapp/webhook:
+    get:
+      tags:
+      - WhatsApp
+      summary: Meta's webhook verification
+      operationId: whatsapp_webhook_verify
+      security: []
+      description: Meta calls this once when you register the webhook, with hub.mode=subscribe, hub.verify_token (your WHATSAPP_VERIFY_TOKEN)
+        and hub.challenge; the challenge is returned as plain text, otherwise 403.
+      parameters:
+      - name: hub.mode
+        in: query
+        schema:
+          type: string
+      - name: hub.verify_token
+        in: query
+        schema:
+          type: string
+      - name: hub.challenge
+        in: query
+        schema:
+          type: string
+      - $ref: '#/components/parameters/Company'
+      responses:
+        '200':
+          description: The challenge
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Wrong verify token
+    post:
+      tags:
+      - WhatsApp
+      summary: 'Meta''s events: message statuses (sent, delivered, read, failed) and customer replies'
+      operationId: whatsapp_webhook_receive
+      security: []
+      description: No login. The call is proven by the X-Hub-Signature-256 header (sha256= and the HMAC-SHA256 of the raw
+        body made with WHATSAPP_APP_SECRET); a wrong or missing signature is 403 (always in live mode). Answered 200 EVENT_RECEIVED
+        so Meta does not repeat it; repeated events are harmless.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                object:
+                  type: string
+                  example: whatsapp_business_account
+                entry:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: EVENT_RECEIVED
+        '403':
+          description: Invalid signature
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /fbr:
     get:
       tags:
@@ -17572,6 +17917,76 @@ components:
                 type: string
               account_name:
                 type: string
+    WhatsAppMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        direction:
+          type: string
+          enum:
+          - out
+          - in
+        to:
+          type: string
+          example: '923001234567'
+          description: Digits with the country code (the sender of a received message).
+        type:
+          type: string
+          enum:
+          - template
+          - text
+        template:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+          - queued
+          - sent
+          - delivered
+          - read
+          - failed
+          - received
+        wamid:
+          type: string
+          nullable: true
+          description: WhatsApp's message id (accepted, not yet delivered).
+        error_code:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        attempts:
+          type: integer
+        mode:
+          type: string
+          enum:
+          - fake
+          - live
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        delivered_at:
+          type: string
+          format: date-time
+          nullable: true
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        failed_at:
+          type: string
+          format: date-time
+          nullable: true
     FbrSubmission:
       type: object
       properties:
