@@ -27,6 +27,14 @@ return [
         'default_company_code' => env('ACCOUNTING_DEFAULT_COMPANY', 'MAIN'),
     ],
 
+    // Several branches (head office, campuses, shops) inside one company. Off: no branch screens, no branch on entries and no filters.
+    // On: entries, invoices/bills and payments carry a branch; the web UI keeps the working branch in the session, the API takes it from the
+    // X-Branch header (id or code); reports and lists follow it; a user assigned to branches works in those only.
+    'branches' => [
+        'enabled' => (bool) env('ACCOUNTING_BRANCHES', false),
+        'header' => env('ACCOUNTING_BRANCH_HEADER', 'X-Branch'),
+    ],
+
     // REST API switches and limits.
     'api_enabled' => (bool) env('ACCOUNTING_API_ENABLED', true),
     'api_rate_limit' => (int) env('ACCOUNTING_API_RATE_LIMIT', 120), // requests per minute per user/IP; 0 disables
@@ -434,6 +442,10 @@ return [
         'cost-centers.create',
         'cost-centers.update',
         'cost-centers.delete',
+        'branches.view',
+        'branches.create',
+        'branches.update',
+        'branches.delete',
         'journal-entries.view',
         'journal-entries.create',
         'journal-entries.update',
@@ -507,6 +519,10 @@ return [
             'journal-entries.view',
             'reports.trial-balance.view',
             'companies.manage',
+            'branches.view',
+            'branches.create',
+            'branches.update',
+            'branches.delete',
             'voucher-types.view',
             'voucher-types.create',
             'voucher-types.update',
@@ -523,6 +539,7 @@ return [
             'currencies.view',
             'periods.view',
             'chart-of-accounts.view',
+            'branches.view',
             'cost-centers.view',
             'journal-entries.view',
             'attachments.view',
@@ -656,6 +673,7 @@ return [
             'currencies.view',
             'periods.view',
             'chart-of-accounts.view',
+            'branches.view',
             'cost-centers.view',
             'journal-entries.view',
             'attachments.view',

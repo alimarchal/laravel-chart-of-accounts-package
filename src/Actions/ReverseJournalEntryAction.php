@@ -44,6 +44,7 @@ class ReverseJournalEntryAction
             }
 
             $reversal = JournalEntry::query()->create([
+                'branch_id' => $entry->branch_id,                                  // a reversal belongs to the branch of the original
                 'voucher_type_id' => $entry->voucher_type_id,
                 'origin_module' => $entry->origin_module,
                 'source_document_type' => $entry->source_document_type,

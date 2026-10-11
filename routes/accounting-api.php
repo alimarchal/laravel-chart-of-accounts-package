@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingPeriodApiCo
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountTypeApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AttachmentApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\BankAccountApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\BranchApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ChartOfAccountApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CompanyApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ControlAccountApiController;
@@ -55,6 +56,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppWebhookController;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingBranchAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
@@ -94,6 +96,7 @@ if ((int) config('accounting.api_rate_limit', 120) > 0) {
 }
 
 $apiMiddleware[] = EnsureAccountingCompanyAccess::class;
+$apiMiddleware[] = EnsureAccountingBranchAccess::class;
 $apiMiddleware[] = EnsureAccountingFeatureEnabled::class;
 
 Route::middleware($apiMiddleware)
@@ -428,6 +431,15 @@ Route::middleware($apiMiddleware)
         Route::post('journal-entries/{journalEntry}/void', [JournalEntryApiController::class, 'void'])
             ->name('journal-entries.void')
             ->middleware('can:journal-entries.void');
+
+        // Branches of the company (accounting.branches.enabled): the working branch is the X-Branch header.
+        Route::get('branches', [BranchApiController::class, 'index'])->name('branches.index')->middleware('can:branches.view');
+        Route::post('branches', [BranchApiController::class, 'store'])->name('branches.store')->middleware('can:branches.create');
+        Route::get('branches/{branch}', [BranchApiController::class, 'show'])->name('branches.show')->middleware('can:branches.view');
+        Route::match(['put', 'patch'], 'branches/{branch}', [BranchApiController::class, 'update'])->name('branches.update')->middleware('can:branches.update');
+        Route::delete('branches/{branch}', [BranchApiController::class, 'destroy'])->name('branches.destroy')->middleware('can:branches.delete');
+        Route::post('branches/{branch}/users', [BranchApiController::class, 'grant'])->name('branches.users.grant')->middleware('can:branches.update');
+        Route::delete('branches/{branch}/users/{user}', [BranchApiController::class, 'revoke'])->name('branches.users.revoke')->middleware('can:branches.update')->whereNumber('user');
 
         // Companies (multi-company). Listing works for every user; managing needs companies.manage.
         Route::get('companies', [CompanyApiController::class, 'index'])

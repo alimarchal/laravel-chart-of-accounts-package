@@ -49,6 +49,7 @@ type JournalEntry = {
     id: number;
     voucher_number: string | null;
     voucher_type?: { code: string; name: string } | null;
+    branch?: { id: number; code: string; name: string } | null;
     entry_date: string;
     reference: string | null;
     source_document_type: string | null;
@@ -154,7 +155,7 @@ export default function JournalEntryShow({
                                 ? `${entry.voucher_type?.name ?? 'Voucher'} ${entry.voucher_number}`
                                 : `${entry.voucher_type?.name ?? 'Journal entry'} (draft #${entry.id})`
                         }
-                        description={`${entry.entry_date.slice(0, 10)} · ${entry.reference ?? 'No reference'} · ${entry.currency?.code ?? 'Base currency'}`}
+                        description={`${entry.entry_date.slice(0, 10)} · ${entry.reference ?? 'No reference'} · ${entry.currency?.code ?? 'Base currency'}${entry.branch ? ` · ${entry.branch.name}` : ''}`}
                     />
                     <div className="flex flex-wrap gap-2">
                         <Button asChild variant="outline">

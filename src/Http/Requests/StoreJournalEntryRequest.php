@@ -86,6 +86,7 @@ class StoreJournalEntryRequest extends FormRequest
     {
         return [
             'entry_date' => ['required', 'date'],
+            'branch_id' => ['nullable', 'integer'],
             'voucher_type_id' => ['nullable', 'integer', CompanyRule::exists('accounting_voucher_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'voucher_type_code' => ['nullable', 'string', 'max:20'],
             'currency_id' => ['nullable', Rule::exists('accounting_currencies', 'id')],

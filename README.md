@@ -21,6 +21,7 @@
 ## Highlights
 
 - **Double-entry journal** — draft → posted → reversed / void, balanced in **exact cents**
+- **Branches** — head office, campuses or shops inside one company: a working-branch switcher, entries, invoices and payments booked to a branch, branch-wise reports, and users limited to their branches
 - **Multi-company** — any number of companies in one database, each with its own chart, periods, journal and reports; per-user access, a company switcher, and consolidated group reports
 - **Tamper-proof ledger** — posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite), the chart-of-accounts rules (valid tree, locked used accounts, same-company lines, no posting to group accounts) are enforced there too, and every change is written to an audit log
 - **Maker-checker approvals** — entries above a threshold need a second person to approve; nobody approves their own work
@@ -192,6 +193,17 @@ The screens are rendered in your application's layout: Jetstream and Breeze `<x-
 (`layouts::app`), so the sidebar stays; anything else gets the package's own layout. Scripts and styles that the screens need (the filter button,
 the select boxes) are printed for you when your layout has no `@stack('scripts')`, `@stack('styles')` or `@stack('modals')`. To name your own layout
 component: `ACCOUNTING_BLADE_LAYOUT=layouts::app`.
+
+**What it looks like in each kit** (a real `accounting:install` on a fresh Laravel Livewire starter kit and on Jetstream; the screenshots are of the Blade screens):
+
+| Livewire starter kit (Flux) | Jetstream |
+|---|---|
+| ![Journal entries in the Livewire starter kit: the Accounting link in the sidebar, Flux-style buttons and cards](docs/images/kit-livewire-flux-journal-entries.jpg) | ![Journal entries in Jetstream: the Accounting link in the top navigation](docs/images/kit-jetstream-journal-entries.jpg) |
+| ![The filters of a list, opened with the filter button, in the Livewire starter kit](docs/images/kit-livewire-flux-filters-open.jpg) | ![The filters of a list, opened with the filter button, in Jetstream](docs/images/kit-jetstream-filters-open.jpg) |
+| ![Working in one branch: the Branch switcher above the page limits the list](docs/images/kit-livewire-flux-branch-karachi.jpg) | ![The branches screen in Jetstream](docs/images/kit-jetstream-branches.jpg) |
+
+Checked in both kits with a browser: every one of the 89 list, report and form pages opens without errors, every filter button opens its filters and
+applies them, the "add" forms open and refuse an empty submit, a journal entry can be created from the form, and the branch switcher limits lists and reports.
 
 <details>
 <summary><b>React: the menu link by hand and (older starter kits) the layout</b></summary>
@@ -1262,6 +1274,35 @@ $entry->attachments;   // morphMany
 
 ---
 
+## Branches
+
+One company, several places of business (head office, campuses, shops). Turn it on once; nothing changes while it is off.
+
+```env
+ACCOUNTING_BRANCHES=true           # off by default; `php artisan accounting:install` asks for it
+```
+
+Create the branches in **Accounting → Branches** (React and Blade, permission `branches.create`) or with `POST /api/v1/accounting/branches`.
+After upgrading an existing installation run `php artisan accounting:update` once, so the `branches.*` permissions are created.
+
+| Blade (Livewire kit): the Branch switcher limits the list | React: the branches screen |
+|---|---|
+| ![Karachi picked in the Branch switcher: the journal list shows only its entries](docs/images/kit-livewire-flux-branch-karachi.jpg) | ![The branches screen in React](docs/images/kit-react-branches.jpg) |
+
+| | |
+|---|---|
+| Booked to a branch | Journal entries, invoices/bills and payments. An invoice, bill or payment gives its branch to the entry it posts; a reversal keeps the branch of the original; the year-end close is for the whole company. Entries with no branch are "head office / not allocated". |
+| Working branch | Pick it in the **Branch** switcher (above every Blade page and on the React dashboard; add `<BranchSwitcher />` from `@/components/accounting/branch-switcher` to your sidebar), or send `X-Branch: LHR` (code or id) to the API. New records go to it; lists and reports follow it. "All branches" shows the whole company. |
+| Reports by branch | Trial balance, general ledger, account statement, income statement, balance sheet, cash flow, ageing, dashboard KPIs, financial statements. The branches add up to the company. |
+| Who sees what | A user given branches (Branches screen → *People who work in this branch*, or `POST /branches/{id}/users`) works in **those only**: other branches' entries, invoices and reports are not even found, and `X-Branch` of another branch is `403`. A user with no branch, and a super-admin, work in all branches. A user with several branches chooses the branch of each entry. |
+| Deleting | A branch with entries, invoices, bills or payments cannot be deleted: deactivate it. Inactive branches cannot be chosen. |
+| Permissions | `branches.view`, `branches.create`, `branches.update`, `branches.delete` (admin: all; accountant and auditor: view). |
+
+Period close and the year-end close are company-wide: run them as a user without branch restriction. Branches are a booking dimension of the
+company's one chart of accounts, periods and numbering; for separate books use [Multi-company](#multi-company) instead (the two can be combined: branches of each company).
+
+---
+
 ## Multi-company
 
 Run several companies (legal entities) from one installation. Each company has its **own chart of
@@ -1476,7 +1517,7 @@ plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->
-_320 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
+_327 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
 
 ### Journal entries
 
@@ -1719,6 +1760,18 @@ _320 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | POST | `/bank-statement-lines/{bankStatementLine}/unmatch` | Release a matched or booked transaction | `bank-statements.match` |
 | POST | `/bank-statement-lines/{bankStatementLine}/ignore` | Ignore (or restore) a transaction | `bank-statements.match` |
 | POST | `/bank-statement-lines/{bankStatementLine}/create-entry` | Book a transaction as a journal entry | `bank-statements.match` |
+
+### Branches
+
+| Method | Endpoint | What it does | Permission |
+|--------|----------|--------------|------------|
+| GET | `/branches` | Branches of the company | `branches.view` |
+| POST | `/branches` | Create a branch | `branches.create` |
+| GET | `/branches/{branch}` | Show a branch with the people who work in it | `branches.view` |
+| PUT | `/branches/{branch}` | Update a branch | `branches.update` |
+| DELETE | `/branches/{branch}` | Delete a branch | `branches.delete` |
+| POST | `/branches/{branch}/users` | Limit a user to this branch (add) | `branches.update` |
+| DELETE | `/branches/{branch}/users/{user}` | Remove a user from this branch | `branches.update` |
 
 ### Budgets
 

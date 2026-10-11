@@ -2,9 +2,36 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.38.0] - 2026-11-21
+
+Branches: one company, several places of business.
+
+### Added
+- **Branches** (`ACCOUNTING_BRANCHES=true`; off by default, nothing changes without it). A company can have a head office, campuses or shops. Journal entries,
+  invoices/bills and payments carry a branch; an invoice, bill or payment hands its branch to the entry it posts, a reversal keeps the branch of the original and
+  the year-end close is for the whole company.
+- **Working branch**: the web UI keeps it in the session (a switcher next to the company switcher, in React and Blade), the API takes it from the `X-Branch`
+  header (id or code). New entries are booked to it, and lists and reports follow it: trial balance, general ledger, account statement, income statement,
+  balance sheet, cash flow, ageing, dashboard KPIs and the financial statements. The branches of a company add up to the company.
+- **Access**: a user assigned to branches works in those only (lists, reports and records of other branches are not even found; a branch can be chosen only
+  among theirs); a user with no branch, and a super-admin, work in all of them. A user limited to several branches must say which one an entry belongs to.
+- **Screens** in React, Blade and the REST API (`/accounting/branches`, `/api/v1/accounting/branches`): create, edit, deactivate, delete (a used branch can only
+  be deactivated), head office, and who works in which branch. Permissions `branches.view|create|update|delete`.
+- The installer asks "Does the company have several branches?" and writes `ACCOUNTING_BRANCHES`.
+- The ledger view (`vw_accounting_general_ledger`) has a `branch_id` column.
+
 ## [2.37.0] - 2026-11-20
 
 Three kinds of screens (React, Blade for Jetstream / Breeze, Livewire for the Livewire starter kit), and the filters work in the Livewire kit.
+
+### Fixed (found by installing the package in a real Livewire starter kit and in Jetstream, and clicking through every page)
+- **The Blade screens were not shown in the Livewire starter kit's layout** when the application had not published `config/livewire.php`: the sidebar was missing
+  and the screens used the package's own page layout. The layout is now found without the config (`layouts::app` of Livewire 4, `components.layouts.app` of Livewire 3).
+- **Two list screens had filters that could not be opened** (chart of accounts, balance snapshots): their header has no filter button, so the filters stayed hidden.
+  A "Filters" button is added when the page has none.
+- **The journal entry form raised JavaScript errors** (`journalEntryForm is not defined`, `initJESelect2 is not defined`) under Livewire 3, and the account select boxes
+  re-fired their change event until the browser stopped it ("Maximum call stack size exceeded"). Fixed.
+- **Flux-style fields**: the Livewire starter kit has no `@tailwindcss/forms`, so inputs and selects had no border; they are given one, and table headers follow the kit's zinc look.
 
 ### Added
 - **Jetstream and Breeze in the installer.** `php artisan accounting:install` offers *Livewire starter kit (Flux)*, *Blade (Jetstream / Breeze)*, *React (Inertia)*

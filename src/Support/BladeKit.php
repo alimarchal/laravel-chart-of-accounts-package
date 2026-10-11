@@ -37,10 +37,14 @@ final class BladeKit
             return 'app-layout';
         }
 
-        $livewire = (string) config('livewire.component_layout', '');
+        // The layout Livewire renders its pages in: livewire.component_layout when the application has published the Livewire config, otherwise
+        // the default of Livewire 4 ("layouts::app") or of Livewire 3 ("components.layouts.app").
+        $configuredLivewire = (string) config('livewire.component_layout', '');
 
-        if ($livewire !== '' && view()->exists($livewire)) {
-            return str_starts_with($livewire, 'components.') ? substr($livewire, 11) : $livewire;
+        foreach (array_values(array_unique(array_filter([$configuredLivewire, 'layouts::app', 'components.layouts.app']))) as $livewire) {
+            if (View::exists($livewire)) {
+                return str_starts_with($livewire, 'components.') ? substr($livewire, 11) : $livewire;
+            }
         }
 
         return null;

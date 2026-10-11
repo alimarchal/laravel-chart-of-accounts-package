@@ -75,6 +75,9 @@
                 <div><x-accounting::label value="Currency" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="optional($journalEntry->currency)->code" disabled readonly /></div>
                 <div><x-accounting::label value="Status" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100 capitalize" :value="$journalEntry->status" disabled readonly /></div>
                 <div><x-accounting::label value="Reference" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="$journalEntry->reference" disabled readonly /></div>
+                @if (\Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::enabled())
+                <div><x-accounting::label value="Branch" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100" :value="$journalEntry->branch ? $journalEntry->branch->name.' ('.$journalEntry->branch->code.')' : 'Head office / not allocated'" disabled readonly /></div>
+                @endif
                 @if ($journalEntry->approval_status || $requiresApproval)
                 <div><x-accounting::label value="Approval" /><x-accounting::input type="text" class="mt-1 block w-full bg-gray-100 capitalize" :value="$journalEntry->approval_status ?? 'required — not submitted'" disabled readonly /></div>
                 @endif

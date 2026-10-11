@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Services\SimpleJournalService;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -36,7 +37,7 @@ class JournalEntryApiController extends Controller
         ]);
 
         return JournalEntryResource::collection(
-            QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType']), request())
+            QueryBuilder::for(CurrentBranch::constrain(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType', 'branch:id,code,name']), 'accounting_journal_entries.branch_id'), request())
                 ->allowedFilters(...[
                     AllowedFilter::partial('reference'),
                     AllowedFilter::partial('description'),
@@ -50,6 +51,7 @@ class JournalEntryApiController extends Controller
                     AllowedFilter::partial('source_document_number'),
                     AllowedFilter::exact('source_document_type'),
                     AllowedFilter::exact('voucher_type_id'),
+                    AllowedFilter::exact('branch_id'),
                 ])
                 ->allowedSorts(['entry_date', 'id', 'reference', 'voucher_number', 'created_at'])
                 ->when($request->input('include') === 'lines', fn ($query) => $query->with(['lines.account', 'lines.costCenter']))

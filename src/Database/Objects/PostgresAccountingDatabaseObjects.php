@@ -368,6 +368,10 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             array_push($columns, 'je.source_document_type', 'je.source_document_number', 'je.source_document_date');
         }
 
+        if (Schema::hasColumn('accounting_journal_entries', 'branch_id')) {
+            $columns[] = 'je.branch_id';
+        }
+
         return $columns === [] ? '' : ', '.implode(', ', $columns);
     }
 }

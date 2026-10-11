@@ -291,6 +291,8 @@ class AccountingInstallCommand extends Command
                 $this->remember('ACCOUNTING_DEFAULT_COMPANY', strtoupper(trim((string) $this->ask('Short code of your first company (letters and digits)', $current('ACCOUNTING_DEFAULT_COMPANY', (string) config('accounting.multi_company.default_company_code', 'MAIN'))))), 'accounting.multi_company.default_company_code');
             }
 
+            $this->remember('ACCOUNTING_BRANCHES', $this->confirm('Does the company have several branches (head office, campuses, shops) to book entries to?', (bool) config('accounting.branches.enabled', false)), 'accounting.branches.enabled');
+
             $approvals = $this->confirm('Should entries be approved by a second person (maker-checker)?', (bool) config('accounting.approvals.enabled', false));
             $this->remember('ACCOUNTING_APPROVALS_ENABLED', $approvals, 'accounting.approvals.enabled');
 

@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -70,6 +71,10 @@ class AccountBalancesBladeController extends Controller
             ->leftJoin('accounting_journal_entries as je', function ($join) {
                 $join->on('jel.journal_entry_id', '=', 'je.id')
                     ->where('je.status', '=', 'posted');
+
+                if (($branches = CurrentBranch::reportIds()) !== null) {
+                    $join->whereIn('je.branch_id', $branches);
+                }
             })
             ->groupBy(['a.id', 'a.account_code', 'a.account_name', 'a.account_type_id', 'at.name', 'at.report_group', 'a.normal_balance', 'a.is_active', 'a.is_group']);
 

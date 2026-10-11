@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\JournalEntryNotEditableExceptio
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 class JournalEntryService
 {
     /**
-     * @param  array{voucher_type_id?: int|null, origin_module?: string|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
+     * @param  array{branch_id?: int|string|null, voucher_type_id?: int|null, origin_module?: string|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
      */
     public function create(array $data): JournalEntry
     {
@@ -28,6 +29,7 @@ class JournalEntryService
                 ?? Currency::query()->where('is_base', true)->value('id');
 
             $journalEntry = JournalEntry::query()->create([
+                'branch_id' => CurrentBranch::resolve(array_key_exists('branch_id', $data) ? $data['branch_id'] : CurrentBranch::defaultId()),
                 'voucher_type_id' => $data['voucher_type_id'] ?? null,
                 'origin_module' => $data['origin_module'] ?? null,
                 'entry_date' => $data['entry_date'],
@@ -66,7 +68,7 @@ class JournalEntryService
     }
 
     /**
-     * @param  array{voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
+     * @param  array{branch_id?: int|string|null, voucher_type_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool}  $data
      */
     public function updateDraft(JournalEntry $journalEntry, array $data): JournalEntry
     {
@@ -91,6 +93,7 @@ class JournalEntryService
             app(JournalApprovalService::class)->resetForEdit($journalEntry);
 
             $journalEntry->update([
+                'branch_id' => array_key_exists('branch_id', $data) ? CurrentBranch::resolve($data['branch_id']) : $journalEntry->branch_id,
                 'voucher_type_id' => array_key_exists('voucher_type_id', $data) ? $data['voucher_type_id'] : $journalEntry->voucher_type_id,
                 'entry_date' => $data['entry_date'],
                 'currency_id' => $currencyId,

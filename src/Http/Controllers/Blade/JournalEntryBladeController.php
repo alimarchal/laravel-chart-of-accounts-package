@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -20,7 +21,7 @@ class JournalEntryBladeController extends Controller
 {
     public function index(): View
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name'])->withCount('lines'), request())
+        $entries = QueryBuilder::for(CurrentBranch::constrain(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name', 'branch:id,code,name'])->withCount('lines'), 'accounting_journal_entries.branch_id'), request())
             ->allowedFilters(
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('voucher_number'),
@@ -33,6 +34,7 @@ class JournalEntryBladeController extends Controller
                 AllowedFilter::exact('approval_status'),
                 AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
                 AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
+                AllowedFilter::exact('branch_id'),
             )
             ->latest('entry_date')
             ->paginate(25)
@@ -42,6 +44,7 @@ class JournalEntryBladeController extends Controller
             'journalEntries' => $entries,
             'filters' => request()->input('filter', []),
             'currencies' => Currency::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
+            'branches' => CurrentBranch::options(),
         ]);
     }
 
@@ -56,7 +59,7 @@ class JournalEntryBladeController extends Controller
 
     public function show(JournalEntry $journalEntry): View
     {
-        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType']);
+        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType', 'branch:id,code,name']);
 
         return view('accounting::journal-entries.show', [
             'journalEntry' => $journalEntry,

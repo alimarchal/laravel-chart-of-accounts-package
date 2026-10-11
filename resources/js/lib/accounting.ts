@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { useAccountingI18n } from '@/lib/i18n';
 
 export type CompanySummary = { id: number; code: string; name: string };
+export type BranchSummary = { id: number; code: string; name: string };
 
 /**
  * Data shared with every accounting page by the package's ShareAccountingInertiaData middleware
@@ -13,6 +14,12 @@ export type AccountingShared = {
         enabled: boolean;
         current: CompanySummary | null;
         list: CompanySummary[];
+    };
+    branch: {
+        enabled: boolean;
+        current: BranchSummary | null;
+        list: BranchSummary[];
+        restricted: boolean;
     };
     flash: { success?: string | null; error?: string | null };
     approvals: { enabled: boolean; threshold: string };
@@ -41,6 +48,12 @@ export function useAccounting(): AccountingShared {
         approvals: props.accounting?.approvals ?? {
             enabled: false,
             threshold: '0',
+        },
+        branch: props.accounting?.branch ?? {
+            enabled: false,
+            current: null,
+            list: [],
+            restricted: false,
         },
         company: props.accounting?.company ?? {
             enabled: false,

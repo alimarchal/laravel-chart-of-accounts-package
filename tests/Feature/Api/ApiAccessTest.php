@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Attachment;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
+use Alimarchal\LaravelChartOfAccounts\Models\Branch;
 use Alimarchal\LaravelChartOfAccounts\Models\Budget;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
@@ -112,6 +113,7 @@ function concreteUri(Route $route, ?string &$modelResource = null): string
 
         $model = match ($resource) {
             'companies' => Company::class,
+            'branches' => Branch::class,
             'account-types' => AccountType::class,
             'currencies' => Currency::class,
             'periods' => AccountingPeriod::class,
@@ -184,6 +186,7 @@ function createEveryResource(): void
     FixedAsset::query()->create(['code' => 'FA1', 'name' => 'Asset', 'acquisition_date' => now()->toDateString(), 'in_service_date' => now()->toDateString(), 'cost' => 100, 'useful_life_months' => 12, 'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => account('5114')->id]);
     InventoryItem::query()->create(['sku' => 'SKU1', 'name' => 'Item', 'inventory_account_id' => account('1151')->id, 'cogs_account_id' => account('5202')->id]);
     Warehouse::query()->create(['code' => 'W1', 'name' => 'Main']);
+    Branch::query()->create(['code' => 'B1', 'name' => 'Branch']);
     WhatsAppMessage::query()->create(['direction' => 'out', 'to_number' => '923001234567', 'type' => 'template', 'template' => 'hello_world', 'payload' => '{}', 'status' => 'failed', 'mode' => 'fake']);
     $employee = Employee::query()->create(['code' => 'E1', 'name' => 'Emp', 'join_date' => now()->toDateString(), 'base_salary' => 1]);
     PayComponent::query()->create(['code' => 'C1', 'name' => 'Comp', 'kind' => 'earning', 'account_id' => account('5102')->id]);

@@ -5,6 +5,7 @@ import {
     Building2,
     CalendarDays,
     FileText,
+    GitBranch,
     Hash,
     KeyRound,
     Landmark,
@@ -16,6 +17,7 @@ import {
     Users,
     WalletCards,
 } from 'lucide-react';
+import { BranchSwitcher } from '@/components/accounting/branch-switcher';
 import { CompanySwitcher } from '@/components/accounting/company-switcher';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -28,7 +30,7 @@ type Props = {
 };
 
 export default function AccountingDashboard({ summary }: Props) {
-    const { company, permissions, flash, disabledPaths } = useAccounting();
+    const { branch, company, permissions, flash, disabledPaths } = useAccounting();
     const allSections = [
         {
             title: 'Chart of Accounts',
@@ -248,6 +250,9 @@ export default function AccountingDashboard({ summary }: Props) {
                   { title: 'Account roles', href: '/accounting/account-roles', icon: KeyRound },
               ]
             : []),
+        ...(branch.enabled && permissions['branches.view']
+            ? [{ title: 'Branches', href: '/accounting/branches', icon: GitBranch }]
+            : []),
         ...(company.enabled && permissions['companies.manage']
             ? [
                   {
@@ -269,7 +274,10 @@ export default function AccountingDashboard({ summary }: Props) {
                         title="Accounting"
                         description="General ledger, chart of accounts, periods, and financial reports."
                     />
-                    <CompanySwitcher />
+                    <div className="flex flex-wrap items-center gap-3">
+                        <CompanySwitcher />
+                        <BranchSwitcher />
+                    </div>
                 </div>
                 {flash.success ? (
                     <Alert className="border-green-500/30 bg-green-500/5">

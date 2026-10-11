@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
@@ -27,6 +28,7 @@ class BalanceSheetReport
             ->join('accounting_journal_entry_lines as line', 'line.chart_of_account_id', '=', 'coa.id')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
             ->whereIn('entry.company_id', CurrentCompany::ids())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))
             ->where('type.report_group', 'BalanceSheet')
             ->where('entry.status', 'posted')
             ->whereDate('entry.entry_date', '<=', $asOf)
@@ -104,6 +106,7 @@ class BalanceSheetReport
         $row = DB::table('accounting_journal_entry_lines as line')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
             ->whereIn('entry.company_id', CurrentCompany::ids())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))
             ->join('accounting_chart_of_accounts as coa', 'coa.id', '=', 'line.chart_of_account_id')
             ->join('accounting_account_types as type', 'type.id', '=', 'coa.account_type_id')
             ->where('type.report_group', 'IncomeStatement')

@@ -31,6 +31,9 @@
         '.bg-blue-950, .bg-indigo-600, .bg-indigo-700' => 'background-color:#27272a;border-color:#27272a;color:#fff',
         '.bg-blue-950:hover, .hover\:bg-green-950:hover, .hover\:bg-indigo-700:hover, .hover\:bg-indigo-800:hover' => 'background-color:#3f3f46',
         'thead th' => 'font-size:.75rem;letter-spacing:.04em',
+        'tr.bg-green-800, tr.bg-green-700, tr.bg-gray-800' => 'background-color:#f4f4f5;color:#52525b',
+        // The Flux kit has no @tailwindcss/forms: give the plain fields a border, as Flux's own inputs have.
+        'input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not([type=hidden]), select, textarea' => 'border:1px solid #d4d4d8;border-radius:.5rem;padding:.4rem .75rem;background-color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04)',
         'input:focus, select:focus, textarea:focus' => 'outline:2px solid #71717a;outline-offset:1px;border-color:#71717a;box-shadow:none',
     ];
     $fluxDark = [
@@ -38,6 +41,7 @@
         '.bg-blue-950, .bg-indigo-600, .bg-indigo-700' => 'background-color:#fff;border-color:#fff;color:#27272a',
         '.bg-blue-950:hover, .hover\:bg-green-950:hover, .hover\:bg-indigo-700:hover, .hover\:bg-indigo-800:hover' => 'background-color:#e4e4e7',
         '.bg-blue-950 svg, .bg-indigo-600 svg' => 'color:#27272a',
+        'tr.bg-green-800, tr.bg-green-700, tr.bg-gray-800' => 'background-color:#27272a;color:#a1a1aa',
     ];
     $css = function (array $rules, string $scope, string $prefix = '') {
         $out = '';

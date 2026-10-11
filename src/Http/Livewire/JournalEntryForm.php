@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -21,6 +22,8 @@ class JournalEntryForm extends Component
     public ?int $entryId = null;
 
     public ?int $voucher_type_id = null;
+
+    public ?int $branch_id = null;
 
     public string $entry_date = '';
 
@@ -48,6 +51,7 @@ class JournalEntryForm extends Component
         if ($entry && $entry->exists) {
             $this->entryId = $entry->id;
             $this->voucher_type_id = $entry->voucher_type_id;
+            $this->branch_id = $entry->branch_id;
             $this->entry_date = $entry->entry_date->format('Y-m-d');
             $this->accounting_period_id = $entry->accounting_period_id;
             $this->currency_id = $entry->currency_id;
@@ -66,6 +70,7 @@ class JournalEntryForm extends Component
             ])->toArray();
         } else {
             $this->entry_date = now()->format('Y-m-d');
+            $this->branch_id = CurrentBranch::defaultId();
             $this->voucher_type_id = VoucherType::query()->where('code', VoucherType::DEFAULT_CODE)->value('id');
             $this->addLine();
             $this->addLine();
@@ -130,6 +135,7 @@ class JournalEntryForm extends Component
         }
 
         $data = [
+            ...(CurrentBranch::enabled() ? ['branch_id' => $this->branch_id ?: null] : []),
             'voucher_type_id' => $this->voucher_type_id,
             'entry_date' => $this->entry_date,
             'accounting_period_id' => $this->accounting_period_id,
@@ -163,6 +169,7 @@ class JournalEntryForm extends Component
             'accounts' => ChartOfAccount::where('is_active', true)->where('is_group', false)->orderBy('account_code')->get(),
             'costCenters' => CostCenter::where('is_active', true)->orderBy('name')->get(),
             'documentTypes' => SourceDocuments::types(),
+            'branches' => CurrentBranch::options(),
             'voucherTypes' => VoucherType::query()->where('is_active', true)->orderByDesc('is_system')->orderBy('code')->get(['id', 'code', 'name']),
         ]);
     }

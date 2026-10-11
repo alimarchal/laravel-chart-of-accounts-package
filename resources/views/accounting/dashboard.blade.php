@@ -246,6 +246,14 @@
                             <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></x-slot>
                         </x-accounting::settings-row>
                         @endcan
+                        @if(\Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::enabled())
+                        @can('branches.view')
+                        <div class="ml-[58px] h-px bg-gray-100"></div>
+                        <x-accounting::settings-row href="{{ route('accounting.branches.index') }}" label="Branches" description="Head office, campuses and shops of the company" icon-bg="bg-emerald-600">
+                            <x-slot name="icon"><svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3v12m0 0a3 3 0 103 3 3 3 0 00-3-3zm12-6a3 3 0 10-3-3 3 3 0 003 3zm0 0a9 9 0 01-9 9"/></svg></x-slot>
+                        </x-accounting::settings-row>
+                        @endcan
+                        @endif
                         @can('tax-codes.view')
                         <div class="ml-[58px] h-px bg-gray-100"></div>
                         <x-accounting::settings-row href="{{ route('accounting.tax-codes.index') }}" label="Tax Codes" description="Tax categories &amp; codes" :count="$summary['taxCodes']" icon-bg="bg-red-500">

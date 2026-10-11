@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -77,7 +78,7 @@ class IncomeStatementBladeController extends Controller
                 SELECT jel.chart_of_account_id, jel.base_debit AS debit, jel.base_credit AS credit
                 FROM accounting_journal_entry_lines jel
                 JOIN accounting_journal_entries je ON je.id = jel.journal_entry_id
-                WHERE je.status = 'posted'
+                WHERE je.status = 'posted'".CurrentBranch::sql('je.branch_id')."
                 AND je.is_closing_entry = false
                 AND je.entry_date >= '{$startDate}'
                 AND je.entry_date <= '{$endDate}'

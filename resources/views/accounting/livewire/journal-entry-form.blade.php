@@ -1,4 +1,4 @@
-<div x-data="journalEntryForm()" x-init="init()">
+<div>
     <x-accounting::validation-errors class="mb-4" />
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -12,6 +12,18 @@
             </select>
             <p class="mt-1 text-xs text-gray-500">The voucher number is issued when the entry is posted.</p>
         </div>
+        @if(count($branches) > 0)
+        <div>
+            <x-accounting::label for="branch_id" value="Branch" />
+            <select id="branch_id" wire:model="branch_id"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                <option value="">@if(\Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::restricted()) Choose a branch @else Head office / not allocated @endif</option>
+                @foreach ($branches as $branch)
+                <option value="{{ $branch['id'] }}">{{ $branch['code'] }} - {{ $branch['name'] }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
         <div>
             <x-accounting::label for="entry_date" value="Entry Date" />
             <x-accounting::input id="entry_date" type="date" class="mt-1 block w-full" wire:model="entry_date" required />
@@ -189,16 +201,19 @@
     </div>
 </div>
 
+{{-- The script body starts with "const": Livewire 3 evaluates a @script body like an Alpine expression, where a bare "function name() {}" would not stay defined. --}}
 @script
 <script>
-    function initJESelect2() {
+    const initJESelect2 = () => {
         if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') return;
 
         $('.je-account-select').each(function () {
             var $el = $(this);
             if ($el.hasClass('select2-hidden-accessible')) $el.select2('destroy');
             $el.select2({ width: '100%', placeholder: '— Select Account —', allowClear: true });
-            $el.off('change.je').on('change.je', function () {
+            // Select2 only triggers jQuery events: tell Livewire with one native change event. Listening to "change" itself would loop forever,
+            // because jQuery also catches the native event that is dispatched here.
+            $el.off('select2:select.je select2:clear.je').on('select2:select.je select2:clear.je', function () {
                 this.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
@@ -207,11 +222,13 @@
             var $el = $(this);
             if ($el.hasClass('select2-hidden-accessible')) $el.select2('destroy');
             $el.select2({ width: '100%', placeholder: 'None', allowClear: true });
-            $el.off('change.je').on('change.je', function () {
+            // Select2 only triggers jQuery events: tell Livewire with one native change event. Listening to "change" itself would loop forever,
+            // because jQuery also catches the native event that is dispatched here.
+            $el.off('select2:select.je select2:clear.je').on('select2:select.je select2:clear.je', function () {
                 this.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
-    }
+    };
 
     document.addEventListener('livewire:updated', initJESelect2);
     initJESelect2();

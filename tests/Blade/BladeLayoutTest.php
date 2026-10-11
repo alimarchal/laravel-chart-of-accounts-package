@@ -111,3 +111,13 @@ it('themes the screens for the kit it runs in (accounting.blade_kit)', function 
     'jetstream' => ['jetstream', 'prefers-color-scheme: dark'],
     'breeze' => ['breeze', '.dark .acc-kit '],
 ])->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
+
+it('finds the Livewire layout without the Livewire config being published (the default of Livewire 3)', function (): void {
+    file_put_contents($this->host.'/components/layouts/app.blade.php', '<html><body class="host-livewire-default">{{ $slot }}</body></html>');
+    config(['livewire.component_layout' => null]);
+    BladeKit::flush();
+
+    $html = $this->get('/accounting/chart-of-accounts')->assertOk()->getContent();
+
+    expect($html)->toContain('host-livewire-default')->and($html)->toContain('Cash In Hand');
+})->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');

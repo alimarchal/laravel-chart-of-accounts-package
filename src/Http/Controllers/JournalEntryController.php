@@ -14,6 +14,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class JournalEntryController extends Controller
 {
     public function index(): Response
     {
-        $entries = QueryBuilder::for(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name']), request())
+        $entries = QueryBuilder::for(CurrentBranch::constrain(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name', 'branch:id,code,name']), 'accounting_journal_entries.branch_id'), request())
             ->allowedFilters(...[
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('voucher_number'),
@@ -41,6 +42,7 @@ class JournalEntryController extends Controller
                 AllowedFilter::callback('entry_date_from', fn ($query, $date) => $query->whereDate('entry_date', '>=', $date)),
                 AllowedFilter::callback('entry_date_to', fn ($query, $date) => $query->whereDate('entry_date', '<=', $date)),
                 AllowedFilter::exact('accounting_period_id'),
+                AllowedFilter::exact('branch_id'),
             ])
             ->latest('entry_date')
             ->paginate(25)
@@ -55,6 +57,7 @@ class JournalEntryController extends Controller
                 ->get(['id', 'code', 'name']),
             'voucherTypes' => VoucherType::query()->orderBy('code')->get(['id', 'code', 'name']),
             'documentTypes' => SourceDocuments::types(),
+            'branches' => CurrentBranch::options(),
         ]);
     }
 
@@ -85,6 +88,8 @@ class JournalEntryController extends Controller
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'documentTypes' => SourceDocuments::types(),
+            'branches' => CurrentBranch::options(),
+            'defaultBranchId' => CurrentBranch::defaultId(),
         ]);
     }
 
@@ -120,12 +125,14 @@ class JournalEntryController extends Controller
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'documentTypes' => SourceDocuments::types(),
+            'branches' => CurrentBranch::options(),
+            'defaultBranchId' => CurrentBranch::defaultId(),
         ]);
     }
 
     public function show(JournalEntry $journalEntry): Response
     {
-        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType']);
+        $journalEntry->load(['lines.account', 'lines.costCenter', 'currency', 'accountingPeriod', 'voucherType', 'branch:id,code,name']);
 
         return Inertia::render('accounting/journal-entries/show', [
             'entry' => $journalEntry,

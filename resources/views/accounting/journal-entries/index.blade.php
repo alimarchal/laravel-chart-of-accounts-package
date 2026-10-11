@@ -15,6 +15,14 @@
                     <option value="void" {{ request('filter.status') === 'void' ? 'selected' : '' }}>Void</option>
                 </select>
             </div>
+            @if(!empty($branches))
+            <div><x-accounting::label for="filter_branch_id" value="Branch" />
+                <select id="filter_branch_id" name="filter[branch_id]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    @foreach($branches as $branch)<option value="{{ $branch['id'] }}" {{ (string) request('filter.branch_id') === (string) $branch['id'] ? 'selected' : '' }}>{{ $branch['code'] }} - {{ $branch['name'] }}</option>@endforeach
+                </select>
+            </div>
+            @endif
             <div><x-accounting::label for="filter_approval_status" value="Approval" />
                 <select id="filter_approval_status" name="filter[approval_status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>

@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ReportLine;
 use Alimarchal\LaravelChartOfAccounts\Reports\BankBookReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\CashBookReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\IncomeStatementReport;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Carbon;
@@ -356,6 +357,7 @@ class FinancialStatementService
         return DB::table('accounting_journal_entry_lines as line')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
             ->whereIn('entry.company_id', CurrentCompany::ids())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))
             ->where('entry.status', 'posted')
             ->when($excludeClosing, fn ($query) => $query->where('entry.is_closing_entry', false))
             ->when($from, fn ($query, string $date) => $query->whereDate('entry.entry_date', '>=', $date))

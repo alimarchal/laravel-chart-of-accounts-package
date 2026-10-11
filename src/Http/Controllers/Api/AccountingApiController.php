@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Services\AccountingHealthCheckService;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingPeriodService;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
 use Alimarchal\LaravelChartOfAccounts\Services\PeriodCloseChecklist;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Http\JsonResponse;
@@ -42,6 +43,7 @@ class AccountingApiController extends Controller
         $row = DB::table('accounting_journal_entry_lines as line')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
             ->whereIn('entry.company_id', [CurrentCompany::currentId()])
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))
             ->whereIn('line.chart_of_account_id', $ids)
             ->where('entry.status', 'posted')
             ->whereDate('entry.entry_date', '<=', $asOf)

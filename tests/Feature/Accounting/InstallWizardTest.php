@@ -245,6 +245,7 @@ it('asks the setup questions and applies the answers', function (): void {
         ->expectsChoice('Which chart of accounts should the company start with?', 'School chart', ['ERPNext standard chart (recommended)', 'General business chart', 'School chart'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'yes')
         ->expectsQuestion('Short code of your first company (letters and digits)', 'school')
+        ->expectsConfirmation('Does the company have several branches (head office, campuses, shops) to book entries to?', 'yes')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'yes')
         ->expectsQuestion('Entries from which amount (in the base currency) need approval? (0 = every entry)', '100000')
         ->expectsConfirmation('May a user approve an entry that he or she made themselves? (not recommended)', 'no')
@@ -264,7 +265,7 @@ it('asks the setup questions and applies the answers', function (): void {
     $env = new EnvFile($this->project.'/.env');
 
     expect($env->get('ACCOUNTING_UI_DRIVER'))->toBe('inertia')->and($env->get('ACCOUNTING_BASE_CURRENCY'))->toBe('PKR')
-        ->and($env->get('ACCOUNTING_CHART_PRESET'))->toBe('school')->and($env->get('ACCOUNTING_MULTI_COMPANY'))->toBe('true')
+        ->and($env->get('ACCOUNTING_CHART_PRESET'))->toBe('school')->and($env->get('ACCOUNTING_MULTI_COMPANY'))->toBe('true')->and($env->get('ACCOUNTING_BRANCHES'))->toBe('true')
         ->and($env->get('ACCOUNTING_DEFAULT_COMPANY'))->toBe('SCHOOL')
         ->and($env->get('ACCOUNTING_APPROVALS_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_APPROVAL_THRESHOLD'))->toBe('100000')
         ->and($env->get('ACCOUNTING_ALLOW_SELF_APPROVAL'))->toBe('false')
@@ -279,6 +280,7 @@ it('asks for the WhatsApp credentials only in live mode, and the FBR and webhook
 
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting', '--admin-email' => 'nobody'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
+        ->expectsConfirmation('Does the company have several branches (head office, campuses, shops) to book entries to?', 'no')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no');
     $exit = declineGroups($command, [
         'whatsapp' => fn ($c) => $c
@@ -337,6 +339,7 @@ it('rejects an administrator password that was typed differently the second time
 
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--no-env' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
+        ->expectsConfirmation('Does the company have several branches (head office, campuses, shops) to book entries to?', 'no')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no');
     declineGroups($command)
         ->expectsQuestion('Email of the administrator (super-admin)', 'head@school.test')

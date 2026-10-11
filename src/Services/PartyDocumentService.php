@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocumentLine;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
@@ -52,6 +53,7 @@ class PartyDocumentService
             'reference' => ['nullable', 'string', 'max:120'],
             'prices_include_tax' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'branch_id' => ['nullable', 'integer'],
             'lines' => ['required', 'array', 'min:1', 'max:200'],
             'lines.*.description' => ['nullable', 'string', 'max:255'],
             'lines.*.chart_of_account_id' => ['required', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true)->whereNull('control_type'))],
@@ -147,7 +149,7 @@ class PartyDocumentService
         $computed = $this->compute($data);
 
         return DB::transaction(function () use ($data, $computed): PartyDocument {
-            $document = new PartyDocument(['party_id' => $data['party_id'], 'kind' => $data['kind'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
+            $document = new PartyDocument(['branch_id' => CurrentBranch::resolve(array_key_exists('branch_id', $data) ? $data['branch_id'] : CurrentBranch::defaultId()), 'party_id' => $data['party_id'], 'kind' => $data['kind'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
             $document->forceFill(['status' => 'draft', ...$this->totals($computed)])->save();
             $this->saveLines($document, $computed['lines']);
             AccountingAuditLog::record($document, 'PARTY_DOCUMENT_CREATED', null, ['kind' => $document->kind, 'party_id' => $document->party_id, 'total' => $document->total]);
@@ -170,7 +172,7 @@ class PartyDocumentService
                 throw new AccountingException('Only a draft can be edited: void a posted document and issue a new one.');
             }
 
-            $document->fill(['party_id' => $data['party_id'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
+            $document->fill(['branch_id' => array_key_exists('branch_id', $data) ? CurrentBranch::resolve($data['branch_id']) : $document->branch_id, 'party_id' => $data['party_id'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
             $document->forceFill($this->totals($computed))->save();
             $document->lines()->delete();
             $this->saveLines($document, $computed['lines']);
@@ -214,6 +216,7 @@ class PartyDocumentService
             $number = $this->numbers->next($document->kind, (int) $document->issue_date->format('Y'));
             $control = $this->controlAccount($party, $document->isSales() ? 'receivables' : 'payables');
             $entry = $this->journals->create([
+                'branch_id' => $document->branch_id,
                 'entry_date' => $document->issue_date->toDateString(),
                 'origin_module' => $document->isSales() ? 'receivables' : 'payables',
                 'reference' => $number,
