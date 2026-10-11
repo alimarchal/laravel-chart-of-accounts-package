@@ -11,7 +11,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -83,7 +85,7 @@ class PartyPaymentService
      */
     public function create(array $data): PartyPayment
     {
-        return DB::transaction(function () use ($data): PartyPayment {
+        $payment = DB::transaction(function () use ($data): PartyPayment {
             $party = Party::query()->findOrFail($data['party_id']);
             $receipt = $data['kind'] === 'receipt';
             $number = $this->numbers->next($data['kind'], (int) substr((string) $data['payment_date'], 0, 4));
@@ -117,6 +119,46 @@ class PartyPaymentService
 
             return $payment->refresh();
         });
+
+        $this->notify($payment);
+
+        return $payment;
+    }
+
+    /**
+     * The customer's WhatsApp message for a receipt (accounting.whatsapp.notifications.receipt names the template). It is sent after the
+     * receipt is saved and never stops it: a missing phone number, WhatsApp being off or Meta refusing the message only leaves a record.
+     */
+    private function notify(PartyPayment $payment): void
+    {
+        $key = config('accounting.whatsapp.notifications.receipt');
+
+        if ($payment->kind !== 'receipt' || ! is_string($key) || $key === '' || ! config('accounting.whatsapp.enabled')) {
+            return;
+        }
+
+        try {
+            $party = Party::query()->find($payment->party_id);
+
+            if ($party === null || blank($party->phone)) {
+                return;
+            }
+
+            $values = [
+                'party' => $party->name, 'name' => $party->name, 'student' => $party->name, 'customer' => $party->name,
+                'amount' => number_format((float) $payment->amount, 2), 'receipt' => (string) $payment->number, 'receipt_no' => (string) $payment->number, 'number' => (string) $payment->number,
+                'date' => Carbon::parse($payment->payment_date)->format('j M Y'), 'reference' => (string) ($payment->reference ?? '-'), 'method' => (string) ($payment->method ?? '-'),
+            ];
+            $names = (array) config("accounting.whatsapp.templates.{$key}.parameters", []);
+            $parameters = array_map(fn ($name) => $values[(string) $name] ?? '-', $names);
+            $whatsapp = app(WhatsAppService::class);
+
+            config('accounting.whatsapp.queue')
+                ? $whatsapp->queueTemplate((string) $party->phone, $key, $parameters, null, $payment)
+                : $whatsapp->template((string) $party->phone, $key, $parameters, null, $payment);
+        } catch (\Throwable $exception) {
+            Log::warning('WhatsApp receipt message not sent', ['payment' => $payment->id, 'error' => $exception->getMessage()]);
+        }
     }
 
     /**

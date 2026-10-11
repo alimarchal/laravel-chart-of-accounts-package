@@ -222,6 +222,52 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | WhatsApp (Cloud API)
+    |--------------------------------------------------------------------------
+    | Send WhatsApp messages (a fee received, an invoice ready, a payslip) with one call:
+    |   Alimarchal\LaravelChartOfAccounts\Support\WhatsApp::template('+92 300 1234567', 'fee_received', ['student' => 'Ali', ...]);
+    |
+    | mode "fake" (default) keeps everything local — a sandbox that behaves like WhatsApp (24-hour window, statuses you move by hand);
+    | mode "live" talks to Meta's Graph API. Needed for live: a Meta app with the WhatsApp product, a phone number (Meta gives a free test
+    | number), a permanent system-user token, and the webhook registered at /api/v1/accounting/whatsapp/webhook (see README → WhatsApp).
+    */
+    'whatsapp' => [
+        'enabled' => (bool) env('ACCOUNTING_WHATSAPP_ENABLED', false),
+        'mode' => env('ACCOUNTING_WHATSAPP_MODE', 'fake'),                          // fake | live
+        'token' => env('WHATSAPP_TOKEN'),                                           // system-user access token (whatsapp_business_messaging)
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),                       // the sending number's ID (not the number itself)
+        'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),               // WABA ID: lists and creates templates
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),                             // a word you choose, repeated in Meta's webhook settings
+        'app_secret' => env('WHATSAPP_APP_SECRET'),                                 // Meta app → Settings → Basic: signs the webhook calls
+        'api_version' => env('WHATSAPP_API_VERSION', 'v25.0'),                      // Graph API version (a version lives about two years)
+        'base_url' => env('WHATSAPP_BASE_URL', 'https://graph.facebook.com'),
+        'default_country_code' => env('WHATSAPP_DEFAULT_COUNTRY_CODE', '92'),       // "0300 1234567" becomes "92 300 1234567"; empty = require +country code
+        'default_language' => env('WHATSAPP_DEFAULT_LANGUAGE', 'en'),               // the language code of your templates (en, en_US, ur …)
+        'timeout' => (int) env('WHATSAPP_TIMEOUT', 15),
+        'retries' => (int) env('WHATSAPP_RETRIES', 2),                              // quick retries of a dropped connection or a 5xx answer
+        'queue' => (bool) env('WHATSAPP_USE_QUEUE', false),                          // automatic messages (receipts) go through the queue instead of the request
+        'queue_name' => env('WHATSAPP_QUEUE', 'default'),
+
+        // Your approved templates: key => [name (as in WhatsApp Manager), language, parameters (the order of {{1}}, {{2}} … or the names of
+        // named parameters), format: positional | named, example: the text of the template for the screen]. A template the key of which is not
+        // listed here is sent as it is named, with the parameters you pass.
+        'templates' => [
+            'hello_world' => ['name' => 'hello_world', 'language' => 'en_US', 'parameters' => [], 'example' => 'Hello World (Meta\'s test template, available on every new number)'],
+            'fee_received' => ['name' => 'fee_received', 'language' => 'en', 'parameters' => ['student', 'amount', 'receipt', 'date'], 'format' => 'positional',
+                'example' => 'Dear parent, we received {{2}} for {{1}}. Receipt {{3}} dated {{4}}. Thank you.'],
+            'payment_received' => ['name' => 'payment_received', 'language' => 'en', 'parameters' => ['name', 'amount', 'receipt', 'date'], 'format' => 'positional',
+                'example' => 'Dear {{1}}, we received your payment of {{2}}. Receipt {{3}} dated {{4}}. Thank you.'],
+        ],
+
+        // Automatic messages. receipt: the template key sent to the customer when a receipt is recorded (the party needs a phone number);
+        // null = none. A failure never stops the receipt.
+        'notifications' => [
+            'receipt' => env('WHATSAPP_NOTIFY_RECEIPT'),
+        ],
+    ],
+
     // Language of the accounting screens. locale is the default; the switcher offers every entry of locales. A phrase is
     // translated when resources/lang/<locale>.json (or your application's own lang/<locale>.json, which wins) has it as a key;
     // any other phrase stays in English. rtl_locales are shown right to left. The API is never translated.
@@ -360,6 +406,8 @@ return [
         'payroll.void',
         'fbr.view',
         'fbr.submit',
+        'whatsapp.view',
+        'whatsapp.send',
         'tax-returns.view',
         'tax-returns.file',
         'tax-entries.create',
@@ -502,6 +550,8 @@ return [
             'payroll.run',
             'fbr.view',
             'fbr.submit',
+            'whatsapp.view',
+            'whatsapp.send',
             'tax-returns.view',
             'tax-returns.file',
             'tax-entries.create',
@@ -574,6 +624,7 @@ return [
             'payroll.approve',
             'payroll.void',
             'fbr.view',
+            'whatsapp.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',
@@ -611,6 +662,7 @@ return [
             'inventory.view',
             'payroll.view',
             'fbr.view',
+            'whatsapp.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',
@@ -649,6 +701,7 @@ return [
             'inventory.view',
             'payroll.view',
             'fbr.view',
+            'whatsapp.view',
             'tax-returns.view',
             'parties.view',
             'party-documents.view',

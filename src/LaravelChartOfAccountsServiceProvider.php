@@ -20,6 +20,8 @@ use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSeedCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingSyncDatabaseObjectsCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingUpdateCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingVerifyCommand;
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingWhatsAppCommand;
+use Alimarchal\LaravelChartOfAccounts\Contracts\WhatsAppGateway;
 use Alimarchal\LaravelChartOfAccounts\Events\AccountingEvent;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingRuleViolation;
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\JournalEntryForm;
@@ -27,6 +29,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedPayablesLivewire
 use Alimarchal\LaravelChartOfAccounts\Http\Livewire\Reports\AgedReceivablesLivewire;
 use Alimarchal\LaravelChartOfAccounts\Listeners\SendAccountingWebhook;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingDatabaseObjectSynchronizer;
+use Alimarchal\LaravelChartOfAccounts\Services\WhatsAppService;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -99,6 +102,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingRolesCommand::class,
                 AccountingFeaturesCommand::class,
                 AccountingAccountRolesCommand::class,
+                AccountingWhatsAppCommand::class,
             ]);
 
             // Daily, once the app's own scheduler runs (php artisan schedule:run): generate the due recurring entries.
@@ -114,6 +118,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         }
 
         $this->app->scoped(FeatureManager::class);
+        $this->app->bind(WhatsAppGateway::class, fn () => WhatsAppService::gatewayFor((string) config('accounting.whatsapp.mode', 'fake')));
         $this->app->scoped('accounting.account-roles', fn () => new \ArrayObject);
         Blade::if('accountingFeature', fn (string $feature): bool => app(FeatureManager::class)->enabled($feature));
 
