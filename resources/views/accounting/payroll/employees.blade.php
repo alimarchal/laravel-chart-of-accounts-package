@@ -8,6 +8,16 @@
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif
         @if(session("error"))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session("error") }}</div>@endif
         <x-accounting::validation-errors />
+        <x-accounting::list-filters :action="route('accounting.payroll.employees.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Code, name, ID, designation or bank'],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Left']],
+            ['name' => 'withhold_tax', 'label' => 'Tax withheld', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No']],
+            ['name' => 'cost_center_id', 'label' => 'Cost center', 'type' => 'select', 'options' => collect($costCenters)->mapWithKeys(fn ($row) => [$row->id => $row->code.' '.$row->name])->all()],
+            ['name' => 'joined_from', 'label' => 'Joined from', 'type' => 'date'],
+            ['name' => 'joined_to', 'label' => 'Joined to', 'type' => 'date'],
+            ['name' => 'min_salary', 'label' => 'Salary from', 'type' => 'number'],
+            ['name' => 'max_salary', 'label' => 'Salary up to', 'type' => 'number'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Code</th><th class="py-2 px-3 text-left font-medium text-gray-600">Name</th><th class="py-2 px-3 text-left font-medium text-gray-600">Designation</th><th class="py-2 px-3 text-left font-medium text-gray-600">Joined</th><th class="py-2 px-3 text-left font-medium text-gray-600">Left</th><th class="py-2 px-3 text-right font-medium text-gray-600">Monthly salary</th><th class="py-2 px-3 text-left font-medium text-gray-600">Tax</th><th></th></tr></thead>
             <tbody>

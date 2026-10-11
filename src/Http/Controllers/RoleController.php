@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -18,11 +19,12 @@ class RoleController extends Controller
 {
     public function __construct(private readonly UserManagementService $users) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('accounting/roles/index', [
-            'roles' => $this->users->rolesWithCounts()
+            'roles' => $this->users->rolesWithCounts($request)
                 ->map(fn (Role $role) => $this->users->presentRole($role))->values(),
+            'filters' => ListFilters::current($request, ['search']),
         ]);
     }
 

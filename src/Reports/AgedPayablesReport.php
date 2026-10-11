@@ -2,11 +2,13 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
+
 class AgedPayablesReport extends AgingReport
 {
     protected function accountCodes(): array
     {
-        return (array) config('accounting.aging.payable_account_codes', ['2101', '2102', '2103', '2104']);
+        return AccountRoles::codes('aging.payables');
     }
 
     protected function amountExpression(): string

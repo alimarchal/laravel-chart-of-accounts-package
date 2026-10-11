@@ -68,6 +68,12 @@
         </form>
         @endif
 
+        <x-accounting::list-filters :action="route('accounting.voucher-types.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Code, name, prefix or description'],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Inactive']],
+            ['name' => 'system', 'label' => 'Built in', 'type' => 'select', 'options' => ['1' => 'Built in', '0' => 'Added by you']],
+            ['name' => 'reset', 'label' => 'Numbering restarts', 'type' => 'select', 'options' => collect($resets)->mapWithKeys(fn ($value) => [$value => $value])->all()],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="bg-gray-50"><tr>

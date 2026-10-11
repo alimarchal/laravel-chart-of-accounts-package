@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 
-type Props = { warehouses: Array<{ id: number; code: string; name: string; address: string | null; is_active: boolean }> };
+type Props = { warehouses: Array<{ id: number; code: string; name: string; address: string | null; is_active: boolean }>; filters: Record<string, string | null> };
 
-export default function InventoryWarehouses({ warehouses }: Props) {
+export default function InventoryWarehouses({ warehouses, filters }: Props) {
     const { permissions, flash } = useAccounting();
     const form = useForm({ code: '', name: '', address: '', is_active: true });
     const add = (event: FormEvent) => {
@@ -25,6 +26,14 @@ export default function InventoryWarehouses({ warehouses }: Props) {
                 <Heading title="Warehouses" description="Places stock is kept" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
+                <FilterBar
+                    path="/accounting/inventory/warehouses"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Code, name or address' },
+                        { name: 'active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                    ]}
+                />
                 <Card>
                     <CardContent className="pt-6">
                         <table className="w-full text-sm"><tbody>

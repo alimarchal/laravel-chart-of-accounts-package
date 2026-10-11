@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherTypeService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -18,10 +19,17 @@ class VoucherTypeController extends Controller
 {
     public function __construct(private readonly VoucherTypeService $types) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('accounting/voucher-types/index', [
-            'voucherTypes' => VoucherType::query()->orderBy('code')->get()
+            'filters' => ListFilters::current($request, ['search', 'active', 'system', 'reset']),
+            'voucherTypes' => ListFilters::for(VoucherType::query(), $request, [
+                ListFilters::search('search', ['code', 'name', 'prefix', 'description']),
+                ListFilters::bool('active', 'is_active'),
+                ListFilters::bool('is_active', 'is_active'),
+                ListFilters::bool('system', 'is_system'),
+                ListFilters::exact('reset'),
+            ], sorts: ['code', 'name'], defaultSort: 'code')->get()
                 ->map(fn (VoucherType $type) => $this->types->present($type))->values(),
             'resets' => VoucherType::resets(),
             'defaultFormat' => VoucherType::DEFAULT_FORMAT,

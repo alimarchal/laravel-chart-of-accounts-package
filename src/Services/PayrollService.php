@@ -19,6 +19,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryGradeComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryRevision;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
@@ -260,9 +261,9 @@ class PayrollService
         Payslip::query()->where('payroll_run_id', $run->id)->delete();
         $this->releaseArrears($run);
 
-        $salaryAccount = $this->accountByCode((string) config('accounting.payroll.salary_expense_account'), 'salary expense');
-        $taxAccount = $this->accountByCode((string) config('accounting.payroll.income_tax_account'), 'income tax payable');
-        $arrearsCode = config('accounting.payroll.arrears_account');
+        $salaryAccount = $this->accountByCode((string) AccountRoles::code('salary_expense'), 'salary expense');
+        $taxAccount = $this->accountByCode((string) AccountRoles::code('income_tax_payable'), 'income tax payable');
+        $arrearsCode = AccountRoles::code('salary_arrears');
         $arrearsAccount = $arrearsCode ? $this->accountByCode((string) $arrearsCode, 'salary arrears') : $salaryAccount;
         $components = PayComponent::query()->where('is_active', true)->get()->keyBy('id');
         $assigned = EmployeeComponent::query()->get()->groupBy('employee_id');
@@ -478,7 +479,7 @@ class PayrollService
 
             $payable = $payableAccountId
                 ? ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->findOrFail($payableAccountId)
-                : $this->accountByCode((string) config('accounting.payroll.net_payable_account'), 'net salary payable');
+                : $this->accountByCode((string) AccountRoles::code('net_salary_payable'), 'net salary payable');
             $costCenters = Employee::query()->whereIn('id', $slips->pluck('employee_id'))->pluck('cost_center_id', 'id');
             $debits = [];
             $credits = [];

@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FeatureLink } from '@/components/accounting/feature-link';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +15,11 @@ type Scheme = {
     id: number; code: string; name: string; base: string; employee_rate: string; employer_rate: string; employee_fixed: string; employer_fixed: string; ceiling: string | null;
     employee_account_id: number | null; employer_expense_account_id: number | null; employer_liability_account_id: number | null; on_arrears: boolean; applies_to_all: boolean; is_active: boolean; employees: number;
 };
-type Props = { schemes: Scheme[]; editing: Scheme | null; employees: Array<{ id: number; code: string; name: string }>; accounts: Array<{ id: number; account_code: string; account_name: string; type: string }> };
+type Props = { filters: Record<string, string | null>; schemes: Scheme[]; editing: Scheme | null; employees: Array<{ id: number; code: string; name: string }>; accounts: Array<{ id: number; account_code: string; account_name: string; type: string }> };
 
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function PayrollSchemes({ schemes, editing, employees, accounts }: Props) {
+export default function PayrollSchemes({ schemes, filters, editing, employees, accounts }: Props) {
     const { permissions, flash } = useAccounting();
     const form = useForm({
         code: editing?.code ?? '', name: editing?.name ?? '', base: editing?.base ?? 'basic', employee_rate: editing?.employee_rate ?? '', employer_rate: editing?.employer_rate ?? '', employee_fixed: editing?.employee_fixed ?? '', employer_fixed: editing?.employer_fixed ?? '',
@@ -48,6 +49,16 @@ export default function PayrollSchemes({ schemes, editing, employees, accounts }
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
+                <FilterBar
+                    path="/accounting/payroll/schemes"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Code or name' },
+                        { name: 'base', label: 'Base', type: 'select', options: { basic: 'Percent of basic', gross: 'Percent of gross', fixed: 'Fixed amount' } },
+                        { name: 'applies_to_all', label: 'Who', type: 'select', options: { '1': 'Everyone', '0': 'Chosen employees' } },
+                        { name: 'active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                    ]}
+                />
                 <Card><CardContent className="overflow-x-auto pt-6">
                     <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Base</th><th className="text-right">Employee</th><th className="text-right">Employer</th><th className="text-right">Ceiling</th><th>Who</th><th /></tr></thead><tbody>
                         {schemes.map((row) => (

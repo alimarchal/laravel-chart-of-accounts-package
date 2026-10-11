@@ -13,11 +13,16 @@
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
-        <form method="GET" class="flex flex-wrap items-end gap-3">
-            <input type="date" name="as_of" value="{{ $filters['as_of'] }}" class="border-gray-300 rounded-md shadow-sm text-sm">
-            <select name="status" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All</option><option value="active" @selected($filters['status'] === 'active')>Active</option><option value="disposed" @selected($filters['status'] === 'disposed')>Disposed</option></select>
-            <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Update</button>
-        </form>
+        <x-accounting::list-filters :action="route('accounting.fixed-assets.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Code, name or category'],
+            ['name' => 'as_of', 'label' => 'As of', 'type' => 'date', 'quiet' => true],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active' => 'Active', 'disposed' => 'Disposed']],
+            ['name' => 'category', 'label' => 'Category', 'type' => 'select', 'options' => collect($categories)->mapWithKeys(fn ($name) => [$name => $name])->all()],
+            ['name' => 'acquired_from', 'label' => 'Acquired from', 'type' => 'date'],
+            ['name' => 'acquired_to', 'label' => 'Acquired to', 'type' => 'date'],
+            ['name' => 'min_cost', 'label' => 'Cost from', 'type' => 'number'],
+            ['name' => 'max_cost', 'label' => 'Cost up to', 'type' => 'number'],
+        ]" />
         <div class="grid gap-4 sm:grid-cols-3">
             @foreach (['Cost' => 'cost', 'Accumulated depreciation' => 'accumulated', 'Book value' => 'book_value'] as $label => $key)
                 <div class="bg-white shadow rounded-lg p-5"><p class="text-sm text-gray-500">{{ $label }}</p><p class="mt-1 text-2xl font-semibold tabular-nums">{{ $fmt($register['totals'][$key]) }}</p></div>

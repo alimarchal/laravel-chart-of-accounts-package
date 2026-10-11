@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FeatureLink } from '@/components/accounting/feature-link';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +12,11 @@ import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 
 type Run = { id: number; period_month: string; status: string; gross: string; deductions: string; tax: string; net: string; employees: number };
-type Props = { runs: Run[]; summary: Array<{ month: string; gross: string; tax: string; net: string }>; year: number; defaultMonth: string };
+type Props = { filters: Record<string, string | null>; runs: Run[]; summary: Array<{ month: string; gross: string; tax: string; net: string }>; year: number; defaultMonth: string };
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
-export default function PayrollIndex({ runs, summary, year, defaultMonth }: Props) {
+export default function PayrollIndex({ runs, summary, year, defaultMonth, filters }: Props) {
     const { permissions, flash } = useAccounting();
     const form = useForm({ period_month: defaultMonth, notes: '' });
     const create = (event: FormEvent) => {
@@ -66,7 +67,17 @@ export default function PayrollIndex({ runs, summary, year, defaultMonth }: Prop
                     </form>
                 )}
                 <Card>
-                    <CardHeader><CardTitle>Runs</CardTitle></CardHeader>
+                    <FilterBar
+                    path="/accounting/payroll"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Notes' },
+                        { name: 'status', label: 'Status', type: 'select', options: { draft: 'Draft', submitted: 'Submitted', approved: 'Approved', posted: 'Posted', paid: 'Paid', void: 'Void' } },
+                        { name: 'period_from', label: 'Month from', type: 'date' },
+                        { name: 'period_to', label: 'Month to', type: 'date' },
+                    ]}
+                />
+                <CardHeader><CardTitle>Runs</CardTitle></CardHeader>
                     <CardContent className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead><tr className="text-left text-muted-foreground"><th className="py-1">Month</th><th>Status</th><th className="text-right">Employees</th><th className="text-right">Gross</th><th className="text-right">Deductions</th><th className="text-right">Tax</th><th className="text-right">Net</th></tr></thead>

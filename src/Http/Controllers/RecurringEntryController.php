@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntryRun;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\RecurringEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,14 +30,21 @@ class RecurringEntryController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $entries = RecurringEntry::query()->with('lines')->orderByRaw('next_run_date IS NULL')->orderBy('next_run_date')->orderBy('id')->get()
+        $request->validate(['frequency' => ['nullable', 'string'], 'mode' => ['nullable', 'in:draft,post'], 'due_by' => ['nullable', 'date']]);
+        $entries = ListFilters::for(RecurringEntry::query()->with('lines'), $request, [
+            ListFilters::search('search', ['name', 'reference', 'description']),
+            ListFilters::exact('frequency'),
+            ListFilters::exact('mode'),
+            ListFilters::bool('active', 'is_active'),
+            ListFilters::to('due_by', 'next_run_date'),
+        ], sorts: ['name', 'next_run_date', 'start_date'])->orderByRaw('next_run_date IS NULL')->orderBy('next_run_date')->orderBy('id')->get()
             ->map(fn (RecurringEntry $entry) => $this->present($entry))->values();
 
         if ($request->expectsJson()) {
             return response()->json(['data' => $entries]);
         }
 
-        return $this->render('index', ['entries' => $entries]);
+        return $this->render('index', ['entries' => $entries, 'filters' => ListFilters::current($request, ['search', 'frequency', 'mode', 'active', 'due_by'])]);
     }
 
     public function create(): Response|View

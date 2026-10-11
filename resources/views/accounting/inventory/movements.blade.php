@@ -8,12 +8,14 @@
     @php($itemName = collect($items)->pluck('sku', 'id'))
     @php($whName = collect($warehouses)->pluck('name', 'id'))
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
-        <form method="GET" class="flex flex-wrap items-end gap-3">
-            <select name="item_id" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All items</option>@foreach ($items as $item)<option value="{{ $item['id'] }}" @selected((string) $filters['item_id'] === (string) $item['id'])>{{ $item['sku'] }}</option>@endforeach</select>
-            <select name="warehouse_id" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All warehouses</option>@foreach ($warehouses as $warehouse)<option value="{{ $warehouse['id'] }}" @selected((string) $filters['warehouse_id'] === (string) $warehouse['id'])>{{ $warehouse['name'] }}</option>@endforeach</select>
-            <select name="type" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All types</option>@foreach (['receipt', 'issue', 'adjustment', 'transfer_in', 'transfer_out'] as $type)<option value="{{ $type }}" @selected($filters['type'] === $type)>{{ str_replace('_', ' ', $type) }}</option>@endforeach</select>
-            <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Filter</button>
-        </form>
+        <x-accounting::list-filters :action="route('accounting.inventory.movements.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Reference or notes'],
+            ['name' => 'item_id', 'label' => 'Item', 'type' => 'select', 'options' => collect($items)->mapWithKeys(fn ($row) => [$row['id'] => $row['sku']])->all()],
+            ['name' => 'warehouse_id', 'label' => 'Warehouse', 'type' => 'select', 'options' => collect($warehouses)->mapWithKeys(fn ($row) => [$row['id'] => $row['name']])->all()],
+            ['name' => 'type', 'label' => 'Type', 'type' => 'select', 'options' => ['receipt' => 'receipt', 'issue' => 'issue', 'adjustment' => 'adjustment', 'transfer_in' => 'transfer in', 'transfer_out' => 'transfer out']],
+            ['name' => 'date_from', 'label' => 'From', 'type' => 'date'],
+            ['name' => 'date_to', 'label' => 'To', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Date</th><th class="py-2 px-3 text-left font-medium text-gray-600">Type</th><th class="py-2 px-3 text-left font-medium text-gray-600">Item</th><th class="py-2 px-3 text-left font-medium text-gray-600">Warehouse</th><th class="py-2 px-3 text-right font-medium text-gray-600">Quantity</th><th class="py-2 px-3 text-right font-medium text-gray-600">Unit cost</th><th class="py-2 px-3 text-right font-medium text-gray-600">Value</th><th class="py-2 px-3 text-left font-medium text-gray-600">Reference</th><th class="py-2 px-3 text-right font-medium text-gray-600">Entry</th></tr></thead>
             <tbody>

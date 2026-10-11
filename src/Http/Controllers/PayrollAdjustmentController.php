@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollAdjustment;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollAdjustmentService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,14 +29,20 @@ class PayrollAdjustmentController extends Controller
     {
         $data = $request->validate(['month' => ['nullable', 'date_format:Y-m'], 'status' => ['nullable', 'in:open,included,cancelled']]);
         $month = $data['month'] ?? now()->format('Y-m');
-        $rows = $this->adjustments->present($month, $data['status'] ?? null);
+        $base = ListFilters::for(PayrollAdjustment::query(), $request, [
+            ListFilters::exact('employee_id'),
+            ListFilters::exact('kind'),
+            ListFilters::bool('taxable', 'taxable'),
+            ListFilters::employee('search', Employee::class, ['description', 'notes']),
+        ]);
+        $rows = $this->adjustments->present($month, $data['status'] ?? null, $base);
 
         if ($request->expectsJson()) {
             return response()->json(['data' => $rows, 'month' => $month]);
         }
 
         return $this->render('adjustments', [
-            'adjustments' => $rows, 'month' => $month, 'status' => $data['status'] ?? '',
+            'adjustments' => $rows, 'month' => $month, 'status' => $data['status'] ?? '', 'filters' => ListFilters::current($request, ['search', 'employee_id', 'kind', 'taxable']),
             'employees' => Employee::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
             'components' => PayComponent::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'kind']),
             'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name']),

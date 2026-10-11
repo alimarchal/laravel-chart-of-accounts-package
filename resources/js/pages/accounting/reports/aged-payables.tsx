@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { Download } from 'lucide-react';
+import FilterBar, { filterQuery } from '@/components/accounting/filter-bar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { BreadcrumbItem } from '@/types';
@@ -31,12 +32,20 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Aged Payables', href: '/accounting/reports/aged-payables' },
 ];
 
-export default function AgedPayables({ rows }: { rows: AgedRow[] }) {
+export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filters: Record<string, string | null> }) {
     useAccountingI18n();
     return (
         <>
             <Head title="Aged Payables" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <FilterBar
+                    path="/accounting/reports/aged-payables"
+                    values={filters}
+                    fields={[
+                        { name: 'as_of_date', label: 'As of', type: 'date' },
+                    ]}
+                />
+
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <div>
                         <h1 className="text-2xl font-semibold">
@@ -51,7 +60,7 @@ export default function AgedPayables({ rows }: { rows: AgedRow[] }) {
                         {['csv', 'xlsx', 'pdf'].map((format) => (
                             <Button key={format} asChild variant="outline">
                                 <a
-                                    href={`/accounting/reports/aged-payables/export/${format}`}
+                                    href={`/accounting/reports/aged-payables/export/${format}${filterQuery(filters)}`}
                                 >
                                     <Download className="size-4" />
                                     {format.toUpperCase()}

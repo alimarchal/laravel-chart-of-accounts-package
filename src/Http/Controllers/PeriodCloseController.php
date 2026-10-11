@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingPeriodService;
 use Alimarchal\LaravelChartOfAccounts\Services\PeriodCloseChecklist;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -22,13 +23,19 @@ use Inertia\Response;
  */
 class PeriodCloseController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $request->validate(['date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date']]);
         $startMonth = app(CurrentCompany::class)->get()->fiscal_year_start_month ?: 1;
 
         return Inertia::render('accounting/periods/index', [
-            'periods' => AccountingPeriod::query()
-                ->orderByDesc('start_date')
+            'filters' => ListFilters::current($request, ['search', 'status', 'date_from', 'date_to']),
+            'periods' => ListFilters::for(AccountingPeriod::query(), $request, [
+                ListFilters::search('search', ['name']),
+                ListFilters::exact('status'),
+                ListFilters::from('date_from', 'end_date'),
+                ListFilters::to('date_to', 'start_date'),
+            ], sorts: ['start_date', 'end_date', 'name'], defaultSort: '-start_date')
                 ->get()
                 ->map(fn (AccountingPeriod $period) => [
                     ...$period->only(['id', 'name', 'status', 'closed_at', 'closing_net_income', 'closing_journal_entry_id']),

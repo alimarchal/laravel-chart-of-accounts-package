@@ -103,6 +103,11 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <td>بقیہ اسکرینیں</td>
 <td>نیا/تفصیل/ترمیم کے عمومی صفحات</td>
 </tr>
+<tr>
+<td><a href="#14-filter-chart-roles">14</a></td>
+<td>فلٹر، چارٹ اور Account Roles</td>
+<td>ہر فہرست میں فلٹر/تلاش، ERPNext چارٹ، کھاتوں کے رول</td>
+</tr>
 </tbody>
 </table>
 <h2 id="_3">مزید وسائل</h2>
@@ -1156,7 +1161,7 @@ curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;i
 <tbody>
 <tr>
 <td><code>php artisan accounting:install</code></td>
-<td>پیکیج کی ابتدائی تنصیب: ترتیب، مائیگریشن، رولز، ڈیفالٹ ڈیٹا</td>
+<td>پیکیج کی ابتدائی تنصیب: ترتیب، مائیگریشن، رولز، ڈیفالٹ ڈیٹا (<code>--chart=erpnext\|general\|school</code> سے چارٹ کا انتخاب)</td>
 </tr>
 <tr>
 <td><code>php artisan accounting:update</code></td>
@@ -1205,6 +1210,10 @@ curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;i
 <tr>
 <td><code>php artisan accounting:payroll-run</code></td>
 <td>پچھلے مہینے کا پے رول Run (Draft) بنانا</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:account-roles</code></td>
+<td>کون سا کھاتہ کس کام (کیش، بینک، تنخواہ ...) کے لیے ہے: فہرست، <code>set</code>، <code>seed</code> (باب 14)</td>
 </tr>
 <tr>
 <td><code>php artisan accounting:features</code></td>
@@ -1356,7 +1365,7 @@ curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;i
 </section>
 <section id="13-zameema">
 <h1 id="_1">ضمیمہ: بقیہ اسکرینیں — نیا، تفصیل اور ترمیم کے صفحات</h1>
-<p><a href="#12-commands-faq">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
+<p><a href="#12-commands-faq">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#14-filter-chart-roles">اگلا باب: فلٹر، چارٹ اور Account Roles →</a></p>
 <p>پچھلے ابواب میں ہر ماڈیول کی بنیادی اسکرینیں آ چکی ہیں۔ یہاں وہ <strong>عمومی</strong> صفحات ہیں جو کئی ماڈیولز میں اسی انداز سے دہرائے جاتے ہیں۔ ہر ماسٹر ڈیٹا (Account Types، Currencies، Periods، Cost Centers، Bank Accounts، Reconciliations، Tax Codes، Tax Rates) میں <strong>چار</strong> صفحے ہوتے ہیں:</p>
 <table>
 <thead>
@@ -1419,5 +1428,51 @@ curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;i
 <p><img alt="Appearance" src="../images/appearance-edit.jpg" /></p>
 <h2 id="json">ڈیٹا کے راستے جو براؤزر میں JSON دکھاتے ہیں</h2>
 <p>پے رول کے کچھ راستے (مثلاً <code>/accounting/payroll/loans/{id}</code>، <code>/payroll/grades/{id}</code>، <code>/payroll/schemes/{id}</code>، <code>/payroll/settlements/{id}</code>) اسکرین نہیں بلکہ <strong>ڈیٹا کے راستے</strong> ہیں: ان پر براؤزر میں JSON ملتا ہے۔ یہ اسکرینوں کے اندر کی ٹیبلوں اور API کو ڈیٹا دیتے ہیں؛ ان کی مکمل فہرست <a href="../help-catalog.md">Help Catalog</a> میں ہے۔</p>
+</section>
+<section id="14-filter-chart-roles">
+<h1 id="14-erpnext-account-roles">باب 14: فلٹر اور تلاش، ERPNext کھاتوں کا چارٹ، اور Account Roles</h1>
+<p><a href="#13-zameema">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
+<h2 id="141">14.1 ہر فہرست میں فلٹر اور تلاش</h2>
+<p><strong>مقصد:</strong> ہزاروں ریکارڈ میں سے وہی نکالنا جو چاہیے — نام/نمبر سے، حالت سے، تاریخ یا رقم کی حد سے۔</p>
+<p>ہر فہرست (گاہک و سپلائر، انوائس اور بل، وصولی/ادائیگی، فکسڈ اثاثے، انوینٹری، بجٹ، بینک اسٹیٹمنٹ، Recurring، پے رول کی تمام فہرستیں، صارفین، رولز، Voucher Types، کمپنیاں، ٹیکس، FBR، مدتیں وغیرہ) کے اوپر <strong>فلٹر بار</strong> ہے۔ خانے بھریں ← <code>Filter</code>۔ جتنے فلٹر لگے ہوں <code>Reset (تعداد)</code> اتنی تعداد دکھاتا ہے؛ اس پر دبانے سے سب ہٹ جاتے ہیں۔</p>
+<p><img alt="انوائس اور بل — فلٹر بار" src="../images/filters-documents.jpg" /></p>
+<ul>
+<li><strong>Search</strong> خانہ نام، کوڈ، نمبر یا حوالہ کا <strong>کوئی بھی حصہ</strong> ڈھونڈتا ہے، بڑے/چھوٹے حروف کا فرق نہیں۔ <code>100%</code> لکھیں تو واقعی <code>100%</code> والا ہی ملے گا (<code>%</code> اور <code>_</code> عام حروف ہیں)۔</li>
+<li><strong>تاریخ</strong> (<code>Issued from</code>، <code>Due to</code> وغیرہ) اور <strong>رقم</strong> (<code>Total from</code>، <code>Total up to</code>) کی حد دی جا سکتی ہے۔</li>
+<li><strong>ایک سے زیادہ فلٹر ایک ساتھ</strong> لگیں تو ریکارڈ کو <strong>سب</strong> شرطیں پوری کرنی ہوں گی۔</li>
+<li>پتے (URL) میں فلٹر نظر آتے ہیں، اس لیے فلٹر شدہ صفحے کا لنک کسی کو بھیجا جا سکتا ہے۔</li>
+<li>یہی نام API میں بھی چلتے ہیں: <code>GET /api/v1/accounting/party-documents?filter[search]=rent&amp;filter[status]=posted&amp;sort=-total</code> (مختصر شکل <code>?search=rent&amp;status=posted</code> بھی چلتی ہے)۔ نامعلوم فلٹر پر <code>400</code> اور غلط تاریخ/رقم پر <code>422</code> آتا ہے تاکہ غلطی چھپے نہیں۔</li>
+</ul>
+<p><strong>رپورٹیں</strong> میں بھی تاریخ کا فلٹر ہے: Trial Balance میں <code>As of</code> (فلاں تاریخ تک) اور <code>Movement from</code> (صرف اس مدت کی حرکت)، Balance Sheet میں <code>As of</code>، Income Statement میں <code>From/To</code>، Aged Receivables/Payables میں <code>As of</code>۔ <strong>CSV / XLSX / PDF</strong> بٹن وہی تاریخ اور فلٹر ساتھ لے جاتے ہیں جو اسکرین پر ہیں۔</p>
+<p><img alt="Trial Balance — تاریخ اور فلٹر" src="../images/filters-trial-balance.jpg" /></p>
+<p><img alt="ملازمین — فلٹر" src="../images/filters-employees.jpg" /></p>
+<blockquote>
+<p><strong>ہوشیار:</strong> رپورٹ ایکسپورٹ کرنے سے پہلے اسکرین پر تاریخ دیکھ لیں۔ ایکسپورٹ وہی دکھاتا ہے جو اسکرین پر لگا ہے۔</p>
+</blockquote>
+<h2 id="142-erpnext">14.2 نئی انسٹالیشن پر ERPNext کھاتوں کا چارٹ</h2>
+<p>نئی انسٹالیشن میں کھاتوں کا چارٹ <strong>ERPNext کا معیاری چارٹ</strong> (اکاؤنٹ نمبروں کے ساتھ) ہے: <code>1110 Cash</code>، <code>1210 Primary Bank Account</code>، <code>1310 Debtors</code>، <code>2110 Creditors</code>، <code>3400 Retained Earnings</code>، <code>4110 Sales</code>، <code>5213 Salary</code> وغیرہ۔ ERPNext جاننے والا اکاؤنٹنٹ ہر کھاتہ اپنی جگہ پائے گا، اور تمام ماڈیول (کیش بک، بینک بک، Ageing، پے رول، سال کی بندش) پہلے ہی ان سے جڑے ہوتے ہیں۔</p>
+<p><img alt="ERPNext چارٹ — کھاتوں کا درخت" src="../images/erpnext-chart.jpg" /></p>
+<p>انسٹال کے وقت دوسرا چارٹ چننا ہو تو:</p>
+<pre><code class="language-bash">php artisan accounting:install --chart=erpnext   # ڈیفالٹ
+php artisan accounting:install --chart=general   # پیکیج کا اپنا عمومی چارٹ (1101 Cash In Hand ...)
+php artisan accounting:install --chart=school    # اسکول کا چارٹ
+php artisan accounting:create-company ERP &quot;ERP Traders&quot; --template=erpnext   # ایک اور کمپنی
+</code></pre>
+<p>چارٹ <strong>ہر کمپنی کا الگ</strong> ہوتا ہے۔ ایک ہی کمپنی میں ERPNext اور عمومی چارٹ ملانے کی اجازت نہیں (دونوں میں ایک جیسے نمبر مختلف چیزوں کے ہیں)۔ پرانی انسٹالیشن کی کمپنیاں جیسی تھیں ویسی رہتی ہیں۔</p>
+<h2 id="143-account-roles">14.3 Account Roles — کون سا کھاتہ کس کام کے لیے</h2>
+<p>کوئی ماڈیول "کھاتہ 1101" نہیں مانگتا؛ وہ <strong>رول</strong> مانگتا ہے: "کیش بک کون سا کھاتہ ہے؟"، "Ageing میں وصولیاں کون سے کھاتے ہیں؟"، "تنخواہ کا خرچ کون سا ہے؟"۔ ہر کمپنی کے جواب الگ ہیں اور <code>Account roles</code> (<code>/accounting/account-roles</code>، Blade میں <code>/settings/account-roles</code>) سے بدلے جا سکتے ہیں۔ یہ صفحہ صرف <code>accounting.manage-settings</code> والے صارف کے لیے ہے۔</p>
+<p><img alt="Account roles — ERPNext کمپنی" src="../images/erpnext-account-roles.jpg" /></p>
+<p><strong>طریقہ:</strong> رول کے سامنے کھاتہ منتخب کریں (کچھ رول کئی کھاتے لیتے ہیں، مثلاً Ageing) ← <code>Save</code>۔ <code>— the chart's default —</code> کا مطلب ہے چارٹ کا اپنا طے شدہ کھاتہ۔ جو رول سیٹنگ فائل (<code>config/accounting.php</code>) میں طے ہو وہ "Fixed in the configuration" لکھ کر بند نظر آتا ہے۔</p>
+<ul>
+<li>کیش، بینک اور Ageing کے رول <strong>گروپ کھاتہ</strong> بھی لے سکتے ہیں (رپورٹ اس کے ذیلی کھاتے جمع کرتی ہے)؛ باقی رول صرف پوسٹ ہونے والے کھاتے لیتے ہیں۔</li>
+<li>جس کھاتے کے پاس کوئی رول ہو اسے ڈیلیٹ یا غیر فعال نہیں کیا جا سکتا۔ دو کھاتے <strong>ضم (Merge)</strong> کریں تو رول اس کھاتے کو منتقل ہو جاتا ہے جو بیلنس رکھتا ہے۔</li>
+<li>ہر تبدیلی Audit Log میں <code>ACCOUNT_ROLES_UPDATED</code> کے نام سے جاتی ہے۔</li>
+</ul>
+<p>کمانڈ لائن سے:</p>
+<pre><code class="language-bash">php artisan accounting:account-roles                       # کون سا رول کس کھاتے کے پاس ہے
+php artisan accounting:account-roles set cash 1110
+php artisan accounting:account-roles seed erpnext --overwrite
+</code></pre>
+<p>API: <code>GET /api/v1/accounting/account-roles</code> اور <code>PUT /api/v1/accounting/account-roles</code> (<code>{"roles": {"cash": [12]}}</code>)۔</p>
 </section>
 </main></body></html>

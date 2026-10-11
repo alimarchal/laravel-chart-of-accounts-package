@@ -36,6 +36,12 @@
                 @endif
             </form>
         @endcan
+        <x-accounting::list-filters :action="route('accounting.payroll.arrears.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Employee code, name or notes'],
+            ['name' => 'employee_id', 'label' => 'Employee', 'type' => 'select', 'options' => collect($employees)->mapWithKeys(fn ($row) => [$row['id'] ?? $row->id => (($row['code'] ?? $row->code).' '.($row['name'] ?? $row->name))])->all()],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'approved' => 'Approved', 'included' => 'Included', 'cancelled' => 'Cancelled']],
+            ['name' => 'payment_month', 'label' => 'Paid in month of', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto">
             <div class="flex items-center justify-between p-4"><h3 class="font-semibold text-gray-800">Register</h3>@can('payroll.post')<form method="POST" action="{{ route('accounting.payroll.arrears.approve-all') }}" onsubmit="return confirm('Approve every draft?')">@csrf<button class="px-3 py-1 border border-gray-300 rounded text-xs uppercase tracking-widest hover:bg-gray-50">Approve all drafts</button></form>@endcan</div>
             <table class="min-w-full text-sm">

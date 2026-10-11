@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -32,7 +33,7 @@ class CashBookReport
      */
     public function accountIds(array $filters = []): array
     {
-        $ids = app(ChartOfAccountService::class)->idsWithDescendants([(string) config('accounting.defaults.cash_account_code')]);
+        $ids = app(ChartOfAccountService::class)->idsWithDescendants(array_filter([AccountRoles::code('cash')]));
 
         if (! empty($filters['account_id'])) {
             return array_values(array_intersect($ids, [(int) $filters['account_id']]));

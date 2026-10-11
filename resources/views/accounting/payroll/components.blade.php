@@ -5,6 +5,13 @@
         @if(session("error"))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session("error") }}</div>@endif
         <x-accounting::validation-errors />
         <p class="text-sm text-gray-600">Earnings are booked to an expense account, deductions to the liability they are owed to.</p>
+        <x-accounting::list-filters :action="route('accounting.payroll.components.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Code or name'],
+            ['name' => 'kind', 'label' => 'Kind', 'type' => 'select', 'options' => ['earning' => 'Earning', 'deduction' => 'Deduction']],
+            ['name' => 'method', 'label' => 'Method', 'type' => 'select', 'options' => ['fixed' => 'Fixed amount', 'percent_of_basic' => 'Percent of basic', 'quantity_rate' => 'Quantity x rate']],
+            ['name' => 'taxable', 'label' => 'Taxable', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No']],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Inactive']],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5 overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-gray-500"><th class="py-1">Code</th><th>Name</th><th>Kind</th><th>Amount</th><th>Account</th><th></th></tr></thead><tbody>
             @forelse ($components as $row)
                 @php($account = collect($accounts)->firstWhere('id', $row['account_id']))

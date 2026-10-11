@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -13,12 +14,12 @@ type Loan = {
     id: number; employee_code: string; employee_name: string; kind: string; principal: string; installments: number; start_month: string; issued_on: string | null; status: string; outstanding: string; notes: string | null;
     schedule: Array<{ id: number; due_month: string; amount: string; status: string }>;
 };
-type Props = { loans: Loan[]; status: string | null; employees: Array<{ id: number; code: string; name: string }>; accounts: Array<{ id: number; account_code: string; account_name: string }>; today: string };
+type Props = { loans: Loan[]; status: string | null; filters: Record<string, string | null>; employees: Array<{ id: number; code: string; name: string }>; accounts: Array<{ id: number; account_code: string; account_name: string }>; today: string };
 
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
-export default function PayrollLoans({ loans, status, employees, accounts, today }: Props) {
+export default function PayrollLoans({ loans, status, filters, employees, accounts, today }: Props) {
     const { permissions, flash } = useAccounting();
     const form = useForm({ employee_id: '', kind: 'loan', principal: '', installments: '12', start_month: today, notes: '' });
     const [open, setOpen] = useState<number | null>(null);
@@ -56,6 +57,20 @@ export default function PayrollLoans({ loans, status, employees, accounts, today
                         </CardContent>
                     </Card></form>
                 )}
+                <FilterBar
+                    path="/accounting/payroll/loans"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Employee code, name or notes' },
+                        { name: 'employee_id', label: 'Employee', type: 'select', options: Object.fromEntries(employees.map((row) => [String(row.id), `${row.code} ${row.name}`])) },
+                        { name: 'kind', label: 'Kind', type: 'select', options: { loan: 'Loan', advance: 'Advance' } },
+                        { name: 'status', label: 'Status', type: 'select', options: { draft: 'Draft', active: 'Active', closed: 'Closed', cancelled: 'Cancelled' } },
+                        { name: 'issued_from', label: 'Issued from', type: 'date' },
+                        { name: 'issued_to', label: 'Issued to', type: 'date' },
+                        { name: 'min_principal', label: 'Amount from', type: 'number' },
+                        { name: 'max_principal', label: 'Amount up to', type: 'number' },
+                    ]}
+                />
                 <Card><CardContent className="overflow-x-auto pt-6">
                     <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Kind</th><th className="text-right">Amount</th><th className="text-right">Left to recover</th><th>From</th><th>Status</th><th /></tr></thead><tbody>
                         {loans.map((loan) => (

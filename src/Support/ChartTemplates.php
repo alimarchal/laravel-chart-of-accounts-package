@@ -33,6 +33,12 @@ final class ChartTemplates
     private static function builtIn(): array
     {
         return [
+            'erpnext' => [
+                'name' => 'ERPNext standard chart',
+                'description' => 'The standard chart of accounts of ERPNext, with account numbers: Application of Funds (Assets), Source of Funds (Liabilities), Equity, Income and Expenses. Starts a company; the package default.',
+                'base' => 'erpnext',
+                'extras' => [],
+            ],
             'general' => [
                 'name' => 'General business',
                 'description' => 'The standard chart: assets, liabilities, equity, income and expenses for any small or medium business.',

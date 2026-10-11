@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -38,7 +39,7 @@ class BankBookReport
         }
 
         $ids = array_merge(
-            app(ChartOfAccountService::class)->idsWithDescendants([(string) config('accounting.defaults.bank_account_code')]),
+            app(ChartOfAccountService::class)->idsWithDescendants(array_filter([AccountRoles::code('bank')])),
             BankAccount::query()->whereNotNull('chart_of_account_id')->pluck('chart_of_account_id')->map(fn ($id) => (int) $id)->all(),
         );
 

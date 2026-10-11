@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { FeatureLink } from '@/components/accounting/feature-link';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ type Preview = { employee_id: number; code: string; name: string; from_month: st
 type Props = {
     rows: Row[];
     totals: { count: number; amount: string; by_status: Record<string, string>; by_payment_month: Record<string, string> };
-    filters: { status?: string; payment_month?: string };
+    filters: Record<string, string | null | undefined>;
     employees: Array<{ id: number; code: string; name: string }>;
     grades: Array<{ id: number; code: string; name: string }>;
     preview: Preview[] | null;
@@ -79,7 +80,17 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
                     </Card>
                 )}
                 <Card>
-                    <CardHeader className="flex-row items-center justify-between"><CardTitle>Register</CardTitle>
+                    <FilterBar
+                    path="/accounting/payroll/arrears"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Employee code, name or notes' },
+                        { name: 'employee_id', label: 'Employee', type: 'select', options: Object.fromEntries(employees.map((row) => [String(row.id), `${row.code} ${row.name}`])) },
+                        { name: 'status', label: 'Status', type: 'select', options: { draft: 'Draft', approved: 'Approved', included: 'Included', cancelled: 'Cancelled' } },
+                        { name: 'payment_month', label: 'Paid in month of', type: 'date' },
+                    ]}
+                />
+                <CardHeader className="flex-row items-center justify-between"><CardTitle>Register</CardTitle>
                         {permissions['payroll.post'] && <Button variant="outline" size="sm" onClick={() => confirm('Approve every draft?') && router.post('/accounting/payroll/arrears/approve-all')}>Approve all drafts</Button>}</CardHeader>
                     <CardContent className="overflow-x-auto">
                         <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Covers</th><th>Paid with</th><th>Status</th><th className="text-right">Amount</th><th /></tr></thead><tbody>

@@ -11,11 +11,13 @@ use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Stock and its value, at moving average cost.
@@ -201,9 +203,10 @@ class InventoryService
     /**
      * Stock and its value per item and warehouse at a date.
      *
+     * @param  Builder<InventoryItem>|QueryBuilder<InventoryItem>|null  $items
      * @return array{as_of: string, rows: list<array<string, mixed>>, totals: array{value: string}, reconcile: array{ledger: string, stock: string, difference: string}}
      */
-    public function valuation(?string $asOf = null, ?int $warehouseId = null): array
+    public function valuation(?string $asOf = null, ?int $warehouseId = null, Builder|QueryBuilder|null $items = null): array
     {
         $asOf = Carbon::parse($asOf ?? now())->toDateString();
         $moves = DB::table('accounting_stock_movements')->where('company_id', CurrentCompany::currentId())->whereDate('movement_date', '<=', $asOf)
@@ -215,12 +218,12 @@ class InventoryService
         $rows = [];
         $total = 0;
 
-        foreach (InventoryItem::query()->orderBy('sku')->get() as $item) {
+        foreach (($items ?? InventoryItem::query())->orderBy('sku')->get() as $item) {
             $total_units = $this->units((string) ($moves[$item->id]->quantity ?? 0));
             $total_value = Money::toCents((string) ($moves[$item->id]->value ?? 0));
             $where = $byItem->get($item->id, collect())->filter(fn ($row) => $this->units((string) $row->quantity) !== 0);
 
-            if ($total_units === 0 && $total_value === 0 && $where->isEmpty()) {
+            if (($total_units === 0 && $total_value === 0 && $where->isEmpty()) || ($warehouseId && $where->isEmpty())) {
                 continue;
             }
 

@@ -15,10 +15,10 @@ class RoleApiController extends Controller
 {
     public function __construct(private readonly UserManagementService $users) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => $this->users->rolesWithCounts()
+            'data' => $this->users->rolesWithCounts($request)
                 ->map(fn (Role $role) => $this->users->presentRole($role))->values(),
         ]);
     }

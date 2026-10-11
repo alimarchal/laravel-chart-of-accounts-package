@@ -3,8 +3,10 @@
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountRole;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
 use Illuminate\Database\Eloquent\Collection;
@@ -124,7 +126,7 @@ class ChartOfAccountService
         $marked = [];
 
         DB::transaction(function () use (&$marked): void {
-            foreach ((array) config('accounting.control_accounts.recommended', []) as $code => $type) {
+            foreach (ControlAccounts::recommended() as $code => $type) {
                 $account = ChartOfAccount::query()->where('account_code', (string) $code)->lockForUpdate()->first();
 
                 if (! $account || $account->is_group || $account->control_type !== null || ! array_key_exists($type, ControlAccounts::types())) {
@@ -187,6 +189,12 @@ class ChartOfAccountService
     {
         DB::transaction(function () use ($account): void {
             $account = ChartOfAccount::query()->lockForUpdate()->findOrFail($account->id);
+
+            $role = AccountRole::query()->where('chart_of_account_id', $account->id)->value('role');
+
+            if ($role !== null) {
+                throw new AccountingException("Account {$account->account_code} plays the role \"{$role}\" for the modules: give that role to another account first, then it can be deleted.");
+            }
 
             if ($account->is_system) {
                 throw new AccountingException('System accounts cannot be deleted.');
@@ -283,6 +291,10 @@ class ChartOfAccountService
             throw new AccountingException('A group account with child accounts cannot be converted into a posting account.');
         }
 
+        if (array_key_exists('is_active', $data) && ! $data['is_active'] && $account->is_active && ($role = AccountRole::query()->where('chart_of_account_id', $account->id)->value('role')) !== null) {
+            throw new AccountingException("Account {$account->account_code} plays the role \"{$role}\" for the modules: give that role to another account first, then it can be deactivated.");
+        }
+
         if ($this->isReferencedByConfig($account->account_code)) {
             if (isset($data['account_code']) && $data['account_code'] !== $account->account_code) {
                 throw new AccountingException("Account {$account->account_code} is referenced by config('accounting.defaults'); its code cannot be changed.");
@@ -348,6 +360,6 @@ class ChartOfAccountService
             ->filter(fn ($value, $key) => str_ends_with((string) $key, '_account_code') && is_scalar($value))
             ->map(fn ($value) => (string) $value);
 
-        return $codes->contains($code);
+        return $codes->contains($code) || in_array($code, AccountRoles::protectedCodes(), true);
     }
 }

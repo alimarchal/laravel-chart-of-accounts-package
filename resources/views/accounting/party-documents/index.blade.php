@@ -11,11 +11,17 @@
     @php($styles = ['draft' => 'bg-amber-100 text-amber-800', 'posted' => 'bg-emerald-100 text-emerald-800', 'void' => 'bg-gray-100 text-gray-600'])
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
-        <form method="GET" action="{{ route('accounting.party-documents.index') }}" class="flex flex-wrap items-end gap-3">
-            <select name="kind" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All kinds</option>@foreach (['invoice' => 'Invoices', 'bill' => 'Bills', 'credit_note' => 'Credit notes', 'debit_note' => 'Debit notes'] as $value => $label)<option value="{{ $value }}" @selected($filters['kind'] === $value)>{{ $label }}</option>@endforeach</select>
-            <select name="status" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">Any status</option>@foreach (['draft', 'posted', 'void'] as $value)<option value="{{ $value }}" @selected($filters['status'] === $value)>{{ ucfirst($value) }}</option>@endforeach</select>
-            <button class="px-4 py-2 border border-gray-300 rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-50">Filter</button>
-        </form>
+        <x-accounting::list-filters :action="route('accounting.party-documents.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Number, reference or party'],
+            ['name' => 'kind', 'label' => 'Kind', 'type' => 'select', 'options' => ['invoice' => 'Invoices', 'bill' => 'Bills', 'credit_note' => 'Credit notes', 'debit_note' => 'Debit notes']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'posted' => 'Posted', 'void' => 'Void']],
+            ['name' => 'date_from', 'label' => 'Issued from', 'type' => 'date'],
+            ['name' => 'date_to', 'label' => 'Issued to', 'type' => 'date'],
+            ['name' => 'due_from', 'label' => 'Due from', 'type' => 'date'],
+            ['name' => 'due_to', 'label' => 'Due to', 'type' => 'date'],
+            ['name' => 'min_total', 'label' => 'Total from', 'type' => 'number'],
+            ['name' => 'max_total', 'label' => 'Total up to', 'type' => 'number'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Number</th><th class="py-2 px-3 text-left font-medium text-gray-600">Party</th><th class="py-2 px-3 text-left font-medium text-gray-600">Issued</th><th class="py-2 px-3 text-left font-medium text-gray-600">Due</th><th class="py-2 px-3 text-right font-medium text-gray-600">Total</th><th class="py-2 px-3 text-right font-medium text-gray-600">Open</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th></tr></thead>
             <tbody>

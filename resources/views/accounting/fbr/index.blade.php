@@ -6,7 +6,15 @@
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
         @unless($enabled)<div class="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">FBR integration is switched off. Set ACCOUNTING_FBR_ENABLED=true and the seller details in the accounting config to send invoices.</div>@endunless
         @if($enabled && $mode === 'fake')<div class="rounded-md bg-sky-50 border border-sky-200 p-3 text-sm text-sky-800">Test mode: invoices are accepted locally and nothing is sent to FBR. Set ACCOUNTING_FBR_MODE=live and the service URL and token to go live.</div>@endif
-        <form method="GET" class="flex gap-3 items-end"><select name="status" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All</option><option value="none" @selected($filters['status'] === 'none')>Not sent</option><option value="accepted" @selected($filters['status'] === 'accepted')>Accepted</option><option value="failed" @selected($filters['status'] === 'failed')>Failed</option></select><button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Filter</button></form>
+        <x-accounting::list-filters :action="route('accounting.fbr.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Number, reference or customer'],
+            ['name' => 'status', 'label' => 'FBR status', 'type' => 'select', 'options' => ['none' => 'Not sent', 'pending' => 'Pending', 'accepted' => 'Accepted', 'failed' => 'Failed']],
+            ['name' => 'kind', 'label' => 'Kind', 'type' => 'select', 'options' => ['invoice' => 'Invoice', 'credit_note' => 'Credit note']],
+            ['name' => 'date_from', 'label' => 'Issued from', 'type' => 'date'],
+            ['name' => 'date_to', 'label' => 'Issued to', 'type' => 'date'],
+            ['name' => 'min_total', 'label' => 'Total from', 'type' => 'number'],
+            ['name' => 'max_total', 'label' => 'Total up to', 'type' => 'number'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Document</th><th class="py-2 px-3 text-left font-medium text-gray-600">Date</th><th class="py-2 px-3 text-left font-medium text-gray-600">Customer</th><th class="py-2 px-3 text-right font-medium text-gray-600">Total</th><th class="py-2 px-3 text-left font-medium text-gray-600">FBR</th><th class="py-2 px-3 text-left font-medium text-gray-600">FBR invoice number</th><th></th></tr></thead>
             <tbody>

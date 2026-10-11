@@ -5,11 +5,13 @@ namespace Alimarchal\LaravelChartOfAccounts\Services;
 use Alimarchal\LaravelChartOfAccounts\Actions\PostJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountRole;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -217,6 +219,13 @@ class ChartRestructureService
             $banks = BankAccount::query()->where('chart_of_account_id', $source->id)->get();
             $banks->each(fn (BankAccount $bank) => $bank->forceFill(['chart_of_account_id' => $target->id])->save());
 
+            // The roles the modules look for (cash, salary expense, …) follow the balance to the account that keeps it.
+            $roles = AccountRole::query()->where('chart_of_account_id', $source->id)->get();
+            $roles->each(fn (AccountRole $row) => AccountRole::query()->where('role', $row->role)->where('chart_of_account_id', $target->id)->exists()
+                ? $row->delete()
+                : $row->forceFill(['chart_of_account_id' => $target->id])->save());
+            AccountRoles::flush();
+
             $metadata = (array) ($source->metadata ?? []);
             $source->forceFill([
                 'is_active' => false,
@@ -229,6 +238,7 @@ class ChartRestructureService
                 'moved_draft_lines' => $draftLines->count(),
                 'moved_children' => $children->count(),
                 'moved_bank_accounts' => $banks->count(),
+                'moved_roles' => $roles->count(),
             ];
 
             AccountingAuditLog::record($source, 'ACCOUNT_MERGED', ['account_code' => $source->account_code, 'is_active' => true], ['merged_into' => $target->account_code, 'is_active' => false], [...$result, 'balance' => $plan['balance']]);
@@ -336,7 +346,8 @@ class ChartRestructureService
 
     private function configuredCode(string $code): bool
     {
-        return in_array($code, array_filter((array) config('accounting.defaults', []), fn ($value, $key) => str_ends_with((string) $key, '_account_code'), ARRAY_FILTER_USE_BOTH), true);
+        return in_array($code, array_filter((array) config('accounting.defaults', []), fn ($value, $key) => str_ends_with((string) $key, '_account_code'), ARRAY_FILTER_USE_BOTH), true)
+            || in_array($code, AccountRoles::protectedCodes(), true);
     }
 
     private function assertNotConfigured(string $code, string $what): void

@@ -97,7 +97,7 @@ class ConsolidatedReport
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return array{rows: Collection<int, object>, totals: array<string, string>}
+     * @return array{rows: Collection<int, \stdClass>, totals: array<string, string>}
      */
     private function companyReport(string $report, array $filters): array
     {

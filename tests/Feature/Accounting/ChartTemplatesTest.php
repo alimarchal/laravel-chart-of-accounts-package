@@ -25,7 +25,7 @@ beforeEach(function (): void {
 });
 
 it('lists the templates and previews what a template would add', function (): void {
-    expect(collect(($this->templates)()->available())->pluck('key')->all())->toBe(['general', 'trading', 'manufacturing', 'services', 'school', 'ngo', 'healthcare']);
+    expect(collect(($this->templates)()->available())->pluck('key')->all())->toBe(['erpnext', 'general', 'trading', 'manufacturing', 'services', 'school', 'ngo', 'healthcare']);
 
     $preview = ($this->templates)()->preview('trading');
 
@@ -126,7 +126,7 @@ it('maps every account of every template to a statement line', function (string 
 it('serves templates over the API, previews with dry_run and applies for permitted users only', function (): void {
     Sanctum::actingAs($this->owner);
 
-    $this->getJson('/api/v1/accounting/chart-templates')->assertOk()->assertJsonCount(7, 'data')->assertJsonPath('data.1.key', 'trading');
+    $this->getJson('/api/v1/accounting/chart-templates')->assertOk()->assertJsonCount(8, 'data')->assertJsonPath('data.2.key', 'trading');
     $this->getJson('/api/v1/accounting/chart-templates/ngo')->assertOk()->assertJsonPath('data.summary.new', 15);
     $this->postJson('/api/v1/accounting/chart-templates/ngo/apply', ['dry_run' => true])->assertOk()->assertJsonPath('message', 'Preview only: nothing was added.');
     expect(ChartOfAccount::query()->where('account_code', '4108')->exists())->toBeFalse();
@@ -145,7 +145,7 @@ it('runs from the React page', function (): void {
     $this->withoutVite();
 
     $this->get('/accounting/chart-templates?template=trading')->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('accounting/chart-of-accounts/templates')->has('templates', 7)->where('preview.summary.new', 15)->where('selected', 'trading'));
+        ->component('accounting/chart-of-accounts/templates')->has('templates', 8)->where('preview.summary.new', 15)->where('selected', 'trading'));
     $this->get('/accounting/chart-templates?template=nope')->assertInertia(fn (AssertableInertia $page) => $page->where('preview', null));
 
     $this->post('/accounting/chart-templates/trading/apply')->assertRedirect('/accounting/chart-of-accounts')

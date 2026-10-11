@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\FinancialStatementService;
 use Closure;
@@ -35,17 +36,23 @@ class ReportCatalog
      */
     public function resolve(string $report, array $input): ?array
     {
+        // The Blade screens pick a period instead of a date: its last day is the as-of date.
+        if (empty($input['as_of_date']) && ! empty($input['accounting_period_id']) && is_numeric($input['accounting_period_id'])) {
+            $period = AccountingPeriod::query()->find((int) $input['accounting_period_id']);
+            $input['as_of_date'] = $period?->end_date?->toDateString();
+        }
+
         $only = fn (array $keys) => array_intersect_key($input, array_flip($keys));
         $ledger = $only(['date_from', 'date_to', 'account_id', 'status']);
 
         $definition = match ($report) {
             'general-ledger' => ['reports.general-ledger.view', fn () => app(GeneralLedgerReport::class)->query($ledger)],
-            'trial-balance' => ['reports.trial-balance.view', fn () => app(TrialBalanceReport::class)->rows()],
-            'balance-sheet' => ['reports.balance-sheet.view', fn () => app(BalanceSheetReport::class)->rows()],
-            'income-statement' => ['reports.income-statement.view', fn () => app(IncomeStatementReport::class)->rows()],
+            'trial-balance' => ['reports.trial-balance.view', fn () => app(TrialBalanceReport::class)->rows($only(['as_of_date', 'date_from', 'search', 'account_type', 'report_group', 'hide_zero']))],
+            'balance-sheet' => ['reports.balance-sheet.view', fn () => app(BalanceSheetReport::class)->rows($only(['as_of_date']))],
+            'income-statement' => ['reports.income-statement.view', fn () => app(IncomeStatementReport::class)->rows($only(['date_from', 'date_to']))],
             'cash-flow' => ['reports.cash-flow.view', fn () => app(CashFlowReport::class)->query($only(['date_from', 'date_to']))],
-            'aged-receivables' => ['reports.aged-receivables.view', fn () => app(AgedReceivablesReport::class)->rows()],
-            'aged-payables' => ['reports.aged-payables.view', fn () => app(AgedPayablesReport::class)->rows()],
+            'aged-receivables' => ['reports.aged-receivables.view', fn () => app(AgedReceivablesReport::class)->rows(is_string($input['as_of_date'] ?? null) ? $input['as_of_date'] : '')],
+            'aged-payables' => ['reports.aged-payables.view', fn () => app(AgedPayablesReport::class)->rows(is_string($input['as_of_date'] ?? null) ? $input['as_of_date'] : '')],
             'bank-book' => ['reports.bank-book.view', fn () => app(BankBookReport::class)->query($only(['date_from', 'date_to', 'account_id', 'bank_account_id', 'status']))],
             'cash-book' => ['reports.cash-book.view', fn () => app(CashBookReport::class)->query($ledger)],
             'account-statement' => ['reports.account-statement.view', fn () => app(AccountStatementReport::class)->query($only(['account_id', 'account_code', 'date_from', 'date_to']))],

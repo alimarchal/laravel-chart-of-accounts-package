@@ -22,6 +22,31 @@ final class ControlAccounts
         return (array) config('accounting.control_accounts.types', []);
     }
 
+    /**
+     * The accounts to mark as control accounts (code => type): the application's accounting.control_accounts.recommended if it set one,
+     * else the accounts that play the control.* roles in the company's chart.
+     *
+     * @return array<string, string>
+     */
+    public static function recommended(): array
+    {
+        $configured = config('accounting.control_accounts.recommended');
+
+        if (is_array($configured) && $configured !== []) {
+            return $configured;
+        }
+
+        $map = [];
+
+        foreach (array_keys(self::types()) as $type) {
+            foreach (AccountRoles::codes('control.'.$type) as $code) {
+                $map[$code] = $type;
+            }
+        }
+
+        return $map;
+    }
+
     public static function label(?string $type): ?string
     {
         return $type === null ? null : (self::types()[$type] ?? ucfirst(str_replace('_', ' ', $type)));

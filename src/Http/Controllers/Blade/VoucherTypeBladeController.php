@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherTypeService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -19,10 +20,17 @@ class VoucherTypeBladeController extends Controller
 
     public function index(Request $request): View
     {
-        $voucherTypes = VoucherType::query()->orderBy('code')->get();
+        $voucherTypes = ListFilters::for(VoucherType::query(), $request, [
+            ListFilters::search('search', ['code', 'name', 'prefix', 'description']),
+            ListFilters::bool('active', 'is_active'),
+            ListFilters::bool('is_active', 'is_active'),
+            ListFilters::bool('system', 'is_system'),
+            ListFilters::exact('reset'),
+        ], sorts: ['code', 'name'], defaultSort: 'code')->get();
 
         return view('accounting::voucher-types.index', [
             'voucherTypes' => $voucherTypes->map(fn (VoucherType $type) => $this->types->present($type)),
+            'filters' => ListFilters::current($request, ['search', 'active', 'system', 'reset']),
             'editing' => $request->filled('edit') ? $voucherTypes->firstWhere('id', (int) $request->input('edit')) : null,
             'resets' => VoucherType::resets(),
             'defaultFormat' => VoucherType::DEFAULT_FORMAT,

@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { Download } from 'lucide-react';
 import { Fragment } from 'react';
+import FilterBar, { filterQuery } from '@/components/accounting/filter-bar';
 import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
 import { useAccountingI18n } from '@/lib/i18n';
@@ -36,9 +37,11 @@ type Totals = {
 export default function BalanceSheet({
     rows,
     totals,
+    filters,
 }: {
     rows: StatementRow[];
     totals: Totals;
+    filters: Record<string, string | null>;
 }) {
     useAccountingI18n();
     const grouped = rows.reduce<Record<string, StatementRow[]>>(
@@ -54,6 +57,14 @@ export default function BalanceSheet({
         <>
             <Head title="Balance Sheet" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <FilterBar
+                    path="/accounting/reports/balance-sheet"
+                    values={filters}
+                    fields={[
+                        { name: 'as_of_date', label: 'As of', type: 'date' },
+                    ]}
+                />
+
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <div>
                         <h1 className="text-2xl font-semibold">
@@ -67,7 +78,7 @@ export default function BalanceSheet({
                         {['csv', 'xlsx', 'pdf'].map((format) => (
                             <Button key={format} asChild variant="outline">
                                 <a
-                                    href={`/accounting/reports/balance-sheet/export/${format}`}
+                                    href={`/accounting/reports/balance-sheet/export/${format}${filterQuery(filters)}`}
                                 >
                                     <Download className="size-4" />
                                     {format.toUpperCase()}

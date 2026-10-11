@@ -26,6 +26,15 @@
                 @endif
             </form>
         @endcan
+        <x-accounting::list-filters :action="route('accounting.payroll.settlements.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Employee code, name or notes'],
+            ['name' => 'employee_id', 'label' => 'Employee', 'type' => 'select', 'options' => collect($employees)->mapWithKeys(fn ($row) => [$row['id'] ?? $row->id => (($row['code'] ?? $row->code).' '.($row['name'] ?? $row->name))])->all()],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'posted' => 'Posted', 'paid' => 'Paid', 'void' => 'Void']],
+            ['name' => 'leave_from', 'label' => 'Left from', 'type' => 'date'],
+            ['name' => 'leave_to', 'label' => 'Left to', 'type' => 'date'],
+            ['name' => 'min_net', 'label' => 'Net from', 'type' => 'number'],
+            ['name' => 'max_net', 'label' => 'Net up to', 'type' => 'number'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Employee</th><th class="py-2 px-3 text-left font-medium text-gray-600">Last day</th><th class="py-2 px-3 text-right font-medium text-gray-600">Gratuity</th><th class="py-2 px-3 text-right font-medium text-gray-600">Leave pay</th><th class="py-2 px-3 text-right font-medium text-gray-600">Loans</th><th class="py-2 px-3 text-right font-medium text-gray-600">Net</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th><th></th></tr></thead>
             <tbody>

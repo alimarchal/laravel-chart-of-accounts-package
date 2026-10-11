@@ -30,6 +30,9 @@
 - **Source documents** — every entry can name the invoice, bill or receipt it records (and link to your own `Invoice` / `Bill` model); a document can be **posted only once**, enforced by the database
 - **Attachments** — scanned bills, receipts and contracts on every entry, stored privately, never removable once posted, duplicate-file warning, optional "evidence required above" amount
 - **Recurring entries** — rent, subscriptions, depreciation and accruals on a daily-to-yearly schedule: generated as drafts or posted automatically, with catch-up, pause/resume, run-now and a full history
+- **ERPNext standard chart on a fresh install** — a new company starts with ERPNext's chart of accounts and its account numbers (`1110 Cash`, `1310 Debtors`, `2110 Creditors`, `4110 Sales` …), already wired to the modules through **account roles**; pick the package's own general or the school chart instead with `--chart=`
+- **Account roles** — which account is "cash", "bank", "salary expense", "receivables in the ageing" … is a setting per company (screen, API, `accounting:account-roles`), not a code hard-wired in the program
+- **Filters and search on every list** — one filter language (`?filter[search]=…`, dates, amounts, status, sorting) on every screen, React and Blade, and every API list, built on Spatie Laravel Query Builder; reports and their exports use the same dates
 - **Industry chart templates** — trading, manufacturing, services, school, NGO and healthcare charts: start a company from one, or add an industry's accounts to the chart you have (existing accounts are never changed); add your own in config
 - **Chart import & export** — bring your existing chart in from Excel or CSV with a line-by-line preview (new / updated / errors) before anything is saved; export it, edit it, import it back
 - **Renumber & merge accounts** — give an account (and its sub-accounts) new codes, or fold a duplicate into another account with a posted transfer entry — the ledger history is never rewritten
@@ -129,7 +132,7 @@ php artisan accounting:install --admin-email=you@example.com
 ```
 
 That's it — open `/accounting`. The installer is idempotent (safe to re-run) and takes about two seconds. It
-publishes config and migrations, migrates, seeds a ready-to-use chart of accounts, currencies, the current
+publishes config and migrations, migrates, seeds a ready-to-use chart of accounts (the ERPNext standard chart; `--chart=general` or `--chart=school` for another, see below), currencies, the current
 fiscal year, roles and tax codes, creates the database views and triggers, gives `super-admin` to your user,
 and verifies everything. If a trait is missing it prints the exact lines to add.
 
@@ -186,7 +189,7 @@ createInertiaApp({
 
 ```env
 ACCOUNTING_BASE_CURRENCY=USD            # default PKR; set before installing
-ACCOUNTING_CHART_PRESET=general         # or "school"
+ACCOUNTING_CHART_PRESET=erpnext         # erpnext (default), general or school
 ACCOUNTING_ROUTE_PREFIX=accounting      # URL prefix for the web UI
 ACCOUNTING_MULTI_COMPANY=true           # several companies (see below)
 ACCOUNTING_APPROVALS_ENABLED=true       # maker-checker (see below)
@@ -252,6 +255,12 @@ Refreshes package-owned files (React pages / Select2 assets), runs new migration
 database views and triggers, and adds roles/permissions introduced by the new version (your changes to
 existing roles are kept). It never overwrites your `config/accounting.php` or customised views
 (`--views` re-publishes Blade views explicitly).
+
+**Upgrading to 2.34.** The default chart of a *new* installation is now the ERPNext chart (`ACCOUNTING_CHART_PRESET=erpnext`); companies that
+already have a chart are not touched and keep the account codes they used (cash `1101`, receivables `1103` …). The fixed account codes in
+`config/accounting.php` (`defaults.*`, `aging.*`) are now optional overrides — if your published config still has them, they keep winning
+and nothing changes. Lists accept the shared filters; an unknown `filter[...]` now answers 400 instead of being ignored by the lists that
+used to read their own parameters.
 
 ---
 
@@ -636,6 +645,49 @@ change is in the audit trail (`FEATURE_ENABLED`, `FEATURE_DISABLED`). Keys: `par
 `payroll_payslip_mail`, `payroll_adjustments`, `payroll_approval`, `payroll_settlements`, `payroll_reports`. Multi-company and maker-checker
 approvals of journal entries keep their own switches (`accounting.multi_company.enabled`, `accounting.approvals.enabled`).
 
+## Filtering and searching lists
+
+Every list, in the React screens, the Blade screens and the REST API, filters the same way (Spatie Laravel Query Builder underneath). On a
+screen the filter bar sits above the table; the same names work in the address and in an API call:
+
+```
+GET /api/v1/accounting/party-documents?filter[search]=rent&filter[status]=posted&filter[date_from]=2026-01-01&sort=-total
+GET /api/v1/accounting/party-documents?search=rent&status=posted&date_from=2026-01-01&sort=-total        # the short form is the same
+```
+
+- `filter[name]=value` is the standard form; the short `?name=value` form is read too, and `filter[...]` wins when both are sent. A
+  link to a filtered screen and an API call therefore look alike.
+- **Several values**, separated by commas, match any of them (`filter[status]=draft,posted`).
+- **Text** (`search`, `name`, `email` …) matches *part* of the text, ignoring case; `%` and `_` in what you type match themselves, so
+  searching `100%` finds "100% Organic" and nothing else.
+- **Dates** are `YYYY-MM-DD` (`date_from` / `date_to` or a name that says what it is, e.g. `due_from`, `joined_to`), **amounts**
+  `min_total` / `max_total` (or `_amount`, `_cost`, `_salary`, `_net`), **yes/no** filters take `1`, `0`, `true` or `false`.
+- `?sort=name` and `?sort=-name` (descending) sort where a list offers it; the allowed columns are in the API reference. Each list has its
+  own default order (newest first for documents and payments, by code for accounts).
+- **Strict where it matters**: an unknown filter or sort answers `400`, a malformed date or number `422`, so a typo never silently
+  returns everything.
+- Filters **combine with AND**; a result that is capped (for example the 300 newest FBR documents) is capped *after* filtering, so the
+  record you are looking for is found by its status or date, not only when it is recent.
+- **Reports keep their filters when exported**: the CSV / Excel / PDF of the trial balance, balance sheet, income statement and the aged
+  reports contain exactly the date and filters on the screen (the Blade screens pick a period instead of a date; its last day is used).
+  The trial balance takes `as_of_date`, `date_from` (the movement of a period), `search`, `account_type`, `report_group` and `hide_zero`.
+
+| List | Filters (besides `search`) |
+|---|---|
+| Customers and suppliers | `type`, `email`, `tax_number`, `active` |
+| Invoices and bills | `kind`, `status`, `party_id`, `date_from`/`date_to` (issued), `due_from`/`due_to`, `min_total`/`max_total` |
+| Receipts and payments | `kind`, `status`, `party_id`, `method`, `date_from`/`date_to`, `min_amount`/`max_amount` |
+| Fixed assets | `category`, `method`, `status`, `as_of`, `acquired_from`/`acquired_to`, `min_cost`/`max_cost` |
+| Inventory, movements, warehouses | `category`, `unit`, `low_stock`, `warehouse_id`, `as_of`; `item_id`, `type`, dates; `active` |
+| Budgets, bank statements | `status`, dates; `bank_account_id`, `unmatched`, dates |
+| Recurring entries | `frequency`, `mode`, `active`, `due_by` |
+| Payroll: runs, employees | `status`, `period_from`/`period_to`; `active`, `withhold_tax`, `cost_center_id`, `joined_from`/`joined_to`, `min_salary`/`max_salary` |
+| Payroll: loans, arrears, adjustments, settlements | `employee_id` and a search by the employee's code or name, `status`, `kind`, dates, amounts |
+| Payroll: components, grades, schemes | `kind`, `method`, `taxable`, `base`, `applies_to_all`, `active`, `min_salary`/`max_salary` |
+| Users, roles, voucher types, companies, control accounts | `role`, `name`, `email`; `guard_name`; `active`, `system`, `reset`; `is_active`; `control_type` |
+| Tax returns, exchange rates, revaluations, FBR, periods | `return_from`/`return_to`, `min_payable`; `currency_id`, `source`, `rate_from`/`rate_to`; `status`, `kind`, dates; `status`, dates |
+| Journal entries, chart of accounts, audit log, small master data | `reference`, `status`, `entry_date_from`/`entry_date_to`, … (see the OpenAPI document) |
+
 ## Inventory
 
 `/accounting/inventory` (and `/api/v1/accounting/inventory`) keeps stock and its value at **moving average cost**: items with the
@@ -749,6 +801,85 @@ is an **unrealised exchange gain or loss**.
 Permissions `fx-revaluation.view` (accountant, approver, auditor, viewer), `fx-revaluation.run` and
 `fx-revaluation.rates` (accountant).
 
+## The chart of accounts on a fresh install (ERPNext)
+
+A new installation starts with the **ERPNext standard chart of accounts with account numbers**, so an accountant who knows ERPNext finds
+every account where it expects it:
+
+| Number | Account | Number | Account |
+|---|---|---|---|
+| `1000` | Application of Funds (Assets) | `4000` | Income |
+| `1100 / 1110` | Cash In Hand / Cash | `4110` | Sales |
+| `1200 / 1210` | Bank Accounts / Primary Bank Account | `4120` | Service |
+| `1300 / 1310` | Accounts Receivable / Debtors | `5000` | Expenses |
+| `1400 / 1410` | Stock Assets / Stock In Hand | `5111` | Cost of Goods Sold |
+| `1700` | Fixed Assets (`1710`–`1790`, `1780` accumulated depreciation) | `5213` | Salary |
+| `2000` | Source of Funds (Liabilities) | `5212` | Round Off |
+| `2100 / 2110` | Accounts Payable / Creditors | `5219` | Exchange Gain / Loss |
+| `2300` | Duties and Taxes (`2310` TDS Payable, `2320` Output Sales Tax Payable) | `3000 / 3400` | Equity / Retained Earnings |
+
+Choose another chart when you install (or later for a new company):
+
+```bash
+php artisan accounting:install --chart=erpnext      # the default: ERPNext's standard chart
+php artisan accounting:install --chart=general      # the package's own business chart (1101 Cash In Hand, 1103 Accounts Receivable …)
+php artisan accounting:install --chart=school       # the school chart
+php artisan accounting:seed --chart=erpnext --company=BRANCH2     # seed one company
+php artisan accounting:create-company BRANCH2 "Branch 2" --template=erpnext   # a new company; without --template it uses ACCOUNTING_CHART_PRESET
+```
+
+`ACCOUNTING_CHART_PRESET` sets the default (`erpnext`, `general` or `school`). Run interactively, the installer asks which chart to use
+(ERPNext is the default answer). The chart is chosen **per company** and kept in the company's settings; the seeder only creates missing
+accounts and never renames or removes one.
+
+- **Everything is wired up** — cash book, bank book, ageing, control accounts, year-end close, rounding, exchange gain/loss, payroll (salary
+  expense, income tax, net salary payable, loans) all find their accounts through [account roles](#account-roles), and the financial
+  statements are mapped to every account.
+- **Mixing is refused** — adding an ERPNext account to a company that was seeded with the general chart (or the other way round) is not
+  allowed, because the two charts use the same numbers for different things. Industry templates (`accounting:chart-templates`) fit both: the
+  template's accounts are numbered after the chart you have.
+- **Existing installations are unchanged** — a company that already has a chart keeps behaving as the general chart did (the same account
+  codes), and `accounting:update` adds the roles table without touching your accounts. To switch such a company to roles explicitly, run
+  `php artisan accounting:account-roles seed general` once, then change roles as you like.
+- **Licence** — the chart follows ERPNext's published structure and names (ERPNext is GPL-3.0); see `NOTICE.md`. Install with
+  `--chart=general` if you prefer the package's own chart.
+
+## Account roles
+
+A module never asks for "account 1101". It asks for a **role**: "which account is the cash book?", "which accounts are the receivables in the
+ageing report?". Each company has its own answers, filled in from the chart when it was seeded and changeable from **Account roles**
+(`/accounting/account-roles`, `/settings/account-roles` with Blade; needs `accounting.manage-settings`), the API or the command line.
+
+| Role | Used for |
+|---|---|
+| `cash`, `bank` | Cash book, bank book, close checklist (bank reconciled) |
+| `retained_earnings`, `rounding`, `fx_gain_loss` | Year-end close, rounding differences, currency revaluation |
+| `aging.receivables`, `aging.payables` | The ageing reports and the party statements |
+| `control.receivables`, `.payables`, `.inventory`, `.payroll`, `.tax` | "Recommended setup" of the control accounts |
+| `salary_expense`, `net_salary_payable`, `income_tax_payable`, `employee_advances` | Payroll posting, loans, settlements |
+| `salary_arrears`, `bonus_expense`, `gratuity_expense`, `gratuity_payable` | Optional: arrears, bonuses and settlements default to salary expense / net salary payable |
+
+```bash
+php artisan accounting:account-roles                          # who plays what, and what the config pins
+php artisan accounting:account-roles set cash 1110
+php artisan accounting:account-roles set aging.receivables 1310 1311
+php artisan accounting:account-roles seed general --overwrite  # fill the roles of a chart again
+```
+
+```http
+GET /api/v1/accounting/account-roles
+PUT /api/v1/accounting/account-roles   {"roles": {"cash": [12], "aging.receivables": [14, 15]}}
+```
+
+- The **order of resolution** is: the config value (`accounting.defaults.cash_account_code`, `accounting.aging.*`,
+  `accounting.payroll.*_account`, `accounting.fx.gain_loss_account` — a config value pins the role and the screen shows it as fixed), then the
+  company's saved roles, then the default of the company's chart.
+- A role takes **active posting accounts** of the company; a role that takes one account refuses two. An empty list puts the role back to the
+  chart's default. Every change is in the audit trail (`ACCOUNT_ROLES_UPDATED`).
+- **They follow the money**: merging an account into another moves its roles to the account that keeps the balance; an account that plays a
+  role cannot be deleted or deactivated until the role is given to another account; and cash, bank, retained earnings and rounding cannot be
+  renumbered, merged away or deactivated while they play their role.
+
 ## Industry chart templates
 
 Chart of Accounts → **Templates** (React and Blade), `GET /chart-templates`, or `php artisan accounting:chart-templates`.
@@ -756,7 +887,8 @@ A template is a base chart plus the accounts an industry adds:
 
 | Template | Adds (examples) |
 |---|---|
-| `general` | The standard chart (the default) |
+| `erpnext` | The ERPNext standard chart with account numbers (the default for a new installation) |
+| `general` | The package's own business chart |
 | `trading` | Merchandise and goods in transit, sales returns / discounts (contra income), purchases, purchase returns, freight inward, customs duty, sales commission |
 | `manufacturing` | Work in progress, packing materials, spare parts, factory building, tools and dies, a **Manufacturing Overheads** group (rent, utilities, depreciation, indirect labour, wastage) and production variances |
 | `services` | Unbilled revenue, retention payable, consulting / retainer / project income, subcontractor costs |
@@ -1191,7 +1323,7 @@ plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->
-_311 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
+_313 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
 
 ### Journal entries
 
@@ -1623,10 +1755,12 @@ _311 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 |--------|----------|--------------|------------|
 | GET | `/features` | Every optional module and payroll feature with its switch | `accounting.manage-settings` |
 | PUT | `/features` | Switch features on or off | `accounting.manage-settings` |
+| GET | `/account-roles` | Which account plays which part for the modules (cash, bank, salary expense, receivables …) | `accounting.manage-settings` |
+| PUT | `/account-roles` | Give roles other accounts | `accounting.manage-settings` |
 
 <!-- api-reference:end -->
 
-List endpoints support `?filter[field]=value`, `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
+List endpoints support `?filter[field]=value` (or the short `?field=value`; see [Filtering and searching lists](#filtering-and-searching-lists)), `?sort=field` / `-field`, `?page=N` and `?per_page=N` (capped by `ACCOUNTING_API_MAX_PER_PAGE`, default 100).
 Journal entries also filter by `filter[approval_status]=pending|approved|rejected`, `filter[voucher_number]` (partial),
 `filter[source_document_number]` (partial), `filter[source_document_type]`,
 `filter[voucher_type_id]` and `filter[entry_date_from]` / `filter[entry_date_to]`.
@@ -1672,23 +1806,24 @@ return [
     ],
     'defaults' => [
         'currency_code'                  => env('ACCOUNTING_BASE_CURRENCY', 'PKR'),
-        'cash_account_code'              => env('ACCOUNTING_CASH_ACCOUNT_CODE', '1101'),   // + child accounts
-        'bank_account_code'              => env('ACCOUNTING_BANK_ACCOUNT_CODE', '1102'),   // group: all bank accounts
-        'retained_earnings_account_code' => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE', '3101'),
-        'rounding_account_code'          => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE', '5201'),
+        'cash_account_code'              => env('ACCOUNTING_CASH_ACCOUNT_CODE'),            // null: the account with the "cash" role
+        'bank_account_code'              => env('ACCOUNTING_BANK_ACCOUNT_CODE'),
+        'retained_earnings_account_code' => env('ACCOUNTING_RETAINED_EARNINGS_ACCOUNT_CODE'),
+        'rounding_account_code'          => env('ACCOUNTING_ROUNDING_ACCOUNT_CODE'),
     ],
     'aging' => [
-        'receivable_account_codes' => ['1103', '1104'],
-        'payable_account_codes'    => ['2101', '2102', '2103', '2104'],
+        'receivable_account_codes' => null,   // null: the accounts with the "aging.receivables" role
+        'payable_account_codes'    => null,
     ],
-    'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'general'), // 'general' or 'school'
+    'chart_preset' => env('ACCOUNTING_CHART_PRESET', 'erpnext'), // 'erpnext', 'general' or 'school'
     'permissions'  => [/* … */],
     'roles'        => [/* super-admin, admin, accountant, approver, auditor, viewer */],
 ];
 ```
 
-Accounts referenced by `defaults.*_account_code` are protected: their code cannot change and they cannot be
-deactivated or deleted.
+The `defaults.*_account_code` and `aging.*` values are optional overrides: leave them out and the accounts that play each
+role in the company's chart (see **Account roles**) are used. An account that plays cash, bank, retained earnings or rounding
+(by role or by one of these overrides) is protected: its code cannot change and it cannot be deactivated, deleted or merged away.
 
 The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` permission check.
 
@@ -1698,9 +1833,9 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 
 | Command | Description |
 |---------|-------------|
-| `accounting:install` | Full setup: publish all assets, migrate, seed, sync, verify |
+| `accounting:install` | Full setup: publish all assets, migrate, seed, sync, verify (`--chart=erpnext\|general\|school`) |
 | `accounting:update` | Re-publish assets + sync DB after package upgrade |
-| `accounting:seed` | Seed account types, currencies, COA, permissions, periods |
+| `accounting:seed` | Seed account types, currencies, COA, permissions, periods (`--chart=`, `--company=`) |
 | `accounting:sync-db-objects` | Sync database views, triggers, stored procedures |
 | `accounting:verify` | Verify accounting data integrity |
 | `accounting:health-check` | Run accounting health checks |
@@ -1711,6 +1846,7 @@ The web routes always use `['web', 'auth', 'verified']` plus a per-route `can:` 
 | `accounting:roles` | Print the role × permission matrix; fails if a role can both create and approve entries |
 | `accounting:prune-exports` | Delete background exports older than `accounting.exports.keep_days` with their files |
 | `accounting:run-recurring` | Generate the recurring entries that are due (`--date=`, `--company=`, `--dry-run`); scheduled daily |
+| `accounting:account-roles` | Show which account plays which role (cash, bank, salary expense …) for a company, `set` a role, or `seed` the roles of a chart (`--company=`, `--overwrite`) |
 | `accounting:chart-templates` | List the industry chart templates, preview (`--dry-run`) or add one to a company (`--company=`) |
 | `accounting:create-company` | Create a company with its own chart, fiscal year, cost centers and tax codes (`--fiscal-start`, `--user`, `--empty`, `--template=`) |
 
@@ -2007,8 +2143,8 @@ installs.
 ### Seeding
 
 `accounting:seed` only **creates missing** records — it never renames, re-activates or re-rates existing
-accounts/currencies and never reopens closed periods. `ACCOUNTING_CHART_PRESET=general` (default) seeds
-industry-neutral names; `school` seeds education-specific names. With a base currency other than PKR only the
+accounts/currencies and never reopens closed periods. `ACCOUNTING_CHART_PRESET=erpnext` (default) seeds the ERPNext standard chart;
+`general` seeds the package's industry-neutral chart; `school` seeds education-specific names (`--chart=` overrides it for one run). With a base currency other than PKR only the
 base currency is seeded.
 
 ---

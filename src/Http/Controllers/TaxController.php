@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingReportExporter;
 use Alimarchal\LaravelChartOfAccounts\Services\TaxService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\QueryBuilder\QueryBuilder;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
@@ -39,10 +41,11 @@ class TaxController extends Controller
 
     public function __construct(private readonly TaxService $tax) {}
 
-    public function index(): Response|View
+    public function index(Request $request): Response|View
     {
         $today = now()->toDateString();
-        $codes = TaxCode::query()->with('taxAccount:id,account_code,account_name')->orderBy('code')->get()->map(fn (TaxCode $code): array => [
+        $request->validate(['return_from' => ['nullable', 'date'], 'return_to' => ['nullable', 'date']]);
+        $codes = ListFilters::collection(TaxCode::query()->with('taxAccount:id,account_code,account_name')->orderBy('code')->get()->map(fn (TaxCode $code): array => [
             'id' => $code->id,
             'code' => $code->code,
             'name' => $code->name,
@@ -51,11 +54,12 @@ class TaxController extends Controller
             'tax_account' => $code->taxAccount ? $code->taxAccount->account_code.' '.$code->taxAccount->account_name : null,
             'jurisdiction' => $code->jurisdiction,
             'is_active' => $code->is_active,
-        ])->values();
+        ])->values(), $request, ['code', 'name', 'jurisdiction', 'tax_account'], ['kind', 'is_active']);
 
         return $this->render('index', [
             'taxCodes' => $codes,
-            'returns' => TaxReturn::query()->with('journalEntry:id,voucher_number')->orderByDesc('period_to')->limit(100)->get()->map(fn (TaxReturn $return): array => $this->presentReturn($return))->values(),
+            'returns' => $this->filteredReturns($request)->limit(100)->get()->map(fn (TaxReturn $return): array => $this->presentReturn($return))->values(),
+            'filters' => ListFilters::current($request, ['search', 'kind', 'is_active', 'return_from', 'return_to', 'return_search']),
             'accounts' => $this->accounts(['LIABILITY', 'ASSET']),
             'today' => $today,
             'monthStart' => now()->startOfMonth()->toDateString(),
@@ -113,9 +117,26 @@ class TaxController extends Controller
         });
     }
 
+    /**
+     * Returns whose period overlaps ?return_from … ?return_to, or whose reference contains ?return_search.
+     *
+     * @return QueryBuilder<TaxReturn>
+     */
+    private function filteredReturns(Request $request): QueryBuilder
+    {
+        return ListFilters::for(TaxReturn::query()->with('journalEntry:id,voucher_number'), $request, [
+            ListFilters::search('return_search', ['reference', 'notes']),
+            ListFilters::from('return_from', 'period_to'),
+            ListFilters::to('return_to', 'period_from'),
+            ListFilters::min('min_payable', 'net_payable'),
+            ListFilters::max('max_payable', 'net_payable'),
+        ], sorts: ['period_to', 'net_payable', 'id'], defaultSort: '-period_to');
+    }
+
     public function returns(Request $request): JsonResponse
     {
-        $returns = TaxReturn::query()->with('journalEntry:id,voucher_number')->orderByDesc('period_to')->get()->map(fn (TaxReturn $return): array => $this->presentReturn($return))->values();
+        $request->validate(['return_from' => ['nullable', 'date'], 'return_to' => ['nullable', 'date']]);
+        $returns = $this->filteredReturns($request)->get()->map(fn (TaxReturn $return): array => $this->presentReturn($return))->values();
 
         return response()->json(['data' => $returns]);
     }

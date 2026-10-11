@@ -50,6 +50,12 @@
         </div>
         @endif
 
+        <x-accounting::list-filters :action="route('accounting.fx-revaluation.index')" :values="$filters" :preserve="collect($filters)->only(['reval_search', 'reval_from', 'reval_to'])->all()" :fields="[
+            ['name' => 'currency_id', 'label' => 'Currency', 'type' => 'select', 'options' => collect($currencies)->mapWithKeys(fn ($currency) => [$currency['id'] => $currency['code']])->all()],
+            ['name' => 'source', 'label' => 'Source', 'placeholder' => 'manual, import…'],
+            ['name' => 'rate_from', 'label' => 'Rates from', 'type' => 'date'],
+            ['name' => 'rate_to', 'label' => 'Rates to', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5 space-y-4">
             <h3 class="font-semibold text-gray-800">Exchange rates <span class="text-xs font-normal text-gray-500">1 unit = rate {{ $base }}; a revaluation date picks the latest rate on or before it</span></h3>
             @can('fx-revaluation.rates')
@@ -77,6 +83,11 @@
             </table></div>
         </div>
 
+        <x-accounting::list-filters :action="route('accounting.fx-revaluation.index')" :values="$filters" :preserve="collect($filters)->only(['currency_id', 'source', 'rate_from', 'rate_to'])->all()" :fields="[
+            ['name' => 'reval_search', 'label' => 'Search revaluations', 'placeholder' => 'Notes'],
+            ['name' => 'reval_from', 'label' => 'As of from', 'type' => 'date'],
+            ['name' => 'reval_to', 'label' => 'As of to', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5 space-y-3">
             <h3 class="font-semibold text-gray-800">History</h3>
             <div class="overflow-x-auto"><table class="min-w-full text-sm">

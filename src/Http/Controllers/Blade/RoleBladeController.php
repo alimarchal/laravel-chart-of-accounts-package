@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,13 +21,13 @@ class RoleBladeController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Role::withCount('permissions')->latest();
+        $query = ListFilters::for(Role::withCount('permissions'), $request, [
+            ListFilters::search('search', ['name']),
+            ListFilters::search('name', ['name']),
+            ListFilters::exact('guard_name'),
+        ], sorts: ['name', 'created_at', 'permissions_count'], defaultSort: '-created_at');
 
-        if ($request->filled('filter.name')) {
-            $query->where('name', 'like', '%'.$request->input('filter.name').'%');
-        }
-
-        return view('accounting::roles.index', ['roles' => $query->paginate(25)->withQueryString()]);
+        return view('accounting::roles.index', ['roles' => $query->paginate(25)->withQueryString(), 'filters' => ListFilters::current($request, ['search', 'name', 'guard_name'])]);
     }
 
     public function create(): View

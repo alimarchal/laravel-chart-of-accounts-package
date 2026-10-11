@@ -10,7 +10,7 @@
 
 | کمانڈ | کام |
 |---|---|
-| `php artisan accounting:install` | پیکیج کی ابتدائی تنصیب: ترتیب، مائیگریشن، رولز، ڈیفالٹ ڈیٹا |
+| `php artisan accounting:install` | پیکیج کی ابتدائی تنصیب: ترتیب، مائیگریشن، رولز، ڈیفالٹ ڈیٹا (`--chart=erpnext\|general\|school` سے چارٹ کا انتخاب) |
 | `php artisan accounting:update` | اپ ڈیٹ کے بعد نئی مائیگریشن/اجازتیں لگانا (`--views` سے شائع شدہ Blade اسکرینیں بھی نئی) |
 | `php artisan accounting:seed` | ڈیفالٹ چارٹ/اقسام/کرنسیاں لگانا (`--company=` کے ساتھ ایک کمپنی کے لیے) |
 | `php artisan accounting:health-check` | جانچ کہ سب کچھ درست انسٹال ہے (`503` اگر نہیں) |
@@ -23,6 +23,7 @@
 | `php artisan accounting:rebuild-snapshots` | بیلنس اسنیپ شاٹ دوبارہ بنانا |
 | `php artisan accounting:run-recurring` | دہرائے جانے والے واؤچر بنانا (شیڈولر روزانہ خود چلاتا ہے) |
 | `php artisan accounting:payroll-run` | پچھلے مہینے کا پے رول Run (Draft) بنانا |
+| `php artisan accounting:account-roles` | کون سا کھاتہ کس کام (کیش، بینک، تنخواہ ...) کے لیے ہے: فہرست، `set`، `seed` (باب 14) |
 | `php artisan accounting:features` | فیچرز کی فہرست / `enable` / `disable` / `reset` |
 | `php artisan accounting:chart-templates` | صنعتی چارٹ ٹیمپلیٹ لگانا |
 | `php artisan accounting:prune-exports` | پرانی ایکسپورٹ فائلیں صاف کرنا |

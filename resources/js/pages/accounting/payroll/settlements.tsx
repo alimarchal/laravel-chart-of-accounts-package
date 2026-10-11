@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +15,12 @@ type Row = {
     adjustment: string; loan_recovery: string; net: string; journal_entry_id: number | null; posted_on: string | null; paid_on: string | null; notes: string | null;
 };
 type Preview = { employee_id: number; leave_date: string; service_years: string; basic: string; gratuity: string; leave_days: string; leave_encashment: string; adjustment: string; loan_recovery: string; net: string; loans: Array<{ loan_id: number; kind: string; outstanding: string }> };
-type Props = { settlements: Row[]; preview: Preview | null; today: string; employees: Array<{ id: number; code: string; name: string }>; accounts: Array<{ id: number; account_code: string; account_name: string }> };
+type Props = { settlements: Row[]; filters: Record<string, string | null>; preview: Preview | null; today: string; employees: Array<{ id: number; code: string; name: string }>; accounts: Array<{ id: number; account_code: string; account_name: string }> };
 
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
-export default function PayrollSettlements({ settlements, preview, today, employees, accounts }: Props) {
+export default function PayrollSettlements({ settlements, filters, preview, today, employees, accounts }: Props) {
     const { permissions, flash } = useAccounting();
     const form = useForm({ employee_id: '', leave_date: today, gratuity: '', leave_days: '', adjustment: '', notes: '' });
     const [account, setAccount] = useState('');
@@ -55,6 +56,19 @@ export default function PayrollSettlements({ settlements, preview, today, employ
                         </CardContent>
                     </Card></form>
                 )}
+                <FilterBar
+                    path="/accounting/payroll/settlements"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Employee code, name or notes' },
+                        { name: 'employee_id', label: 'Employee', type: 'select', options: Object.fromEntries(employees.map((row) => [String(row.id), `${row.code} ${row.name}`])) },
+                        { name: 'status', label: 'Status', type: 'select', options: { draft: 'Draft', posted: 'Posted', paid: 'Paid', void: 'Void' } },
+                        { name: 'leave_from', label: 'Left from', type: 'date' },
+                        { name: 'leave_to', label: 'Left to', type: 'date' },
+                        { name: 'min_net', label: 'Net from', type: 'number' },
+                        { name: 'max_net', label: 'Net up to', type: 'number' },
+                    ]}
+                />
                 <Card><CardContent className="overflow-x-auto pt-6">
                     <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Last day</th><th className="text-right">Gratuity</th><th className="text-right">Leave pay</th><th className="text-right">Loans</th><th className="text-right">Net</th><th>Status</th><th /></tr></thead><tbody>
                         {settlements.map((row) => (

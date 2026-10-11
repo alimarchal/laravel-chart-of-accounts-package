@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { Download } from 'lucide-react';
+import FilterBar, { filterQuery } from '@/components/accounting/filter-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,15 +33,29 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function TrialBalance({
     rows,
     totals,
+    filters,
 }: {
     rows: TrialBalanceRow[];
     totals: Record<string, number>;
+    filters: Record<string, string | null>;
 }) {
     useAccountingI18n();
     return (
         <>
             <Head title="Trial Balance" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <FilterBar
+                    path="/accounting/reports/trial-balance"
+                    values={filters}
+                    fields={[
+                        { name: 'as_of_date', label: 'As of', type: 'date' },
+                        { name: 'date_from', label: 'Movement from (optional)', type: 'date' },
+                        { name: 'search', label: 'Search', placeholder: 'Account code or name' },
+                        { name: 'account_type', label: 'Account type', type: 'select', options: Object.fromEntries(Array.from(new Set(rows.map((row) => row.account_type))).sort().map((type) => [type, type])) },
+                        { name: 'hide_zero', label: 'Activity', type: 'select', options: { '1': 'Only accounts with activity' } },
+                    ]}
+                />
+
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <div>
                         <h1 className="text-2xl font-semibold">
@@ -54,7 +69,7 @@ export default function TrialBalance({
                         {['csv', 'xlsx', 'pdf'].map((format) => (
                             <Button key={format} asChild variant="outline">
                                 <a
-                                    href={`/accounting/reports/trial-balance/export/${format}`}
+                                    href={`/accounting/reports/trial-balance/export/${format}${filterQuery(filters)}`}
                                 >
                                     <Download className="size-4" />
                                     {format.toUpperCase()}

@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -23,10 +24,10 @@ class UserController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('accounting/users/index', [
-            'users' => $this->users->userQuery((array) $request->input('filter', []))->paginate(25)->withQueryString()
+            'users' => $this->users->userQuery($request)->paginate(25)->withQueryString()
                 ->through(fn ($user) => $this->users->presentUser($user)),
             'roles' => Role::query()->orderBy('name')->pluck('name'),
-            'filters' => (array) $request->input('filter', []),
+            'filters' => ListFilters::current($request, ['search', 'name', 'email', 'role']),
         ]);
     }
 

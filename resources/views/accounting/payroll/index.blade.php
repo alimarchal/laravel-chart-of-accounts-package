@@ -21,6 +21,12 @@
                 <button class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Calculate</button>
             </form>
         @endcan
+        <x-accounting::list-filters :action="route('accounting.payroll.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Notes'],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'submitted' => 'Submitted', 'approved' => 'Approved', 'posted' => 'Posted', 'paid' => 'Paid', 'void' => 'Void']],
+            ['name' => 'period_from', 'label' => 'Month from', 'type' => 'date'],
+            ['name' => 'period_to', 'label' => 'Month to', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Month</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th><th class="py-2 px-3 text-right font-medium text-gray-600">Employees</th><th class="py-2 px-3 text-right font-medium text-gray-600">Gross</th><th class="py-2 px-3 text-right font-medium text-gray-600">Deductions</th><th class="py-2 px-3 text-right font-medium text-gray-600">Tax</th><th class="py-2 px-3 text-right font-medium text-gray-600">Net</th></tr></thead>
             <tbody>

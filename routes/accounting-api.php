@@ -1,6 +1,7 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingOverviewController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountRoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountBalanceSnapshotApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingPeriodApiController;
@@ -350,6 +351,8 @@ Route::middleware($apiMiddleware)
         Route::middleware('can:accounting.manage-settings')->group(function (): void {
             Route::get('features', [FeatureController::class, 'index'])->name('features.index');
             Route::put('features', [FeatureController::class, 'update'])->name('features.update');
+            Route::get('account-roles', [AccountRoleController::class, 'index'])->name('account-roles.index');
+            Route::put('account-roles', [AccountRoleController::class, 'update'])->name('account-roles.update');
             Route::get('roles', [RoleApiController::class, 'index'])->name('roles.index');
             Route::post('roles', [RoleApiController::class, 'store'])->name('roles.store');
             Route::get('roles/{role}', [RoleApiController::class, 'show'])->name('roles.show');

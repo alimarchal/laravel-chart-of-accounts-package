@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollArrear;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollArrearsService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -26,14 +27,18 @@ class PayrollArrearsController extends Controller
     public function index(Request $request): Response|View|JsonResponse
     {
         $filters = $request->validate(['status' => ['nullable', 'in:draft,approved,included,cancelled'], 'payment_month' => ['nullable', 'date']]);
-        $report = $this->arrears->report($filters['status'] ?? null, $filters['payment_month'] ?? null);
+        $scoped = ListFilters::for(PayrollArrear::query(), $request, [
+            ListFilters::exact('employee_id'),
+            ListFilters::employee('search', Employee::class, ['notes']),
+        ]);
+        $report = $this->arrears->report($filters['status'] ?? null, $filters['payment_month'] ?? null, $scoped);
 
         if ($request->expectsJson()) {
             return response()->json(['data' => $report['rows'], 'totals' => $report['totals']]);
         }
 
         return $this->render('arrears', [
-            'rows' => $report['rows'], 'totals' => $report['totals'], 'filters' => $filters,
+            'rows' => $report['rows'], 'totals' => $report['totals'], 'filters' => [...$filters, ...ListFilters::current($request, ['search', 'employee_id'])],
             'employees' => Employee::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name'])->values(),
             'grades' => SalaryGrade::query()->orderBy('code')->get(['id', 'code', 'name']),
             'preview' => session('arrears_preview'),

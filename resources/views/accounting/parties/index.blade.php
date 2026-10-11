@@ -14,11 +14,11 @@
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
-        <form method="GET" action="{{ route('accounting.parties.index') }}" class="flex flex-wrap items-end gap-3">
-            <input name="search" value="{{ $filters['search'] }}" placeholder="Search by name or code" class="border-gray-300 rounded-md shadow-sm text-sm w-64">
-            <select name="type" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All</option>@foreach (['customer' => 'Customers', 'supplier' => 'Suppliers', 'both' => 'Both'] as $value => $label)<option value="{{ $value }}" @selected($filters['type'] === $value)>{{ $label }}</option>@endforeach</select>
-            <button class="px-4 py-2 border border-gray-300 rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-50">Filter</button>
-        </form>
+        <x-accounting::list-filters :action="route('accounting.parties.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Name, code, e-mail, tax number'],
+            ['name' => 'type', 'label' => 'Type', 'type' => 'select', 'options' => ['customer' => 'Customers', 'supplier' => 'Suppliers', 'both' => 'Both']],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Inactive']],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Code</th><th class="py-2 px-3 text-left font-medium text-gray-600">Name</th><th class="py-2 px-3 text-left font-medium text-gray-600">Type</th><th class="py-2 px-3 text-left font-medium text-gray-600">Contact</th><th class="py-2 px-3 text-right font-medium text-gray-600">Terms</th><th class="py-2 px-3 text-right font-medium text-gray-600">Credit limit</th></tr></thead>
             <tbody>

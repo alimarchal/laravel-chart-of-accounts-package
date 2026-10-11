@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherNumberService;
 use Alimarchal\LaravelChartOfAccounts\Services\VoucherTypeService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -19,10 +20,13 @@ class VoucherTypeApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $types = VoucherType::query()
-            ->when($request->has('filter.is_active'), fn ($query) => $query->where('is_active', $request->boolean('filter.is_active')))
-            ->orderBy('code')
-            ->get();
+        $types = ListFilters::for(VoucherType::query(), $request, [
+            ListFilters::search('search', ['code', 'name', 'prefix', 'description']),
+            ListFilters::bool('active', 'is_active'),
+            ListFilters::bool('is_active', 'is_active'),
+            ListFilters::bool('system', 'is_system'),
+            ListFilters::exact('reset'),
+        ], sorts: ['code', 'name'], defaultSort: 'code')->get();
 
         return response()->json(['data' => $types->map(fn (VoucherType $type) => $this->types->present($type))->values()]);
     }

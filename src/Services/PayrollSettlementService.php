@@ -11,6 +11,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\LeaveType;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryRevision;
 use Alimarchal\LaravelChartOfAccounts\Models\Settlement;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SalaryHistory;
@@ -143,10 +144,10 @@ class PayrollSettlementService
             }
 
             $employee = Employee::query()->findOrFail($settlement->employee_id);
-            $expense = $this->account((string) (config('accounting.payroll.gratuity.expense_account') ?: config('accounting.payroll.salary_expense_account')), 'gratuity expense');
+            $expense = $this->account((string) (AccountRoles::code('gratuity_expense') ?: AccountRoles::code('salary_expense')), 'gratuity expense');
             $payable = $payableAccountId
                 ? ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->findOrFail($payableAccountId)
-                : $this->account((string) (config('accounting.payroll.gratuity.payable_account') ?: config('accounting.payroll.net_payable_account')), 'net salary payable');
+                : $this->account((string) (AccountRoles::code('gratuity_payable') ?: AccountRoles::code('net_salary_payable')), 'net salary payable');
             $debit = Money::toCents($work['gratuity']) + Money::toCents($work['leave_encashment']) + Money::toCents($work['adjustment']);
 
             if ($debit < 0) {

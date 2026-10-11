@@ -2,7 +2,7 @@
 
 # ضمیمہ: بقیہ اسکرینیں — نیا، تفصیل اور ترمیم کے صفحات
 
-[← پچھلا باب](12-commands-faq.md) · [فہرست](README.md)
+[← پچھلا باب](12-commands-faq.md) · [فہرست](README.md) · [اگلا باب: فلٹر، چارٹ اور Account Roles →](14-filter-chart-roles.md)
 
 پچھلے ابواب میں ہر ماڈیول کی بنیادی اسکرینیں آ چکی ہیں۔ یہاں وہ **عمومی** صفحات ہیں جو کئی ماڈیولز میں اسی انداز سے دہرائے جاتے ہیں۔ ہر ماسٹر ڈیٹا (Account Types، Currencies، Periods، Cost Centers، Bank Accounts، Reconciliations، Tax Codes، Tax Rates) میں **چار** صفحے ہوتے ہیں:
 

@@ -19,6 +19,16 @@
                 <div class="pt-6"><button class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Record</button></div>
             </form>
         @endcan
+        <x-accounting::list-filters :action="route('accounting.payroll.loans.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Employee code, name or notes'],
+            ['name' => 'employee_id', 'label' => 'Employee', 'type' => 'select', 'options' => collect($employees)->mapWithKeys(fn ($row) => [$row['id'] ?? $row->id => (($row['code'] ?? $row->code).' '.($row['name'] ?? $row->name))])->all()],
+            ['name' => 'kind', 'label' => 'Kind', 'type' => 'select', 'options' => ['loan' => 'Loan', 'advance' => 'Advance']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'active' => 'Active', 'closed' => 'Closed', 'cancelled' => 'Cancelled']],
+            ['name' => 'issued_from', 'label' => 'Issued from', 'type' => 'date'],
+            ['name' => 'issued_to', 'label' => 'Issued to', 'type' => 'date'],
+            ['name' => 'min_principal', 'label' => 'Amount from', 'type' => 'number'],
+            ['name' => 'max_principal', 'label' => 'Amount up to', 'type' => 'number'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Employee</th><th class="py-2 px-3 text-left font-medium text-gray-600">Kind</th><th class="py-2 px-3 text-right font-medium text-gray-600">Amount</th><th class="py-2 px-3 text-right font-medium text-gray-600">Left to recover</th><th class="py-2 px-3 text-left font-medium text-gray-600">From</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th><th></th></tr></thead>
             <tbody>

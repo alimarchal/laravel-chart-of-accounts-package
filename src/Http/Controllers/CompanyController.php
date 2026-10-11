@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Services\CompanyService;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -24,10 +25,11 @@ class CompanyController extends Controller
         $users = config('auth.providers.users.model');
 
         return Inertia::render('accounting/companies/index', [
-            'companies' => $this->companies->accessibleBy($request->user())->map(fn (Company $company) => [
+            'filters' => ListFilters::current($request, ['search', 'is_active']),
+            'companies' => ListFilters::collection($this->companies->accessibleBy($request->user())->map(fn (Company $company) => [
                 ...$company->only(['id', 'code', 'name', 'legal_name', 'tax_number', 'registration_number', 'email', 'phone', 'address', 'fiscal_year_start_month', 'is_active']),
                 'members' => $this->service->members($company),
-            ])->values(),
+            ])->values(), $request, ['code', 'name', 'legal_name', 'tax_number', 'registration_number', 'email'], ['is_active']),
             'users' => $users::query()->orderBy('name')->get(['id', 'name', 'email']),
         ]);
     }

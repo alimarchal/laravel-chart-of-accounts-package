@@ -18,11 +18,13 @@
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif
         @if(session("error"))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session("error") }}</div>@endif
         <x-accounting::validation-errors />
-        <form method="GET" class="flex flex-wrap items-end gap-3">
-            <input type="date" name="as_of" value="{{ $filters['as_of'] }}" class="border-gray-300 rounded-md shadow-sm text-sm">
-            <select name="warehouse_id" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="">All warehouses</option>@foreach ($warehouses as $warehouse)<option value="{{ $warehouse['id'] }}" @selected((string) $filters['warehouse_id'] === (string) $warehouse['id'])>{{ $warehouse['name'] }}</option>@endforeach</select>
-            <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Update</button>
-        </form>
+        <x-accounting::list-filters :action="route('accounting.inventory.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'SKU, name or category'],
+            ['name' => 'as_of', 'label' => 'As of', 'type' => 'date', 'quiet' => true],
+            ['name' => 'warehouse_id', 'label' => 'Warehouse', 'type' => 'select', 'options' => collect($warehouses)->mapWithKeys(fn ($row) => [$row['id'] => $row['name']])->all()],
+            ['name' => 'category', 'label' => 'Category', 'type' => 'select', 'options' => collect($categories)->mapWithKeys(fn ($name) => [$name => $name])->all()],
+            ['name' => 'low_stock', 'label' => 'Stock level', 'type' => 'select', 'options' => ['1' => 'At or below reorder level']],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5"><p class="text-sm text-gray-500">Stock value</p><p class="mt-1 text-2xl font-semibold tabular-nums">{{ $fmt($valuation['totals']['value']) }}</p>
             <p class="mt-1 text-xs text-gray-500">Ledger vs stock difference <span class="{{ (float) $valuation['reconcile']['difference'] !== 0.0 ? 'font-medium text-red-700' : '' }}">{{ $fmt($valuation['reconcile']['difference']) }}</span> (ledger {{ $fmt($valuation['reconcile']['ledger']) }}, stock {{ $fmt($valuation['reconcile']['stock']) }})</p></div>
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">

@@ -11,6 +11,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyDocumentService;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyPaymentService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,13 +29,22 @@ class PartyPaymentController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $filters = $request->validate(['kind' => ['nullable', 'in:receipt,payment'], 'party_id' => ['nullable', 'integer']]);
-        $payments = PartyPayment::query()->with('party:id,code,name')
-            ->when($filters['kind'] ?? null, fn ($query, $kind) => $query->where('kind', $kind))
-            ->when($filters['party_id'] ?? null, fn ($query, $party) => $query->where('party_id', $party))
-            ->orderByDesc('payment_date')->orderByDesc('id')->limit(500)->get()->map(fn (PartyPayment $payment): array => $this->present($payment))->values();
+        $request->validate(['kind' => ['nullable', 'in:receipt,payment'], 'party_id' => ['nullable', 'integer'], 'status' => ['nullable', 'in:posted,void'], 'search' => ['nullable', 'string', 'max:100'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date']]);
+        $names = ['kind', 'party_id', 'status', 'method', 'search', 'date_from', 'date_to', 'min_amount', 'max_amount'];
+        $payments = ListFilters::for(PartyPayment::query()->with('party:id,code,name'), $request, [
+            ListFilters::exact('kind'),
+            ListFilters::exact('party_id'),
+            ListFilters::exact('status'),
+            ListFilters::exact('method'),
+            ListFilters::search('search', ['number', 'reference', 'notes'], ['party' => ['name', 'code']]),
+            ListFilters::from('date_from', 'payment_date'),
+            ListFilters::to('date_to', 'payment_date'),
+            ListFilters::min('min_amount', 'amount'),
+            ListFilters::max('max_amount', 'amount'),
+        ], sorts: ['payment_date', 'number', 'amount', 'id'], defaultSort: '-payment_date')->orderByDesc('id')->limit(500)->get()
+            ->map(fn (PartyPayment $payment): array => $this->present($payment))->values();
 
-        return $request->expectsJson() ? response()->json(['data' => $payments]) : $this->render('index', ['payments' => $payments, 'filters' => ['kind' => $filters['kind'] ?? null, 'party_id' => $filters['party_id'] ?? null]]);
+        return $request->expectsJson() ? response()->json(['data' => $payments]) : $this->render('index', ['payments' => $payments, 'filters' => ListFilters::current($request, $names)]);
     }
 
     public function create(Request $request): Response|View

@@ -8,7 +8,9 @@ use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\ExchangeRate;
 use Alimarchal\LaravelChartOfAccounts\Models\FxRevaluation;
 use Alimarchal\LaravelChartOfAccounts\Services\FxRevaluationService;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -30,9 +32,19 @@ class FxRevaluationController extends Controller
     {
         $base = Currency::query()->where('is_base', true)->first();
         $currencies = Currency::query()->where('is_base', false)->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'exchange_rate_to_base']);
-        $revaluations = FxRevaluation::query()->with(['journalEntry:id,voucher_number', 'reversalEntry:id,voucher_number'])->orderByDesc('as_of_date')->orderByDesc('id')->limit(100)->get()
+        $request->validate(['reval_from' => ['nullable', 'date'], 'reval_to' => ['nullable', 'date'], 'rate_from' => ['nullable', 'date'], 'rate_to' => ['nullable', 'date']]);
+        $revaluations = ListFilters::for(FxRevaluation::query()->with(['journalEntry:id,voucher_number', 'reversalEntry:id,voucher_number']), $request, [
+            ListFilters::search('reval_search', ['notes']),
+            ListFilters::from('reval_from', 'as_of_date'),
+            ListFilters::to('reval_to', 'as_of_date'),
+        ], sorts: ['as_of_date', 'total_gain', 'total_loss'], defaultSort: '-as_of_date')->orderByDesc('id')->limit(100)->get()
             ->map(fn (FxRevaluation $revaluation): array => $this->present($revaluation))->values();
-        $rates = ExchangeRate::query()->with('currency:id,code')->orderByDesc('rate_date')->orderBy('currency_id')->limit(200)->get()
+        $rates = ListFilters::for(ExchangeRate::query()->with('currency:id,code'), $request, [
+            ListFilters::exact('currency_id'),
+            ListFilters::exact('source'),
+            ListFilters::from('rate_from', 'rate_date'),
+            ListFilters::to('rate_to', 'rate_date'),
+        ], sorts: ['rate_date', 'rate'], defaultSort: '-rate_date')->orderBy('currency_id')->limit(200)->get()
             ->map(fn (ExchangeRate $rate): array => ['id' => $rate->id, 'currency_id' => $rate->currency_id, 'currency' => $rate->currency->code ?? '', 'rate_date' => $rate->rate_date->toDateString(), 'rate' => $rate->rate, 'source' => $rate->source])->values();
 
         $asOf = $request->string('as_of_date')->toString();
@@ -65,7 +77,8 @@ class FxRevaluationController extends Controller
             'revaluations' => $revaluations,
             'rates' => $rates,
             'today' => now()->toDateString(),
-            'defaultAccountCode' => config('accounting.fx.gain_loss_account'),
+            'filters' => ListFilters::current($request, ['reval_search', 'reval_from', 'reval_to', 'currency_id', 'source', 'rate_from', 'rate_to']),
+            'defaultAccountCode' => AccountRoles::code('fx_gain_loss'),
         ];
 
         if ($request->expectsJson()) {

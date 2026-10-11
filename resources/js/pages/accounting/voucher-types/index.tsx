@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Hash, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -236,10 +237,12 @@ function VoucherTypeForm({
 }
 
 export default function VoucherTypes({
+    filters,
     voucherTypes,
     resets,
     defaultFormat,
 }: {
+    filters: Record<string, string | null>;
     voucherTypes: VoucherType[];
     resets: string[];
     defaultFormat: string;
@@ -291,6 +294,17 @@ export default function VoucherTypes({
                         onDone={() => setEditing(null)}
                     />
                 ) : null}
+
+                <FilterBar
+                    path="/accounting/voucher-types"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Code, name, prefix or description' },
+                        { name: 'active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                        { name: 'system', label: 'Built in', type: 'select', options: { '1': 'Built in', '0': 'Added by you' } },
+                        { name: 'reset', label: 'Numbering restarts', type: 'select', options: Object.fromEntries(resets.map((value) => [value, value])) },
+                    ]}
+                />
 
                 <div className="overflow-x-auto rounded-lg border">
                     <table className="w-full min-w-[820px] text-sm">

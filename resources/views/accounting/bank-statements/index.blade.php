@@ -12,6 +12,13 @@
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
         <p class="text-sm text-gray-600">Import statements from your bank, match them to the ledger and reconcile.</p>
+        <x-accounting::list-filters :action="route('accounting.bank-statements.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'File or bank account'],
+            ['name' => 'bank_account_id', 'label' => 'Bank account', 'type' => 'select', 'options' => collect($banks)->mapWithKeys(fn ($bank) => [$bank['id'] => $bank['name']])->all()],
+            ['name' => 'date_from', 'label' => 'Period from', 'type' => 'date'],
+            ['name' => 'date_to', 'label' => 'Period to', 'type' => 'date'],
+            ['name' => 'unmatched', 'label' => 'Lines', 'type' => 'select', 'options' => ['1' => 'With unmatched lines']],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">File</th><th class="py-2 px-3 text-left font-medium text-gray-600">Bank account</th><th class="py-2 px-3 text-left font-medium text-gray-600">Period</th><th class="py-2 px-3 text-right font-medium text-gray-600">Closing balance</th><th class="py-2 px-3 text-right font-medium text-gray-600">Transactions</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th></tr></thead>
             <tbody>

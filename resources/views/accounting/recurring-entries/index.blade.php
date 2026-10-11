@@ -15,6 +15,13 @@
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
         <p class="text-sm text-gray-600">Entries that repeat on a schedule — rent, subscriptions, depreciation, accruals — generated daily by <code class="text-xs">accounting:run-recurring</code>.</p>
+        <x-accounting::list-filters :action="route('accounting.recurring-entries.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Name, reference or description'],
+            ['name' => 'frequency', 'label' => 'Repeats', 'type' => 'select', 'options' => \Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry::FREQUENCIES],
+            ['name' => 'mode', 'label' => 'Creates', 'type' => 'select', 'options' => ['draft' => 'Draft', 'post' => 'Posted entry']],
+            ['name' => 'active', 'label' => 'State', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Paused']],
+            ['name' => 'due_by', 'label' => 'Due by', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="bg-gray-50"><tr>

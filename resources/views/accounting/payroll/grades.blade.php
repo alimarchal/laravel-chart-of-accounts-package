@@ -7,6 +7,12 @@
         @if(session("error"))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session("error") }}</div>@endif
         <x-accounting::validation-errors />
         <p class="text-sm text-gray-600">A grade is a basic salary with its allowances. Change a grade and everybody on it follows in the next payroll calculation.</p>
+        <x-accounting::list-filters :action="route('accounting.payroll.grades.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Code or name'],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Inactive']],
+            ['name' => 'min_salary', 'label' => 'Basic from', 'type' => 'number'],
+            ['name' => 'max_salary', 'label' => 'Basic up to', 'type' => 'number'],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5 overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-gray-500"><th class="py-1">Code</th><th>Name</th><th class="text-right">Basic salary</th><th class="text-right">Employees</th><th>Allowances</th><th></th></tr></thead><tbody>
             @forelse ($grades as $row)
                 <tr class="border-t"><td class="py-2 font-medium">{{ $row['code'] }}</td><td>{{ $row['name'] }} @unless($row['is_active'])<span class="ml-1 rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-600">inactive</span>@endunless</td><td class="text-right tabular-nums">{{ $money($row['base_salary']) }}</td><td class="text-right">{{ $row['employees'] }}</td>

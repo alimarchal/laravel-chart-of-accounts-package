@@ -9,15 +9,18 @@ use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollAdjustment;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryRevision;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SalaryHistory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Variable pay: one-off earnings (bonus, extra allowance) and deductions (fine, recovery) of an employee in a month, recorded one at a
@@ -153,14 +156,15 @@ class PayrollAdjustmentService
     }
 
     /**
+     * @param  Builder<PayrollAdjustment>|QueryBuilder<PayrollAdjustment>|null  $base
      * @return list<array<string, mixed>>
      */
-    public function present(?string $month = null, ?string $status = null): array
+    public function present(?string $month = null, ?string $status = null, Builder|QueryBuilder|null $base = null): array
     {
         $names = Employee::query()->pluck('name', 'id');
         $codes = Employee::query()->pluck('code', 'id');
 
-        return PayrollAdjustment::query()
+        return ($base ?? PayrollAdjustment::query())
             ->when($month, fn ($query, $value) => $query->whereDate('month', Carbon::parse($value.'-01')->toDateString()))
             ->when($status, fn ($query, $value) => $query->where('status', $value))
             ->orderByDesc('month')->orderBy('id')->limit(500)->get()
@@ -211,7 +215,7 @@ class PayrollAdjustmentService
             }
 
             if ($data['kind'] === 'earning' && empty($data['account_id'])) {
-                $code = (string) (config('accounting.payroll.bonus_account') ?: config('accounting.payroll.salary_expense_account'));
+                $code = (string) (AccountRoles::code('bonus_expense') ?: AccountRoles::code('salary_expense'));
                 $data['account_id'] = ChartOfAccount::query()->where('account_code', $code)->where('is_group', false)->value('id')
                     ?? throw ValidationException::withMessages(['account_id' => "The bonus account ({$code}) does not exist: choose an account or set accounting.payroll.bonus_account."]);
             }

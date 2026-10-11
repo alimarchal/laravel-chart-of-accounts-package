@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
 use Alimarchal\LaravelChartOfAccounts\Services\ControlAccountService;
 use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -17,9 +18,9 @@ use Illuminate\Validation\Rule;
  */
 class ControlAccountApiController extends Controller
 {
-    public function index(ControlAccountService $controls): JsonResponse
+    public function index(Request $request, ControlAccountService $controls): JsonResponse
     {
-        return response()->json(['data' => $controls->overview(), 'types' => ControlAccounts::types()]);
+        return response()->json(['data' => ListFilters::collection(collect($controls->overview()), $request, ['account_code', 'account_name'], ['control_type']), 'types' => ControlAccounts::types()]);
     }
 
     public function recommended(ChartOfAccountService $accounts): JsonResponse
