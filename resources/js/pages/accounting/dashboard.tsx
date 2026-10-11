@@ -235,6 +235,7 @@ export default function AccountingDashboard({ summary }: Props) {
             ? [
                   { title: 'Roles', href: '/accounting/roles', icon: KeyRound },
                   { title: 'Features', href: '/accounting/features', icon: ShieldCheck },
+                  { title: 'Account roles', href: '/accounting/account-roles', icon: KeyRound },
               ]
             : []),
         ...(company.enabled && permissions['companies.manage']

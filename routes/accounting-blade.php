@@ -1,5 +1,6 @@
 <?php
 
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountRoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountBalanceSnapshotBladeController;
@@ -467,6 +468,8 @@ Route::middleware(['web', 'auth', 'verified'])
         Route::middleware('can:accounting.manage-settings')->group(function (): void {
             Route::get('features', [FeatureController::class, 'index'])->name('features.index');
             Route::put('features', [FeatureController::class, 'update'])->name('features.update');
+            Route::get('account-roles', [AccountRoleController::class, 'index'])->name('account-roles.index');
+            Route::put('account-roles', [AccountRoleController::class, 'update'])->name('account-roles.update');
             Route::get('roles', [RoleBladeController::class, 'index'])->name('roles.index');
             Route::get('roles/create', [RoleBladeController::class, 'create'])->name('roles.create');
             Route::post('roles', [RoleBladeController::class, 'store'])->name('roles.store');

@@ -126,7 +126,7 @@ final class AccountRoles
             return $saved;
         }
 
-        return $entry['defaults']['general'];
+        return $entry['defaults'][self::preset()] ?? $entry['defaults']['general'];
     }
 
     /**

@@ -4,6 +4,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountBalanceSnapshotCon
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingDashboardController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingOverviewController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingPeriodController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountRoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AuditLogController;
@@ -389,6 +390,8 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
         Route::middleware('can:accounting.manage-settings')->group(function (): void {
             Route::get('features', [FeatureController::class, 'index'])->name('features.index');
             Route::put('features', [FeatureController::class, 'update'])->name('features.update');
+            Route::get('account-roles', [AccountRoleController::class, 'index'])->name('account-roles.index');
+            Route::put('account-roles', [AccountRoleController::class, 'update'])->name('account-roles.update');
             Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
             Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
             Route::post('roles', [RoleController::class, 'store'])->name('roles.store');

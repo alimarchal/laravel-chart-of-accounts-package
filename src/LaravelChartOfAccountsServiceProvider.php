@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts;
 
+use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingAccountRolesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingChartTemplatesCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingCloseFiscalYearCommand;
 use Alimarchal\LaravelChartOfAccounts\Console\Commands\AccountingClosePeriodCommand;
@@ -97,6 +98,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
                 AccountingOpenPeriodCommand::class,
                 AccountingRolesCommand::class,
                 AccountingFeaturesCommand::class,
+                AccountingAccountRolesCommand::class,
             ]);
 
             // Daily, once the app's own scheduler runs (php artisan schedule:run): generate the due recurring entries.

@@ -13152,6 +13152,101 @@ paths:
                     payroll_loans: false
       parameters:
       - $ref: '#/components/parameters/Company'
+  /account-roles:
+    get:
+      tags:
+      - Settings
+      summary: Which account plays which part for the modules (cash, bank, salary expense, receivables …)
+      operationId: list_account_roles
+      description: 'The accounts come from the company''s saved roles (filled when the chart was installed), unless the config
+        pins a role. `chart` is the chart the company started from: `erpnext`, `general` or `school`.
+
+
+        Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Roles of the current company
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccountRole'
+                  chart:
+                    type: string
+                    example: erpnext
+                  presets:
+                    type: object
+                    additionalProperties:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Settings
+      summary: Give roles other accounts
+      operationId: update_account_roles
+      description: '422 for a role that takes one account, a group or inactive account, an account of another company, an
+        unknown role, or a role the config pins. The change is audited (ACCOUNT_ROLES_UPDATED). The accounts of cash, bank,
+        retained earnings and rounding cannot be deactivated, deleted or merged away while they play their role.
+
+
+        Permission: `accounting.manage-settings`.'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccountRole'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - roles
+              properties:
+                roles:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: integer
+                  example:
+                    cash:
+                    - 12
+                    aging.receivables:
+                    - 14
+                    - 15
+                  description: Role → account ids. An empty list puts the role back to the chart's default.
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /fbr:
     get:
       tags:
@@ -17447,6 +17542,36 @@ components:
           enum:
           - config
           - database
+    AccountRole:
+      type: object
+      properties:
+        role:
+          type: string
+          example: salary_expense
+        label:
+          type: string
+        multiple:
+          type: boolean
+          description: True when the role takes several accounts (the ageing report, control accounts).
+        config:
+          type:
+          - string
+          - 'null'
+          description: The config key that pins the role, when there is one.
+        overridden:
+          type: boolean
+          description: 'True while the config pins the role: it cannot be changed here.'
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              account_code:
+                type: string
+              account_name:
+                type: string
     FbrSubmission:
       type: object
       properties:
