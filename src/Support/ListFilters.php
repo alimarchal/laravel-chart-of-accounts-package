@@ -126,7 +126,7 @@ final class ListFilters
 
             $query->where(function ($inner) use ($columns, $relations, $term, $grammar): void {
                 foreach ($columns as $column) {
-                    $inner->orWhereRaw($grammar->wrap($column)." like ? escape '!'", ["%{$term}%"]);
+                    $inner->orWhereRaw('LOWER('.$grammar->wrap($column).") like ? escape '!'", ['%'.mb_strtolower($term).'%']);
                 }
 
                 foreach ($relations as $relation => $related) {
@@ -135,7 +135,7 @@ final class ListFilters
                             $grammar = $match->getQuery()->getGrammar();
 
                             foreach ($related as $column) {
-                                $match->orWhereRaw($grammar->wrap($column)." like ? escape '!'", ["%{$term}%"]);
+                                $match->orWhereRaw('LOWER('.$grammar->wrap($column).") like ? escape '!'", ['%'.mb_strtolower($term).'%']);
                             }
                         });
                     });
@@ -160,13 +160,14 @@ final class ListFilters
             }
 
             $grammar = $query->getQuery()->getGrammar();
-            $like = fn (string $field): string => $grammar->wrap($field)." like ? escape '!'";
+            $like = fn (string $field): string => 'LOWER('.$grammar->wrap($field).") like ? escape '!'";
+            $needle = '%'.mb_strtolower($term).'%';
 
-            $query->where(function ($inner) use ($employeeModel, $columns, $column, $term, $like): void {
-                $inner->orWhereIn($column, $employeeModel::query()->select('id')->where(fn ($match) => $match->whereRaw($like('code'), ["%{$term}%"])->orWhereRaw($like('name'), ["%{$term}%"])));
+            $query->where(function ($inner) use ($employeeModel, $columns, $column, $like, $needle): void {
+                $inner->orWhereIn($column, $employeeModel::query()->select('id')->where(fn ($match) => $match->whereRaw($like('code'), [$needle])->orWhereRaw($like('name'), [$needle])));
 
                 foreach ($columns as $own) {
-                    $inner->orWhereRaw($like($own), ["%{$term}%"]);
+                    $inner->orWhereRaw($like($own), [$needle]);
                 }
             });
         });
