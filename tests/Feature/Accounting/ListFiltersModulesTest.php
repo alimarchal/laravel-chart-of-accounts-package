@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Budget;
 use Alimarchal\LaravelChartOfAccounts\Models\FbrSubmission;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService;
 use Alimarchal\LaravelChartOfAccounts\Services\InventoryService;
@@ -136,6 +137,7 @@ it('filters recurring entries by text, frequency, mode, state and due date', fun
 
 it('keeps the active filters on the React list screens', function (): void {
     $this->withoutVite();
+    $this->user->syncRoles(['super-admin']);
     $this->actingAs($this->user);
 
     foreach ([
@@ -145,6 +147,12 @@ it('keeps the active filters on the React list screens', function (): void {
         ['/accounting/budgets?status=draft', 'accounting/budgets/index', ['filters.status' => 'draft']],
         ['/accounting/bank-statements?unmatched=1', 'accounting/bank-statements/index', ['filters.unmatched' => '1']],
         ['/accounting/recurring-entries?frequency=monthly', 'accounting/recurring-entries/index', ['filters.frequency' => 'monthly']],
+        ['/accounting/fbr?status=failed&search=x', 'accounting/fbr/index', ['filters.status' => 'failed', 'filters.search' => 'x']],
+        ['/accounting/tax?kind=output&return_search=q1', 'accounting/tax/index', ['filters.kind' => 'output', 'filters.return_search' => 'q1']],
+        ['/accounting/voucher-types?active=1', 'accounting/voucher-types/index', ['filters.active' => '1']],
+        ['/accounting/control-accounts?control_type=payables', 'accounting/control-accounts/index', ['filters.control_type' => 'payables']],
+        ['/accounting/companies?is_active=1', 'accounting/companies/index', ['filters.is_active' => '1']],
+        ['/accounting/payroll/employees?active=0', 'accounting/payroll/employees', ['filters.active' => '0']],
     ] as [$url, $component, $expected]) {
         $this->get($url)->assertInertia(function (AssertableInertia $page) use ($component, $expected): void {
             $page->component($component);
@@ -173,9 +181,10 @@ it('renders the shared Blade filter bar with the current values and a reset link
 
 it('shows the filter bar on the Blade list screens when the Blade driver is active', function (): void {
     $this->withoutVite();
+    $this->user->syncRoles(['super-admin']);
     $this->actingAs($this->user);
 
-    foreach (['/accounting/fixed-assets', '/accounting/inventory', '/accounting/inventory/movements', '/accounting/inventory/warehouses', '/accounting/budgets', '/accounting/bank-statements', '/accounting/recurring-entries', '/accounting/parties', '/accounting/party-documents', '/accounting/party-payments', '/accounting/payroll', '/accounting/payroll/employees', '/accounting/payroll/loans', '/accounting/payroll/arrears', '/accounting/payroll/adjustments', '/accounting/payroll/settlements'] as $path) {
+    foreach (['/accounting/fixed-assets', '/accounting/inventory', '/accounting/inventory/movements', '/accounting/inventory/warehouses', '/accounting/budgets', '/accounting/bank-statements', '/accounting/recurring-entries', '/accounting/parties', '/accounting/party-documents', '/accounting/party-payments', '/accounting/payroll', '/accounting/payroll/employees', '/accounting/payroll/loans', '/accounting/payroll/arrears', '/accounting/payroll/adjustments', '/accounting/payroll/settlements', '/accounting/fbr', '/accounting/tax', '/accounting/voucher-types', '/accounting/control-accounts'] as $path) {
         $html = $this->get($path.'?search=zzz-nothing')->assertOk()->getContent();
 
         foreach (['role="search"', 'value="zzz-nothing"', 'Reset (1)'] as $needle) {
@@ -226,4 +235,43 @@ it('applies the FBR status filter before the 300-row cap so older failures stay 
         ->and($numbers('search=INV-0001'))->toBe(['INV-0001'])
         ->and($numbers('search=acme&date_to=2021-01-01'))->toBe(['INV-0001'])
         ->and($numbers('status=accepted'))->toBe([]);
+});
+
+it('filters voucher types, control accounts, companies, tax returns and exchange rates', function (): void {
+    $this->user->syncRoles(['super-admin']);
+
+    $codes = fn (string $query) => collect($this->getJson("/api/v1/accounting/voucher-types?{$query}")->assertOk()->json('data'))->pluck('code')->all();
+    expect($codes('search=journal'))->toContain('JV')->not->toContain('CPV')
+        ->and($codes('filter[is_active]=true'))->toContain('JV')
+        ->and($codes('active=0'))->toBe([])
+        ->and($codes('system=1'))->toBe(['JV'])
+        ->and($codes('system=0'))->toContain('CPV')->not->toContain('JV')
+        ->and($codes('search=zzz'))->toBe([]);
+
+    account('1103')->forceFill(['control_type' => 'receivables'])->save();
+    account('2101')->forceFill(['control_type' => 'payables'])->save();
+    $controls = fn (string $query) => collect($this->getJson("/api/v1/accounting/control-accounts?{$query}")->assertOk()->json('data'))->pluck('account_code')->all();
+    expect($controls(''))->toEqualCanonicalizing(['1103', '2101'])
+        ->and($controls('control_type=payables'))->toBe(['2101'])
+        ->and($controls('filter[control_type]=receivables,payables'))->toEqualCanonicalizing(['1103', '2101'])
+        ->and($controls('search=1103'))->toBe(['1103'])
+        ->and($controls('search=nothing'))->toBe([]);
+
+    $companies = fn (string $query) => collect($this->getJson("/api/v1/accounting/companies?{$query}")->assertOk()->json('data'))->pluck('code')->all();
+    $all = $companies('');
+    expect($all)->not->toBe([])
+        ->and($companies('search='.$all[0]))->toContain($all[0])
+        ->and($companies('is_active=0'))->toBe([])
+        ->and($companies('search=no-such-company'))->toBe([]);
+
+    $returns = fn (string $query) => collect($this->getJson("/api/v1/accounting/tax/returns?{$query}")->assertOk()->json('data'))->pluck('reference')->all();
+    foreach ([['Q1 return', 1, 28, '100'], ['Q2 return', 40, 68, '900']] as [$reference, $from, $to, $payable]) {
+        TaxReturn::query()->forceCreate(['period_from' => ($this->day)($from), 'period_to' => ($this->day)($to), 'output_tax' => $payable, 'input_tax' => 0, 'net_payable' => $payable, 'reference' => $reference, 'payable_account_id' => account('2104')->id, 'company_id' => account('1101')->company_id]);
+    }
+    expect($returns(''))->toBe(['Q2 return', 'Q1 return'])
+        ->and($returns('return_search=q1'))->toBe(['Q1 return'])
+        ->and($returns('return_from='.($this->day)(50)))->toBe(['Q2 return'])             // periods that end on or after
+        ->and($returns('return_to='.($this->day)(30)))->toBe(['Q1 return'])              // periods that start on or before
+        ->and($returns('min_payable=500'))->toBe(['Q2 return'])
+        ->and($returns('sort=net_payable'))->toBe(['Q1 return', 'Q2 return']);
 });

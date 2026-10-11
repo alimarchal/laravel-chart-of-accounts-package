@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Calculator, FilePlus } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -33,6 +34,7 @@ type TaxReturn = {
     reference: string | null;
 };
 type Props = {
+    filters: Record<string, string | null>;
     taxCodes: Code[];
     returns: TaxReturn[];
     accounts: Array<{ id: number; account_code: string; account_name: string }>;
@@ -46,7 +48,7 @@ const selectClass =
 const money = (value: string) =>
     Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
-export default function TaxIndex({ taxCodes, returns, accounts, today, monthStart, monthEnd }: Props) {
+export default function TaxIndex({ taxCodes, returns, accounts, today, monthStart, monthEnd, filters }: Props) {
     const { permissions, flash } = useAccounting();
     const [calc, setCalc] = useState({ tax_code_id: String(taxCodes[0]?.id ?? ''), amount: '', inclusive: false });
     const [result, setResult] = useState<{ base: string; tax: string; gross: string; rate: string } | null>(null);
@@ -113,6 +115,17 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                         <AlertDescription>{flash.error}</AlertDescription>
                     </Alert>
                 ) : null}
+
+                <FilterBar
+                    path="/accounting/tax"
+                    values={filters}
+                    preserve={{ return_search: filters.return_search, return_from: filters.return_from, return_to: filters.return_to }}
+                    fields={[
+                        { name: 'search', label: 'Search tax codes', placeholder: 'Code, name or jurisdiction' },
+                        { name: 'kind', label: 'Kind', type: 'select', options: { output: 'Output', input: 'Input', withholding: 'Withholding' } },
+                        { name: 'is_active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                    ]}
+                />
 
                 <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
@@ -235,7 +248,17 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                 ) : null}
 
                 <Card>
-                    <CardHeader>
+                    <FilterBar
+                    path="/accounting/tax"
+                    values={filters}
+                    preserve={{ search: filters.search, kind: filters.kind, is_active: filters.is_active }}
+                    fields={[
+                        { name: 'return_search', label: 'Search returns', placeholder: 'Reference or notes' },
+                        { name: 'return_from', label: 'Period from', type: 'date' },
+                        { name: 'return_to', label: 'Period to', type: 'date' },
+                    ]}
+                />
+                <CardHeader>
                         <CardTitle>Filed returns</CardTitle>
                     </CardHeader>
                     <CardContent>

@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ShieldCheck, Sparkles } from 'lucide-react';
 import { money } from '@/components/accounting/ledger';
 import { SearchableSelect } from '@/components/accounting/searchable-select';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -35,12 +36,14 @@ type ManualPosting = {
 };
 
 export default function ControlAccounts({
+    filters,
     controlAccounts,
     types,
     recommended,
     accounts,
     selected,
 }: {
+    filters: Record<string, string | null>;
     controlAccounts: ControlAccount[];
     types: Record<string, string>;
     recommended: Record<string, string>;
@@ -112,6 +115,15 @@ export default function ControlAccounts({
                         <AlertDescription>{flash.error}</AlertDescription>
                     </Alert>
                 ) : null}
+
+                <FilterBar
+                    path="/accounting/control-accounts"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Account code or name' },
+                        { name: 'control_type', label: 'Controls', type: 'select', options: types },
+                    ]}
+                />
 
                 <div className="overflow-x-auto rounded-lg border">
                     <table className="w-full min-w-[760px] text-sm">

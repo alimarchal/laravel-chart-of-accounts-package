@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
 use Alimarchal\LaravelChartOfAccounts\Services\CompanyService;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,9 +24,10 @@ class CompanyApiController extends Controller
         $current = $this->companies->id();
 
         return response()->json([
-            'data' => $this->companies->accessibleBy($request->user())
-                ->map(fn (Company $company) => [...$this->present($company), 'current' => (int) $company->getKey() === $current])
-                ->values(),
+            'data' => ListFilters::collection(
+                $this->companies->accessibleBy($request->user())->map(fn (Company $company) => [...$this->present($company), 'current' => (int) $company->getKey() === $current])->values(),
+                $request, ['code', 'name', 'legal_name', 'tax_number', 'registration_number', 'email'], ['is_active'],
+            ),
             'multi_company' => CurrentCompany::enabled(),
         ]);
     }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -64,6 +65,46 @@ final class ListFilters
         $given = self::given($request, $names, $aliases);
 
         return collect($names)->mapWithKeys(fn (string $name) => [$name => $given[$name] ?? null])->all();
+    }
+
+    /**
+     * The same filters for lists that are already in memory (a user's companies, the control accounts): ?search=… over the
+     * given keys (case-insensitive), and exact matches on the others ("1"/"0"/true/false match booleans; commas match any).
+     *
+     * @template TKey of array-key
+     * @template TRow
+     *
+     * @param  Collection<TKey, TRow>  $rows
+     * @param  list<string>  $searchKeys
+     * @param  list<string>  $exactKeys
+     * @return Collection<TKey, TRow>
+     */
+    public static function collection(Collection $rows, Request $request, array $searchKeys, array $exactKeys = []): Collection
+    {
+        $given = self::given($request, ['search', ...$exactKeys], []);
+        $get = fn ($row, string $key) => is_array($row) ? ($row[$key] ?? null) : data_get($row, $key);
+        $term = mb_strtolower(self::text($given['search'] ?? ''));
+
+        return $rows->filter(function ($row) use ($given, $exactKeys, $searchKeys, $term, $get): bool {
+            if ($term !== '' && ! collect($searchKeys)->contains(fn (string $key) => str_contains(mb_strtolower((string) $get($row, $key)), $term))) {
+                return false;
+            }
+
+            foreach ($exactKeys as $key) {
+                if (! array_key_exists($key, $given)) {
+                    continue;
+                }
+
+                $wanted = array_map(fn (string $value) => mb_strtolower(trim($value)), explode(',', self::text($given[$key])));
+                $actual = $get($row, $key);
+
+                if (! in_array(mb_strtolower(trim((string) (is_bool($actual) ? (int) $actual : $actual))), array_map(fn (string $value) => in_array($value, ['true', 'yes', 'on'], true) ? '1' : (in_array($value, ['false', 'no', 'off'], true) ? '0' : $value), $wanted), true)) {
+                    return false;
+                }
+            }
+
+            return true;
+        })->values();
     }
 
     /**

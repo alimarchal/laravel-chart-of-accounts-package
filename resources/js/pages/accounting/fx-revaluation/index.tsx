@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Calculator, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -44,6 +45,7 @@ type Revaluation = {
     reversal_date: string | null;
 };
 type Props = {
+    filters: Record<string, string | null>;
     base: string | null;
     asOf: string;
     preview: Plan | null;
@@ -71,6 +73,7 @@ export default function FxRevaluation({
     revaluations,
     rates,
     today,
+    filters,
     defaultAccountCode,
 }: Props) {
     const { permissions, flash } = useAccounting();
@@ -300,7 +303,18 @@ export default function FxRevaluation({
                 ) : null}
 
                 <Card>
-                    <CardHeader>
+                    <FilterBar
+                    path="/accounting/fx-revaluation"
+                    values={filters}
+                    preserve={{ reval_search: filters.reval_search, reval_from: filters.reval_from, reval_to: filters.reval_to }}
+                    fields={[
+                        { name: 'currency_id', label: 'Currency', type: 'select', options: Object.fromEntries(currencies.map((currency) => [String(currency.id), currency.code])) },
+                        { name: 'source', label: 'Source', placeholder: 'manual, import…' },
+                        { name: 'rate_from', label: 'Rates from', type: 'date' },
+                        { name: 'rate_to', label: 'Rates to', type: 'date' },
+                    ]}
+                />
+                <CardHeader>
                         <CardTitle>Exchange rates</CardTitle>
                         <CardDescription>
                             Dated rates (1 unit = rate {base}). A revaluation date picks the latest rate on or before it.
@@ -407,7 +421,17 @@ export default function FxRevaluation({
                 </Card>
 
                 <Card>
-                    <CardHeader>
+                    <FilterBar
+                    path="/accounting/fx-revaluation"
+                    values={filters}
+                    preserve={{ currency_id: filters.currency_id, source: filters.source, rate_from: filters.rate_from, rate_to: filters.rate_to }}
+                    fields={[
+                        { name: 'reval_search', label: 'Search revaluations', placeholder: 'Notes' },
+                        { name: 'reval_from', label: 'As of from', type: 'date' },
+                        { name: 'reval_to', label: 'As of to', type: 'date' },
+                    ]}
+                />
+                <CardHeader>
                         <CardTitle>History</CardTitle>
                     </CardHeader>
                     <CardContent>

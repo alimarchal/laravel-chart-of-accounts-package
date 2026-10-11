@@ -2,6 +2,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { Building2, Plus, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { SearchableSelect } from '@/components/accounting/searchable-select';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -303,9 +304,11 @@ function CompanyCard({ company, users }: { company: Company; users: User[] }) {
 }
 
 export default function Companies({
+    filters,
     companies,
     users,
 }: {
+    filters: Record<string, string | null>;
     companies: Company[];
     users: User[];
 }) {
@@ -376,6 +379,14 @@ export default function Companies({
                     </div>
                 ) : null}
 
+                <FilterBar
+                    path="/accounting/companies"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Code, name, legal name or tax number' },
+                        { name: 'is_active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                    ]}
+                />
                 <div className="space-y-4">
                     {companies.map((company) => (
                         <CompanyCard

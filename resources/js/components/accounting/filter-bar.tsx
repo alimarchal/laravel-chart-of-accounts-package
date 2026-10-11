@@ -18,6 +18,8 @@ type Props = {
     path: string;
     fields: FilterField[];
     values: Record<string, string | number | null | undefined>;
+    /** Parameters of other filter bars on the same page that this one must not drop. */
+    preserve?: Record<string, string | number | null | undefined>;
 };
 
 const selectClass =
@@ -27,18 +29,19 @@ const selectClass =
  * The filter bar of the list screens. The fields use the same names as the API (`?name=…` or `?filter[name]=…`),
  * so a link to a filtered screen and a call to the API look alike.
  */
-export default function FilterBar({ path, fields, values }: Props) {
+export default function FilterBar({ path, fields, values, preserve = {} }: Props) {
+    const kept = Object.fromEntries(Object.entries(preserve).filter(([, value]) => value !== null && value !== undefined && String(value) !== ''));
     const [state, setState] = useState<Record<string, string>>(() =>
         Object.fromEntries(fields.map((field) => [field.name, String(values[field.name] ?? '')])),
     );
     const active = fields.filter((field) => !field.quiet && String(values[field.name] ?? '') !== '').length;
     const apply = (event: FormEvent) => {
         event.preventDefault();
-        router.get(path, Object.fromEntries(Object.entries(state).filter(([, value]) => value !== '')), { preserveScroll: true });
+        router.get(path, { ...kept, ...Object.fromEntries(Object.entries(state).filter(([, value]) => value !== '')) }, { preserveScroll: true });
     };
     const reset = () => {
         setState(Object.fromEntries(fields.map((field) => [field.name, ''])));
-        router.get(path, {}, { preserveScroll: true });
+        router.get(path, kept, { preserveScroll: true });
     };
 
     return (

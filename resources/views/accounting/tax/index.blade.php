@@ -15,6 +15,11 @@
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
         <x-accounting::validation-errors />
         <p class="text-sm text-gray-600">Tax codes and rates, taxed documents, the tax ledger and tax returns. Manage codes and rates under <a class="text-indigo-700 hover:underline" href="{{ route('accounting.tax-codes.index') }}">Tax codes</a>.</p>
+        <x-accounting::list-filters :action="route('accounting.tax.index')" :values="$filters" :preserve="collect($filters)->only(['return_search', 'return_from', 'return_to'])->all()" :fields="[
+            ['name' => 'search', 'label' => 'Search tax codes', 'placeholder' => 'Code, name or jurisdiction'],
+            ['name' => 'kind', 'label' => 'Kind', 'type' => 'select', 'options' => ['output' => 'Output', 'input' => 'Input', 'withholding' => 'Withholding']],
+            ['name' => 'is_active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Inactive']],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Code</th><th class="py-2 px-3 text-left font-medium text-gray-600">Name</th><th class="py-2 px-3 text-left font-medium text-gray-600">Kind</th><th class="py-2 px-3 text-right font-medium text-gray-600">Rate today</th><th class="py-2 px-3 text-left font-medium text-gray-600">Tax account</th><th class="py-2 px-3 text-left font-medium text-gray-600">Jurisdiction</th></tr></thead>
             <tbody>
@@ -49,6 +54,11 @@
         </form>
         @endcan
 
+        <x-accounting::list-filters :action="route('accounting.tax.index')" :values="$filters" :preserve="collect($filters)->only(['search', 'kind', 'is_active'])->all()" :fields="[
+            ['name' => 'return_search', 'label' => 'Search returns', 'placeholder' => 'Reference or notes'],
+            ['name' => 'return_from', 'label' => 'Period from', 'type' => 'date'],
+            ['name' => 'return_to', 'label' => 'Period to', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5 space-y-3">
             <h3 class="font-semibold text-gray-800">Filed returns</h3>
             <div class="overflow-x-auto"><table class="min-w-full text-sm">

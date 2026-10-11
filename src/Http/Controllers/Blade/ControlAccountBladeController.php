@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ControlAccountController;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\ControlAccountService;
 use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -19,7 +20,8 @@ class ControlAccountBladeController extends ControlAccountController
         $selected = $request->filled('account') ? ChartOfAccount::query()->whereNotNull('control_type')->find($request->integer('account')) : null;
 
         return view('accounting::control-accounts.index', [
-            'controlAccounts' => $controls->overview(),
+            'controlAccounts' => ListFilters::collection(collect($controls->overview()), $request, ['account_code', 'account_name'], ['control_type']),
+            'filters' => ListFilters::current($request, ['search', 'control_type']),
             'types' => ControlAccounts::types(),
             'recommended' => ControlAccounts::recommended(),
             'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->orderBy('account_code')

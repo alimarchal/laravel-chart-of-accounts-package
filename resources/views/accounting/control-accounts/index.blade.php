@@ -17,6 +17,10 @@
             @endcan
         </div>
 
+        <x-accounting::list-filters :action="route('accounting.control-accounts.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Account code or name'],
+            ['name' => 'control_type', 'label' => 'Controls', 'type' => 'select', 'options' => $types],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="bg-gray-50"><tr>
