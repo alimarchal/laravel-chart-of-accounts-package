@@ -6,10 +6,13 @@ use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Budget;
+use Alimarchal\LaravelChartOfAccounts\Models\FbrSubmission;
+use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService;
 use Alimarchal\LaravelChartOfAccounts\Services\InventoryService;
+use Alimarchal\LaravelChartOfAccounts\Services\PartyService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Blade;
 use Inertia\Testing\AssertableInertia;
@@ -200,4 +203,27 @@ it('filters users and roles with the shared filters', function (): void {
     expect($roles('search=account'))->toContain('accountant')->not->toContain('viewer')
         ->and($roles('filter[search]=viewer'))->toBe(['viewer'])
         ->and($roles('search=zzz'))->toBe([]);
+});
+
+it('applies the FBR status filter before the 300-row cap so older failures stay reachable', function (): void {
+    $parties = app(PartyService::class);
+    $customer = $parties->create($parties->validate(['type' => 'customer', 'code' => 'C1', 'name' => 'Acme Traders']));
+    $row = fn (int $n, string $date) => PartyDocument::query()->forceCreate([
+        'party_id' => $customer->id, 'kind' => 'invoice', 'number' => sprintf('INV-%04d', $n), 'issue_date' => $date, 'due_date' => $date, 'subtotal' => 100, 'tax_total' => 0, 'total' => 100, 'status' => 'posted', 'company_id' => $customer->company_id,
+    ]);
+    $old = $row(1, '2020-01-01');
+    FbrSubmission::query()->forceCreate(['party_document_id' => $old->id, 'status' => 'failed', 'mode' => 'fake', 'attempts' => 1, 'error' => 'boom', 'company_id' => $customer->company_id]);
+
+    foreach (range(2, 305) as $n) {
+        $row($n, '2026-01-01');
+    }
+
+    $numbers = fn (string $query) => collect($this->getJson("/api/v1/accounting/fbr?{$query}")->assertOk()->json('data.documents'))->pluck('number')->all();
+
+    expect($numbers(''))->toHaveCount(300)->not->toContain('INV-0001')            // the cap keeps the newest 300
+        ->and($numbers('status=failed'))->toBe(['INV-0001'])                       // but the failure is still found by its status
+        ->and($numbers('status=none'))->toHaveCount(300)
+        ->and($numbers('search=INV-0001'))->toBe(['INV-0001'])
+        ->and($numbers('search=acme&date_to=2021-01-01'))->toBe(['INV-0001'])
+        ->and($numbers('status=accepted'))->toBe([]);
 });

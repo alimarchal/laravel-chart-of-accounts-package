@@ -12,9 +12,11 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocumentLine;
 use Alimarchal\LaravelChartOfAccounts\Support\Fbr\FakeFbrGateway;
 use Alimarchal\LaravelChartOfAccounts\Support\Fbr\HttpFbrGateway;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Sales tax invoicing with FBR: posted sales invoices and credit notes are turned into the digital-invoice payload,
@@ -158,11 +160,16 @@ class FbrService
     /**
      * Sales documents and what happened to them, newest first: each with its FBR status (none = not sent yet).
      *
+     * @param  Builder<PartyDocument>|QueryBuilder<PartyDocument>|null  $base
      * @return list<array<string, mixed>>
      */
-    public function overview(?string $status = null): array
+    public function overview(?string $status = null, Builder|QueryBuilder|null $base = null): array
     {
-        $documents = PartyDocument::query()->whereIn('kind', ['invoice', 'credit_note'])->where('status', 'posted')->orderByDesc('issue_date')->orderByDesc('id')->limit(300)->get();
+        // The status filter belongs in the query: filtering the 300 newest rows afterwards would hide older failed submissions.
+        $documents = ($base ?? PartyDocument::query())->whereIn('kind', ['invoice', 'credit_note'])->where('status', 'posted')
+            ->when($status === 'none', fn ($query) => $query->whereNotIn('id', FbrSubmission::query()->select('party_document_id')))
+            ->when($status !== null && $status !== 'none', fn ($query) => $query->whereIn('id', FbrSubmission::query()->where('status', $status)->select('party_document_id')))
+            ->orderByDesc('issue_date')->orderByDesc('id')->limit(300)->get();
         $submissions = FbrSubmission::query()->whereIn('party_document_id', $documents->pluck('id'))->get()->keyBy('party_document_id');
         $parties = Party::query()->whereIn('id', $documents->pluck('party_id'))->pluck('name', 'id');
 
@@ -176,6 +183,6 @@ class FbrService
             ];
         })->values()->all();
 
-        return $status ? array_values(array_filter($rows, fn (array $row): bool => $row['status'] === $status)) : $rows;
+        return $rows;
     }
 }

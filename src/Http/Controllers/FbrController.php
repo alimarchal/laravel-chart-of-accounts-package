@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\FbrSubmission;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Services\FbrService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -23,9 +24,18 @@ class FbrController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $filters = $request->validate(['status' => ['nullable', 'in:none,pending,accepted,failed']]);
-        $documents = $this->fbr->overview($filters['status'] ?? null);
-        $props = ['documents' => $documents, 'enabled' => $this->fbr->enabled(), 'mode' => (string) config('accounting.fbr.mode', 'fake'), 'filters' => ['status' => $filters['status'] ?? '']];
+        $filters = $request->validate(['status' => ['nullable', 'in:none,pending,accepted,failed'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date']]);
+        $base = ListFilters::for(PartyDocument::query(), $request, [
+            ListFilters::exact('kind'),
+            ListFilters::exact('party_id'),
+            ListFilters::search('search', ['number', 'reference'], ['party' => ['name', 'code']]),
+            ListFilters::from('date_from', 'issue_date'),
+            ListFilters::to('date_to', 'issue_date'),
+            ListFilters::min('min_total', 'total'),
+            ListFilters::max('max_total', 'total'),
+        ], sorts: ['issue_date', 'number', 'total']);
+        $documents = $this->fbr->overview($filters['status'] ?? null, $base);
+        $props = ['documents' => $documents, 'enabled' => $this->fbr->enabled(), 'mode' => (string) config('accounting.fbr.mode', 'fake'), 'filters' => ['status' => $filters['status'] ?? '', ...ListFilters::current($request, ['search', 'kind', 'date_from', 'date_to', 'min_total', 'max_total'])]];
 
         if ($request->expectsJson()) {
             return response()->json(['data' => ['enabled' => $props['enabled'], 'mode' => $props['mode'], 'documents' => $documents]]);
