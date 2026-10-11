@@ -10,6 +10,9 @@ The installer sets everything up, and the Blade screens no longer crash in the L
 - **`php artisan accounting:install` asks the setup questions** and writes the answers to `.env`: the screens (Livewire/Blade, React/Inertia, API only),
   base currency, chart of accounts, multi-company, maker-checker and its threshold, WhatsApp, REST API, and the URL of the screens (the starter kit's own
   URLs such as `/settings` and `/dashboard` are refused). Everything is also an option (`--ui`, `--currency`, `--chart`, `--prefix`) for scripted installs.
+- **The installer covers every `.env` setting of the package**: one yes/no per topic (REST API, WhatsApp, FBR, signed webhooks, payroll, budgets and bank
+  statements, PDF/exports/attachments, language, modules to switch off), and a "yes" asks that topic's settings with the current or default value shown;
+  secrets can be generated; credentials are only asked for live mode. `--advanced` asks everything without the yes/no.
 - **The administrator is created by the installer** (`--admin-email`, `--admin-name`, `--admin-password`, or asked for, with the password typed twice): a user
   that does not exist is created, verified and given `super-admin`; an existing user keeps its password.
 - **The Accounting link is added to the starter kit's navigation**, next to Dashboard: the Livewire kit's Flux sidebar or header, and the React kit's

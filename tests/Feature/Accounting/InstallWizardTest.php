@@ -2,10 +2,12 @@
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvFile;
+use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvQuestions;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\StarterKitMenu;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Testing\PendingCommand;
 
 beforeEach(function (): void {
     $this->project = sys_get_temp_dir().'/coa-project-'.uniqid();
@@ -203,19 +205,44 @@ it('refuses a URL prefix that the starter kit uses and an unknown screen type or
     $this->artisan('accounting:install', ['--setup-only' => true, '--no-interaction' => true, '--chart' => 'nope'])->assertExitCode(2);
 });
 
+function declineGroups(PendingCommand $command, array $except = []): PendingCommand
+{
+    $gates = [
+        'api' => 'Do you want to use the REST API? (needs Laravel Sanctum: "php artisan install:api")',
+        'whatsapp' => 'Do you want to send WhatsApp messages (receipts, reminders)? You can start in the sandbox without any Meta account.',
+        'fbr' => 'Do you want to send sales invoices to FBR?',
+        'webhooks' => 'Do you want to send events (entry posted, period closed …) to another system as signed webhooks?',
+        'payroll' => 'Do you want to set the payroll options (working days, overtime, gratuity, approval)?',
+        'budgets_bank' => 'Do you want to set budget control and bank statement import options?',
+        'files' => 'Do you want to set the PDF, export and attachment options?',
+        'language' => 'Do you want to change the language of the screens?',
+        'modules' => 'Are there modules you will not use and want to switch off?',
+    ];
+
+    foreach ($gates as $key => $question) {
+        $command->expectsConfirmation($question, in_array($key, $except, true) ? 'yes' : 'no');
+    }
+
+    return $command;
+}
+
 it('asks the setup questions and applies the answers', function (): void {
     setupProject($this);
 
-    $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true])
+    $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true])
         ->expectsChoice('Which screens do you want?', 'React / Inertia', ['Livewire / Blade', 'React / Inertia', 'REST API only'])
         ->expectsQuestion('Base currency code (ISO 4217, for example PKR, USD, EUR)', 'pkr')
         ->expectsChoice('Which chart of accounts should the company start with?', 'School chart', ['ERPNext standard chart (recommended)', 'General business chart', 'School chart'])
-        ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
+        ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'yes')
+        ->expectsQuestion('Short code of your first company (letters and digits)', 'school')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'yes')
         ->expectsQuestion('Entries from which amount (in the base currency) need approval? (0 = every entry)', '100000')
-        ->expectsConfirmation('Do you want to send WhatsApp messages (receipts, reminders)? You can start in the sandbox without any Meta account.', 'yes')
-        ->expectsConfirmation('Enable the REST API?', 'yes')
-        ->expectsQuestion('URL of the accounting screens (https://your-app/<this>)', 'books')
+        ->expectsConfirmation('May a user approve an entry that he or she made themselves? (not recommended)', 'no')
+        ->expectsQuestion('URL of the accounting screens (https://your-app/<this>)', 'books');
+    declineGroups($command, ['api'])
+        ->expectsQuestion('URL of the API', 'api/v1/accounting')
+        ->expectsQuestion('API calls per minute and user (0 = no limit)', '60')
+        ->expectsQuestion('Most rows an API list returns in one page', '100')
         ->expectsQuestion('Email of the administrator (super-admin)', 'head@school.test')
         ->expectsQuestion('Name of the administrator', 'Head Teacher')
         ->expectsQuestion('Password for head@school.test (at least 8 characters)', 'a-good-password')
@@ -225,21 +252,75 @@ it('asks the setup questions and applies the answers', function (): void {
     $env = new EnvFile($this->project.'/.env');
 
     expect($env->get('ACCOUNTING_UI_DRIVER'))->toBe('inertia')->and($env->get('ACCOUNTING_BASE_CURRENCY'))->toBe('PKR')
-        ->and($env->get('ACCOUNTING_CHART_PRESET'))->toBe('school')->and($env->get('ACCOUNTING_MULTI_COMPANY'))->toBe('false')
+        ->and($env->get('ACCOUNTING_CHART_PRESET'))->toBe('school')->and($env->get('ACCOUNTING_MULTI_COMPANY'))->toBe('true')
+        ->and($env->get('ACCOUNTING_DEFAULT_COMPANY'))->toBe('SCHOOL')
         ->and($env->get('ACCOUNTING_APPROVALS_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_APPROVAL_THRESHOLD'))->toBe('100000')
-        ->and($env->get('ACCOUNTING_WHATSAPP_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_WHATSAPP_MODE'))->toBe('fake')
-        ->and($env->get('ACCOUNTING_API_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_ROUTE_PREFIX'))->toBe('books')
+        ->and($env->get('ACCOUNTING_ALLOW_SELF_APPROVAL'))->toBe('false')
+        ->and($env->get('ACCOUNTING_API_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_API_RATE_LIMIT'))->toBe('60')
+        ->and($env->get('ACCOUNTING_ROUTE_PREFIX'))->toBe('books')
+        ->and($env->get('ACCOUNTING_WHATSAPP_ENABLED'))->toBeNull()->and($env->get('ACCOUNTING_FBR_ENABLED'))->toBeNull()        // declined: the package defaults stay
         ->and(User::query()->where('email', 'head@school.test')->firstOrFail()->hasRole('super-admin'))->toBeTrue();
+});
+
+it('asks for the WhatsApp credentials only in live mode, and the FBR and webhook settings on request', function (): void {
+    setupProject($this);
+
+    $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting', '--admin-email' => 'nobody'])
+        ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
+        ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no');
+    declineGroups($command, ['whatsapp', 'fbr', 'webhooks'])
+        ->expectsChoice('WhatsApp mode: fake (sandbox, nothing is sent) or live (Meta)', 'live', ['fake', 'live'])
+        ->expectsQuestion('WhatsApp access token (system user token) (empty = leave unset)', 'EAAG-token')
+        ->expectsQuestion('WhatsApp phone number ID', '1055550000')
+        ->expectsQuestion('WhatsApp Business Account ID (to list templates)', '2066660000')
+        ->expectsQuestion('Meta app secret (signs the webhook calls) (empty = leave unset)', 'app-secret')
+        ->expectsQuestion('Verify token for Meta\'s webhook (empty = generate a random one)', 'my-verify-word')
+        ->expectsQuestion('Country code for numbers written with a leading 0 (92 for Pakistan)', '92')
+        ->expectsQuestion('Language code of your WhatsApp templates (en, en_US, ur …)', 'en')
+        ->expectsQuestion('Template to send the customer when a receipt is recorded (empty = none)', 'fee_received')
+        ->expectsConfirmation('Send the automatic messages through the queue?', 'yes')
+        ->expectsChoice('FBR mode: fake (accepted locally) or live', 'fake', ['fake', 'live'])
+        ->expectsQuestion('Seller name', 'Green School')
+        ->expectsQuestion('Seller NTN', '1234567-8')
+        ->expectsQuestion('Seller province', 'Punjab')
+        ->expectsQuestion('Seller address', 'Lahore')
+        ->expectsQuestion('Province to use when a customer has none', 'Punjab')
+        ->expectsQuestion('Default HS code of your items', '9999.0000')
+        ->expectsConfirmation('Send an invoice to FBR as soon as it is posted?', 'no')
+        ->expectsQuestion('Webhook URL(s), comma separated', 'https://school.test/hooks/accounting')
+        ->expectsQuestion('Secret that signs the webhooks (empty = generate a random one)', '')
+        ->expectsQuestion('Delivery attempts', '5')
+        ->expectsQuestion('Seconds to wait for the receiver', '10')
+        ->assertSuccessful();
+
+    $env = new EnvFile($this->project.'/.env');
+
+    expect($env->get('ACCOUNTING_WHATSAPP_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_WHATSAPP_MODE'))->toBe('live')
+        ->and($env->get('WHATSAPP_TOKEN'))->toBe('EAAG-token')->and($env->get('WHATSAPP_PHONE_NUMBER_ID'))->toBe('1055550000')
+        ->and($env->get('WHATSAPP_APP_SECRET'))->toBe('app-secret')->and($env->get('WHATSAPP_VERIFY_TOKEN'))->toBe('my-verify-word')
+        ->and($env->get('WHATSAPP_NOTIFY_RECEIPT'))->toBe('fee_received')->and($env->get('WHATSAPP_USE_QUEUE'))->toBe('true')
+        ->and($env->get('ACCOUNTING_FBR_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_FBR_MODE'))->toBe('fake')->and($env->get('ACCOUNTING_FBR_URL'))->toBeNull()
+        ->and($env->get('ACCOUNTING_FBR_SELLER_NAME'))->toBe('Green School')
+        ->and($env->get('ACCOUNTING_WEBHOOK_URLS'))->toBe('https://school.test/hooks/accounting')
+        ->and(strlen((string) $env->get('ACCOUNTING_WEBHOOK_SECRET')))->toBe(40);                                  // generated
+});
+
+it('lists the modules that can be switched off and every optional setting once', function (): void {
+    $keys = collect(EnvQuestions::groups())->flatMap(fn (array $group) => collect($group['questions'])->pluck('env'));
+    $configured = collect(explode("\n", (string) file_get_contents(__DIR__.'/../../../config/accounting.php')))
+        ->map(fn (string $line) => preg_match("/env\('([A-Z_]+)'/", $line, $match) === 1 ? $match[1] : null)->filter();
+
+    expect($keys->duplicates()->all())->toBe([])
+        ->and($keys->diff($configured)->all())->toBe([]);                                                         // every question sets a key the config reads
 });
 
 it('rejects an administrator password that was typed differently the second time', function (): void {
     setupProject($this);
 
-    $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--no-env' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])
+    $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--no-env' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
-        ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no')
-        ->expectsConfirmation('Do you want to send WhatsApp messages (receipts, reminders)? You can start in the sandbox without any Meta account.', 'no')
-        ->expectsConfirmation('Enable the REST API?', 'no')
+        ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no');
+    declineGroups($command)
         ->expectsQuestion('Email of the administrator (super-admin)', 'head@school.test')
         ->expectsQuestion('Name of the administrator', 'Head')
         ->expectsQuestion('Password for head@school.test (at least 8 characters)', 'password-one')
@@ -247,4 +328,25 @@ it('rejects an administrator password that was typed differently the second time
         ->assertSuccessful();
 
     expect(User::query()->count())->toBe(0);
+});
+
+it('patches the real files of the official Laravel starter kits (Livewire sidebar and header, React sidebar)', function (): void {
+    $kits = __DIR__.'/../../Fixtures/starter-kits';
+    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', (string) file_get_contents($kits.'/livewire-sidebar.blade.php'));
+    writeFile($this->project.'/resources/views/layouts/app/header.blade.php', (string) file_get_contents($kits.'/livewire-header.blade.php'));
+    writeFile($this->project.'/resources/js/components/app-sidebar.tsx', (string) file_get_contents($kits.'/react-app-sidebar.tsx'));
+    $menu = new StarterKitMenu;
+
+    $blade = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $react = $menu->apply('inertia', $this->project, '/accounting', 'accounting.dashboard');
+
+    $sidebar = (string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php');
+    $header = (string) file_get_contents($this->project.'/resources/views/layouts/app/header.blade.php');
+
+    expect(array_column($blade, 'status'))->toBe(['added', 'added'])->and(array_column($react, 'status'))->toBe(['added'])
+        ->and($sidebar)->toContain('<flux:sidebar.item icon="calculator" :href="route(\'accounting.dashboard\')"')
+        ->and($header)->toContain('<flux:navbar.item icon="calculator" :href="route(\'accounting.dashboard\')"')
+        ->and(substr_count($header, "route('accounting.dashboard')"))->toBe(2)                    // the top bar and the mobile menu each have a Dashboard item
+        ->and(substr_count($sidebar, "route('accounting.dashboard')"))->toBe(1)
+        ->and(file_get_contents($this->project.'/resources/js/components/app-sidebar.tsx'))->toContain('icon: Calculator }, // accounting:menu');
 });

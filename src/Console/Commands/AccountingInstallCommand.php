@@ -3,12 +3,15 @@
 namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvFile;
+use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvQuestions;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\StarterKitMenu;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
@@ -26,6 +29,7 @@ class AccountingInstallCommand extends Command
         {--prefix= : URL prefix of the accounting screens (default accounting)}
         {--no-menu : Do not add the Accounting link to the starter kit navigation}
         {--no-env : Do not write the answers to .env}
+        {--advanced : Ask every optional setting (WhatsApp, FBR, webhooks, payroll, budgets, PDF, language, modules) instead of one yes/no per topic}
         {--setup-only : Only ask the questions, write .env, create the administrator and add the menu (no publishing, migrating or seeding)}';
 
     protected $description = 'Full setup: publish assets, run migrations (including Spatie), seed master data, and verify.';
@@ -268,25 +272,22 @@ class AccountingInstallCommand extends Command
         $this->remember('ACCOUNTING_CHART_PRESET', ($this->option('chart') || $interactive) ? $chart : null, 'accounting.chart_preset');
         config(['accounting.chart_preset' => $chart]);
 
-        // 4. Companies, maker-checker, WhatsApp, REST API
+        // 4. Companies and maker-checker
         if ($interactive) {
-            $this->remember('ACCOUNTING_MULTI_COMPANY', $this->confirm('Will you keep the books of more than one company (multi-company)?', (bool) config('accounting.multi_company.enabled', false)), 'accounting.multi_company.enabled');
+            $multi = $this->confirm('Will you keep the books of more than one company (multi-company)?', (bool) config('accounting.multi_company.enabled', false));
+            $this->remember('ACCOUNTING_MULTI_COMPANY', $multi, 'accounting.multi_company.enabled');
+
+            if ($multi) {
+                $this->remember('ACCOUNTING_DEFAULT_COMPANY', strtoupper(trim((string) $this->ask('Short code of your first company (letters and digits)', $current('ACCOUNTING_DEFAULT_COMPANY', (string) config('accounting.multi_company.default_company_code', 'MAIN'))))), 'accounting.multi_company.default_company_code');
+            }
 
             $approvals = $this->confirm('Should entries be approved by a second person (maker-checker)?', (bool) config('accounting.approvals.enabled', false));
             $this->remember('ACCOUNTING_APPROVALS_ENABLED', $approvals, 'accounting.approvals.enabled');
 
             if ($approvals) {
                 $this->remember('ACCOUNTING_APPROVAL_THRESHOLD', (string) $this->ask('Entries from which amount (in the base currency) need approval? (0 = every entry)', (string) config('accounting.approvals.threshold', '0')), 'accounting.approvals.threshold');
+                $this->remember('ACCOUNTING_ALLOW_SELF_APPROVAL', $this->confirm('May a user approve an entry that he or she made themselves? (not recommended)', false), 'accounting.approvals.allow_self_approval');
             }
-
-            if ($this->confirm('Do you want to send WhatsApp messages (receipts, reminders)? You can start in the sandbox without any Meta account.', (bool) config('accounting.whatsapp.enabled', false))) {
-                $this->remember('ACCOUNTING_WHATSAPP_ENABLED', true, 'accounting.whatsapp.enabled');
-                $this->remember('ACCOUNTING_WHATSAPP_MODE', $current('ACCOUNTING_WHATSAPP_MODE', 'fake'), 'accounting.whatsapp.mode');
-            }
-
-            $sanctum = class_exists(Sanctum::class);
-            $api = $this->confirm($sanctum ? 'Enable the REST API?' : 'Enable the REST API? (needs Laravel Sanctum: run "php artisan install:api" afterwards)', $sanctum && (bool) config('accounting.api_enabled', true));
-            $this->remember('ACCOUNTING_API_ENABLED', $api, 'accounting.api_enabled');
         } elseif (! class_exists(Sanctum::class) && $envFile->get('ACCOUNTING_API_ENABLED') === null && ! array_key_exists('sanctum', (array) config('auth.guards', []))) {
             $this->remember('ACCOUNTING_API_ENABLED', false, 'accounting.api_enabled');
         }
@@ -306,6 +307,10 @@ class AccountingInstallCommand extends Command
 
         $this->remember('ACCOUNTING_ROUTE_PREFIX', $prefix !== '' ? $prefix : null, 'accounting.route_prefix');
 
+        if ($interactive) {
+            $this->askOptionalGroups($envFile);
+        }
+
         if (! $this->option('no-env')) {
             $written = $envFile->set(array_filter($this->env, fn ($value) => $value !== null));
 
@@ -317,6 +322,142 @@ class AccountingInstallCommand extends Command
         }
 
         return true;
+    }
+
+    /**
+     * The optional settings, topic by topic (EnvQuestions): one yes/no per topic, or every question with --advanced. What is answered goes
+     * to .env; a question left empty is not written, so the package default stays.
+     */
+    private function askOptionalGroups(EnvFile $envFile): void
+    {
+        $advanced = (bool) $this->option('advanced');
+
+        foreach (EnvQuestions::groups() as $group) {
+            $default = $group['key'] === 'api' ? class_exists(Sanctum::class) && (bool) config('accounting.api_enabled', true) : false;
+
+            if (! $advanced && ! $this->confirm($group['gate'], $default)) {
+                foreach ($group['off'] ?? [] as $key => $value) {
+                    $this->env[$key] = $value;
+                }
+
+                continue;
+            }
+
+            if ($advanced) {
+                $this->newLine();
+                $this->line("<fg=cyan>{$group['title']}</>");
+            }
+
+            foreach ($group['questions'] as $question) {
+                if (isset($question['when']) && ! $this->answerIs((array) $question['when'], $envFile)) {
+                    continue;
+                }
+
+                if (! empty($question['forced'])) {
+                    $this->env[(string) $question['env']] = true;
+
+                    continue;
+                }
+
+                $value = $this->askValue($question, $envFile->get((string) $question['env']));
+
+                if ($value !== null) {
+                    $this->env[(string) $question['env']] = $value;
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, string>  $when  env key => the value an earlier answer (or .env) must have
+     */
+    private function answerIs(array $when, EnvFile $envFile): bool
+    {
+        foreach ($when as $key => $expected) {
+            $actual = $this->env[$key] ?? $envFile->get($key);
+
+            if ((is_bool($actual) ? ($actual ? 'true' : 'false') : (string) $actual) !== $expected) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $question
+     */
+    private function askValue(array $question, ?string $current): string|int|bool|null
+    {
+        $type = (string) ($question['type'] ?? 'text');
+        $label = (string) $question['label'];
+        $default = $current ?? (isset($question['default']) ? (string) (is_bool($question['default']) ? ($question['default'] ? 'true' : 'false') : $question['default']) : null);
+
+        if ($type === 'bool') {
+            return $this->confirm($label, filter_var($default, FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if ($type === 'choice') {
+            $choices = array_values((array) $question['choices']);
+
+            return (string) $this->choice($label, $choices, in_array($default, $choices, true) ? $default : $choices[0]);
+        }
+
+        if ($type === 'secret') {
+            $value = trim((string) $this->secret($label.' (empty = leave unset)'));
+
+            return $value === '' ? null : $value;
+        }
+
+        if ($type === 'secret-or-random') {
+            $value = trim((string) $this->ask($label.' (empty = '.($current ? 'keep the current one' : 'generate a random one').')'));
+
+            if ($value === '' && $current) {
+                return null;
+            }
+
+            if ($value === '') {
+                $value = Str::random(40);
+                $this->line('   '.$question['env'].' = '.$value);
+            }
+
+            return $value;
+        }
+
+        if ($type === 'features') {
+            $options = ['none' => 'none: keep every module'];
+
+            foreach (FeatureManager::catalog() as $key => $feature) {
+                if ($feature['parent'] === null && $feature['group'] === 'Modules') {
+                    $options[$key] = $feature['label'];
+                }
+            }
+
+            $picked = array_diff((array) $this->choice($label.' (several: 2,4)', $options, 'none', null, true), ['none', $options['none']]);
+            $keys = array_values(array_filter(array_map(fn ($pick) => array_key_exists((string) $pick, $options) ? (string) $pick : (string) array_search($pick, $options, true), $picked)));
+
+            return $keys === [] ? null : implode(',', $keys);
+        }
+
+        for ($try = 0; $try < 3; $try++) {
+            $value = trim((string) $this->ask($label, $default !== null && $default !== '' ? $default : null));
+
+            if ($value === '') {
+                return null;
+            }
+
+            if ($type === 'int' && ! ctype_digit($value)) {
+                $this->error('Please write a whole number.');
+            } elseif ($type === 'url' && filter_var($value, FILTER_VALIDATE_URL) === false) {
+                $this->error('Please write a full URL, for example https://example.com/path.');
+            } elseif ($type === 'time' && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value) !== 1) {
+                $this->error('Please write the time as HH:MM, for example 03:00.');
+            } else {
+                return $type === 'int' ? (int) $value : $value;
+            }
+        }
+
+        return null;
     }
 
     /** Keep an answer: for this run (config) and, when given, for .env. */

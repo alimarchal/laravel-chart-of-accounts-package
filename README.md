@@ -137,12 +137,18 @@ The installer asks what it needs, so there is nothing to edit by hand afterwards
 | Which screens do you want? | Livewire / Blade, React / Inertia or REST API only (it suggests the one that matches your starter kit) → `ACCOUNTING_UI_DRIVER` |
 | Base currency | `ACCOUNTING_BASE_CURRENCY` (PKR, USD, …) |
 | Chart of accounts | ERPNext standard chart, general business chart or school chart → `ACCOUNTING_CHART_PRESET` |
-| Several companies? | `ACCOUNTING_MULTI_COMPANY` |
-| Approval by a second person? | maker-checker and its threshold → `ACCOUNTING_APPROVALS_ENABLED`, `ACCOUNTING_APPROVAL_THRESHOLD` |
-| WhatsApp? | switches the sandbox on → `ACCOUNTING_WHATSAPP_ENABLED` |
-| REST API? | `ACCOUNTING_API_ENABLED` (needs Laravel Sanctum, `php artisan install:api`) |
+| Several companies? | `ACCOUNTING_MULTI_COMPANY` and the short code of your first company → `ACCOUNTING_DEFAULT_COMPANY` |
+| Approval by a second person? | maker-checker, its threshold and whether one may approve their own entry → `ACCOUNTING_APPROVALS_ENABLED`, `ACCOUNTING_APPROVAL_THRESHOLD`, `ACCOUNTING_ALLOW_SELF_APPROVAL` |
 | URL of the screens | default `accounting`; the starter kit's own URLs (`settings`, `dashboard`, `login`, …) are refused → `ACCOUNTING_ROUTE_PREFIX` |
 | Email, name and password of the administrator | the user is **created** when it does not exist, verified, and given `super-admin` |
+
+Then one yes/no question per topic, and a "yes" asks that topic's settings (each shows the current or default value; an empty answer
+leaves the package default): **REST API** (prefix, rate limit, page size), **WhatsApp** (sandbox or live, token, phone number ID, business account ID, app secret,
+verify token, country code, language, receipt template, queue), **FBR** (mode, URL, token, seller NTN, name, province, address, HS code, auto-submit), **signed
+webhooks** (URLs, secret, attempts, timeout), **payroll** (days per month, approval, automatic run, overtime, gratuity, tax year), **budgets and bank statements**,
+**PDF, exports and attachments**, **language** and **modules you will not use** (switched off through `ACCOUNTING_FEATURES_DISABLED`). Secrets (verify token,
+webhook secret) can be generated for you. `--advanced` asks every topic without the yes/no. Every key the package reads is covered by these questions
+or the ones above; `.env` keys that are not asked keep their documented defaults.
 
 Your answers are written to `.env`. Then the installer publishes the config and migrations, migrates, seeds the chart of accounts,
 currencies, the current fiscal year, roles and tax codes, creates the database views and triggers, and verifies everything. It adds

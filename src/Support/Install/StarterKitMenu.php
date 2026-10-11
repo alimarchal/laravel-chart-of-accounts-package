@@ -88,30 +88,35 @@ final class StarterKitMenu
             return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting link'];
         }
 
-        // The Dashboard item of the kit: <flux:sidebar.item|navlist.item|navbar.item … route('dashboard') …>…</flux:…>
-        if (preg_match('/^([ \t]*)(<flux:(sidebar\.item|navlist\.item|navbar\.item)\b(?:(?!<\/flux:\3>).)*?route\(\s*[\'"]dashboard[\'"]\s*\)(?:(?!<\/flux:\3>).)*?<\/flux:\3>)/ms', $source, $match) !== 1) {
+        // Every Dashboard item of the kit (the header layout has one in the top bar and one in the mobile menu):
+        // <flux:sidebar.item|navlist.item|navbar.item … route('dashboard') …>…</flux:…>
+        $pattern = '/^([ \t]*)(<flux:(sidebar\.item|navlist\.item|navbar\.item)\b(?:(?!<\/flux:\3>).)*?route\(\s*[\'"]dashboard[\'"]\s*\)(?:(?!<\/flux:\3>).)*?<\/flux:\3>)/ms';
+
+        if (preg_match_all($pattern, $source, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE) < 1) {
             return ['file' => $file, 'status' => 'manual', 'message' => 'no Dashboard item found to copy'];
         }
 
-        $indent = $match[1];
-        $item = $match[2];
-        $item = (string) preg_replace('/\s+wire:navigate(?:\.hover)?\b/', '', $item);                       // the accounting pages are ordinary pages
-        $item = str_replace(["route('dashboard')", 'route("dashboard")'], "route('{$routeName}')", $item);
-        $item = (string) preg_replace('/routeIs\(\s*[\'"]dashboard[\'"]\s*\)/', "routeIs('".preg_replace('/\.dashboard$/', '.*', $routeName)."')", $item);
-        $item = (string) preg_replace('/\bicon="[^"]*"/', 'icon="calculator"', $item);
-        $item = (string) preg_replace('/__\(\s*[\'"]Dashboard[\'"]\s*\)/', "__('Accounting')", $item);
-        $item = (string) preg_replace('/>\s*Dashboard\s*</', '>Accounting<', $item);
+        $updated = $source;
 
-        $block = $indent.'{{-- '.self::MARKER.' --}}'."\n".$indent.'@if (\Illuminate\Support\Facades\Route::has(\''.$routeName.'\'))'."\n"
-            .$indent.'    '.ltrim($item)."\n".$indent.'@endif';
+        foreach (array_reverse($matches) as $match) {
+            [$whole, $at] = $match[0];
+            $indent = $match[1][0];
+            $item = $match[2][0];
+            $item = (string) preg_replace('/\s+wire:navigate(?:\.hover)?\b/', '', $item);                   // the accounting pages are ordinary pages
+            $item = str_replace(["route('dashboard')", 'route("dashboard")'], "route('{$routeName}')", $item);
+            $item = (string) preg_replace('/routeIs\(\s*[\'"]dashboard[\'"]\s*\)/', "routeIs('".preg_replace('/\.dashboard$/', '.*', $routeName)."')", $item);
+            $item = (string) preg_replace('/\bicon="[^"]*"/', 'icon="calculator"', $item);
+            $item = (string) preg_replace('/__\(\s*[\'"]Dashboard[\'"]\s*\)/', "__('Accounting')", $item);
+            $item = (string) preg_replace('/>\s*Dashboard\s*</', '>Accounting<', $item);
 
-        $at = strpos($source, $match[0]);
+            $lines = explode("\n", $item);
+            $nested = array_map(fn (string $line, int $index): string => $index === 0 ? $line : ($line === '' ? $line : '    '.$line), $lines, array_keys($lines));
 
-        if ($at === false) {
-            return ['file' => $file, 'status' => 'manual', 'message' => 'could not be changed'];
+            $block = $indent.'{{-- '.self::MARKER.' --}}'."\n".$indent.'@if (\Illuminate\Support\Facades\Route::has(\''.$routeName.'\'))'."\n"
+                .$indent.'    '.ltrim(implode("\n", $nested))."\n".$indent.'@endif';
+
+            $updated = substr_replace($updated, $whole."\n".$block, $at, strlen($whole));
         }
-
-        $updated = substr_replace($source, $match[0]."\n".$block, $at, strlen($match[0]));
 
         file_put_contents($path, $updated);
 
