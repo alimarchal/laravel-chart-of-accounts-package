@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountRole;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
@@ -189,6 +190,12 @@ class ChartOfAccountService
         DB::transaction(function () use ($account): void {
             $account = ChartOfAccount::query()->lockForUpdate()->findOrFail($account->id);
 
+            $role = AccountRole::query()->where('chart_of_account_id', $account->id)->value('role');
+
+            if ($role !== null) {
+                throw new AccountingException("Account {$account->account_code} plays the role \"{$role}\" for the modules: give that role to another account first, then it can be deleted.");
+            }
+
             if ($account->is_system) {
                 throw new AccountingException('System accounts cannot be deleted.');
             }
@@ -282,6 +289,10 @@ class ChartOfAccountService
 
         if (array_key_exists('is_group', $data) && ! $data['is_group'] && $account->is_group && $account->children()->exists()) {
             throw new AccountingException('A group account with child accounts cannot be converted into a posting account.');
+        }
+
+        if (array_key_exists('is_active', $data) && ! $data['is_active'] && $account->is_active && ($role = AccountRole::query()->where('chart_of_account_id', $account->id)->value('role')) !== null) {
+            throw new AccountingException("Account {$account->account_code} plays the role \"{$role}\" for the modules: give that role to another account first, then it can be deactivated.");
         }
 
         if ($this->isReferencedByConfig($account->account_code)) {

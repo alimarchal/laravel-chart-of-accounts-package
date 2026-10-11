@@ -905,9 +905,65 @@ for path_item in paths.values():
         if method in ("get", "post", "put", "patch", "delete"):
             operation.setdefault("parameters", []).append({"$ref": "#/components/parameters/Company"})
 
+# -- list filters (every list takes ?filter[name]=… or the short ?name=…; see the README "Filtering lists") -------------------------
+def _f(name, type_="string", desc="", enum=None, fmt=None):
+    schema = {"type": type_}
+    if enum: schema["enum"] = enum
+    if fmt: schema["format"] = fmt
+    return {"name": name, "in": "query", "description": (desc + " " if desc else "") + f"Also accepted as `filter[{name}]`.", "schema": schema}
+
+_TEXT = lambda cols: _f("search", "string", f"Text contained in {cols} (case-insensitive; `%` and `_` match themselves).")
+_DATE = lambda name, desc: _f(name, "string", desc, fmt="date")
+_NUM = lambda name, desc: _f(name, "number", desc)
+_BOOL = lambda name, desc: _f(name, "boolean", desc + " `1`/`0`/`true`/`false`.")
+_SORT = lambda cols: {"name": "sort", "in": "query", "description": "Sort column; prefix with `-` for descending. One of: " + ", ".join(cols) + ".", "schema": {"type": "string"}}
+
+LIST_FILTERS = {
+ "/parties": [_TEXT("name, code, e-mail, phone or tax number"), _f("type", "string", "`customer` (includes `both`), `supplier` (includes `both`) or `both`.", ["customer", "supplier", "both"]), _f("email", "string", "Text contained in the e-mail."), _f("tax_number", "string", "Text contained in the tax number."), _BOOL("active", "Active parties only (1) or inactive only (0)."), _SORT(["name", "code", "created_at"])],
+ "/party-documents": [_TEXT("number, reference, notes or the party's name/code"), _f("party_id", "integer"), _DATE("date_from", "Issued on or after."), _DATE("date_to", "Issued on or before."), _DATE("due_from", "Due on or after."), _DATE("due_to", "Due on or before."), _NUM("min_total", "Total at least."), _NUM("max_total", "Total at most."), _SORT(["issue_date", "due_date", "number", "total", "id"])],
+ "/party-payments": [_TEXT("number, reference, notes or the party's name/code"), _f("status", "string", "", ["posted", "void"]), _f("party_id", "integer"), _f("method", "string", "Exact payment method, e.g. `cash`."), _DATE("date_from", "Paid on or after."), _DATE("date_to", "Paid on or before."), _NUM("min_amount", "Amount at least."), _NUM("max_amount", "Amount at most."), _SORT(["payment_date", "number", "amount", "id"])],
+ "/fixed-assets": [_TEXT("code, name, category or description"), _f("category", "string"), _f("method", "string", "Depreciation method."), _DATE("acquired_from", "Acquired on or after."), _DATE("acquired_to", "Acquired on or before."), _NUM("min_cost", "Cost at least."), _NUM("max_cost", "Cost at most."), _SORT(["code", "name", "acquisition_date", "cost"])],
+ "/inventory": [_TEXT("SKU, name or category"), _f("category", "string"), _f("unit", "string"), _BOOL("active", "Active items."), _BOOL("low_stock", "Only items at or below their reorder level."), _SORT(["sku", "name"])],
+ "/inventory/warehouses": [_TEXT("code, name or address"), _BOOL("active", "Active warehouses."), _SORT(["code", "name"])],
+ "/inventory/movements": [_TEXT("reference or notes"), _f("item_id", "integer"), _f("warehouse_id", "integer"), _f("type", "string"), _DATE("date_from", "On or after."), _DATE("date_to", "On or before."), _SORT(["movement_date", "quantity", "value", "id"])],
+ "/budgets": [_TEXT("name or notes"), _f("status", "string", "", ["draft", "approved", "closed"]), _DATE("date_from", "Starts on or after."), _DATE("date_to", "Ends on or before."), _SORT(["name", "start_date", "end_date", "status"])],
+ "/bank-statements": [_TEXT("file name or bank account"), _f("bank_account_id", "integer"), _DATE("date_from", "Covers a day on or after."), _DATE("date_to", "Covers a day on or before."), _BOOL("unmatched", "Only statements that still have unmatched lines."), _SORT(["to_date", "from_date", "file_name", "id"])],
+ "/recurring-entries": [_TEXT("name, reference or description"), _f("frequency", "string", "", ["daily", "weekly", "monthly", "quarterly", "yearly"]), _f("mode", "string", "", ["draft", "post"]), _BOOL("active", "Active (1) or paused (0)."), _DATE("due_by", "Next run on or before."), _SORT(["name", "next_run_date", "start_date"])],
+ "/payroll": [_TEXT("notes"), _f("status", "string", "", ["draft", "submitted", "approved", "posted", "paid", "void"]), _DATE("period_from", "Month on or after."), _DATE("period_to", "Month on or before."), _SORT(["period_month", "net", "gross", "id"])],
+ "/payroll/employees": [_TEXT("code, name, national ID, designation or bank"), _BOOL("active", "Employed (1) or left (0)."), _BOOL("withhold_tax", "Income tax withheld."), _f("cost_center_id", "integer"), _f("designation", "string"), _DATE("joined_from", "Joined on or after."), _DATE("joined_to", "Joined on or before."), _NUM("min_salary", "Basic salary at least."), _NUM("max_salary", "Basic salary at most."), _SORT(["code", "name", "join_date", "base_salary"])],
+ "/payroll/loans": [_TEXT("employee code/name or notes"), _f("employee_id", "integer"), _f("kind", "string", "", ["loan", "advance"]), _DATE("issued_from", "Issued on or after."), _DATE("issued_to", "Issued on or before."), _NUM("min_principal", "Amount at least."), _NUM("max_principal", "Amount at most."), _SORT(["issued_on", "principal", "id"])],
+ "/payroll/arrears": [_TEXT("employee code/name or notes"), _f("employee_id", "integer")],
+ "/payroll/adjustments": [_TEXT("employee code/name, description or notes"), _f("employee_id", "integer"), _f("kind", "string", "", ["earning", "deduction"]), _BOOL("taxable", "Taxable adjustments.")],
+ "/payroll/settlements": [_TEXT("employee code/name or notes"), _f("status", "string", "", ["draft", "posted", "paid", "void"]), _f("employee_id", "integer"), _DATE("leave_from", "Last day on or after."), _DATE("leave_to", "Last day on or before."), _NUM("min_net", "Net at least."), _NUM("max_net", "Net at most."), _SORT(["leave_date", "net", "id"])],
+ "/payroll/components": [_TEXT("code or name"), _f("kind", "string", "", ["earning", "deduction"]), _f("method", "string", "", ["fixed", "percent_of_basic", "quantity_rate"]), _BOOL("taxable", "Taxable."), _BOOL("active", "Active."), _SORT(["code", "name", "kind"])],
+ "/payroll/grades": [_TEXT("code or name"), _BOOL("active", "Active."), _NUM("min_salary", "Basic at least."), _NUM("max_salary", "Basic at most."), _SORT(["code", "name", "base_salary"])],
+ "/payroll/schemes": [_TEXT("code or name"), _f("base", "string", "", ["basic", "gross", "fixed"]), _BOOL("applies_to_all", "Applies to everyone."), _BOOL("active", "Active."), _SORT(["code", "name"])],
+ "/users": [_TEXT("name or e-mail"), _f("name", "string", "Text contained in the name."), _f("email", "string", "Text contained in the e-mail."), _f("role", "string", "Role name (comma separated: any of them)."), _SORT(["name", "email", "created_at"])],
+ "/roles": [_TEXT("role name"), _f("guard_name", "string"), _SORT(["name", "created_at"])],
+ "/voucher-types": [_TEXT("code, name, prefix or description"), _BOOL("active", "Active."), _BOOL("system", "Built in."), _f("reset", "string", "When numbering restarts."), _SORT(["code", "name"])],
+ "/control-accounts": [_TEXT("account code or name"), _f("control_type", "string", "Which sub-ledger the account controls (comma separated: any).")],
+ "/companies": [_TEXT("code, name, legal name, tax or registration number or e-mail"), _BOOL("is_active", "Active companies.")],
+ "/tax/returns": [_f("return_search", "string", "Text contained in the reference or notes."), _DATE("return_from", "Period ends on or after."), _DATE("return_to", "Period starts on or before."), _NUM("min_payable", "Net payable at least."), _NUM("max_payable", "Net payable at most."), _SORT(["period_to", "net_payable", "id"])],
+ "/fx-revaluation": [_f("currency_id", "integer", "Exchange rates of this currency."), _f("source", "string", "Exchange rate source."), _DATE("rate_from", "Rates dated on or after."), _DATE("rate_to", "Rates dated on or before."), _f("reval_search", "string", "Revaluations whose notes contain the text."), _DATE("reval_from", "Revaluations as of on or after."), _DATE("reval_to", "Revaluations as of on or before.")],
+ "/fbr": [_TEXT("number, reference or customer"), _f("status", "string", "FBR status.", ["none", "pending", "accepted", "failed"]), _f("kind", "string", "", ["invoice", "credit_note"]), _f("party_id", "integer"), _DATE("date_from", "Issued on or after."), _DATE("date_to", "Issued on or before."), _NUM("min_total", "Total at least."), _NUM("max_total", "Total at most."), _SORT(["issue_date", "number", "total"])],
+ "/periods": [_TEXT("period name"), _f("status", "string", "", ["open", "closed", "archived"]), _DATE("date_from", "Ends on or after."), _DATE("date_to", "Starts on or before.")],
+ "/reports/trial-balance": [_DATE("as_of_date", "Entries dated up to and including this day (default: all)."), _DATE("date_from", "With `as_of_date`: only the movement from this day (a period's trial balance)."), _TEXT("account code or name"), _f("account_type", "string", "Account type name (comma separated: any), e.g. `Income,Expense`."), _f("report_group", "string", "`BalanceSheet` or `IncomeStatement`."), _BOOL("hide_zero", "Hide accounts with no debits or credits.")],
+}
+
+def _merge_filters(path, extra):
+    get = paths.get(path, {}).get("get")
+    if get is None:
+        print("openapi: no GET for", path); return
+    have = {p.get("name") for p in get.get("parameters", [])}
+    get["parameters"] = [*get.get("parameters", []), *[p for p in extra if p["name"] not in have]]
+
+for _path, _params in LIST_FILTERS.items():
+    _merge_filters(_path, _params)
+
+
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.33.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.34.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
@@ -917,6 +973,7 @@ spec = {
    "* **Money:** amounts are returned as decimal strings with two decimals.\n"
    "* **Retries:** send `Idempotency-Key` when creating journal entries.\n"
    "* **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible (404).\n"
+   "* **Filtering and sorting:** every list takes `?filter[name]=value` (the standard form) or just `?name=value`; when both are sent, `filter[...]` wins. Several values separated by commas match any of them. Text filters are case-insensitive and match part of the text; dates are `YYYY-MM-DD`; yes/no filters take `1`/`0`/`true`/`false`. `?sort=name` / `?sort=-name` sorts where a list offers it. An unknown filter or sort answers 400, a malformed date or number 422.\n"
    "* **Maker-checker:** with approvals enabled, entries at/above the threshold go submit → approve (a different user) → posted.",
   "license": {"name": "MIT", "identifier": "MIT"}},
  "servers": [{"url": "{host}/api/v1/accounting", "variables": {"host": {"default": "http://localhost:8000"}}}],

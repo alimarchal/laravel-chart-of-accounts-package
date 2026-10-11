@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
+use Alimarchal\LaravelChartOfAccounts\Services\ChartRestructureService;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartTemplateService;
 use Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService;
 use Alimarchal\LaravelChartOfAccounts\Services\InventoryService;
@@ -166,4 +167,28 @@ it('seeds a new company with the chart picked on the command line, next to the f
         expect(account('1101')->account_name)->toBe('Cash In Hand')->and(AccountRoles::code('cash'))->toBe('1101')->and(AccountRoles::code('salary_expense'))->toBe('5101')->and(AccountRoles::preset())->toBe('general');
     });
     expect(AccountRoles::preset())->toBe('erpnext')->and(AccountRoles::code('cash'))->toBe('1100');
+});
+
+it('keeps the roles with the money: refuses to delete or deactivate a role account and moves the role on a merge', function (): void {
+    $chart = app(ChartOfAccountService::class);
+    $advances = AccountRoles::account('employee_advances');
+    expect($advances->account_code)->toBe('1610');
+
+    expect(fn () => $chart->update($advances, ['is_active' => false]))->toThrow(AccountingException::class, 'plays the role "employee_advances"')
+        ->and(fn () => $chart->delete($advances))->toThrow(AccountingException::class, 'plays the role "employee_advances"');
+
+    // Two accounts of your own: merging the one that holds the role into the other hands the role over.
+    $make = fn (string $code, string $name) => ChartOfAccount::query()->create([
+        'parent_id' => $advances->parent_id, 'account_type_id' => $advances->account_type_id, 'currency_id' => $advances->currency_id, 'account_code' => $code,
+        'account_name' => $name, 'normal_balance' => 'debit', 'is_group' => false,
+    ]);
+    $old = $make('1611', 'Staff Advances (old)');
+    $new = $make('1612', 'Staff Advances (new)');
+    AccountRoles::set('employee_advances', [$old->id]);
+
+    $result = app(ChartRestructureService::class)->merge($old, $new);
+
+    expect($result['moved_roles'])->toBe(1)
+        ->and(AccountRoles::code('employee_advances'))->toBe('1612')
+        ->and($old->refresh()->is_active)->toBeFalse();
 });
