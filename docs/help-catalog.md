@@ -2,7 +2,7 @@
 
 Generated from the routes the package registers (`python3 docs/generate-route-catalog.py`); do not edit by hand.
 
-- **399 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **327 API endpoints**.
+- **399 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **328 API endpoints**.
 - Web screens live under `/accounting` (users, roles and the feature switches under `/settings` with the Blade driver); the API under `/api/v1/accounting` (see the prefixes in `config/accounting.php`).
 - *Permission* is the Spatie permission a user needs; a user without it gets 403. A feature that is switched off answers 404 (see *Feature switches* in the README).
 - The API is described in full in [`openapi.yaml`](openapi.yaml) and the [Postman collection](postman_collection.json).
@@ -704,6 +704,7 @@ Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorizati
 | GET | `/reports/aged-receivables` | Aged receivables | `reports.aged-receivables.view` |
 | GET | `/reports/aged-payables` | Aged payables | `reports.aged-payables.view` |
 | GET | `/reports/account-statement` | Account statement | `reports.account-statement.view` |
+| GET | `/reports/branch-comparison` | Branch comparison | `reports.income-statement.view` |
 
 ### Periods
 

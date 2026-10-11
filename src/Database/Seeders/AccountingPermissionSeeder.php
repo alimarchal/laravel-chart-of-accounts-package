@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Database\Seeders;
 
 use Alimarchal\LaravelChartOfAccounts\Support\AccountingPermissions;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -26,13 +27,15 @@ class AccountingPermissionSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $existing = Permission::query()->where('guard_name', 'web')->pluck('name')->all();
-        $introduced = [];
+        $introduced = array_values(array_diff($this->permissions(), $existing));
 
-        foreach ($this->permissions() as $permissionName) {
-            Permission::findOrCreate($permissionName, 'web');
+        // One insert for all the new permissions instead of a look-up and an insert for each (a fresh install has about 140).
+        if ($introduced !== []) {
+            $now = now();
+            $table = config('permission.table_names.permissions', 'permissions');
 
-            if (! in_array($permissionName, $existing, true)) {
-                $introduced[] = $permissionName;
+            foreach (array_chunk($introduced, 100) as $chunk) {
+                DB::table($table)->insert(array_map(fn (string $name): array => ['name' => $name, 'guard_name' => 'web', 'created_at' => $now, 'updated_at' => $now], $chunk));
             }
         }
 

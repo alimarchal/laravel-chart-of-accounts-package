@@ -4046,6 +4046,46 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+  /reports/branch-comparison:
+    get:
+      tags:
+      - Reports
+      summary: Branch comparison
+      operationId: report_branch_comparison
+      description: 'Revenue, expenses and net_income of each branch side by side (same dates as the income statement). Only
+        when branches are on; a branch user sees only theirs; entries with no branch are one row with branch_id null.
+
+
+        Permission: `reports.branch-comparison.view`.'
+      responses:
+        '200':
+          description: Branch comparison
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
   /reports/general-ledger:
     get:
       tags:

@@ -21,6 +21,8 @@ use Alimarchal\LaravelChartOfAccounts\Services\PartyService;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
@@ -364,4 +366,34 @@ it('shows each user only the cards, links and routes their permissions allow', f
     $this->get('/accounting/journal-entries')->assertOk();
     $this->get('/accounting/branches')->assertForbidden();
     $this->get('/accounting/users')->assertForbidden();
+});
+
+it('does not let the branch of a posted entry be changed, whatever the database', function (): void {
+    $entry = ($this->at)($this->lahore, fn () => journal(['1101' => 50, '4101' => -50]));
+
+    expect(fn () => DB::transaction(fn () => DB::table('accounting_journal_entries')->where('id', $entry->id)->update(['branch_id' => $this->karachi->id])))
+        ->toThrow(QueryException::class);
+    expect($entry->fresh()->branch_id)->toBe($this->lahore->id);
+});
+
+it('compares the branches side by side, and a branch user sees only theirs', function (): void {
+    ($this->at)($this->lahore, fn () => journal(['1101' => 1000, '4101' => -1000]));
+    ($this->at)($this->karachi, fn () => journal(['1101' => 300, '4101' => -300]));
+    ($this->at)(null, fn () => journal(['1101' => 40, '4101' => -40]));
+
+    Sanctum::actingAs($this->admin);
+    $all = $this->getJson(BR_API.'/reports/branch-comparison')->assertOk()->json();
+    $byCode = collect($all['data'])->keyBy(fn ($row) => $row['code'] ?? 'none');
+
+    expect($byCode['LHR']['revenue'])->toEqual('1000.00')->and($byCode['KHI']['revenue'])->toEqual('300.00')
+        ->and($byCode['none']['revenue'])->toEqual('40.00')->and($all['totals']['revenue'])->toEqual('1340.00');
+
+    $user = User::factory()->create();
+    $user->assignRole('accountant');
+    $this->branches->grant($this->karachi, $user);
+    Sanctum::actingAs($user);
+    CurrentBranch::flush();
+    $mine = $this->getJson(BR_API.'/reports/branch-comparison')->assertOk()->json();
+
+    expect($mine['data'])->toHaveCount(1)->and($mine['data'][0]['code'])->toBe('KHI')->and($mine['totals']['revenue'])->toEqual('300.00');
 });

@@ -290,6 +290,7 @@ reports = {
  "trial-balance": ("Trial balance", [], ref("ReportRows"), "All posted activity per account; totals.difference is 0 when balanced."),
  "balance-sheet": ("Balance sheet", asof_q, ref("ReportRows"), "Includes a 'Current Earnings (unclosed)' row; totals: assets, liabilities_and_equity, difference."),
  "income-statement": ("Income statement", date_q, ref("ReportRows"), "Defaults to the period containing today; closing entries excluded. totals: revenue, expenses, net_income."),
+ "branch-comparison": ("Branch comparison", date_q, ref("ReportRows"), "Revenue, expenses and net_income of each branch side by side (same dates as the income statement). Only when branches are on; a branch user sees only theirs; entries with no branch are one row with branch_id null."),
  "general-ledger": ("General ledger", ledger_q, ref("LedgerPage"), None),
  "cash-flow": ("Cash flow", date_q + PAGE, ref("CashFlowPage"), "Direct method: movements on cash and bank accounts (and their child accounts), paginated; totals cover the whole period."),
  "bank-book": ("Bank book", ledger_q + [{"name": "bank_account_id", "in": "query", "schema": {"type": "integer"}}], ref("LedgerPage"), None),

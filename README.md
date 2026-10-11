@@ -1328,6 +1328,19 @@ After upgrading an existing installation run `php artisan accounting:update` onc
 | Deleting | A branch with entries, invoices, bills or payments cannot be deleted: deactivate it. Inactive branches cannot be chosen. |
 | Permissions | `branches.view`, `branches.create`, `branches.update`, `branches.delete` (admin: all; accountant and auditor: view). |
 
+### Branch reports
+
+`GET /api/v1/accounting/reports/branch-comparison` (permission `reports.income-statement.view`) shows revenue, expenses and net income of every branch side by side; the other
+reports (trial balance, income statement, balance sheet, general ledger, ageing, cash flow, dashboard) follow the working branch (`X-Branch`) or, with none picked, the user's branches.
+Seeing only what you are allowed to see is automatic. To build **your own report by branch**:
+
+- Group by the entry's `branch_id`: `vw_accounting_general_ledger` has a `branch_id` column (`null` = head office / not allocated), or join `accounting_journal_entries.branch_id` as
+  `Reports/BranchComparisonReport` does (one grouped query, posted entries only, `is_closing_entry = false`, amounts in `base_debit` / `base_credit`).
+- In your own queries limit to what the user may see with `CurrentBranch::constrain($query, 'entry.branch_id')` (or `CurrentBranch::accessibleIds()` for a branch list); models that use the `HasBranch` trait are limited automatically.
+- Company-wide on purpose: budgets, tax returns and the customer/supplier control-account reconciliation (they follow the one chart of accounts), and the year-end close. Entries and documents
+  booked **before** branches were switched on have no branch: they are visible to admins, super-admins and users without a branch only.
+- A posted entry's branch cannot be changed (a database trigger refuses it); reverse and re-book instead.
+
 Period close and the year-end close are company-wide: run them as a user without branch restriction. Branches are a booking dimension of the
 company's one chart of accounts, periods and numbering; for separate books use [Multi-company](#multi-company) instead (the two can be combined: branches of each company).
 
@@ -1547,7 +1560,7 @@ plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->
-_327 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
+_328 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
 
 ### Journal entries
 
@@ -1623,6 +1636,7 @@ _327 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | GET | `/reports/aged-receivables` | Aged receivables | `reports.aged-receivables.view` |
 | GET | `/reports/aged-payables` | Aged payables | `reports.aged-payables.view` |
 | GET | `/reports/account-statement` | Account statement | `reports.account-statement.view` |
+| GET | `/reports/branch-comparison` | Branch comparison | `reports.income-statement.view` |
 
 ### Periods
 

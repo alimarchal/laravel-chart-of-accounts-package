@@ -181,7 +181,8 @@ final class CurrentBranch
      */
     public static function reportIds(): ?array
     {
-        if (! self::enabled()) {
+        // A report over several companies (consolidation) is not limited to the branches of one of them.
+        if (! self::enabled() || count(CurrentCompany::ids()) > 1) {
             return null;
         }
 

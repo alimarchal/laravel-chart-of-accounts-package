@@ -485,5 +485,10 @@ Route::middleware($apiMiddleware)
                     ->name($uri)
                     ->middleware("can:reports.{$uri}.view");
             }
+
+            // Branches side by side: the income statement's permission, and only when branches are on.
+            Route::get('branch-comparison', [ReportApiController::class, 'branchComparison'])
+                ->name('branch-comparison')
+                ->middleware('can:reports.income-statement.view');
         });
     });

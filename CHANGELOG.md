@@ -6,6 +6,12 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 Branches: one company, several places of business.
 
+### Test speed and branch reports
+- **The test suite is much faster**: the permission seeder inserts in bulk (seeding 0.9 s → 0.4 s per test) and CI runs `pest --parallel` with one database per worker (`<db>_<n>`, created automatically
+  for MySQL/MariaDB/PostgreSQL by `tests/TestCase.php`). MariaDB: 726 tests in ~21 minutes on 4 processes instead of over an hour serially; run it locally with `vendor/bin/pest --parallel`.
+- **Branch comparison report**: `GET /reports/branch-comparison` (revenue, expenses, net income per branch), and a documented pattern for building any report by branch (README → *Branch reports*).
+- A posted entry's `branch_id` can no longer be changed (database triggers on SQLite, MySQL/MariaDB and PostgreSQL); reports over several companies (consolidation) ignore the branch filter.
+
 ### Also in this release
 - **The accounting area is split into two parts, "Accounting" and "Settings"**, with tabs on both and one link each in the starter kit's menu (*Accounting*, *Accounting settings*; the
   installer adds the second one to existing installations too). *Accounting* holds the daily work (journal, reports, customers and suppliers, banking, payroll, inventory …);

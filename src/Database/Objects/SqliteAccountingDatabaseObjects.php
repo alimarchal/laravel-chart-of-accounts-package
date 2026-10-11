@@ -134,6 +134,8 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         $voucher = Schema::hasColumn('accounting_journal_entries', 'voucher_number')
             ? 'OR NEW.voucher_number IS NOT OLD.voucher_number OR NEW.voucher_type_id IS NOT OLD.voucher_type_id'
             : '';
+        // A posted entry stays in its branch, as it stays in its company.
+        $voucher .= Schema::hasColumn('accounting_journal_entries', 'branch_id') ? ' OR NEW.branch_id IS NOT OLD.branch_id' : '';
 
         if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
             $voucher .= ' OR NEW.source_document_type IS NOT OLD.source_document_type OR NEW.source_document_number IS NOT OLD.source_document_number OR NEW.source_document_date IS NOT OLD.source_document_date OR NEW.sourceable_type IS NOT OLD.sourceable_type OR NEW.sourceable_id IS NOT OLD.sourceable_id';
