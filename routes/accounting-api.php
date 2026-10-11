@@ -1,7 +1,7 @@
 <?php
 
-use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountRoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingOverviewController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountRoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountBalanceSnapshotApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\AccountingPeriodApiController;
