@@ -3,82 +3,58 @@
 namespace Alimarchal\LaravelChartOfAccounts\Console\Commands;
 
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
+use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvFile;
+use Alimarchal\LaravelChartOfAccounts\Support\Install\StarterKitMenu;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 
 class AccountingInstallCommand extends Command
 {
     protected $signature = 'accounting:install
-        {--admin-email= : Email of the user to receive the super-admin role (defaults to the first user)}
+        {--admin-email= : Email of the user to receive the super-admin role (the user is created when it does not exist; defaults to the first user)}
+        {--admin-name= : Name of the administrator, used when the user has to be created}
+        {--admin-password= : Password of the administrator, used when the user has to be created (asked for when interactive)}
         {--views : Also publish the Blade views for customisation (not needed otherwise)}
-        {--chart= : Chart of accounts to start from: erpnext (default), general or school}';
+        {--chart= : Chart of accounts to start from: erpnext (default), general or school}
+        {--ui= : Screens to install: blade (Livewire), inertia (React) or api}
+        {--currency= : Base currency code, for example PKR}
+        {--prefix= : URL prefix of the accounting screens (default accounting)}
+        {--no-menu : Do not add the Accounting link to the starter kit navigation}
+        {--no-env : Do not write the answers to .env}
+        {--setup-only : Only ask the questions, write .env, create the administrator and add the menu (no publishing, migrating or seeding)}';
 
     protected $description = 'Full setup: publish assets, run migrations (including Spatie), seed master data, and verify.';
 
+    /** @var array<string, string|int|bool|null> what goes into .env */
+    private array $env = [];
+
     public function handle(): int
     {
-        $this->info('Publishing accounting migrations...');
-        Artisan::call('vendor:publish', ['--tag' => 'accounting-migrations', '--no-interaction' => true], $this->output);
-
-        $this->info('Publishing accounting config...');
-        Artisan::call('vendor:publish', ['--tag' => 'accounting-config', '--no-interaction' => true], $this->output);
-
-        $driver = config('accounting.ui_driver', 'inertia');
-
-        // Views are served from the package; publishing them freezes them and hides future fixes.
-        if ($this->option('views')) {
-            $this->info('Publishing accounting views...');
-            Artisan::call('vendor:publish', ['--tag' => 'accounting-views', '--no-interaction' => true], $this->output);
-        }
-
-        if ($driver === 'blade') {
-            $this->info('Publishing accounting public assets (select2, jQuery)...');
-            Artisan::call('vendor:publish', ['--tag' => 'accounting-assets', '--no-interaction' => true], $this->output);
-        }
-
-        if ($driver === 'inertia') {
-            $this->info('Publishing Inertia/React pages to resources/js/pages/accounting...');
-            Artisan::call('vendor:publish', ['--tag' => 'accounting-js', '--no-interaction' => true], $this->output);
-        }
-
-        if (! $this->spatiePermissionMigrationExists()) {
-            $this->info('Publishing spatie/laravel-permission migrations...');
-            Artisan::call('vendor:publish', [
-                '--provider' => 'Spatie\Permission\PermissionServiceProvider',
-                '--no-interaction' => true,
-            ], $this->output);
-        }
-
-        if (! $this->spatieActivitylogMigrationExists()) {
-            $this->info('Publishing spatie/laravel-activitylog migrations...');
-            Artisan::call('vendor:publish', [
-                '--provider' => 'Spatie\Activitylog\ActivitylogServiceProvider',
-                '--tag' => 'activitylog-migrations',
-                '--no-interaction' => true,
-            ], $this->output);
-        }
-
-        $this->info('Running all migrations...');
-        Artisan::call('migrate', ['--force' => true, '--no-interaction' => true], $this->output);
-
-        $chart = $this->chosenChart();
-
-        if ($chart === null) {
+        if (! $this->askSetupQuestions()) {
             return self::INVALID;
         }
 
-        $this->info('Seeding accounting master data ('.(AccountRoles::presets()[$chart] ?? $chart).')...');
-        Artisan::call('accounting:seed', ['--chart' => $chart], $this->output);
+        $driver = (string) config('accounting.ui_driver', 'inertia');
 
-        $this->info('Syncing database objects...');
-        Artisan::call('accounting:sync-db-objects', [], $this->output);
+        if (! $this->option('setup-only')) {
+            $this->installPackage($driver);
+        }
 
         $this->checkUserModel();
-        $this->assignSuperAdminToFirstUser();
+        $this->assignSuperAdmin();
         $this->warnIfApiGuardMissing();
+        $this->addNavigation($driver);
+
+        if ($this->option('setup-only')) {
+            $this->info('Setup done.');
+
+            return self::SUCCESS;
+        }
 
         $this->info('Verifying installation...');
         $verifyExitCode = Artisan::call('accounting:verify', [], $this->output);
@@ -92,7 +68,7 @@ class AccountingInstallCommand extends Command
         $this->newLine();
         $this->info('Accounting module installed successfully!');
         if ($driver !== 'api') {
-            $this->info('   Visit /'.trim((string) config('accounting.route_prefix', 'accounting'), '/').' after logging in.');
+            $this->info('   Log in and open '.url('/'.trim((string) config('accounting.route_prefix', 'accounting'), '/')).($driver === 'inertia' ? '  (run "npm run build" once for the React pages)' : '  (run "npm run build" once so the styles of the screens are compiled)'));
         }
         $this->newLine();
         $this->line('   UI driver: '.$driver.' (ACCOUNTING_UI_DRIVER = inertia | blade | api).');
@@ -187,7 +163,199 @@ class AccountingInstallCommand extends Command
         $this->line('   …and list them in the class body, e.g. "use HasApiTokens, HasFactory, HasRoles, Notifiable;"');
     }
 
-    private function assignSuperAdminToFirstUser(): void
+    private function installPackage(string $driver): void
+    {
+        $this->info('Publishing accounting migrations...');
+        Artisan::call('vendor:publish', ['--tag' => 'accounting-migrations', '--no-interaction' => true], $this->output);
+
+        $this->info('Publishing accounting config...');
+        Artisan::call('vendor:publish', ['--tag' => 'accounting-config', '--no-interaction' => true], $this->output);
+
+        // Views are served from the package; publishing them freezes them and hides future fixes.
+        if ($this->option('views')) {
+            $this->info('Publishing accounting views...');
+            Artisan::call('vendor:publish', ['--tag' => 'accounting-views', '--no-interaction' => true], $this->output);
+        }
+
+        if ($driver === 'blade') {
+            $this->info('Publishing accounting public assets (select2, jQuery)...');
+            Artisan::call('vendor:publish', ['--tag' => 'accounting-assets', '--no-interaction' => true], $this->output);
+        }
+
+        if ($driver === 'inertia') {
+            $this->info('Publishing Inertia/React pages to resources/js/pages/accounting...');
+            Artisan::call('vendor:publish', ['--tag' => 'accounting-js', '--no-interaction' => true], $this->output);
+        }
+
+        if (! $this->spatiePermissionMigrationExists()) {
+            $this->info('Publishing spatie/laravel-permission migrations...');
+            Artisan::call('vendor:publish', [
+                '--provider' => 'Spatie\Permission\PermissionServiceProvider',
+                '--no-interaction' => true,
+            ], $this->output);
+        }
+
+        if (! $this->spatieActivitylogMigrationExists()) {
+            $this->info('Publishing spatie/laravel-activitylog migrations...');
+            Artisan::call('vendor:publish', [
+                '--provider' => 'Spatie\Activitylog\ActivitylogServiceProvider',
+                '--tag' => 'activitylog-migrations',
+                '--no-interaction' => true,
+            ], $this->output);
+        }
+
+        $this->info('Running all migrations...');
+        Artisan::call('migrate', ['--force' => true, '--no-interaction' => true], $this->output);
+
+        $chart = (string) config('accounting.chart_preset', 'erpnext');
+
+        $this->info('Seeding accounting master data ('.(AccountRoles::presets()[$chart] ?? $chart).')...');
+        Artisan::call('accounting:seed', ['--chart' => $chart], $this->output);
+
+        $this->info('Syncing database objects...');
+        Artisan::call('accounting:sync-db-objects', [], $this->output);
+    }
+
+    /**
+     * The questions of a first installation (only asked when there is a person to ask and the answer was not given as an option): screens,
+     * currency, chart, companies, approvals, WhatsApp, REST API, URL prefix. The answers take effect for this run and are written to .env.
+     */
+    private function askSetupQuestions(): bool
+    {
+        $interactive = $this->input->isInteractive();
+        $envFile = new EnvFile($this->laravel->environmentFilePath());
+        $current = fn (string $key, string $fallback): string => $envFile->get($key) ?? $fallback;
+
+        // 1. The screens
+        $uis = ['blade' => 'Livewire / Blade', 'inertia' => 'React / Inertia', 'api' => 'REST API only'];
+        $ui = (string) $this->option('ui');
+
+        if ($ui !== '' && ! array_key_exists($ui, $uis)) {
+            $this->error("Unknown --ui \"{$ui}\": use blade, inertia or api.");
+
+            return false;
+        }
+
+        if ($ui === '' && $interactive) {
+            $default = $envFile->get('ACCOUNTING_UI_DRIVER') ?: $this->detectUi();
+            $ui = (string) array_search($this->choice('Which screens do you want?', array_values($uis), $uis[$default] ?? $uis['blade']), $uis, true);
+        }
+
+        $this->remember('ACCOUNTING_UI_DRIVER', $ui !== '' ? $ui : null, 'accounting.ui_driver');
+
+        // 2. Currency
+        $currency = strtoupper(trim((string) $this->option('currency')));
+
+        if ($currency === '' && $interactive) {
+            $currency = strtoupper(trim((string) $this->ask('Base currency code (ISO 4217, for example PKR, USD, EUR)', $current('ACCOUNTING_BASE_CURRENCY', (string) config('accounting.defaults.currency_code', 'PKR')))));
+        }
+
+        if ($currency !== '' && preg_match('/^[A-Z]{3}$/', $currency) !== 1) {
+            $this->error("\"{$currency}\" is not a three-letter currency code.");
+
+            return false;
+        }
+
+        $this->remember('ACCOUNTING_BASE_CURRENCY', $currency !== '' ? $currency : null, 'accounting.defaults.currency_code');
+
+        // 3. The chart of accounts
+        $chart = $this->chosenChart();
+
+        if ($chart === null) {
+            return false;
+        }
+
+        $this->remember('ACCOUNTING_CHART_PRESET', ($this->option('chart') || $interactive) ? $chart : null, 'accounting.chart_preset');
+        config(['accounting.chart_preset' => $chart]);
+
+        // 4. Companies, maker-checker, WhatsApp, REST API
+        if ($interactive) {
+            $this->remember('ACCOUNTING_MULTI_COMPANY', $this->confirm('Will you keep the books of more than one company (multi-company)?', (bool) config('accounting.multi_company.enabled', false)), 'accounting.multi_company.enabled');
+
+            $approvals = $this->confirm('Should entries be approved by a second person (maker-checker)?', (bool) config('accounting.approvals.enabled', false));
+            $this->remember('ACCOUNTING_APPROVALS_ENABLED', $approvals, 'accounting.approvals.enabled');
+
+            if ($approvals) {
+                $this->remember('ACCOUNTING_APPROVAL_THRESHOLD', (string) $this->ask('Entries from which amount (in the base currency) need approval? (0 = every entry)', (string) config('accounting.approvals.threshold', '0')), 'accounting.approvals.threshold');
+            }
+
+            if ($this->confirm('Do you want to send WhatsApp messages (receipts, reminders)? You can start in the sandbox without any Meta account.', (bool) config('accounting.whatsapp.enabled', false))) {
+                $this->remember('ACCOUNTING_WHATSAPP_ENABLED', true, 'accounting.whatsapp.enabled');
+                $this->remember('ACCOUNTING_WHATSAPP_MODE', $current('ACCOUNTING_WHATSAPP_MODE', 'fake'), 'accounting.whatsapp.mode');
+            }
+
+            $sanctum = class_exists(Sanctum::class);
+            $api = $this->confirm($sanctum ? 'Enable the REST API?' : 'Enable the REST API? (needs Laravel Sanctum: run "php artisan install:api" afterwards)', $sanctum && (bool) config('accounting.api_enabled', true));
+            $this->remember('ACCOUNTING_API_ENABLED', $api, 'accounting.api_enabled');
+        } elseif (! class_exists(Sanctum::class) && $envFile->get('ACCOUNTING_API_ENABLED') === null && ! array_key_exists('sanctum', (array) config('auth.guards', []))) {
+            $this->remember('ACCOUNTING_API_ENABLED', false, 'accounting.api_enabled');
+        }
+
+        // 5. The URL of the screens
+        $prefix = trim((string) $this->option('prefix'), '/ ');
+
+        if ($prefix === '' && $interactive) {
+            $prefix = trim((string) $this->ask('URL of the accounting screens (https://your-app/<this>)', $current('ACCOUNTING_ROUTE_PREFIX', (string) config('accounting.route_prefix', 'accounting'))), '/ ');
+        }
+
+        if ($prefix !== '' && in_array(strtolower(explode('/', $prefix)[0]), self::RESERVED_PREFIXES, true)) {
+            $this->error("\"{$prefix}\" is already used by your application (the starter kit's own screens): choose another URL, for example accounting.");
+
+            return false;
+        }
+
+        $this->remember('ACCOUNTING_ROUTE_PREFIX', $prefix !== '' ? $prefix : null, 'accounting.route_prefix');
+
+        if (! $this->option('no-env')) {
+            $written = $envFile->set(array_filter($this->env, fn ($value) => $value !== null));
+
+            if ($written !== []) {
+                $this->info('Saved to .env: '.implode(', ', $written));
+            } elseif ($this->env !== [] && ! $envFile->exists()) {
+                $this->warn('No .env file found: set '.implode(', ', array_keys($this->env)).' yourself.');
+            }
+        }
+
+        return true;
+    }
+
+    /** Keep an answer: for this run (config) and, when given, for .env. */
+    private function remember(string $envKey, string|int|bool|null $value, string $configKey): void
+    {
+        if ($value === null) {
+            return;
+        }
+
+        $this->env[$envKey] = $value;
+        config([$configKey => $value]);
+    }
+
+    private function detectUi(): string
+    {
+        if (is_file(resource_path('js/components/app-sidebar.tsx')) || is_file(resource_path('js/components/app-header.tsx'))) {
+            return 'inertia';
+        }
+
+        return $this->vueOrSvelteKit() || is_dir(resource_path('views/layouts')) || class_exists(Livewire::class) ? 'blade' : (string) config('accounting.ui_driver', 'inertia');
+    }
+
+    /** The Vue and Svelte starter kits: the accounting screens are React (Inertia) or Blade, so these apps use the Blade screens. */
+    private function vueOrSvelteKit(): bool
+    {
+        foreach (['AppSidebar.vue', 'app-sidebar.vue', 'AppSidebar.svelte', 'app-sidebar.svelte', 'AppHeader.vue', 'app-header.svelte'] as $file) {
+            if (is_file(resource_path('js/components/'.$file))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The administrator: --admin-email (asked for when interactive). A user that does not exist yet is created (name and password asked for,
+     * or --admin-name / --admin-password), then it gets the super-admin role.
+     */
+    private function assignSuperAdmin(): void
     {
         $userModel = config('auth.providers.users.model');
 
@@ -195,14 +363,25 @@ class AccountingInstallCommand extends Command
             return;
         }
 
-        $email = $this->option('admin-email');
-        $user = $email
+        $email = trim((string) $this->option('admin-email'));
+        $interactive = $this->input->isInteractive();
+
+        if ($email === '' && $interactive) {
+            $first = $userModel::query()->orderBy((new $userModel)->getKeyName())->first();
+            $email = trim((string) $this->ask('Email of the administrator (super-admin)', $first instanceof Model ? (string) $first->getAttribute('email') : null));
+        }
+
+        $user = $email !== ''
             ? $userModel::query()->where('email', $email)->first()
             : $userModel::query()->orderBy((new $userModel)->getKeyName())->first();
 
+        if (! $user && $email !== '') {
+            $user = $this->createAdministrator($userModel, $email, $interactive);
+        }
+
         if (! $user) {
-            $this->warn($email
-                ? "No user with email {$email} found. Assign the \"super-admin\" role manually."
+            $this->warn($email !== ''
+                ? "No user with email {$email} was created. Create it, then run \"php artisan accounting:install --admin-email={$email}\" again."
                 : 'No users found. Please create a user and assign the "super-admin" role manually.');
 
             return;
@@ -214,7 +393,7 @@ class AccountingInstallCommand extends Command
             return;
         }
 
-        if (! $email) {
+        if ($email === '') {
             $this->warn('No --admin-email given: the super-admin role goes to the first user. Verify this is intended.');
         }
 
@@ -223,6 +402,97 @@ class AccountingInstallCommand extends Command
 
         $this->info('Assigned "super-admin" role to user: '.$user->getAttribute('email'));
     }
+
+    private function createAdministrator(string $userModel, string $email, bool $interactive): ?Model
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $this->error("\"{$email}\" is not an email address.");
+
+            return null;
+        }
+
+        $name = trim((string) $this->option('admin-name'));
+        $password = (string) $this->option('admin-password');
+
+        if ($name === '' && $interactive) {
+            $name = trim((string) $this->ask('Name of the administrator', 'Administrator'));
+        }
+
+        if ($password === '' && $interactive) {
+            $password = (string) $this->secret('Password for '.$email.' (at least 8 characters)');
+            $confirm = (string) $this->secret('Repeat the password');
+
+            if ($password !== $confirm) {
+                $this->error('The passwords do not match.');
+
+                return null;
+            }
+        }
+
+        if (strlen($password) < 8) {
+            $this->error('The administrator needs a password of at least 8 characters (--admin-password).');
+
+            return null;
+        }
+
+        try {
+            /** @var Model $user */
+            $user = new $userModel;
+            $user->forceFill([
+                'name' => $name !== '' ? $name : 'Administrator', 'email' => $email, 'password' => Hash::make($password),
+                'email_verified_at' => now(),
+            ]);
+            $user->save();
+        } catch (\Throwable $exception) {
+            $this->error('The administrator could not be created: '.$exception->getMessage());
+
+            return null;
+        }
+
+        $this->info("Created the user {$email}.");
+
+        return $user;
+    }
+
+    /**
+     * The Accounting link in the navigation of the starter kit (Livewire: Blade sidebar, React: app-sidebar.tsx) and the Tailwind source that
+     * compiles the classes of the package's Blade screens.
+     */
+    private function addNavigation(string $driver): void
+    {
+        if ($this->option('no-menu') || $driver === 'api') {
+            return;
+        }
+
+        $menu = new StarterKitMenu;
+        $url = '/'.trim((string) config('accounting.route_prefix', 'accounting'), '/');
+        $routeName = trim((string) config('accounting.route_name_prefix', 'accounting'), '.').'.dashboard';
+        $results = $menu->apply($driver, base_path(), $url, $routeName);
+
+        foreach ($results as $result) {
+            $line = "   {$result['file']}: {$result['message']}";
+            $result['status'] === 'manual' ? $this->warn($line) : $this->line($line);
+        }
+
+        if ($results === [] && $this->vueOrSvelteKit()) {
+            $this->line('   Vue/Svelte starter kit: the accounting screens are separate pages, not Inertia pages. Add a plain link, not an Inertia Link:  <a href="'.$url.'">Accounting</a>');
+        } elseif ($results === []) {
+            $this->line($driver === 'blade'
+                ? '   No Livewire starter kit sidebar found: link to route(\''.$routeName.'\') from your own menu.'
+                : '   No React starter kit sidebar found: add { title: \'Accounting\', href: \''.$url.'\', icon: Calculator } to mainNavItems.');
+        } elseif (in_array('manual', array_column($results, 'status'), true)) {
+            $this->line($driver === 'blade'
+                ? '   Add to your sidebar:  <flux:sidebar.item icon="calculator" :href="route(\''.$routeName.'\')">{{ __(\'Accounting\') }}</flux:sidebar.item>'
+                : '   Add to mainNavItems:  { title: \'Accounting\', href: \''.$url.'\', icon: Calculator }');
+        }
+
+        if ($driver === 'blade' && $menu->tailwindSource(base_path()) === 'added') {
+            $this->line('   resources/css/app.css: Tailwind now also scans the package\'s screens (run "npm run build" or keep "npm run dev" running).');
+        }
+    }
+
+    /** URL segments the starter kits use for their own screens: the accounting screens must not take them over. */
+    private const RESERVED_PREFIXES = ['settings', 'dashboard', 'login', 'logout', 'register', 'password', 'user', 'email', 'two-factor', 'livewire', 'api', 'up', 'storage', 'sanctum', 'forgot-password', 'reset-password', 'verify-email', 'confirm-password'];
 
     private function spatiePermissionMigrationExists(): bool
     {

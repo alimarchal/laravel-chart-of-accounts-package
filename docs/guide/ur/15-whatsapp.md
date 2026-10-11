@@ -89,4 +89,7 @@ WhatsApp::text('+92 300 1234567', 'آپ کی رسید تیار ہے۔');   // ص
 
 API: `GET /api/v1/accounting/whatsapp`، `POST /api/v1/accounting/whatsapp/messages` (`{"to": "0300-1234567", "template": "fee_received", "parameters": {...}}`)، `POST .../messages/{id}/retry`۔ اجازتیں: `whatsapp.view` (دیکھنا) اور `whatsapp.send` (بھیجنا)۔
 
+
+[اگلا باب: تنصیب →](16-tansib.md)
+
 </div>

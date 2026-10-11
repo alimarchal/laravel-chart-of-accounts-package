@@ -10,7 +10,7 @@
 
 | کمانڈ | کام |
 |---|---|
-| `php artisan accounting:install` | پیکیج کی ابتدائی تنصیب: ترتیب، مائیگریشن، رولز، ڈیفالٹ ڈیٹا (`--chart=erpnext\|general\|school` سے چارٹ کا انتخاب) |
+| `php artisan accounting:install` | پیکیج کی تنصیب: سوالات، `.env`، ایڈمن یوزر، مائیگریشن، رولز، ڈیفالٹ ڈیٹا اور سائیڈ بار کا مینو (`--chart=erpnext\|general\|school`، `--ui`، `--currency`، `--prefix`، `--admin-email`، `--setup-only`) (باب 16) |
 | `php artisan accounting:update` | اپ ڈیٹ کے بعد نئی مائیگریشن/اجازتیں لگانا (`--views` سے شائع شدہ Blade اسکرینیں بھی نئی) |
 | `php artisan accounting:seed` | ڈیفالٹ چارٹ/اقسام/کرنسیاں لگانا (`--company=` کے ساتھ ایک کمپنی کے لیے) |
 | `php artisan accounting:health-check` | جانچ کہ سب کچھ درست انسٹال ہے (`503` اگر نہیں) |

@@ -2,6 +2,29 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.36.0] - 2026-11-19
+
+The installer sets everything up, and the Blade screens no longer crash in the Livewire starter kit.
+
+### Added
+- **`php artisan accounting:install` asks the setup questions** and writes the answers to `.env`: the screens (Livewire/Blade, React/Inertia, API only),
+  base currency, chart of accounts, multi-company, maker-checker and its threshold, WhatsApp, REST API, and the URL of the screens (the starter kit's own
+  URLs such as `/settings` and `/dashboard` are refused). Everything is also an option (`--ui`, `--currency`, `--chart`, `--prefix`) for scripted installs.
+- **The administrator is created by the installer** (`--admin-email`, `--admin-name`, `--admin-password`, or asked for, with the password typed twice): a user
+  that does not exist is created, verified and given `super-admin`; an existing user keeps its password.
+- **The Accounting link is added to the starter kit's navigation**, next to Dashboard: the Livewire kit's Flux sidebar or header, and the React kit's
+  `app-sidebar.tsx` / `app-header.tsx` (with the icon import). Once only; `--no-menu` skips it. For Blade the package's screens are added to the Tailwind 4
+  sources in `resources/css/app.css`, so their styles are compiled. Vue and Svelte kits are told which plain link to add.
+- `accounting:install --setup-only` (questions, `.env`, administrator and menu without publishing, migrating or seeding) and `ACCOUNTING_BLADE_LAYOUT`
+  (`accounting.blade_layout`) to name the layout component the Blade screens are rendered in.
+
+### Fixed
+- **Out of memory (HTTP 500) on every Blade screen with the Livewire starter kit.** The page layout called `<x-app-layout>` whenever the application had a
+  `layouts.app` view; the Livewire kit has no such component, Blade then resolved the name to the package's own `app-layout`, and the layout rendered itself
+  until PHP ran out of memory. The layout is now chosen only from a component that exists: `accounting.blade_layout`, Breeze's `app-layout`, the layout
+  Livewire renders its pages in (`layouts::app` in the Livewire 4 kit), else the package's own page layout. The page title and buttons are shown above
+  the content and the scripts of the page are loaded in layouts that have no header slot or script stack.
+
 ## [2.35.0] - 2026-11-12
 
 WhatsApp: one call sends a message through the WhatsApp Cloud API, with everything in `.env`.
