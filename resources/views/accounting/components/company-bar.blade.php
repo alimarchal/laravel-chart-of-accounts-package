@@ -40,3 +40,25 @@
         </div>
     </div>
 @endif
+
+{{-- The working branch (branches enabled only): new entries are booked to it, lists and reports follow it. --}}
+@if(\Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::enabled() && auth()->check() && \Illuminate\Support\Facades\Route::has(config('accounting.route_name_prefix', 'accounting').'.branch.switch'))
+    @php
+        $branchOptions = \Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::options();
+        $workingBranch = \Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::selectedId();
+    @endphp
+    @if(count($branchOptions) > 0)
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+            <form method="POST" action="{{ route(config('accounting.route_name_prefix', 'accounting').'.branch.switch') }}" class="flex items-center justify-end gap-2 text-sm text-gray-700">
+                @csrf
+                <label for="acc-branch" class="text-gray-500">Branch:</label>
+                <select id="acc-branch" name="branch_id" aria-label="Branch" onchange="this.form.submit()" class="rounded-md border-gray-300 py-1 text-sm">
+                    <option value="">{{ \Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::restricted() ? 'All my branches' : 'All branches' }}</option>
+                    @foreach($branchOptions as $option)
+                        <option value="{{ $option['id'] }}" @selected($workingBranch === $option['id'])>{{ $option['name'] }} ({{ $option['code'] }})</option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
+    @endif
+@endif

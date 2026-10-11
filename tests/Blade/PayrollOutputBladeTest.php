@@ -55,7 +55,8 @@ it('hides a switched-off feature from the menus and shows the switches screen in
     $admin->assignRole('super-admin');
     $this->actingAs($admin);
 
-    $this->get('/accounting')->assertOk()->assertSee('Inventory')->assertSee('Features');
+    $this->get('/accounting')->assertOk()->assertSee('Inventory');
+    $this->get('/accounting/settings')->assertOk()->assertSee('Features');
     $this->get('/settings/features')->assertOk()->assertSee('Loans &amp; advances', false)->assertSee('Final settlements')->assertSee('Payroll');
 
     $this->put('/settings/features', ['features' => ['inventory' => '0', 'payroll_loans' => '0']])->assertRedirect()->assertSessionHas('success');

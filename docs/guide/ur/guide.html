@@ -118,6 +118,11 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <td>تنصیب</td>
 <td>انسٹالر کے سوالات، ایڈمن یوزر، سائیڈ بار میں مینو، لاگ اِن</td>
 </tr>
+<tr>
+<td><a href="#17-kits-branches">17</a></td>
+<td>کٹس اور برانچیں</td>
+<td>Livewire (Flux)، Jetstream اور React میں اسکرینیں، ایک کمپنی کی کئی برانچیں، برانچ کے حساب سے رپورٹ اور رسائی</td>
+</tr>
 </tbody>
 </table>
 <h2 id="_3">مزید وسائل</h2>
@@ -1632,7 +1637,7 @@ WhatsApp::text('+92 300 1234567', 'آپ کی رسید تیار ہے۔');   // ص
 </section>
 <section id="16-tansib">
 <h1 id="16">باب 16: تنصیب — سوالات، ایڈمن یوزر اور مینو</h1>
-<p><a href="#15-whatsapp">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
+<p><a href="#15-whatsapp">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#17-kits-branches">اگلا باب: کٹس اور برانچیں →</a></p>
 <h2 id="161-3">16.1 تنصیب کے 3 قدم</h2>
 <pre><code class="language-bash">composer require alimarchal/laravel-chart-of-accounts
 </code></pre>
@@ -1659,7 +1664,11 @@ class User extends Authenticatable
 <tbody>
 <tr>
 <td>Which screens do you want?</td>
-<td><strong>Livewire / Blade</strong>، <strong>React / Inertia</strong> یا صرف <strong>REST API</strong>۔ آپ کے اسٹارٹر کٹ کے مطابق خود تجویز دیتا ہے (Vue اور Svelte کٹ والے Blade چنیں)</td>
+<td><strong>Livewire starter kit (Flux)</strong>، <strong>Blade (Jetstream / Breeze)</strong>، <strong>React (Inertia)</strong> یا صرف <strong>REST API</strong>۔ آپ کے اسٹارٹر کٹ کے مطابق خود تجویز دیتا ہے (Vue اور Svelte کٹ والے Blade چنیں)</td>
+</tr>
+<tr>
+<td>Several branches?</td>
+<td>کیا کمپنی کی کئی برانچیں ہیں (دیکھیں <a href="#17-kits-branches">باب 17</a>)</td>
 </tr>
 <tr>
 <td>Base currency</td>
@@ -1709,5 +1718,74 @@ class User extends Authenticatable
 <p><code>--setup-only</code> صرف سوال، <code>.env</code>، ایڈمن یوزر اور مینو کرتا ہے (ٹیبلز دوبارہ نہیں بناتا)۔ <code>--no-env</code> سے <code>.env</code> کو چھوا نہیں جاتا۔</p>
 <h2 id="166-allowed-memory-size-exhausted-500">16.6 عام مسئلہ: "Allowed memory size exhausted" (500)</h2>
 <p>پرانے ورژن میں Livewire اسٹارٹر کٹ پر ہر Blade صفحہ میموری ختم ہو کر 500 دیتا تھا۔ <strong>ورژن 2.36.0 میں یہ ٹھیک ہے</strong>: <code>composer update alimarchal/laravel-chart-of-accounts</code> چلائیں، پھر <code>php artisan view:clear</code>۔ صفحات اب Livewire کٹ کی اپنی لے آؤٹ (سائیڈ بار سمیت) میں کھلتے ہیں۔ اپنی لے آؤٹ منتخب کرنی ہو تو <code>.env</code> میں <code>ACCOUNTING_BLADE_LAYOUT=layouts::app</code> لکھیں۔</p>
+</section>
+<section id="17-kits-branches">
+<h1 id="17">باب 17: اسٹارٹر کٹس اور برانچیں</h1>
+<p><a href="#16-tansib">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
+<h2 id="171">17.1 تین قسم کی اسکرینیں</h2>
+<p>انسٹالر تین قسم کی اسکرینیں پیش کرتا ہے (چوتھی صرف API ہے):</p>
+<table>
+<thead>
+<tr>
+<th>انتخاب</th>
+<th>کس کے لیے</th>
+<th>کیسا لگتا ہے</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--ui=livewire</code></td>
+<td>Laravel کا <strong>Livewire اسٹارٹر کٹ</strong> (Flux)</td>
+<td>کٹ کی اپنی سائیڈ بار میں "Accounting"؛ سادہ سرحد والے کارڈ، Flux جیسے بٹن، پوری چوڑائی</td>
+</tr>
+<tr>
+<td><code>--ui=blade</code></td>
+<td><strong>Jetstream</strong> یا <strong>Breeze</strong></td>
+<td>اوپر کی نیویگیشن میں "Accounting"؛ Jetstream کے کارڈ</td>
+</tr>
+<tr>
+<td><code>--ui=inertia</code></td>
+<td><strong>React</strong> اسٹارٹر کٹ</td>
+<td>سائیڈ بار میں "Accounting"، React صفحات</td>
+</tr>
+</tbody>
+</table>
+<p>Blade والی دونوں قسمیں ایک ہی صفحات ہیں؛ <code>.env</code> میں <code>ACCOUNTING_BLADE_KIT</code> (<code>auto</code>، <code>flux</code>، <code>jetstream</code>، <code>breeze</code>، <code>plain</code>) بتاتا ہے کہ کس کٹ جیسے دکھیں۔ <code>auto</code> خود پہچان لیتا ہے۔</p>
+<p><img alt="Livewire (Flux) میں جرنل انٹریاں" src="../images/kit-livewire-flux.jpg" /></p>
+<p><img alt="Jetstream میں جرنل انٹریاں" src="../images/kit-jetstream.jpg" /></p>
+<p>یہ سب اصل ایپس میں چلا کر دیکھا گیا ہے (Livewire کٹ اور Jetstream پر اصل <code>accounting:install</code>): تمام 89 صفحات کھلتے ہیں، ہر فلٹر کا بٹن کھلتا اور لگتا ہے، "Add" فارم کھلتے ہیں، اور جرنل انٹری فارم سے بن جاتی ہے۔</p>
+<h2 id="171_1">17.1 ب: ہر کام پر آواز اور تصدیقی ڈائیلاگ</h2>
+<ul>
+<li>کام کامیاب ہو تو اوپر جاتی ہوئی دو سروں کی آواز، غلطی ہو تو نیچے جاتی ہوئی بھاری آواز۔</li>
+<li>مٹانا، وائیڈ، ریورس وغیرہ پر براؤزر کے سادہ باکس کی جگہ اپنا ڈائیلاگ: آئیکن، سوال، <strong>Cancel</strong> اور سرخ <strong>Delete</strong>۔</li>
+</ul>
+<p><img alt="Delete پر ڈائیلاگ" src="../images/kit-jetstream-delete-modal.jpg" /></p>
+<p><img alt="فلٹر لگانے کے بعد فہرست" src="../images/kit-livewire4-filter-applied.jpg" /></p>
+<h2 id="171_2">17.1 ج: اکاؤنٹنگ اور سیٹنگز: دو حصے</h2>
+<p>اسٹارٹر کٹ کے مینو میں اب دو لنک ہیں: <strong>Accounting</strong> اور <strong>Accounting settings</strong>۔ دونوں صفحات پر اوپر دو ٹیب ہیں۔</p>
+<ul>
+<li><strong>Accounting</strong>: روزمرہ کام: جرنل انٹریاں، رپورٹیں (ٹرائل بیلنس، بیلنس شیٹ، آمدنی و اخراجات، کیش فلو…)، کسٹمر/سپلائر، انوائس اور ادائیگیاں، بینک، تنخواہ، اسٹاک، فکسڈ اثاثے، بجٹ۔</li>
+<li><strong>Settings</strong>: <strong>Users &amp; access</strong> (یوزر، ان کے رول، اضافی permissions اور برانچیں؛ رول بنانا اور permissions لگانا/ہٹانا؛ Features؛ برانچیں)، <strong>Setup</strong> (کرنسی، پیریڈ، ٹیکس، ووچر ٹائپ…) اور <strong>Audit</strong>۔</li>
+<li>ہر شخص کو صرف وہی کارڈ اور لنک ملتے ہیں جن کی اجازت اس کے پاس ہو؛ باقی راستے 403 دیتے ہیں۔ جس کے پاس Settings میں کھولنے کو کچھ نہ ہو اسے Settings ٹیب نظر ہی نہیں آتا۔</li>
+</ul>
+<p><img alt="Accounting ٹیب" src="../images/kit-lw4-tab-accounting.jpg" /></p>
+<p><img alt="Settings ٹیب: Users &amp; access، Setup، Audit" src="../images/kit-lw4-tab-settings.jpg" /></p>
+<h2 id="172">17.2 ایک کمپنی، کئی برانچیں</h2>
+<p><code>.env</code> میں <code>ACCOUNTING_BRANCHES=true</code> لکھیں (انسٹالر بھی پوچھتا ہے)۔ پھر <strong>Accounting ← Branches</strong> میں برانچیں بنائیں: ہیڈ آفس، لاہور کیمپس، کراچی کیمپس وغیرہ۔</p>
+<ul>
+<li><strong>جرنل انٹری، انوائس، بل اور ادائیگی</strong> کسی برانچ میں بُک ہوتی ہے۔ انوائس/ادائیگی اپنی برانچ اپنی انٹری کو دیتی ہے؛ ریورس انٹری اصل انٹری کی برانچ میں جاتی ہے؛ سال کی بندش پوری کمپنی کی ہے۔</li>
+<li>اوپر <strong>Branch</strong> کا انتخاب ("کام کی برانچ"): چنتے ہی نئی انٹریاں اسی میں بنتی ہیں، اور فہرستیں اور رپورٹیں (ٹرائل بیلنس، جنرل لیجر، آمدنی و اخراجات، بیلنس شیٹ، کیش فلو، ایجنگ، ڈیش بورڈ) اسی برانچ کی ہو جاتی ہیں۔ "All branches" سے پوری کمپنی۔ API میں <code>X-Branch: LHR</code> ہیڈر۔ سب برانچوں کا مجموعہ کمپنی کے برابر آتا ہے۔</li>
+<li><strong>رسائی</strong>: جس شخص کو برانچ دی جائے (برانچ کی ایڈٹ اسکرین ← <em>People who work in this branch</em>) وہ <strong>صرف انہی</strong> برانچوں میں کام کرتا ہے؛ دوسری برانچوں کی انٹریاں اسے نظر ہی نہیں آتیں۔ جسے کوئی برانچ نہ دی جائے (اور super-admin) وہ سب میں کام کرتا ہے۔ ایک سے زیادہ برانچ والا ہر انٹری کی برانچ خود چنتا ہے۔</li>
+<li><strong>یوزر بناتے وقت برانچ</strong>: یوزر کی فارم میں "Branches" چنیں۔ وہ یوزر صرف انہی برانچوں کا ڈیٹا (انٹریاں، انوائس، ادائیگیاں، رپورٹیں، کسٹمر، بینک اکاؤنٹ، ملازم، اثاثے، گودام) دیکھتا اور بناتا ہے۔ <strong>Admin اور super-admin ہمیشہ سب برانچیں</strong> دیکھتے ہیں۔ یوزر کو صرف وہی کارڈ، لنک اور صفحات ملتے ہیں جن کی اجازت (permission) اس کے پاس ہو۔</li>
+<li>جس برانچ میں انٹریاں ہو چکی ہوں اسے مٹایا نہیں جا سکتا؛ اسے <strong>غیر فعال</strong> کریں۔</li>
+<li>اجازتیں: <code>branches.view</code>، <code>branches.create</code>، <code>branches.update</code>، <code>branches.delete</code>۔</li>
+</ul>
+<p><img alt="کراچی برانچ منتخب: فہرست صرف اسی کی انٹریاں دکھاتی ہے" src="../images/kit-branch-karachi.jpg" /></p>
+<p><img alt="Jetstream میں برانچوں کی اسکرین" src="../images/kit-jetstream-branches.jpg" /></p>
+<p><img alt="React میں برانچوں کی اسکرین" src="../images/kit-react-branches.jpg" /></p>
+<blockquote>
+<p>پرانی ایپ میں اپ ڈیٹ کے بعد <code>php artisan accounting:update</code> چلائیں تاکہ نئی اجازتیں بن جائیں۔</p>
+</blockquote>
+<p><a href="#16-tansib">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
 </section>
 </main></body></html>

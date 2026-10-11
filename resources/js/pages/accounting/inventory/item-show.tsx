@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Props = {
     item: { id: number; sku: string; name: string; unit: string; category: string | null; reorder_level: string; on_hand_quantity: string; on_hand_value: string; is_active: boolean };
@@ -29,7 +30,7 @@ export default function InventoryItemShow({ item, card, warehouses, locked }: Pr
                         {!item.is_active && <Badge variant="outline">inactive</Badge>}
                         {permissions['inventory.move'] && <Button asChild><Link href={`/accounting/inventory/movements/create?item_id=${item.id}`}>Move stock</Link></Button>}
                         {permissions['inventory.manage'] && <Button asChild variant="outline"><Link href={`/accounting/inventory/items/${item.id}/edit`}>Edit</Link></Button>}
-                        {permissions['inventory.manage'] && !locked && <Button variant="ghost" onClick={() => confirm('Delete this item?') && router.delete(`/accounting/inventory/items/${item.id}`)}>Delete</Button>}
+                        {permissions['inventory.manage'] && !locked && <Button variant="ghost" onClick={() => confirmThen('Delete this item?', () => router.delete(`/accounting/inventory/items/${item.id}`))}>Delete</Button>}
                     </div>
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}

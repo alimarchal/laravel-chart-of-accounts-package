@@ -2,6 +2,69 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.38.0] - 2026-11-21
+
+Branches: one company, several places of business.
+
+### Test speed and branch reports
+- **The test suite is much faster**: the permission seeder inserts in bulk (seeding 0.9 s → 0.4 s per test) and CI runs `pest --parallel` with one database per worker (`<db>_<n>`, created automatically
+  for MySQL/MariaDB/PostgreSQL by `tests/TestCase.php`). MariaDB: 726 tests in ~21 minutes on 4 processes instead of over an hour serially; run it locally with `vendor/bin/pest --parallel`.
+- **Branch comparison report**: `GET /reports/branch-comparison` (revenue, expenses, net income per branch), and a documented pattern for building any report by branch (README → *Branch reports*).
+- A posted entry's `branch_id` can no longer be changed (database triggers on SQLite, MySQL/MariaDB and PostgreSQL); reports over several companies (consolidation) ignore the branch filter.
+
+### Also in this release
+- **The accounting area is split into two parts, "Accounting" and "Settings"**, with tabs on both and one link each in the starter kit's menu (*Accounting*, *Accounting settings*; the
+  installer adds the second one to existing installations too). *Accounting* holds the daily work (journal, reports, customers and suppliers, banking, payroll, inventory …);
+  *Settings* (`/accounting/settings`, route `accounting.settings`, React, Blade) holds **Users & access** (users with roles, direct permissions and branches; roles and their permissions;
+  permissions; features; account roles; branches; companies), **Setup** (currencies, periods, account types, cost centers, tax codes and rates, voucher types, control accounts, report mapping) and
+  **Audit**. The React dashboard is now grouped with headings instead of one flat list of buttons.
+- **A confirm dialog instead of the browser's `confirm()`** for delete, void, post, reverse … in the Blade screens (any `onsubmit="return confirm('…')"` or `data-confirm`) and the React screens (`confirmThen()` in `lib/confirm.ts`): an icon, the question, *Cancel* and a red *Delete* (or *Confirm*) button; Esc cancels.
+- **A sound for every result**: a rising chime on success, a lower falling one on an error or a validation error, in Blade (also after a page reload; if the browser keeps audio locked the sound plays with the first click) and React (every flash message once).
+- **People of a branch**: the user form (React, Blade, API) has the branches the user works in; admins and super-admins always work in all branches; customers/suppliers, bank accounts, employees, fixed assets and warehouses belong to a branch too; users created by an administrator are marked verified (starter kits with e-mail verification would otherwise lock them out).
+- **Only what the user may open**: the dashboard (React and Blade) shows cards and links, and the Overview screen needs a report permission; the branch screens list only the user's own branches; `branches.view` is for admins only by default.
+- The description texts of the Blade dashboard showed `&amp;`; fixed.
+
+### Added
+- **Branches** (`ACCOUNTING_BRANCHES=true`; off by default, nothing changes without it). A company can have a head office, campuses or shops. Journal entries,
+  invoices/bills and payments carry a branch; an invoice, bill or payment hands its branch to the entry it posts, a reversal keeps the branch of the original and
+  the year-end close is for the whole company.
+- **Working branch**: the web UI keeps it in the session (a switcher next to the company switcher, in React and Blade), the API takes it from the `X-Branch`
+  header (id or code). New entries are booked to it, and lists and reports follow it: trial balance, general ledger, account statement, income statement,
+  balance sheet, cash flow, ageing, dashboard KPIs and the financial statements. The branches of a company add up to the company.
+- **Access**: a user assigned to branches works in those only (lists, reports and records of other branches are not even found; a branch can be chosen only
+  among theirs); a user with no branch, and a super-admin, work in all of them. A user limited to several branches must say which one an entry belongs to.
+- **Screens** in React, Blade and the REST API (`/accounting/branches`, `/api/v1/accounting/branches`): create, edit, deactivate, delete (a used branch can only
+  be deactivated), head office, and who works in which branch. Permissions `branches.view|create|update|delete`.
+- The installer asks "Does the company have several branches?" and writes `ACCOUNTING_BRANCHES`.
+- The ledger view (`vw_accounting_general_ledger`) has a `branch_id` column.
+
+## [2.37.0] - 2026-11-20
+
+Three kinds of screens (React, Blade for Jetstream / Breeze, Livewire for the Livewire starter kit), and the filters work in the Livewire kit.
+
+### Fixed (found by installing the package in a real Livewire starter kit and in Jetstream, and clicking through every page)
+- **The Blade screens were not shown in the Livewire starter kit's layout** when the application had not published `config/livewire.php`: the sidebar was missing
+  and the screens used the package's own page layout. The layout is now found without the config (`layouts::app` of Livewire 4, `components.layouts.app` of Livewire 3).
+- **Two list screens had filters that could not be opened** (chart of accounts, balance snapshots): their header has no filter button, so the filters stayed hidden.
+  A "Filters" button is added when the page has none.
+- **The journal entry form raised JavaScript errors** (`journalEntryForm is not defined`, `initJESelect2 is not defined`) under Livewire 3, and the account select boxes
+  re-fired their change event until the browser stopped it ("Maximum call stack size exceeded"). Fixed.
+- **Flux-style fields**: the Livewire starter kit has no `@tailwindcss/forms`, so inputs and selects had no border; they are given one, and table headers follow the kit's zinc look.
+
+### Added
+- **Jetstream and Breeze in the installer.** `php artisan accounting:install` offers *Livewire starter kit (Flux)*, *Blade (Jetstream / Breeze)*, *React (Inertia)*
+  and *REST API only* (`--ui=livewire|blade|inertia|api`, `react` is accepted too) and suggests the one that matches the application. The Accounting link is added
+  to `navigation-menu.blade.php` (Jetstream) and `layouts/navigation.blade.php` (Breeze), top bar and mobile menu; with Tailwind 3 the package's screens are added
+  to the `content` list of `tailwind.config.js`. Jetstream's own URLs (`/teams`, `/profile`, …) are refused as the URL of the accounting screens.
+- **`ACCOUNTING_BLADE_KIT`** (`auto`, `flux`, `jetstream`, `breeze`, `plain`): the Blade screens are dressed for the shell they run in. `flux` gives the look of
+  the Livewire starter kit (flat bordered cards, zinc colours, Flux-style buttons, dark mode with the kit's `.dark` class); `jetstream` and `breeze` get a dark mode.
+  `Support\BladeKit` detects the kit.
+
+### Fixed
+- **Filters did not open and select boxes were plain in the Livewire starter kit and in Jetstream.** The screens push their scripts to `@stack('modals')`,
+  `@stack('scripts')` and `@stack('styles')`; the layouts of these kits print some or none of them. The package now prints the stacks the host layout leaves out
+  (and never twice).
+
 ## [2.36.0] - 2026-11-19
 
 The installer sets everything up, and the Blade screens no longer crash in the Livewire starter kit.

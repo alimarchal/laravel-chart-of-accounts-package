@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Check = {
     key: string;
@@ -92,17 +93,13 @@ export default function PeriodClose({
             ? `Post the year-end closing entry and close ${period.name}? Profit or loss moves to retained earnings.`
             : `Close ${period.name}? No entries can be posted into it afterwards.`;
 
-        if (
-            window.confirm(
-                warnings
+        confirmThen(warnings
                     ? `${message}\n\n${warnings} warning(s) are still open.`
-                    : message,
-            )
-        ) {
+                    : message, () => {
             router.post(
                 `/accounting/periods/${period.id}/${checklist.year_end ? 'close-fiscal-year' : 'close'}`,
             );
-        }
+        });
     };
 
     return (

@@ -2,7 +2,7 @@
 
 # باب 16: تنصیب — سوالات، ایڈمن یوزر اور مینو
 
-[← پچھلا باب](15-whatsapp.md) · [فہرست](README.md)
+[← پچھلا باب](15-whatsapp.md) · [فہرست](README.md) · [اگلا باب: کٹس اور برانچیں →](17-kits-branches.md)
 
 ## 16.1 تنصیب کے 3 قدم
 
@@ -33,7 +33,8 @@ php artisan accounting:install
 
 | سوال | مطلب |
 |------|------|
-| Which screens do you want? | **Livewire / Blade**، **React / Inertia** یا صرف **REST API**۔ آپ کے اسٹارٹر کٹ کے مطابق خود تجویز دیتا ہے (Vue اور Svelte کٹ والے Blade چنیں) |
+| Which screens do you want? | **Livewire starter kit (Flux)**، **Blade (Jetstream / Breeze)**، **React (Inertia)** یا صرف **REST API**۔ آپ کے اسٹارٹر کٹ کے مطابق خود تجویز دیتا ہے (Vue اور Svelte کٹ والے Blade چنیں) |
+| Several branches? | کیا کمپنی کی کئی برانچیں ہیں (دیکھیں [باب 17](17-kits-branches.md)) |
 | Base currency | بنیادی کرنسی، مثلاً PKR |
 | Which chart of accounts | ERPNext، عمومی یا **School chart** |
 | Multi-company | کیا ایک سے زیادہ کمپنیوں کا حساب رکھنا ہے، اور پہلی کمپنی کا مختصر کوڈ |

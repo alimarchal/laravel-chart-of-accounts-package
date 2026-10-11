@@ -42,7 +42,7 @@ jobs:
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Run tests
-        run: vendor/bin/pest
+        run: .github/run-tests.sh
 
   databases:
     name: ${{ matrix.db }} (PHP 8.3 / Laravel 12)
@@ -97,8 +97,10 @@ jobs:
           composer require "laravel/framework:12.*" "orchestra/testbench:10.*" --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
+      # One process per core, each with a database of its own (tests/TestCase.php adds "_<worker>" to DB_DATABASE and creates it):
+      # the slow part of the suite is the set-up of every test, not the tests, so this cuts the time to about a third.
       - name: Run tests
-        run: vendor/bin/pest
+        run: .github/run-tests.sh
 
   laravel-next:
     # Early warning for the next Laravel major (14.x, expected Q1 2027, PHP 8.4+).

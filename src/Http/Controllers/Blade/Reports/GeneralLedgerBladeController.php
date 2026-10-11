@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -33,6 +34,7 @@ class GeneralLedgerBladeController extends Controller
         $query = DB::table('accounting_journal_entry_lines as jel')
             ->join('accounting_journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->whereIn('je.company_id', CurrentCompany::ids())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('je.branch_id', CurrentBranch::reportIds()))
             ->join('accounting_chart_of_accounts as coa', 'coa.id', '=', 'jel.chart_of_account_id')
             ->leftJoin('accounting_cost_centers as cc', 'cc.id', '=', 'jel.cost_center_id')
             ->select([

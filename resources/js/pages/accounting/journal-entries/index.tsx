@@ -28,6 +28,7 @@ type Entry = {
     voucher_number: string | null;
     source_document_number: string | null;
     voucher_type: { id: number; code: string; name: string } | null;
+    branch?: { id: number; code: string; name: string } | null;
     entry_date: string;
     reference: string | null;
     description: string | null;
@@ -44,12 +45,14 @@ type Props = {
     };
     filters: Record<string, string | undefined>;
     currencies: Array<{ id: number; code: string; name: string }>;
+    branches?: Array<{ id: number; code: string; name: string }>;
 };
 
 export default function JournalEntriesIndex({
     entries,
     filters,
     currencies,
+    branches = [],
 }: Props) {
     const { permissions, flash } = useAccounting();
     const hasFilters = Object.values(filters ?? {}).some(
@@ -57,6 +60,7 @@ export default function JournalEntriesIndex({
     );
     const [filtersOpen, setFiltersOpen] = useState(hasFilters);
     const filterForm = useForm({
+        branch_id: filters.branch_id ?? '',
         voucher_number: filters.voucher_number ?? '',
         source_document_number: filters.source_document_number ?? '',
         reference: filters.reference ?? '',
@@ -107,6 +111,7 @@ export default function JournalEntriesIndex({
 
     const resetFilters = () => {
         filterForm.setData({
+            branch_id: '',
             voucher_number: '',
             source_document_number: '',
             reference: '',
@@ -200,6 +205,26 @@ export default function JournalEntriesIndex({
                                 className="space-y-4"
                             >
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    {branches.length > 0 ? (
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="filter_branch_id">Branch</Label>
+                                            <select
+                                                id="filter_branch_id"
+                                                className="h-9 rounded-md border bg-transparent px-3 text-sm"
+                                                value={filterForm.data.branch_id}
+                                                onChange={(event) =>
+                                                    filterForm.setData('branch_id', event.target.value)
+                                                }
+                                            >
+                                                <option value="">All branches</option>
+                                                {branches.map((branch) => (
+                                                    <option key={branch.id} value={branch.id}>
+                                                        {branch.code} - {branch.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ) : null}
                                     <div className="grid gap-2">
                                         <Label htmlFor="voucher_number">
                                             Voucher no.
@@ -401,6 +426,11 @@ export default function JournalEntriesIndex({
                                     </td>
                                     <td className="p-3 whitespace-nowrap">
                                         {entry.entry_date.slice(0, 10)}
+                                        {entry.branch ? (
+                                            <div className="text-xs text-muted-foreground">
+                                                {entry.branch.code}
+                                            </div>
+                                        ) : null}
                                     </td>
                                     <td className="p-3">
                                         {entry.reference}

@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Budget;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Carbon\Carbon;
@@ -72,6 +73,7 @@ class DashboardService
             ->join('accounting_chart_of_accounts as coa', 'coa.id', '=', 'line.chart_of_account_id')
             ->join('accounting_account_types as type', 'type.id', '=', 'coa.account_type_id')
             ->where('entry.company_id', CurrentCompany::currentId())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))
             ->where('type.report_group', 'IncomeStatement')
             ->where('entry.status', 'posted')->where('entry.is_closing_entry', false)
             ->whereDate('entry.entry_date', '>=', $earliest->toDateString())->whereDate('entry.entry_date', '<=', $asOf->toDateString())
@@ -144,7 +146,8 @@ class DashboardService
         $accounts = BankAccount::query()->whereNotNull('chart_of_account_id')->get(['id', 'chart_of_account_id', 'account_name']);
         $balances = $accounts->isEmpty() ? collect() : DB::table('accounting_journal_entry_lines as line')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
-            ->where('entry.company_id', CurrentCompany::currentId())->where('entry.status', 'posted')
+            ->where('entry.company_id', CurrentCompany::currentId())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))->where('entry.status', 'posted')
             ->whereDate('entry.entry_date', '<=', $asOf->toDateString())
             ->whereIn('line.chart_of_account_id', $accounts->pluck('chart_of_account_id')->all())
             ->groupBy('line.chart_of_account_id')

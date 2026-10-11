@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasBranch;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\BankAccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class BankAccount extends AccountingModel
 {
     use BelongsToCompany;
+    use HasBranch;
 
     /** @use HasFactory<BankAccountFactory> */
     use HasFactory;

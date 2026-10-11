@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Collection;
@@ -23,7 +24,7 @@ class TrialBalanceReport
         $asOf = $filters['as_of_date'] ?? null;
         $from = $filters['date_from'] ?? null;
 
-        $rows = $asOf || $from ? $this->rowsBetween($from, $asOf) : DB::table('vw_accounting_trial_balance')
+        $rows = $asOf || $from || CurrentBranch::reportIds() !== null ? $this->rowsBetween($from, $asOf) : DB::table('vw_accounting_trial_balance')
             ->whereIn('company_id', CurrentCompany::ids())
             ->orderBy('account_code')
             ->get();
@@ -59,6 +60,10 @@ class TrialBalanceReport
                 if ($to) {
                     $join->whereDate('je.entry_date', '<=', $to);
                 }
+
+                if (($branches = CurrentBranch::reportIds()) !== null) {
+                    $join->whereIn('je.branch_id', $branches);
+                }
             })
             ->whereIn('coa.company_id', CurrentCompany::ids())
             ->where(fn ($query) => $query->where('coa.is_active', true)->orWhereNotNull('je.id'))
@@ -90,6 +95,10 @@ class TrialBalanceReport
                 'total_credit' => $credit / 100,
                 'difference' => ($debit - $credit) / 100,
             ];
+        }
+
+        if (CurrentBranch::reportIds() !== null) {
+            return $this->totals($this->rowsBetween(null, null));         // the stored view is for the whole company
         }
 
         $row = DB::table('vw_accounting_trial_balance')

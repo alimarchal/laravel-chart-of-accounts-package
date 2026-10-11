@@ -21,6 +21,7 @@
 ## Highlights
 
 - **Double-entry journal** — draft → posted → reversed / void, balanced in **exact cents**
+- **Branches** — head office, campuses or shops inside one company: a working-branch switcher, entries, invoices and payments booked to a branch, branch-wise reports, and users limited to their branches
 - **Multi-company** — any number of companies in one database, each with its own chart, periods, journal and reports; per-user access, a company switcher, and consolidated group reports
 - **Tamper-proof ledger** — posted entries are **immutable at the database layer** (triggers on MySQL/MariaDB, PostgreSQL, SQLite), the chart-of-accounts rules (valid tree, locked used accounts, same-company lines, no posting to group accounts) are enforced there too, and every change is written to an audit log
 - **Maker-checker approvals** — entries above a threshold need a second person to approve; nobody approves their own work
@@ -134,7 +135,7 @@ The installer asks what it needs, so there is nothing to edit by hand afterwards
 
 | Question | What it does |
 |---|---|
-| Which screens do you want? | Livewire / Blade, React / Inertia or REST API only (it suggests the one that matches your starter kit) → `ACCOUNTING_UI_DRIVER` |
+| Which screens do you want? | Livewire starter kit (Flux), Blade (Jetstream / Breeze), React (Inertia) or REST API only (it suggests the one that matches your starter kit) → `ACCOUNTING_UI_DRIVER` and `ACCOUNTING_BLADE_KIT` |
 | Base currency | `ACCOUNTING_BASE_CURRENCY` (PKR, USD, …) |
 | Chart of accounts | ERPNext standard chart, general business chart or school chart → `ACCOUNTING_CHART_PRESET` |
 | Several companies? | `ACCOUNTING_MULTI_COMPANY` and the short code of your first company → `ACCOUNTING_DEFAULT_COMPANY` |
@@ -152,11 +153,12 @@ or the ones above; `.env` keys that are not asked keep their documented defaults
 
 Your answers are written to `.env`. Then the installer publishes the config and migrations, migrates, seeds the chart of accounts,
 currencies, the current fiscal year, roles and tax codes, creates the database views and triggers, and verifies everything. It adds
-the **Accounting** link next to **Dashboard** in the sidebar of the Laravel starter kit (Livewire: `resources/views/layouts/app/sidebar.blade.php`;
-React: `resources/js/components/app-sidebar.tsx` and `app-header.tsx`) and, for Blade, adds the package's screens to the Tailwind sources
-in `resources/css/app.css` (run `npm run build` once). It is safe to re-run.
+the **Accounting** and **Accounting settings** links next to **Dashboard** in the menu of your starter kit (Livewire/Flux: `resources/views/layouts/app/sidebar.blade.php`;
+Jetstream: `resources/views/navigation-menu.blade.php`; Breeze: `resources/views/layouts/navigation.blade.php`; React: `resources/js/components/app-sidebar.tsx`
+and `app-header.tsx`) and, for Blade, adds the package's screens to the Tailwind sources (`resources/css/app.css` for Tailwind 4, `tailwind.config.js`
+for Tailwind 3 as in Jetstream and Breeze; run `npm run build` once). It is safe to re-run.
 
-Everything can be given as an option instead (no questions): `--ui=blade|inertia|api`, `--currency=PKR`, `--chart=erpnext|general|school`,
+Everything can be given as an option instead (no questions): `--ui=livewire|blade|inertia|api`, `--currency=PKR`, `--chart=erpnext|general|school`,
 `--prefix=accounting`, `--admin-email=… --admin-name=… --admin-password=…`; `--no-menu` keeps your sidebar untouched, `--no-env` leaves
 `.env` alone, and `--setup-only` asks the questions, writes `.env`, creates the administrator and adds the menu without publishing, migrating or seeding.
 The starter kits of Vue and Svelte are supported through the Blade screens (the installer tells you which plain link to add to your sidebar).
@@ -168,12 +170,48 @@ Log in with the administrator you entered (the login page is your starter kit's)
 | `ACCOUNTING_UI_DRIVER` | You get | Notes |
 |---|---|---|
 | `inertia` (default) | React pages in `resources/js/pages/accounting` | React starter kit; run `npm run build` afterwards |
-| `blade` | Blade pages inside your layout | Livewire starter kit (also Vue and Svelte kits); `composer require livewire/livewire` |
+| `blade` | Blade pages inside your layout | Livewire starter kit, Jetstream, Breeze (also Vue and Svelte kits) |
 | `api` | REST API only | Lightest: no web routes, views or Livewire |
 
-With the Livewire starter kit the screens are rendered in the kit's own layout (`livewire.component_layout`), so the sidebar stays. With
-Breeze they use `<x-app-layout>`, and with anything else the package's own page layout. To name your own layout component:
-`ACCOUNTING_BLADE_LAYOUT=layouts::app`.
+The installer offers **three kinds of screens**: **React**, **Blade for Jetstream / Breeze** and **Livewire for the Laravel Livewire starter kit (Flux)**.
+The two Blade kinds are the same pages (`ACCOUNTING_UI_DRIVER=blade`); `ACCOUNTING_BLADE_KIT` tells them which shell to look native in:
+
+| `ACCOUNTING_BLADE_KIT` | For | Look |
+|---|---|---|
+| `auto` (default) | whatever your application has | Jetstream, else Flux (Livewire kit), else Breeze |
+| `flux` | Livewire starter kit | Flux style: flat bordered cards, zinc colours, buttons as in Flux, dark mode with the kit's `.dark` switch |
+| `jetstream` | Laravel Jetstream | Jetstream cards, dark mode follows the system setting |
+| `breeze` | Laravel Breeze | Breeze cards, dark mode with the `.dark` class |
+| `plain` | none | the package's own page layout |
+
+Matches the official starter kits ([laravel.com/docs/starter-kits](https://laravel.com/docs/starter-kits)): **Livewire** (Flux, sidebar or header layout, also
+with teams or WorkOS) gets the Flux look; **React** gets the React pages and the sidebar/header link; **Vue** and **Svelte** have no Blade layout, so the
+Blade screens use the package's own page layout and you add one plain `<a href="/accounting">` link (not an Inertia `Link`); Jetstream and Breeze (no longer
+developed by Laravel, still widely used) are supported as described above. In the Flux sidebar layout the pages use the full width next to the sidebar.
+
+The screens are rendered in your application's layout: Jetstream and Breeze `<x-app-layout>`, the Livewire kit its `livewire.component_layout`
+(`layouts::app`), so the sidebar stays; anything else gets the package's own layout. Scripts and styles that the screens need (the filter button,
+the select boxes) are printed for you when your layout has no `@stack('scripts')`, `@stack('styles')` or `@stack('modals')`. To name your own layout
+component: `ACCOUNTING_BLADE_LAYOUT=layouts::app`.
+
+**What it looks like in each kit** (a real `accounting:install` on a fresh Laravel Livewire starter kit and on Jetstream; the screenshots are of the Blade screens):
+
+| Livewire starter kit (Flux) | Jetstream |
+|---|---|
+| ![Journal entries in the Livewire starter kit: the Accounting link in the sidebar, Flux-style buttons and cards](docs/images/kit-livewire-flux-journal-entries.jpg) | ![Journal entries in Jetstream: the Accounting link in the top navigation](docs/images/kit-jetstream-journal-entries.jpg) |
+| ![The filters of a list, opened with the filter button, in the Livewire starter kit](docs/images/kit-livewire-flux-filters-open.jpg) | ![The filters of a list, opened with the filter button, in Jetstream](docs/images/kit-jetstream-filters-open.jpg) |
+| ![Working in one branch: the Branch switcher above the page limits the list](docs/images/kit-livewire-flux-branch-karachi.jpg) | ![The branches screen in Jetstream](docs/images/kit-jetstream-branches.jpg) |
+
+| Filters: type a value and press *Apply filters* (Livewire 4 kit) | The list after the filter |
+|---|---|
+| ![The filter panel opened with a value typed in, in the Livewire 4 starter kit](docs/images/kit-livewire4-filter-typed.jpg) | ![The list narrowed to the entries that match, in the Livewire 4 starter kit](docs/images/kit-livewire4-filter-applied.jpg) |
+
+| A confirm dialog instead of the browser's own (Jetstream) | The same in React |
+|---|---|
+| ![Delete asks in a modal: Cancel or Delete](docs/images/kit-jetstream-delete-modal.jpg) | ![Delete asks in a modal in React](docs/images/kit-react-delete-modal.jpg) |
+
+Checked with a browser in three real apps (the Laravel Livewire starter kit of Livewire 3 and the current one of Livewire 4, and Jetstream), each after a real `accounting:install`: every one of the 89 list, report and form pages opens without errors, every filter button opens its filters and
+applies them, the "add" forms open and refuse an empty submit, a journal entry can be created from the form, a branch can be created, edited and filtered, and the branch switcher limits lists and reports. The React screens of the branches were checked the same way.
 
 <details>
 <summary><b>React: the menu link by hand and (older starter kits) the layout</b></summary>
@@ -555,6 +593,26 @@ in Blade, a small selector in the corner in React); the choice is kept for the s
   first render, texts that include data (for example "Last 6 months, closing entries excluded"), and the host application's own
   menus. The Urdu terms were written without review by an accountant: have yours check them and override what they would say
   differently.
+
+## Accounting and Settings (the two parts of the area)
+
+The accounting area has two parts, with tabs at the top of each and **one link each in your starter kit's menu** (*Accounting* and *Accounting settings*; the
+installer adds both, and `accounting:install` adds the missing one to an installation that has only *Accounting*):
+
+| Part | URL / route | What is in it |
+|---|---|---|
+| **Accounting** | `/accounting` · `accounting.dashboard` | the daily work: journal entries, chart of accounts, recurring entries, reports (overview, ledger, trial balance, balance sheet, income statement, cash flow, statements, ageing), customers and suppliers, invoices/bills, receipts/payments, tax, banking, payroll, inventory, fixed assets, budgets, FBR, WhatsApp |
+| **Settings** | `/accounting/settings` · `accounting.settings` | **Users & access** (users with their roles, direct permissions and branches; roles and what each may do; permissions; features; account roles; branches; companies), **Setup** (currencies, periods, account types, cost centers, tax codes and rates, voucher types, control accounts, report mapping) and **Audit** |
+
+Only the cards and links the signed-in person's permissions allow are shown, and a route without the permission answers 403; the Settings tab appears only for
+people who may open something in it. Roles are created and changed in **Settings → Users & access → Roles** (React `/accounting/roles`, Blade `/settings/roles`):
+tick the permissions a role has; give a user extra permissions on the user's own screen; remove them the same way.
+
+| Accounting | Settings |
+|---|---|
+| ![The Accounting tab in the Livewire 4 starter kit](docs/images/kit-lw4-tab-accounting.jpg) | ![The Settings tab: Users & access, Setup, Audit](docs/images/kit-lw4-tab-settings.jpg) |
+
+---
 
 ## Dashboard
 
@@ -1244,6 +1302,50 @@ $entry->attachments;   // morphMany
 
 ---
 
+## Branches
+
+One company, several places of business (head office, campuses, shops). Turn it on once; nothing changes while it is off.
+
+```env
+ACCOUNTING_BRANCHES=true           # off by default; `php artisan accounting:install` asks for it
+```
+
+Create the branches in **Accounting → Branches** (React and Blade, permission `branches.create`) or with `POST /api/v1/accounting/branches`.
+After upgrading an existing installation run `php artisan accounting:update` once, so the `branches.*` permissions are created.
+
+| Blade (Livewire kit): the Branch switcher limits the list | React: the branches screen |
+|---|---|
+| ![Karachi picked in the Branch switcher: the journal list shows only its entries](docs/images/kit-livewire-flux-branch-karachi.jpg) | ![The branches screen in React](docs/images/kit-react-branches.jpg) |
+
+| | |
+|---|---|
+| Booked to a branch | Journal entries, invoices/bills and payments. An invoice, bill or payment gives its branch to the entry it posts; a reversal keeps the branch of the original; the year-end close is for the whole company. Entries with no branch are "head office / not allocated". |
+| Working branch | Pick it in the **Branch** switcher (above every Blade page and on the React dashboard; add `<BranchSwitcher />` from `@/components/accounting/branch-switcher` to your sidebar), or send `X-Branch: LHR` (code or id) to the API. New records go to it; lists and reports follow it. "All branches" shows the whole company. |
+| Reports by branch | Trial balance, general ledger, account statement, income statement, balance sheet, cash flow, ageing, dashboard KPIs, financial statements. The branches add up to the company. |
+| Who sees what | **Admins and super-admins always work in every branch** (`accounting.branches.unrestricted_roles`). A user given branches (Branches screen → *People who work in this branch*, or `POST /branches/{id}/users`) works in **those only**: other branches' entries, invoices and reports are not even found, and `X-Branch` of another branch is `403`. A user with no branch, and a super-admin, work in all branches. A user with several branches chooses the branch of each entry. |
+| Users | Tick the branches when you create or edit a user (React: *Users*, Blade: *Settings → Users*, API: `branches: [ids]` on `POST/PATCH /users`). The user sees and books only the data of those branches. |
+| What belongs to a branch | Journal entries, invoices/bills, payments, customers/suppliers, bank accounts, employees, fixed assets and warehouses. Anything created while a working branch is picked (or by a user with a single branch) belongs to it; a user of several branches must pick the working branch first. Records without a branch (all data from before branches were turned on) are for people without a branch restriction. Chart of accounts, periods, tax codes and currencies stay company-wide. |
+| Deleting | A branch with entries, invoices, bills or payments cannot be deleted: deactivate it. Inactive branches cannot be chosen. |
+| Permissions | `branches.view`, `branches.create`, `branches.update`, `branches.delete` (admin: all; accountant and auditor: view). |
+
+### Branch reports
+
+`GET /api/v1/accounting/reports/branch-comparison` (permission `reports.income-statement.view`) shows revenue, expenses and net income of every branch side by side; the other
+reports (trial balance, income statement, balance sheet, general ledger, ageing, cash flow, dashboard) follow the working branch (`X-Branch`) or, with none picked, the user's branches.
+Seeing only what you are allowed to see is automatic. To build **your own report by branch**:
+
+- Group by the entry's `branch_id`: `vw_accounting_general_ledger` has a `branch_id` column (`null` = head office / not allocated), or join `accounting_journal_entries.branch_id` as
+  `Reports/BranchComparisonReport` does (one grouped query, posted entries only, `is_closing_entry = false`, amounts in `base_debit` / `base_credit`).
+- In your own queries limit to what the user may see with `CurrentBranch::constrain($query, 'entry.branch_id')` (or `CurrentBranch::accessibleIds()` for a branch list); models that use the `HasBranch` trait are limited automatically.
+- Company-wide on purpose: budgets, tax returns and the customer/supplier control-account reconciliation (they follow the one chart of accounts), and the year-end close. Entries and documents
+  booked **before** branches were switched on have no branch: they are visible to admins, super-admins and users without a branch only.
+- A posted entry's branch cannot be changed (a database trigger refuses it); reverse and re-book instead.
+
+Period close and the year-end close are company-wide: run them as a user without branch restriction. Branches are a booking dimension of the
+company's one chart of accounts, periods and numbering; for separate books use [Multi-company](#multi-company) instead (the two can be combined: branches of each company).
+
+---
+
 ## Multi-company
 
 Run several companies (legal entities) from one installation. Each company has its **own chart of
@@ -1458,7 +1560,7 @@ plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->
-_320 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
+_328 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
 
 ### Journal entries
 
@@ -1534,6 +1636,7 @@ _320 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | GET | `/reports/aged-receivables` | Aged receivables | `reports.aged-receivables.view` |
 | GET | `/reports/aged-payables` | Aged payables | `reports.aged-payables.view` |
 | GET | `/reports/account-statement` | Account statement | `reports.account-statement.view` |
+| GET | `/reports/branch-comparison` | Branch comparison | `reports.income-statement.view` |
 
 ### Periods
 
@@ -1648,6 +1751,18 @@ _320 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | PUT | `/voucher-types/{record}` | Update a voucher type (PATCH also accepted) | `voucher-types.update` |
 | DELETE | `/voucher-types/{record}` | Delete an unused voucher type | `voucher-types.delete` |
 | GET | `/voucher-types/{record}/next-number` | Preview the next number | `voucher-types.view` |
+
+### Branches
+
+| Method | Endpoint | What it does | Permission |
+|--------|----------|--------------|------------|
+| GET | `/branches` | Branches of the company | `branches.view` |
+| POST | `/branches` | Create a branch | `branches.create` |
+| GET | `/branches/{branch}` | Show a branch with the people who work in it | `branches.view` |
+| PUT | `/branches/{branch}` | Update a branch | `branches.update` |
+| DELETE | `/branches/{branch}` | Delete a branch | `branches.delete` |
+| POST | `/branches/{branch}/users` | Limit a user to this branch (add) | `branches.update` |
+| DELETE | `/branches/{branch}/users/{user}` | Remove a user from this branch | `branches.update` |
 
 ### Companies
 

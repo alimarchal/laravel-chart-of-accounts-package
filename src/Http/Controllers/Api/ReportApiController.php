@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Reports\AgedPayablesReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\AgedReceivablesReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\BalanceSheetReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\BankBookReport;
+use Alimarchal\LaravelChartOfAccounts\Reports\BranchComparisonReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\CashBookReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\CashFlowReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\GeneralLedgerReport;
@@ -65,6 +66,26 @@ class ReportApiController extends Controller
                 'revenue' => Money::fromCents($revenue),
                 'expenses' => Money::fromCents($expenses),
                 'net_income' => Money::fromCents($revenue - $expenses),
+            ],
+            'date_from' => $from,
+            'date_to' => $to,
+        ]);
+    }
+
+    public function branchComparison(Request $request, BranchComparisonReport $report): JsonResponse
+    {
+        abort_unless(config('accounting.branches.enabled'), 404);
+
+        $filters = $this->dateRange($request);
+        [$from, $to] = app(IncomeStatementReport::class)->range($filters);
+        $rows = $report->rows($filters);
+
+        return response()->json([
+            'data' => $rows,
+            'totals' => [
+                'revenue' => Money::fromCents($rows->sum(fn ($row) => Money::toCents($row['revenue']))),
+                'expenses' => Money::fromCents($rows->sum(fn ($row) => Money::toCents($row['expenses']))),
+                'net_income' => Money::fromCents($rows->sum(fn ($row) => Money::toCents($row['net_income']))),
             ],
             'date_from' => $from,
             'date_to' => $to,

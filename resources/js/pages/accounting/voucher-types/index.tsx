@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type VoucherType = {
     id: number;
@@ -251,11 +252,11 @@ export default function VoucherTypes({
     const [editing, setEditing] = useState<VoucherType | 'new' | null>(null);
 
     const remove = (type: VoucherType) => {
-        if (window.confirm(`Delete voucher type ${type.code}?`)) {
+        confirmThen(`Delete voucher type ${type.code}?`, () => {
             router.delete(`/accounting/voucher-types/${type.id}`, {
                 preserveScroll: true,
             });
-        }
+        });
     };
 
     return (

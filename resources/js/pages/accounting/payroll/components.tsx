@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Props = {
     filters: Record<string, string | null>;
@@ -51,7 +52,7 @@ export default function PayrollComponents({ components, accounts, filters }: Pro
                             <tr key={row.id} className="border-t">
                                 <td className="py-2 font-medium">{row.code}</td><td>{row.name} {!row.is_active && <Badge variant="outline">inactive</Badge>}</td><td>{row.kind}{row.kind === 'earning' && !row.taxable ? ' (not taxable)' : ''}</td>
                                 <td>{row.method === 'quantity_rate' ? `${Number(row.value)} ${row.unit ?? 'units'} x ${Number(row.rate)} = ${(Number(row.value) * Number(row.rate)).toLocaleString()}` : `${Number(row.value)}${row.method === 'percent_of_basic' ? '% of basic' : ' per month'}`}</td><td>{label(row.account_id)?.account_code} {label(row.account_id)?.account_name}</td>
-                                <td className="text-right">{permissions['payroll.manage'] && <Button variant="ghost" size="sm" onClick={() => confirm('Delete this component?') && router.delete(`/accounting/payroll/components/${row.id}`)}>Delete</Button>}</td>
+                                <td className="text-right">{permissions['payroll.manage'] && <Button variant="ghost" size="sm" onClick={() => confirmThen('Delete this component?', () => router.delete(`/accounting/payroll/components/${row.id}`))}>Delete</Button>}</td>
                             </tr>
                         ))}
                         {components.length === 0 && <tr><td colSpan={6} className="py-4 text-center text-muted-foreground">No components yet.</td></tr>}

@@ -290,6 +290,7 @@ reports = {
  "trial-balance": ("Trial balance", [], ref("ReportRows"), "All posted activity per account; totals.difference is 0 when balanced."),
  "balance-sheet": ("Balance sheet", asof_q, ref("ReportRows"), "Includes a 'Current Earnings (unclosed)' row; totals: assets, liabilities_and_equity, difference."),
  "income-statement": ("Income statement", date_q, ref("ReportRows"), "Defaults to the period containing today; closing entries excluded. totals: revenue, expenses, net_income."),
+ "branch-comparison": ("Branch comparison", date_q, ref("ReportRows"), "Revenue, expenses and net_income of each branch side by side (same dates as the income statement). Only when branches are on; a branch user sees only theirs; entries with no branch are one row with branch_id null."),
  "general-ledger": ("General ledger", ledger_q, ref("LedgerPage"), None),
  "cash-flow": ("Cash flow", date_q + PAGE, ref("CashFlowPage"), "Direct method: movements on cash and bank accounts (and their child accounts), paginated; totals cover the whole period."),
  "bank-book": ("Bank book", ledger_q + [{"name": "bank_account_id", "in": "query", "schema": {"type": "integer"}}], ref("LedgerPage"), None),
@@ -301,6 +302,38 @@ reports = {
 for uri, (summary, params, schema, desc) in reports.items():
     errors = {**E404_422} if uri == "account-statement" else E422
     paths[f"/reports/{uri}"] = {"get": op("Reports", summary, f"reports.{uri}.view", {"200": resp(summary, schema), **errors}, params=params or None, desc=desc, opid=f"report_{uri.replace('-', '_')}")}
+
+
+# ── Branches ─────────────────────────────────────────────────────────────────
+schemas["Branch"] = {"type": "object", "properties": {
+    "id": {"type": "integer"}, "code": {"type": "string", "example": "LHR"}, "name": {"type": "string", "example": "Lahore campus"},
+    "city": {"type": ["string", "null"]}, "address": {"type": ["string", "null"]}, "phone": {"type": ["string", "null"]},
+    "is_head_office": {"type": "boolean"}, "is_active": {"type": "boolean"}}}
+branch_input = {"type": "object", "required": ["code", "name"], "properties": {
+    "code": {"type": "string", "maxLength": 30, "pattern": "^[A-Za-z0-9._-]+$", "description": "Stored upper-case; unique inside the company."},
+    "name": {"type": "string"}, "city": {"type": "string"}, "address": {"type": "string"}, "phone": {"type": "string"},
+    "is_head_office": {"type": "boolean", "description": "Only one branch is the head office: setting it clears the others."},
+    "is_active": {"type": "boolean", "default": True}}}
+branch_members = {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}, "email": {"type": "string"}}}}
+branch_id = {"name": "branch", "in": "path", "required": True, "schema": {"type": "integer"}}
+branch_desc = "Needs ACCOUNTING_BRANCHES=true. Send X-Branch (code or id) to work in one branch: new records are booked to it and lists and reports follow it."
+paths["/branches"] = {
+    "get": op("Branches", "Branches of the company", "branches.view", {"200": resp("Branches; current marks the working branch of this request", {"type": "object", "properties": {
+        "data": {"type": "array", "items": {"allOf": [ref("Branch"), {"type": "object", "properties": {"current": {"type": "boolean"}}}]}},
+        "branches_enabled": {"type": "boolean"}}}), **E}, desc=branch_desc, opid="list_branches"),
+    "post": op("Branches", "Create a branch", "branches.create", {"201": resp("Created branch", data(ref("Branch"))), **E422}, body=branch_input, opid="create_branch"),
+}
+paths["/branches/{branch}"] = {"parameters": [branch_id],
+    "get": op("Branches", "Show a branch with the people who work in it", "branches.view", {"200": resp("Branch", data({"allOf": [ref("Branch"), {"type": "object", "properties": {"members": branch_members}}]})), **E404}, opid="show_branch"),
+    "put": op("Branches", "Update a branch", "branches.update", {"200": resp("Updated branch", data(ref("Branch"))), **E404_422}, body={**branch_input, "required": []}, opid="update_branch"),
+    "delete": op("Branches", "Delete a branch", "branches.delete", {"204": {"description": "Deleted"}, **E404_422}, desc="A branch with entries, invoices, bills or payments cannot be deleted: deactivate it (is_active=false).", opid="delete_branch"),
+}
+paths["/branches/{branch}/users"] = {"parameters": [branch_id],
+    "post": op("Branches", "Limit a user to this branch (add)", "branches.update", {"200": resp("People who work in the branch", data(branch_members)), **E404_422},
+               body={"type": "object", "required": ["user_id"], "properties": {"user_id": {"type": "integer"}}},
+               desc="A user with branches works in those only; a user with none works in all of them.", opid="grant_branch_access")}
+paths["/branches/{branch}/users/{user}"] = {"parameters": [branch_id, {"name": "user", "in": "path", "required": True, "schema": {"type": "integer"}}],
+    "delete": op("Branches", "Remove a user from this branch", "branches.update", {"200": resp("People who work in the branch", data(branch_members)), **E404}, opid="revoke_branch_access")}
 
 
 # ── Companies (multi-company) ────────────────────────────────────────────────
@@ -986,7 +1019,7 @@ for _path, _params in LIST_FILTERS.items():
 
 spec = {
  "openapi": "3.1.0",
- "info": {"title": "Laravel Chart of Accounts API", "version": "2.36.0",
+ "info": {"title": "Laravel Chart of Accounts API", "version": "2.38.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
    "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
@@ -995,6 +1028,7 @@ spec = {
    "* **Errors:** 422 with `message` (accounting rules) and `errors` (validation).\n"
    "* **Money:** amounts are returned as decimal strings with two decimals.\n"
    "* **Retries:** send `Idempotency-Key` when creating journal entries.\n"
+   "* **Branches:** with ACCOUNTING_BRANCHES=true, send `X-Branch: <code or id>` to work in one branch; a user limited to branches only sees theirs.\n"
    "* **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible (404).\n"
    "* **Filtering and sorting:** every list takes `?filter[name]=value` (the standard form) or just `?name=value`; when both are sent, `filter[...]` wins. Several values separated by commas match any of them. Text filters are case-insensitive and match part of the text; dates are `YYYY-MM-DD`; yes/no filters take `1`/`0`/`true`/`false`. `?sort=name` / `?sort=-name` sorts where a list offers it. An unknown filter or sort answers 400, a malformed date or number 422.\n"
    "* **Maker-checker:** with approvals enabled, entries at/above the threshold go submit → approve (a different user) → posted.",
@@ -1014,6 +1048,7 @@ spec = {
    ("Tax", "Tax codes and dated tax rates."),
    ("Recurring entries", "Journal entries that repeat on a schedule: templates, runs, pause and resume."),
    ("Voucher types", "Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series."),
+   ("Branches", "Branches of a company, who works in each, and the X-Branch working branch."),
    ("Companies", "Companies (multi-company), access and consolidation."),
    ("Users & roles", "Users, roles and permissions — privilege-checked and audited."),
    ("System", "Installation health.")]],

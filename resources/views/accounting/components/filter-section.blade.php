@@ -25,9 +25,22 @@
     <script>
         (function() {
             const targetDiv = document.getElementById("filters");
-            const btn = document.getElementById("toggle");
+            let btn = document.getElementById("toggle");
 
-            if (!targetDiv || !btn) return;
+            if (!targetDiv) return;
+
+            // A page whose header has no filter button (chart of accounts, snapshots …) gets one above the filters.
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.id = 'toggle';
+                btn.type = 'button';
+                btn.textContent = 'Filters';
+                btn.className = 'inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition';
+                const bar = document.createElement('div');
+                bar.className = 'max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 flex justify-end';
+                bar.appendChild(btn);
+                targetDiv.parentElement.parentElement.insertBefore(bar, targetDiv.parentElement);
+            }
 
             function showFilters() {
                 targetDiv.style.display = 'block';

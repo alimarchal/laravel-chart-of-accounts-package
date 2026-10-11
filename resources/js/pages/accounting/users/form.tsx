@@ -14,6 +14,7 @@ type User = {
     name: string;
     email: string;
     roles: string[];
+    branches?: number[];
     direct_permissions: string[] | null;
     role_permissions: string[];
 };
@@ -21,11 +22,13 @@ type User = {
 export default function UserForm({
     user,
     roles,
+    branches = [],
     permissionGroups,
     isSelf = false,
 }: {
     user: User | null;
     roles: string[];
+    branches?: Array<{ id: number; code: string; name: string }>;
     permissionGroups: Record<string, string[]> | null;
     isSelf?: boolean;
 }) {
@@ -37,6 +40,7 @@ export default function UserForm({
         password: '',
         password_confirmation: '',
         roles: user?.roles ?? ([] as string[]),
+        branches: user?.branches ?? ([] as number[]),
     });
     const direct = useForm({
         permissions: user?.direct_permissions ?? ([] as string[]),
@@ -188,6 +192,38 @@ export default function UserForm({
                             </p>
                         ) : null}
                     </div>
+
+                    {branches.length > 0 ? (
+                        <div>
+                            <div className="mb-1 text-sm font-medium">Branches</div>
+                            <p className="mb-2 text-xs text-muted-foreground">
+                                The user sees and books only the data of these branches (entries, invoices, payments, reports). Leave all unticked to work in all branches. Admins and super-admins always work in all branches.
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {branches.map((branch) => (
+                                    <label
+                                        key={branch.id}
+                                        className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm ${form.data.branches.includes(branch.id) ? 'border-primary bg-primary/5' : ''}`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={form.data.branches.includes(branch.id)}
+                                            onChange={() =>
+                                                form.setData(
+                                                    'branches',
+                                                    form.data.branches.includes(branch.id)
+                                                        ? form.data.branches.filter((id) => id !== branch.id)
+                                                        : [...form.data.branches, branch.id],
+                                                )
+                                            }
+                                        />
+                                        {branch.name} ({branch.code})
+                                    </label>
+                                ))}
+                            </div>
+                            <InputError message={errors.branches} />
+                        </div>
+                    ) : null}
 
                     <Button type="submit" disabled={form.processing}>
                         <Save className="size-4" />

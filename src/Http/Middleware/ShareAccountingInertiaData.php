@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Http\Middleware;
 
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountingPermissions;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Closure;
@@ -34,6 +35,22 @@ class ShareAccountingInertiaData
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function branch(): array
+    {
+        $options = CurrentBranch::options();
+        $selected = CurrentBranch::selectedId();
+
+        return [
+            'enabled' => CurrentBranch::enabled(),
+            'current' => $selected === null ? null : (collect($options)->firstWhere('id', $selected)),
+            'list' => $options,
+            'restricted' => CurrentBranch::restricted(),
+        ];
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         if (class_exists(Inertia::class)) {
@@ -44,6 +61,7 @@ class ShareAccountingInertiaData
                     'error' => $request->session()->get('error'),
                 ],
                 'company' => $this->company($request),
+                'branch' => $this->branch(),
                 'features' => app(FeatureManager::class)->states(),
                 'disabledPaths' => app(FeatureManager::class)->disabledPatterns(),
                 'approvals' => [

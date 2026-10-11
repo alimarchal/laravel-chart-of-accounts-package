@@ -2,10 +2,15 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
+use Alimarchal\LaravelChartOfAccounts\Models\Branch;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -85,6 +90,9 @@ class UserManagementService
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
             'roles' => ['sometimes', 'nullable', 'array'],
             'roles.*' => ['string', Rule::exists(config('permission.table_names.roles', 'roles'), 'name')],
+            // The branches the user works in (with branches enabled); none = every branch.
+            'branches' => ['sometimes', 'nullable', 'array'],
+            'branches.*' => ['integer'],
         ];
     }
 
@@ -107,8 +115,17 @@ class UserManagementService
                 'password' => Hash::make($data['password']),
             ]);
 
+            // A person added by an administrator is trusted: the accounting routes need a verified address (starter kits with e-mail verification).
+            if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
+                $user->forceFill(['email_verified_at' => now()])->save();
+            }
+
             if ($roles !== []) {
                 $user->syncRoles($roles);
+            }
+
+            if (CurrentBranch::enabled() && ! empty($data['branches']) && $user instanceof Authenticatable) {
+                $this->syncBranches($actor, $user, array_values($data['branches']));
             }
 
             $this->audit($user, 'USER_CREATED', null, ['name' => $user->getAttribute('name'), 'email' => $user->getAttribute('email'), 'roles' => $roles], $actor);
@@ -152,6 +169,10 @@ class UserManagementService
                 $this->syncRoles($actor, $user, array_values($data['roles'] ?? []));
             }
 
+            if (CurrentBranch::enabled() && array_key_exists('branches', $data)) {
+                $this->syncBranches($actor, $user, array_values($data['branches'] ?? []));
+            }
+
             return $user->load(['roles', 'permissions']);
         });
     }
@@ -183,6 +204,61 @@ class UserManagementService
         ]);
 
         return $user->load(['roles', 'permissions']);
+    }
+
+    /**
+     * Replace the branches (of the current company) a user works in. None = the user works in every branch. A super-admin and an admin work in
+     * all of them whatever is stored.
+     *
+     * @param  array<int, int|string>  $branchIds
+     * @param  Model&Authenticatable  $user
+     */
+    public function syncBranches(Authenticatable $actor, Model $user, array $branchIds): Model
+    {
+        $this->guard->assertCanManageUser($actor, $user);
+        abort_unless($actor->can('branches.update'), 403, 'You are not allowed to change the branches of a user.');
+
+        $companyBranches = Branch::query()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $wanted = collect($branchIds)->map(fn ($id) => (int) $id)->unique()->values()->all();
+        $unknown = array_diff($wanted, $companyBranches);
+
+        if ($unknown !== []) {
+            throw new AccountingException('Branches '.implode(', ', $unknown).' do not exist in the current company.');
+        }
+
+        $current = DB::table('accounting_branch_user')->where('user_id', $user->getKey())->whereIn('branch_id', $companyBranches)->pluck('branch_id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+        sort($wanted);
+
+        if ($current === $wanted) {
+            return $user;
+        }
+
+        DB::table('accounting_branch_user')->where('user_id', $user->getKey())->whereIn('branch_id', $companyBranches)->delete();
+
+        foreach ($wanted as $id) {
+            DB::table('accounting_branch_user')->insert(['branch_id' => $id, 'user_id' => $user->getKey(), 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        CurrentBranch::flush();
+        $this->audit($user, 'USER_BRANCHES_CHANGED', ['branches' => $current], ['branches' => $wanted], $actor);
+
+        return $user;
+    }
+
+    /**
+     * The branches of the current company a user works in (empty: all of them).
+     *
+     * @return list<int>
+     */
+    public function branchIds(Model $user): array
+    {
+        if (! CurrentBranch::enabled()) {
+            return [];
+        }
+
+        return DB::table('accounting_branch_user as bu')->join('accounting_branches as b', 'b.id', '=', 'bu.branch_id')
+            ->where('bu.user_id', $user->getKey())->where('b.company_id', app(CurrentCompany::class)->id())
+            ->orderBy('b.id')->pluck('b.id')->map(fn ($id) => (int) $id)->all();
     }
 
     /**
@@ -360,6 +436,7 @@ class UserManagementService
             'name' => $user->getAttribute('name'),
             'email' => $user->getAttribute('email'),
             'roles' => $user->getRoleNames()->values()->all(),
+            'branches' => CurrentBranch::enabled() ? $this->branchIds($user) : [],
             'direct_permissions' => $user->relationLoaded('permissions') ? $user->getDirectPermissions()->pluck('name')->values()->all() : null,
             'created_at' => $user->getAttribute('created_at')?->toISOString(),
         ];

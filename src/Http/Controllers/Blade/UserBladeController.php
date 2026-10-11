@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Database\Eloquent\Collection;
@@ -48,7 +49,7 @@ class UserBladeController extends Controller
 
     public function create(): View
     {
-        return view('accounting::users.create', ['roles' => Role::orderBy('name')->get()]);
+        return view('accounting::users.create', ['roles' => Role::orderBy('name')->get(), 'branches' => CurrentBranch::options(), 'userBranchIds' => []]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -76,6 +77,8 @@ class UserBladeController extends Controller
         return view('accounting::users.edit', [
             'user' => $user,
             'roles' => Role::orderBy('name')->get(),
+            'branches' => CurrentBranch::options(),
+            'userBranchIds' => $this->users->branchIds($user),
             'filters' => ListFilters::current($request, ['search', 'name', 'email', 'role']),
         ]);
     }
@@ -88,6 +91,11 @@ class UserBladeController extends Controller
         $validated = $request->validate($this->users->userRules($user));
         // The form always carries the full role list: none ticked means no roles.
         $validated['roles'] = $validated['roles'] ?? [];
+
+        if (CurrentBranch::enabled()) {
+            $validated['branches'] = $validated['branches'] ?? [];
+        }
+
         $this->users->updateUser($request->user(), $user, $validated);
 
         return redirect()->route('settings.users.index')->with('success', 'User updated successfully.');

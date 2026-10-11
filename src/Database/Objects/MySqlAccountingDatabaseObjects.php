@@ -72,6 +72,8 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
         $voucher = Schema::hasColumn('accounting_journal_entries', 'voucher_number')
             ? 'OR NOT (NEW.voucher_number <=> OLD.voucher_number) OR NOT (NEW.voucher_type_id <=> OLD.voucher_type_id)'
             : '';
+        // A posted entry stays in its branch, as it stays in its company.
+        $voucher .= Schema::hasColumn('accounting_journal_entries', 'branch_id') ? ' OR NOT (NEW.branch_id <=> OLD.branch_id)' : '';
 
         if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
             $voucher .= ' OR NOT (NEW.source_document_type <=> OLD.source_document_type) OR NOT (NEW.source_document_number <=> OLD.source_document_number) OR NOT (NEW.source_document_date <=> OLD.source_document_date) OR NOT (NEW.sourceable_type <=> OLD.sourceable_type) OR NOT (NEW.sourceable_id <=> OLD.sourceable_id)';
@@ -320,6 +322,10 @@ class MySqlAccountingDatabaseObjects implements AccountingDatabaseObjects
 
         if (Schema::hasColumn('accounting_journal_entries', 'source_document_number')) {
             array_push($columns, 'je.source_document_type', 'je.source_document_number', 'je.source_document_date');
+        }
+
+        if (Schema::hasColumn('accounting_journal_entries', 'branch_id')) {
+            $columns[] = 'je.branch_id';
         }
 
         return $columns === [] ? '' : ', '.implode(', ', $columns);

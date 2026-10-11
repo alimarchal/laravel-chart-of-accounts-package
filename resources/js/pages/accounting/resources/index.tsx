@@ -22,6 +22,7 @@ import {
     playSuccessSound,
     useAccounting,
 } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type RecordValue = string | number | boolean | null;
 
@@ -120,9 +121,9 @@ export default function AccountingResourceIndex({
     }, [flash.error]);
 
     const destroy = (record: AccountingRecord) => {
-        if (window.confirm(`Delete ${title.toLowerCase()} #${record.id}?`)) {
+        confirmThen(`Delete ${title.toLowerCase()} #${record.id}?`, () => {
             router.delete(`${basePath}/${record.id}`);
-        }
+        });
     };
 
     const submitFilters = (event: FormEvent<HTMLFormElement>) => {

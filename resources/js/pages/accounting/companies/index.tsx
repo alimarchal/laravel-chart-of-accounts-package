@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Member = {
     id: number;
@@ -250,16 +251,12 @@ function CompanyCard({ company, users }: { company: Company; users: User[] }) {
                                     size="icon"
                                     aria-label={`Remove ${member.name}`}
                                     onClick={() => {
-                                        if (
-                                            window.confirm(
-                                                `Remove ${member.name}'s access to ${company.name}?`,
-                                            )
-                                        ) {
+                                        confirmThen(`Remove ${member.name}'s access to ${company.name}?`, () => {
                                             router.delete(
                                                 `/accounting/companies/${company.id}/users/${member.id}`,
                                                 { preserveScroll: true },
                                             );
-                                        }
+                                        });
                                     }}
                                 >
                                     <Trash2 className="size-4" />

@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Database\Query\Builder;
@@ -27,6 +28,7 @@ class AccountStatementReport
     {
         return DB::table('vw_accounting_general_ledger')
             ->whereIn('company_id', CurrentCompany::ids())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('branch_id', CurrentBranch::reportIds()))
             ->where('status', 'posted')
             ->when($filters['account_id'] ?? null, fn ($query, int|string $accountId) => $query->where('account_id', $accountId))
             ->when($filters['account_code'] ?? null, fn ($query, string $accountCode) => $query->where('account_code', $accountCode))
@@ -47,7 +49,8 @@ class AccountStatementReport
     public function statement(ChartOfAccount $account, ?string $dateFrom = null, ?string $dateTo = null, int $perPage = 100): array
     {
         $sign = $account->normal_balance === 'credit' ? -1 : 1;
-        $posted = fn () => DB::table('vw_accounting_general_ledger')->whereIn('company_id', CurrentCompany::ids())->where('status', 'posted')->where('account_id', $account->id);
+        $posted = fn () => DB::table('vw_accounting_general_ledger')->whereIn('company_id', CurrentCompany::ids())
+            ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('branch_id', CurrentBranch::reportIds()))->where('status', 'posted')->where('account_id', $account->id);
 
         $openingNet = $dateFrom
             ? Money::toCents($posted()->whereDate('entry_date', '<', $dateFrom)->selectRaw('COALESCE(SUM(base_debit) - SUM(base_credit), 0) as net')->value('net'))

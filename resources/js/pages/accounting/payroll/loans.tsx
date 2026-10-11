@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmIf } from '@/lib/confirm';
 
 type Loan = {
     id: number; employee_code: string; employee_name: string; kind: string; principal: string; installments: number; start_month: string; issued_on: string | null; status: string; outstanding: string; notes: string | null;
@@ -25,7 +26,7 @@ export default function PayrollLoans({ loans, status, filters, employees, accoun
     const [open, setOpen] = useState<number | null>(null);
     const [account, setAccount] = useState('');
     const submit = (event: FormEvent) => { event.preventDefault(); form.post('/accounting/payroll/loans', { onSuccess: () => form.reset('principal', 'notes') }); };
-    const act = (id: number, action: string, body: Record<string, string> = {}, confirmText?: string) => (!confirmText || confirm(confirmText)) && router.post(`/accounting/payroll/loans/${id}/${action}`, body, { preserveScroll: true });
+    const act = (id: number, action: string, body: Record<string, string> = {}, confirmText?: string) => confirmIf(confirmText, () => router.post(`/accounting/payroll/loans/${id}/${action}`, body, { preserveScroll: true }));
     const bankSelect = (
         <select className={`${selectClass} w-64`} value={account} onChange={(event) => setAccount(event.target.value)}><option value="">Bank or cash account…</option>{accounts.map((row) => (<option key={row.id} value={row.id}>{row.account_code} {row.account_name}</option>))}</select>
     );

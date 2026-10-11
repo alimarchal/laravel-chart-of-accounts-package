@@ -42,6 +42,7 @@ class CloseFiscalYearAction
 
             if (count($preview['lines']) >= 2) {
                 $closingEntry = $this->journalEntryService->create([
+                    'branch_id' => null,                                           // the year-end close is for the whole company
                     'entry_date' => $period->end_date->toDateString(),
                     'reference' => "YEAR-END-{$period->id}",
                     'description' => "Year-end close for {$period->name}",

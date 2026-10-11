@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Month = { month: string; paid: string; due: string; difference: string };
 type Row = { id: number; employee_code: string; employee_name: string; from_month: string; to_month: string; payment_month: string; amount: string; status: string; months: Month[] };
@@ -91,7 +92,7 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
                     ]}
                 />
                 <CardHeader className="flex-row items-center justify-between"><CardTitle>Register</CardTitle>
-                        {permissions['payroll.post'] && <Button variant="outline" size="sm" onClick={() => confirm('Approve every draft?') && router.post('/accounting/payroll/arrears/approve-all')}>Approve all drafts</Button>}</CardHeader>
+                        {permissions['payroll.post'] && <Button variant="outline" size="sm" onClick={() => confirmThen('Approve every draft?', () => router.post('/accounting/payroll/arrears/approve-all'))}>Approve all drafts</Button>}</CardHeader>
                     <CardContent className="overflow-x-auto">
                         <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Covers</th><th>Paid with</th><th>Status</th><th className="text-right">Amount</th><th /></tr></thead><tbody>
                             {rows.map((row) => (
@@ -99,7 +100,7 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
                                     <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.from_month}{row.to_month !== row.from_month ? ` – ${row.to_month}` : ''}</td><td>{row.payment_month}</td><td>{badge(row.status)}</td><td className="text-right tabular-nums">{money(row.amount)}</td>
                                     <td className="text-right">{permissions['payroll.post'] && <>
                                         {row.status === 'draft' && <Button variant="ghost" size="sm" onClick={() => router.post(`/accounting/payroll/arrears/${row.id}/approve`)}>Approve</Button>}
-                                        {(row.status === 'draft' || row.status === 'approved') && <Button variant="ghost" size="sm" onClick={() => confirm('Cancel these arrears?') && router.post(`/accounting/payroll/arrears/${row.id}/cancel`)}>Cancel</Button>}</>}</td>
+                                        {(row.status === 'draft' || row.status === 'approved') && <Button variant="ghost" size="sm" onClick={() => confirmThen('Cancel these arrears?', () => router.post(`/accounting/payroll/arrears/${row.id}/cancel`))}>Cancel</Button>}</>}</td>
                                 </tr>
                             ))}
                             {rows.length === 0 && <tr><td colSpan={6} className="py-4 text-center text-muted-foreground">No arrears yet{filters.status ? ` with status ${filters.status}` : ''}.</td></tr>}

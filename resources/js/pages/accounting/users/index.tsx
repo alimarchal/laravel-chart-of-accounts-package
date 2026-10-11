@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type User = {
     id: number;
@@ -51,11 +52,11 @@ export default function Users({
     };
 
     const remove = (user: User) => {
-        if (window.confirm(`Delete ${user.name} (${user.email})?`)) {
+        confirmThen(`Delete ${user.name} (${user.email})?`, () => {
             router.delete(`/accounting/users/${user.id}`, {
                 preserveScroll: true,
             });
-        }
+        });
     };
 
     return (

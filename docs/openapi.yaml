@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Laravel Chart of Accounts API
-  version: 2.36.0
+  version: 2.38.0
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
@@ -18,6 +18,9 @@ info:
     * **Money:** amounts are returned as decimal strings with two decimals.
 
     * **Retries:** send `Idempotency-Key` when creating journal entries.
+
+    * **Branches:** with ACCOUNTING_BRANCHES=true, send `X-Branch: <code or id>` to work in one branch; a user limited to
+    branches only sees theirs.
 
     * **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible
     (404).
@@ -63,6 +66,8 @@ tags:
   description: 'Journal entries that repeat on a schedule: templates, runs, pause and resume.'
 - name: Voucher types
   description: Voucher types (JV, CPV, CRV, BPV, BRV, …) and their gapless number series.
+- name: Branches
+  description: Branches of a company, who works in each, and the X-Branch working branch.
 - name: Companies
   description: Companies (multi-company), access and consolidation.
 - name: Users & roles
@@ -4041,6 +4046,46 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
+  /reports/branch-comparison:
+    get:
+      tags:
+      - Reports
+      summary: Branch comparison
+      operationId: report_branch_comparison
+      description: 'Revenue, expenses and net_income of each branch side by side (same dates as the income statement). Only
+        when branches are on; a branch user sees only theirs; entries with no branch are one row with branch_id null.
+
+
+        Permission: `reports.branch-comparison.view`.'
+      responses:
+        '200':
+          description: Branch comparison
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportRows'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Company'
+      - $ref: '#/components/parameters/Company'
   /reports/general-ledger:
     get:
       tags:
@@ -4354,6 +4399,340 @@ paths:
           format: date
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/PerPage'
+      - $ref: '#/components/parameters/Company'
+  /branches:
+    get:
+      tags:
+      - Branches
+      summary: Branches of the company
+      operationId: list_branches
+      description: 'Needs ACCOUNTING_BRANCHES=true. Send X-Branch (code or id) to work in one branch: new records are booked
+        to it and lists and reports follow it.
+
+
+        Permission: `branches.view`.'
+      responses:
+        '200':
+          description: Branches; current marks the working branch of this request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '#/components/schemas/Branch'
+                      - type: object
+                        properties:
+                          current:
+                            type: boolean
+                  branches_enabled:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Branches
+      summary: Create a branch
+      operationId: create_branch
+      description: 'Permission: `branches.create`.'
+      responses:
+        '201':
+          description: Created branch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Branch'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - name
+              properties:
+                code:
+                  type: string
+                  maxLength: 30
+                  pattern: ^[A-Za-z0-9._-]+$
+                  description: Stored upper-case; unique inside the company.
+                name:
+                  type: string
+                city:
+                  type: string
+                address:
+                  type: string
+                phone:
+                  type: string
+                is_head_office:
+                  type: boolean
+                  description: 'Only one branch is the head office: setting it clears the others.'
+                is_active:
+                  type: boolean
+                  default: true
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /branches/{branch}:
+    parameters:
+    - name: branch
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      tags:
+      - Branches
+      summary: Show a branch with the people who work in it
+      operationId: show_branch
+      description: 'Permission: `branches.view`.'
+      responses:
+        '200':
+          description: Branch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/Branch'
+                    - type: object
+                      properties:
+                        members:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              name:
+                                type: string
+                              email:
+                                type: string
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    put:
+      tags:
+      - Branches
+      summary: Update a branch
+      operationId: update_branch
+      description: 'Permission: `branches.update`.'
+      responses:
+        '200':
+          description: Updated branch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Branch'
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                code:
+                  type: string
+                  maxLength: 30
+                  pattern: ^[A-Za-z0-9._-]+$
+                  description: Stored upper-case; unique inside the company.
+                name:
+                  type: string
+                city:
+                  type: string
+                address:
+                  type: string
+                phone:
+                  type: string
+                is_head_office:
+                  type: boolean
+                  description: 'Only one branch is the head office: setting it clears the others.'
+                is_active:
+                  type: boolean
+                  default: true
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    delete:
+      tags:
+      - Branches
+      summary: Delete a branch
+      operationId: delete_branch
+      description: 'A branch with entries, invoices, bills or payments cannot be deleted: deactivate it (is_active=false).
+
+
+        Permission: `branches.delete`.'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /branches/{branch}/users:
+    parameters:
+    - name: branch
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      tags:
+      - Branches
+      summary: Limit a user to this branch (add)
+      operationId: grant_branch_access
+      description: 'A user with branches works in those only; a user with none works in all of them.
+
+
+        Permission: `branches.update`.'
+      responses:
+        '200':
+          description: People who work in the branch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        email:
+                          type: string
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - user_id
+              properties:
+                user_id:
+                  type: integer
+      parameters:
+      - $ref: '#/components/parameters/Company'
+  /branches/{branch}/users/{user}:
+    parameters:
+    - name: branch
+      in: path
+      required: true
+      schema:
+        type: integer
+    - name: user
+      in: path
+      required: true
+      schema:
+        type: integer
+    delete:
+      tags:
+      - Branches
+      summary: Remove a user from this branch
+      operationId: revoke_branch_access
+      description: 'Permission: `branches.update`.'
+      responses:
+        '200':
+          description: People who work in the branch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        email:
+                          type: string
+                required:
+                - data
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
       - $ref: '#/components/parameters/Company'
   /companies:
     get:
@@ -16539,6 +16918,33 @@ components:
           - string
           - 'null'
           format: date-time
+    Branch:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: LHR
+        name:
+          type: string
+          example: Lahore campus
+        city:
+          type:
+          - string
+          - 'null'
+        address:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        is_head_office:
+          type: boolean
+        is_active:
+          type: boolean
     Company:
       type: object
       properties:

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Line = {
     account: string | null;
@@ -99,12 +100,9 @@ export default function ShowRecurringEntry({ entry, runs, upcoming }: Props) {
                                 variant="outline"
                                 className="gap-2"
                                 onClick={() =>
-                                    window.confirm(
-                                        'Delete this recurring entry?',
-                                    ) &&
-                                    router.delete(
+                                    confirmThen('Delete this recurring entry?', () => router.delete(
                                         `/accounting/recurring-entries/${entry.id}`,
-                                    )
+                                    ))
                                 }
                             >
                                 <Trash2 className="size-4" />

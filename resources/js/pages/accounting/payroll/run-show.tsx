@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen, confirmIf } from '@/lib/confirm';
 
 type Slip = { id: number; employee_code: string; employee_name: string; basic: string; gross: string; deductions: string; tax: string; net: string; days_paid: string; days_in_month: string };
 type Props = {
@@ -23,7 +24,7 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
     const { permissions, flash, features } = useAccounting();
     const pay = useForm({ account_id: '', date: today });
     const base = `/accounting/payroll/runs/${run.id}`;
-    const act = (action: string, confirmText?: string) => (!confirmText || confirm(confirmText)) && router.post(`${base}/${action}`, {}, { preserveScroll: true });
+    const act = (action: string, confirmText?: string) => confirmIf(confirmText, () => router.post(`${base}/${action}`, {}, { preserveScroll: true }));
 
     return (
         <>
@@ -39,8 +40,8 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                         {run.status === 'submitted' && permissions['payroll.approve'] && <Button variant="outline" onClick={() => { const reason = prompt('Why is it sent back to HR?'); if (reason) router.post(`${base}/reject`, { reason }, { preserveScroll: true }); }}>Send back</Button>}
                         {['submitted', 'approved'].includes(run.status) && permissions['payroll.run'] && <Button variant="outline" onClick={() => act('withdraw', 'Take this payroll back to draft?')}>Withdraw</Button>}
                         {((run.status === 'draft' && !run.approval_required) || run.status === 'approved') && permissions['payroll.post'] && <Button onClick={() => act('post', 'Post this payroll to the books?')}>Post</Button>}
-                        {run.status === 'draft' && permissions['payroll.run'] && <Button variant="ghost" onClick={() => confirm('Delete this draft run?') && router.delete(base)}>Delete</Button>}
-                        {['posted', 'paid'].includes(run.status) && permissions['payroll.manage'] && features.payroll_payslip_mail !== false && <Button variant="outline" onClick={() => confirm('E-mail every payslip to its employee?') && act('email-payslips')}>E-mail payslips</Button>}
+                        {run.status === 'draft' && permissions['payroll.run'] && <Button variant="ghost" onClick={() => confirmThen('Delete this draft run?', () => router.delete(base))}>Delete</Button>}
+                        {['posted', 'paid'].includes(run.status) && permissions['payroll.manage'] && features.payroll_payslip_mail !== false && <Button variant="outline" onClick={() => confirmThen('E-mail every payslip to its employee?', () => act('email-payslips'))}>E-mail payslips</Button>}
                         {['posted', 'paid'].includes(run.status) && permissions['payroll.void'] && <Button variant="ghost" onClick={() => act('void', 'Void this payroll? Its entries will be reversed.')}>Void</Button>}
                     </div>
                 </div>

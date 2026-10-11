@@ -66,6 +66,7 @@ type Props = {
     method?: 'post' | 'put';
     title?: string;
     entry?: {
+        branch_id?: number | null;
         voucher_type_id: number | null;
         entry_date: string;
         currency_id: number | null;
@@ -91,6 +92,8 @@ type Props = {
     costCenters: CostCenter[];
     voucherTypes: VoucherType[];
     documentTypes: Record<string, string>;
+    branches?: Array<{ id: number; code: string; name: string }>;
+    defaultBranchId?: number | null;
 };
 
 const emptyLine = (): JournalLine => ({
@@ -111,6 +114,8 @@ export default function JournalEntryForm({
     costCenters,
     voucherTypes,
     documentTypes,
+    branches = [],
+    defaultBranchId = null,
 }: Props) {
     useAccountingI18n();
     const baseCurrency =
@@ -129,6 +134,7 @@ export default function JournalEntryForm({
     ];
 
     const form = useForm({
+        branch_id: String(entry?.branch_id ?? defaultBranchId ?? ''),
         // The first type is the default (JV); the voucher number itself is issued on posting.
         voucher_type_id: entry?.voucher_type_id
             ? String(entry.voucher_type_id)
@@ -200,6 +206,7 @@ export default function JournalEntryForm({
 
         form.transform((data) => ({
             ...data,
+            ...(branches.length > 0 ? { branch_id: data.branch_id === '' ? null : data.branch_id } : { branch_id: undefined }),
             source_document_type:
                 data.source_document_type === 'none'
                     ? ''
@@ -277,6 +284,28 @@ export default function JournalEntryForm({
                                         message={form.errors.voucher_type_id}
                                     />
                                 </div>
+
+                                {branches.length > 0 ? (
+                                    <div className="flex flex-col gap-2">
+                                        <Label htmlFor="branch_id">Branch</Label>
+                                        <select
+                                            id="branch_id"
+                                            className="h-9 rounded-md border bg-transparent px-3 text-sm"
+                                            value={form.data.branch_id}
+                                            onChange={(event) =>
+                                                form.setData('branch_id', event.target.value)
+                                            }
+                                        >
+                                            <option value="">Head office / not allocated</option>
+                                            {branches.map((branch) => (
+                                                <option key={branch.id} value={branch.id}>
+                                                    {branch.code} - {branch.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <InputError message={form.errors.branch_id} />
+                                    </div>
+                                ) : null}
 
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="entry_date">

@@ -14,6 +14,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
@@ -30,8 +31,8 @@ class AccountingDashboardBladeController extends Controller
             'periods' => AccountingPeriod::query()->count(),
             'costCenters' => CostCenter::query()->count(),
             'bankAccounts' => BankAccount::query()->count(),
-            'journalEntries' => JournalEntry::query()->count(),
-            'postedJournalEntries' => JournalEntry::query()->where('status', 'posted')->count(),
+            'journalEntries' => CurrentBranch::constrain(JournalEntry::query(), 'accounting_journal_entries.branch_id')->count(),
+            'postedJournalEntries' => CurrentBranch::constrain(JournalEntry::query()->where('status', 'posted'), 'accounting_journal_entries.branch_id')->count(),
             'taxCodes' => TaxCode::query()->count(),
             'taxRates' => TaxRate::query()->count(),
             'voucherTypes' => VoucherType::query()->count(),

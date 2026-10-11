@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Scheme = {
     id: number; code: string; name: string; base: string; employee_rate: string; employer_rate: string; employee_fixed: string; employer_fixed: string; ceiling: string | null;
@@ -65,7 +66,7 @@ export default function PayrollSchemes({ schemes, filters, editing, employees, a
                             <tr key={row.id} className="border-t">
                                 <td className="py-2 font-medium">{row.code}</td><td>{row.name} {!row.is_active && <Badge variant="outline">inactive</Badge>}</td><td>{row.base}</td><td className="text-right tabular-nums">{rate(row, 'employee')}</td><td className="text-right tabular-nums">{rate(row, 'employer')}</td>
                                 <td className="text-right tabular-nums">{row.ceiling ? Number(row.ceiling).toLocaleString() : '—'}</td><td>{row.applies_to_all ? 'everybody' : `${row.employees} employees`}</td>
-                                <td className="text-right">{permissions['payroll.manage'] && <><Button variant="ghost" size="sm" asChild><Link href={`/accounting/payroll/schemes?edit=${row.id}`}>Edit</Link></Button><Button variant="ghost" size="sm" onClick={() => confirm('Delete this scheme?') && router.delete(`/accounting/payroll/schemes/${row.id}`)}>Delete</Button></>}</td>
+                                <td className="text-right">{permissions['payroll.manage'] && <><Button variant="ghost" size="sm" asChild><Link href={`/accounting/payroll/schemes?edit=${row.id}`}>Edit</Link></Button><Button variant="ghost" size="sm" onClick={() => confirmThen('Delete this scheme?', () => router.delete(`/accounting/payroll/schemes/${row.id}`))}>Delete</Button></>}</td>
                             </tr>
                         ))}
                         {schemes.length === 0 && <tr><td colSpan={8} className="py-4 text-center text-muted-foreground">No schemes yet.</td></tr>}

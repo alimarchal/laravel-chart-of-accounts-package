@@ -32,6 +32,7 @@ import {
     playErrorSound,
     playSuccessSound,
 } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Account = {
     id: number;
@@ -122,9 +123,9 @@ export default function ChartOfAccountsIndex({
     };
 
     const destroy = (account: Account) => {
-        if (window.confirm(`Delete account ${account.account_code}?`)) {
+        confirmThen(`Delete account ${account.account_code}?`, () => {
             router.delete(`/accounting/chart-of-accounts/${account.id}`);
-        }
+        });
     };
 
     const resetFilters = () => {

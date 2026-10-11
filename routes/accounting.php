@@ -4,12 +4,15 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountBalanceSnapshotCon
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingDashboardController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingOverviewController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingPeriodController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountingSettingsController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountRoleController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AccountTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AttachmentController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\AuditLogController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BankStatementController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BranchController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BranchSwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BudgetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
@@ -68,6 +71,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\UserController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherTypeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppController;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingBranchAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\SetAccountingLocale;
@@ -98,22 +102,34 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
         ->middleware("can:{$permissionPrefix}.delete");
 };
 
-Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, EnsureAccountingFeatureEnabled::class, ShareAccountingInertiaData::class, SetAccountingLocale::class])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, EnsureAccountingBranchAccess::class, EnsureAccountingFeatureEnabled::class, ShareAccountingInertiaData::class, SetAccountingLocale::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name('accounting.')
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardController::class)
             ->name('dashboard')
             ->middleware('can:accounting.view');
+        Route::get('settings', AccountingSettingsController::class)
+            ->name('settings')
+            ->middleware('can:accounting.view');
         Route::get('overview', AccountingOverviewController::class)
             ->name('overview')
-            ->middleware('can:accounting.view');
+            ->middleware('can:reports.trial-balance.view');
         Route::post('locale', LocaleController::class)
             ->name('locale')
             ->middleware('can:accounting.view');
         Route::post('company/switch', CompanySwitchController::class)
             ->name('company.switch')
             ->middleware('can:accounting.view');
+        Route::post('branch/switch', BranchSwitchController::class)
+            ->name('branch.switch')
+            ->middleware('can:accounting.view');
+        Route::get('branches', [BranchController::class, 'index'])->name('branches.index')->middleware('can:branches.view');
+        Route::post('branches', [BranchController::class, 'store'])->name('branches.store')->middleware('can:branches.create');
+        Route::match(['put', 'patch'], 'branches/{branch}', [BranchController::class, 'update'])->name('branches.update')->middleware('can:branches.update');
+        Route::delete('branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy')->middleware('can:branches.delete');
+        Route::post('branches/{branch}/users', [BranchController::class, 'grant'])->name('branches.users.grant')->middleware('can:branches.update');
+        Route::delete('branches/{branch}/users/{user}', [BranchController::class, 'revoke'])->name('branches.users.revoke')->middleware('can:branches.update')->whereNumber('user');
         Route::middleware('can:companies.manage')->group(function (): void {
             Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
             Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');

@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type ControlAccount = {
     id: number;
@@ -62,31 +63,23 @@ export default function ControlAccounts({
             .map(([code, type]) => `${code} → ${types[type] ?? type}`)
             .join('\n');
 
-        if (
-            window.confirm(
-                `Mark these accounts as control accounts?\n\n${list}\n\nManual journal entries to them will then need the "control-accounts.post-manual" permission.`,
-            )
-        ) {
+        confirmThen(`Mark these accounts as control accounts?\n\n${list}\n\nManual journal entries to them will then need the "control-accounts.post-manual" permission.`, () => {
             router.post(
                 '/accounting/control-accounts/recommended',
                 {},
                 { preserveScroll: true },
             );
-        }
+        });
     };
 
     const clear = (account: ControlAccount) => {
-        if (
-            window.confirm(
-                `Stop treating ${account.account_code} ${account.account_name} as a control account?`,
-            )
-        ) {
+        confirmThen(`Stop treating ${account.account_code} ${account.account_name} as a control account?`, () => {
             router.put(
                 `/accounting/chart-of-accounts/${account.id}/control-type`,
                 { control_type: null },
                 { preserveScroll: true },
             );
-        }
+        });
     };
 
     return (

@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,7 @@ class PartyPaymentService
             'method' => ['nullable', 'string', 'max:20'],
             'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'branch_id' => ['nullable', 'integer'],
             'auto_allocate' => ['nullable', 'boolean'],
             'allocations' => ['nullable', 'array', 'max:200'],
             'allocations.*.document_id' => ['required', 'integer', CompanyRule::exists('accounting_party_documents', 'id')],
@@ -91,7 +93,9 @@ class PartyPaymentService
             $number = $this->numbers->next($data['kind'], (int) substr((string) $data['payment_date'], 0, 4));
             $control = $this->documents->controlAccount($party, $receipt ? 'receivables' : 'payables');
             $amount = Money::fromCents(Money::toCents((string) $data['amount']));
+            $branchId = CurrentBranch::resolve(array_key_exists('branch_id', $data) ? $data['branch_id'] : CurrentBranch::defaultId());
             $entry = $this->journals->create([
+                'branch_id' => $branchId,
                 'entry_date' => $data['payment_date'],
                 'origin_module' => $receipt ? 'receivables' : 'payables',
                 'reference' => $number,
@@ -107,7 +111,7 @@ class PartyPaymentService
                 'system_generated' => true,
             ]);
 
-            $payment = new PartyPayment(['party_id' => $party->id, 'kind' => $data['kind'], 'payment_date' => $data['payment_date'], 'amount' => $amount, 'account_id' => $data['account_id'], 'method' => $data['method'] ?? null, 'reference' => $data['reference'] ?? null, 'notes' => $data['notes'] ?? null]);
+            $payment = new PartyPayment(['branch_id' => $entry->branch_id, 'party_id' => $party->id, 'kind' => $data['kind'], 'payment_date' => $data['payment_date'], 'amount' => $amount, 'account_id' => $data['account_id'], 'method' => $data['method'] ?? null, 'reference' => $data['reference'] ?? null, 'notes' => $data['notes'] ?? null]);
             $payment->forceFill(['number' => $number, 'status' => 'posted', 'journal_entry_id' => $entry->id])->save();
             AccountingAuditLog::record($payment, 'PARTY_PAYMENT_POSTED', null, ['number' => $number, 'amount' => $amount, 'party_id' => $party->id, 'journal_entry_id' => $entry->id]);
 

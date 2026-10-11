@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasBranch;
 
 /**
  * A place stock is kept.
@@ -16,6 +17,7 @@ use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 class Warehouse extends AccountingModel
 {
     use BelongsToCompany;
+    use HasBranch;
 
     protected $table = 'accounting_warehouses';
 

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Row = { id: number; employee_code: string; employee_name: string; month: string; kind: string; description: string; amount: string; taxable: boolean; status: string; notes: string | null };
 type Props = {
@@ -89,7 +90,7 @@ export default function PayrollAdjustments({ adjustments, month, status, filters
                     <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Month</th><th>What for</th><th>Kind</th><th className="text-right">Amount</th><th>Status</th><th /></tr></thead><tbody>
                         {adjustments.map((row) => (
                             <tr key={row.id} className="border-t"><td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.month}</td><td>{row.description}{!row.taxable && row.kind === 'earning' && <span className="ml-1 text-xs text-muted-foreground">(not taxed)</span>}</td><td>{row.kind}</td><td className="text-right tabular-nums">{money(row.amount)}</td><td><Badge variant="outline">{row.status}</Badge></td>
-                                <td className="text-right">{row.status === 'open' && permissions['payroll.manage'] && <Button size="sm" variant="ghost" onClick={() => confirm('Cancel this?') && router.post(`/accounting/payroll/adjustments/${row.id}/cancel`, {}, { preserveScroll: true })}>Cancel</Button>}</td></tr>
+                                <td className="text-right">{row.status === 'open' && permissions['payroll.manage'] && <Button size="sm" variant="ghost" onClick={() => confirmThen('Cancel this?', () => router.post(`/accounting/payroll/adjustments/${row.id}/cancel`, {}, { preserveScroll: true }))}>Cancel</Button>}</td></tr>
                         ))}
                         {adjustments.length === 0 && <tr><td colSpan={7} className="py-4 text-center text-muted-foreground">Nothing for {month}.</td></tr>}
                     </tbody></table>

@@ -7,9 +7,11 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountBalanceSnaps
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingDashboardBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingOverviewBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingPeriodBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountingSettingsBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AccountTypeBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\AuditLogBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\BankAccountBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\BranchBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ChartOfAccountBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ControlAccountBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CostCenterBladeController;
@@ -33,6 +35,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxCodeBladeControl
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\TaxRateBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\UserBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\VoucherTypeBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BranchSwitchController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BudgetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
@@ -67,6 +70,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Reports\ReportExportContr
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\TaxController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\VoucherPrintController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppController;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingBranchAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\SetAccountingLocale;
@@ -97,22 +101,36 @@ $resourceRoutes = function (string $uri, string $controller, string $routeName, 
 };
 
 // ── Accounting routes ─────────────────────────────────────────────────────────
-Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, EnsureAccountingFeatureEnabled::class, SetAccountingLocale::class])
+Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::class, EnsureAccountingBranchAccess::class, EnsureAccountingFeatureEnabled::class, SetAccountingLocale::class])
     ->prefix(config('accounting.route_prefix', 'accounting'))
     ->name(config('accounting.route_name_prefix', 'accounting').'.')
     ->group(function () use ($resourceRoutes): void {
         Route::get('/', AccountingDashboardBladeController::class)
             ->name('dashboard')
             ->middleware('can:accounting.view');
+        Route::get('settings', AccountingSettingsBladeController::class)
+            ->name('settings')
+            ->middleware('can:accounting.view');
         Route::get('overview', AccountingOverviewBladeController::class)
             ->name('overview')
-            ->middleware('can:accounting.view');
+            ->middleware('can:reports.trial-balance.view');
         Route::post('locale', LocaleController::class)
             ->name('locale')
             ->middleware('can:accounting.view');
         Route::post('company/switch', CompanySwitchController::class)
             ->name('company.switch')
             ->middleware('can:accounting.view');
+        Route::post('branch/switch', BranchSwitchController::class)
+            ->name('branch.switch')
+            ->middleware('can:accounting.view');
+        Route::get('branches', [BranchBladeController::class, 'index'])->name('branches.index')->middleware('can:branches.view');
+        Route::get('branches/create', [BranchBladeController::class, 'create'])->name('branches.create')->middleware('can:branches.create');
+        Route::post('branches', [BranchBladeController::class, 'store'])->name('branches.store')->middleware('can:branches.create');
+        Route::get('branches/{branch}/edit', [BranchBladeController::class, 'edit'])->name('branches.edit')->middleware('can:branches.update');
+        Route::match(['put', 'patch'], 'branches/{branch}', [BranchBladeController::class, 'update'])->name('branches.update')->middleware('can:branches.update');
+        Route::delete('branches/{branch}', [BranchBladeController::class, 'destroy'])->name('branches.destroy')->middleware('can:branches.delete');
+        Route::post('branches/{branch}/users', [BranchBladeController::class, 'grant'])->name('branches.users.grant')->middleware('can:branches.update');
+        Route::delete('branches/{branch}/users/{user}', [BranchBladeController::class, 'revoke'])->name('branches.users.revoke')->middleware('can:branches.update')->whereNumber('user');
 
         $resourceRoutes('account-types', AccountTypeBladeController::class, 'account-types', 'account-types');
         $resourceRoutes('currencies', CurrencyBladeController::class, 'currencies', 'currencies');

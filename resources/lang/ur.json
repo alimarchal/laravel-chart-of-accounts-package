@@ -628,5 +628,16 @@
     "Runs": "رنز",
     "submitted": "جمع شدہ",
     "approved": "منظور شدہ",
-    "withdrawn": "واپس لیا گیا"
+    "withdrawn": "واپس لیا گیا",
+    "Settings": "سیٹنگز",
+    "Accounting settings": "اکاؤنٹنگ سیٹنگز",
+    "Users & access": "یوزرز اور رسائی",
+    "Setup": "ترتیب",
+    "Audit": "آڈٹ",
+    "Roles & permissions": "رولز اور پرمیشنز",
+    "Branches": "برانچیں",
+    "Branch": "برانچ",
+    "Banking": "بینکنگ",
+    "Operations": "آپریشنز",
+    "Journal & ledger": "جرنل اور لیجر"
 }

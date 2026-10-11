@@ -69,33 +69,35 @@ $(document).ready(function() {
 
 @php
     // The layout of the host application, in this order: accounting.blade_layout (ACCOUNTING_BLADE_LAYOUT, a component name such as
-    // "app-layout" or "layouts::app"); Breeze's <x-app-layout> when the application really has that component; the layout Livewire
-    // renders its pages in (livewire.component_layout: "layouts::app" in the Livewire 4 starter kit, "components.layouts.app" in Livewire 3)
-    // when that view exists. Anything else gets this package's own page layout.
-    $livewireLayout = (string) config('livewire.component_layout', '');
-    $hostLayout = config('accounting.blade_layout')
-        ?: (class_exists(\App\View\Components\AppLayout::class) || view()->exists('components.app-layout')
-            ? 'app-layout'
-            : ($livewireLayout !== '' && view()->exists($livewireLayout)
-                ? (str_starts_with($livewireLayout, 'components.') ? substr($livewireLayout, 11) : $livewireLayout)
-                : null));
+    // "app-layout" or "layouts::app"); <x-app-layout> (Breeze, Jetstream) when the application really has that component; the layout
+    // Livewire renders its pages in (livewire.component_layout: "layouts::app" in the Livewire 4 starter kit, "components.layouts.app" in
+    // Livewire 3) when that view exists. Anything else gets this package's own page layout. See Support\BladeKit.
+    $hostLayout = \Alimarchal\LaravelChartOfAccounts\Support\BladeKit::layout();
+    $kit = \Alimarchal\LaravelChartOfAccounts\Support\BladeKit::kit();
 @endphp
 @if($hostLayout)
     <x-dynamic-component :component="$hostLayout" :title="$title">
         @if($hostLayout === 'app-layout')
             @if(isset($header))
-                <x-slot name="header">{{ $header }}</x-slot>
+                <x-slot name="header"><div class="acc-kit acc-kit-{{ $kit }}">{{ $header }}</div></x-slot>
             @endif
-        @elseif(isset($header))
-            {{-- The layout of a starter kit has no header slot: the page title and its buttons go above the content. --}}
-            <div class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">{{ $header }}</div>
         @endif
-        <x-accounting::company-bar />
-        {{ $slot }}
-        @if($hostLayout !== 'app-layout')
-            @stack('styles')
-            @stack('scripts')
-        @endif
+        <x-accounting::kit-theme :kit="$kit" />
+        <x-accounting::feedback />
+        <div class="acc-kit acc-kit-{{ $kit }}">
+            @if($hostLayout !== 'app-layout' && isset($header))
+                {{-- The layout of a starter kit has no header slot: the page title and its buttons go above the content. --}}
+                <div class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">{{ $header }}</div>
+            @endif
+            <x-accounting::company-bar />
+            {{ $slot }}
+        </div>
+        {{-- Jetstream, Breeze and the Livewire kit print none (or only some) of these stacks: print the ones their layout leaves out. --}}
+        @foreach(['styles', 'scripts', 'modals'] as $acStack)
+            @unless(\Alimarchal\LaravelChartOfAccounts\Support\BladeKit::hostRenders($acStack))
+                @stack($acStack)
+            @endunless
+        @endforeach
     </x-dynamic-component>
 @else
     <!DOCTYPE html>
@@ -156,6 +158,7 @@ $(document).ready(function() {
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">{{ $header }}</div>
         </header>
         @endif
+        <x-accounting::feedback />
         <main><x-accounting::company-bar />{{ $slot }}</main>
         @stack('modals')
         @if(class_exists(\Livewire\Livewire::class))

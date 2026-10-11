@@ -101,7 +101,8 @@ it('adds the Accounting link to mainNavItems of the React starter kit, with its 
 
     expect($first[0]['status'])->toBe('added')->and($second[0]['status'])->toBe('present')
         ->and($result)->toContain("{ title: 'Accounting', href: '/settings-config', icon: Calculator }")
-        ->toContain("import { BookOpen, Calculator, Folder, LayoutGrid } from 'lucide-react';")
+        ->toContain("import { BookOpen, Calculator, Folder, LayoutGrid, Settings2 } from 'lucide-react';")
+        ->toContain("{ title: 'Accounting settings', href: '/settings-config/settings', icon: Settings2 }")
         ->and(substr_count($result, 'Calculator'))->toBe(2)
         ->and(strpos($result, 'icon: LayoutGrid'))->toBeLessThan(strpos($result, "title: 'Accounting'"))
         ->and(strpos($result, "title: 'Accounting'"))->toBeLessThan(strpos($result, 'const footerNavItems'));
@@ -240,11 +241,12 @@ it('asks the setup questions and applies the answers', function (): void {
     setupProject($this);
 
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true])
-        ->expectsChoice('Which screens do you want?', 'React / Inertia', ['Livewire / Blade', 'React / Inertia', 'REST API only'])
+        ->expectsChoice('Which screens do you want?', 'React (Inertia)', ['Livewire starter kit (Flux)', 'Blade (Jetstream / Breeze)', 'React (Inertia)', 'REST API only'])
         ->expectsQuestion('Base currency code (ISO 4217, for example PKR, USD, EUR)', 'pkr')
         ->expectsChoice('Which chart of accounts should the company start with?', 'School chart', ['ERPNext standard chart (recommended)', 'General business chart', 'School chart'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'yes')
         ->expectsQuestion('Short code of your first company (letters and digits)', 'school')
+        ->expectsConfirmation('Does the company have several branches (head office, campuses, shops) to book entries to?', 'yes')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'yes')
         ->expectsQuestion('Entries from which amount (in the base currency) need approval? (0 = every entry)', '100000')
         ->expectsConfirmation('May a user approve an entry that he or she made themselves? (not recommended)', 'no')
@@ -264,7 +266,7 @@ it('asks the setup questions and applies the answers', function (): void {
     $env = new EnvFile($this->project.'/.env');
 
     expect($env->get('ACCOUNTING_UI_DRIVER'))->toBe('inertia')->and($env->get('ACCOUNTING_BASE_CURRENCY'))->toBe('PKR')
-        ->and($env->get('ACCOUNTING_CHART_PRESET'))->toBe('school')->and($env->get('ACCOUNTING_MULTI_COMPANY'))->toBe('true')
+        ->and($env->get('ACCOUNTING_CHART_PRESET'))->toBe('school')->and($env->get('ACCOUNTING_MULTI_COMPANY'))->toBe('true')->and($env->get('ACCOUNTING_BRANCHES'))->toBe('true')
         ->and($env->get('ACCOUNTING_DEFAULT_COMPANY'))->toBe('SCHOOL')
         ->and($env->get('ACCOUNTING_APPROVALS_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_APPROVAL_THRESHOLD'))->toBe('100000')
         ->and($env->get('ACCOUNTING_ALLOW_SELF_APPROVAL'))->toBe('false')
@@ -279,6 +281,7 @@ it('asks for the WhatsApp credentials only in live mode, and the FBR and webhook
 
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting', '--admin-email' => 'nobody'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
+        ->expectsConfirmation('Does the company have several branches (head office, campuses, shops) to book entries to?', 'no')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no');
     $exit = declineGroups($command, [
         'whatsapp' => fn ($c) => $c
@@ -337,6 +340,7 @@ it('rejects an administrator password that was typed differently the second time
 
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--no-env' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
+        ->expectsConfirmation('Does the company have several branches (head office, campuses, shops) to book entries to?', 'no')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no');
     declineGroups($command)
         ->expectsQuestion('Email of the administrator (super-admin)', 'head@school.test')
@@ -367,4 +371,82 @@ it('patches the real files of the official Laravel starter kits (Livewire sideba
         ->and(substr_count($header, "route('accounting.dashboard')"))->toBe(2)                    // the top bar and the mobile menu each have a Dashboard item
         ->and(substr_count($sidebar, "route('accounting.dashboard')"))->toBe(1)
         ->and(file_get_contents($this->project.'/resources/js/components/app-sidebar.tsx'))->toContain('icon: Calculator }, // accounting:menu');
+});
+
+it('patches the real navigation of Jetstream and Breeze: the top bar and the mobile menu, once', function (string $fixture, string $file): void {
+    $original = (string) file_get_contents(__DIR__.'/../../Fixtures/starter-kits/'.$fixture);
+    writeFile($this->project.'/'.$file, $original);
+    $menu = new StarterKitMenu;
+
+    $first = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $second = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $result = (string) file_get_contents($this->project.'/'.$file);
+
+    expect($first[0]['status'])->toBe('added')->and($second[0]['status'])->toBe('present')
+        ->and(substr_count($result, "route('accounting.dashboard')"))->toBe(2)                       // x-nav-link and x-responsive-nav-link
+        ->and($result)->toContain("routeIs('accounting.*')")->toContain("__('Accounting')")->toContain('{{-- accounting:menu --}}')
+        ->and(substr_count($result, "route('dashboard')"))->toBe(substr_count($original, "route('dashboard')"));   // the Dashboard items are untouched
+})->with([
+    'Jetstream (Livewire)' => ['jetstream-navigation-menu.blade.php', 'resources/views/navigation-menu.blade.php'],
+    'Breeze' => ['breeze-navigation.blade.php', 'resources/views/layouts/navigation.blade.php'],
+]);
+
+it('lets Tailwind 3 (Jetstream, Breeze) scan the screens of the package through tailwind.config.js', function (): void {
+    writeFile($this->project.'/resources/css/app.css', "@tailwind base;\n@tailwind components;\n@tailwind utilities;\n");
+    writeFile($this->project.'/tailwind.config.js', "export default {\n    content: [\n        './resources/views/**/*.blade.php',\n    ],\n};\n");
+    $menu = new StarterKitMenu;
+
+    expect($menu->tailwindSource($this->project))->toBe('added')->and($menu->tailwindSource($this->project))->toBe('present')
+        ->and(file_get_contents($this->project.'/tailwind.config.js'))->toContain("'./vendor/alimarchal/laravel-chart-of-accounts/resources/views/**/*.blade.php',")
+        ->toContain("'./resources/views/**/*.blade.php'");
+});
+
+it('has three kinds of screens: --ui=livewire dresses the Blade screens for Flux, --ui=blade lets them follow Jetstream / Breeze', function (string $ui, string $driver, string $kit): void {
+    setupProject($this, "APP_NAME=Laravel\n");
+
+    $this->artisan('accounting:install', ['--setup-only' => true, '--no-interaction' => true, '--no-menu' => true, '--ui' => $ui, '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])->assertSuccessful();
+    $env = new EnvFile($this->project.'/.env');
+
+    expect($env->get('ACCOUNTING_UI_DRIVER'))->toBe($driver)->and($env->get('ACCOUNTING_BLADE_KIT'))->toBe($kit);
+})->with([
+    'livewire' => ['livewire', 'blade', 'flux'],
+    'blade (Jetstream / Breeze)' => ['blade', 'blade', 'auto'],
+]);
+
+it('writes no kit for React', function (): void {
+    setupProject($this, "APP_NAME=Laravel\n");
+
+    $this->artisan('accounting:install', ['--setup-only' => true, '--no-interaction' => true, '--no-menu' => true, '--ui' => 'react', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])->assertSuccessful();
+
+    expect((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_UI_DRIVER'))->toBe('inertia')->and((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_BLADE_KIT'))->toBeNull();
+});
+
+it('adds an Accounting settings link next to Accounting, and to an installation that only has Accounting', function (): void {
+    $kits = __DIR__.'/../../Fixtures/starter-kits';
+    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', (string) file_get_contents($kits.'/livewire-sidebar.blade.php'));
+    writeFile($this->project.'/resources/views/navigation-menu.blade.php', (string) file_get_contents($kits.'/jetstream-navigation-menu.blade.php'));
+    writeFile($this->project.'/resources/js/components/app-sidebar.tsx', (string) file_get_contents($kits.'/react-app-sidebar.tsx'));
+    $menu = new StarterKitMenu;
+
+    $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $menu->apply('inertia', $this->project, '/accounting', 'accounting.dashboard');
+    $again = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $sidebar = (string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php');
+    $jetstream = (string) file_get_contents($this->project.'/resources/views/navigation-menu.blade.php');
+
+    expect(array_column($again, 'status'))->each->toBe('present')
+        ->and(substr_count($sidebar, "route('accounting.settings')"))->toBe(1)->and($sidebar)->toContain('icon="cog-6-tooth"')->toContain("__('Accounting settings')")
+        ->and($sidebar)->toContain("routeIs('accounting.*') && ! request()->routeIs('accounting.settings')")
+        ->and(substr_count($jetstream, "route('accounting.settings')"))->toBe(2)                    // top bar and mobile menu
+        ->and($jetstream)->toContain("routeIs('accounting.settings')");
+
+    // An installation from before the Settings part: the Accounting block is there, the settings one is not.
+    $old = str_replace(" && ! request()->routeIs('accounting.settings')", '', (string) preg_replace('/\n[ \t]*\{\{-- accounting:menu-settings --\}\}.*?@endif/s', '', $sidebar));
+    expect($old)->not->toContain('accounting.settings');
+    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', $old);
+    $upgrade = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+
+    expect($upgrade[0]['status'])->toBe('added')
+        ->and(substr_count((string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php'), "route('accounting.settings')"))->toBe(1)
+        ->and((string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php'))->toContain("routeIs('accounting.*') && ! request()->routeIs('accounting.settings')");
 });
