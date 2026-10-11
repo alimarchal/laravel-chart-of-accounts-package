@@ -3,10 +3,10 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\Reports;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
-use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Reports\TrialBalanceReport;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class TrialBalanceBladeController extends Controller
@@ -27,25 +27,23 @@ class TrialBalanceBladeController extends Controller
             $asOfDate = now()->format('Y-m-d');
         }
 
-        $totals = DB::table('accounting_journal_entry_lines as jel')
-            ->join('accounting_journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-            ->whereIn('je.company_id', CurrentCompany::ids())
-            ->where('je.status', 'posted')
-            ->whereDate('je.entry_date', '<=', $asOfDate)
-            ->selectRaw('COALESCE(SUM(jel.base_debit), 0) as total_debits')
-            ->selectRaw('COALESCE(SUM(jel.base_credit), 0) as total_credits')
-            ->first();
+        $filters = $request->validate(['search' => ['nullable', 'string', 'max:100'], 'account_type' => ['nullable', 'string'], 'hide_zero' => ['nullable', 'boolean']]);
+        $report = app(TrialBalanceReport::class);
+        $rows = $report->rows([...$filters, 'as_of_date' => (string) $asOfDate]);
+        $summary = $report->totals($rows);
 
         $trialBalance = (object) [
-            'total_debits' => (float) ($totals->total_debits ?? 0),
-            'total_credits' => (float) ($totals->total_credits ?? 0),
-            'difference' => (float) ($totals->total_debits ?? 0) - (float) ($totals->total_credits ?? 0),
+            'total_debits' => $summary['total_debit'],
+            'total_credits' => $summary['total_credit'],
+            'difference' => $summary['difference'],
         ];
 
         $accountingPeriods = AccountingPeriod::orderBy('end_date', 'desc')->get();
 
         return view('accounting::reports.trial-balance', [
             'trialBalance' => $trialBalance,
+            'rows' => $rows,
+            'filters' => ListFilters::current($request, ['search', 'account_type', 'hide_zero']),
             'asOfDate' => $asOfDate,
             'periodId' => $periodId,
             'accountingPeriods' => $accountingPeriods,

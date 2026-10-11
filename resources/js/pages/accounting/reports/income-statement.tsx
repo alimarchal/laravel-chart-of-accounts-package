@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { Download } from 'lucide-react';
 import { Fragment } from 'react';
+import FilterBar, { filterQuery } from '@/components/accounting/filter-bar';
 import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
 import { useAccountingI18n } from '@/lib/i18n';
@@ -27,7 +28,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Income Statement', href: '/accounting/reports/income-statement' },
 ];
 
-export default function IncomeStatement({ rows }: { rows: StatementRow[] }) {
+export default function IncomeStatement({ rows, filters }: { rows: StatementRow[]; filters: Record<string, string | null> }) {
     useAccountingI18n();
     const grouped = rows.reduce<Record<string, StatementRow[]>>(
         (carry, row) => {
@@ -50,6 +51,15 @@ export default function IncomeStatement({ rows }: { rows: StatementRow[] }) {
         <>
             <Head title="Income Statement" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <FilterBar
+                    path="/accounting/reports/income-statement"
+                    values={filters}
+                    fields={[
+                        { name: 'date_from', label: 'From', type: 'date' },
+                        { name: 'date_to', label: 'To', type: 'date' },
+                    ]}
+                />
+
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <div>
                         <h1 className="text-2xl font-semibold">
@@ -64,7 +74,7 @@ export default function IncomeStatement({ rows }: { rows: StatementRow[] }) {
                         {['csv', 'xlsx', 'pdf'].map((format) => (
                             <Button key={format} asChild variant="outline">
                                 <a
-                                    href={`/accounting/reports/income-statement/export/${format}`}
+                                    href={`/accounting/reports/income-statement/export/${format}${filterQuery(filters)}`}
                                 >
                                     <Download className="size-4" />
                                     {format.toUpperCase()}

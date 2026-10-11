@@ -27,9 +27,13 @@ class ReportApiController extends Controller
 {
     use ResolvesPerPage;
 
-    public function trialBalance(TrialBalanceReport $report): JsonResponse
+    public function trialBalance(Request $request, TrialBalanceReport $report): JsonResponse
     {
-        $rows = $report->rows();
+        $filters = $request->validate([
+            'as_of_date' => ['nullable', 'date'], 'date_from' => ['nullable', 'date', 'before_or_equal:as_of_date'], 'search' => ['nullable', 'string', 'max:100'],
+            'account_type' => ['nullable', 'string'], 'report_group' => ['nullable', 'string'], 'hide_zero' => ['nullable', 'boolean'],
+        ]);
+        $rows = $report->rows($filters);
 
         return response()->json(['data' => $rows, 'totals' => $report->totals($rows)]);
     }

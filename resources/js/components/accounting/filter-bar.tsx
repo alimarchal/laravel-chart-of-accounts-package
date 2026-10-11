@@ -87,3 +87,14 @@ export default function FilterBar({ path, fields, values, preserve = {} }: Props
         </form>
     );
 }
+
+/** The active filters as a query string ("?as_of_date=…"), for links that must carry them (exports, prints). */
+export const filterQuery = (values: Record<string, string | number | null | undefined>): string => {
+    const query = new URLSearchParams(
+        Object.entries(values)
+            .filter(([, value]) => value !== null && value !== undefined && String(value) !== '')
+            .map(([key, value]) => [key, String(value)]),
+    ).toString();
+
+    return query === '' ? '' : `?${query}`;
+};
