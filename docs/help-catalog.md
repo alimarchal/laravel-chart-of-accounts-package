@@ -2,7 +2,7 @@
 
 Generated from the routes the package registers (`python3 docs/generate-route-catalog.py`); do not edit by hand.
 
-- **381 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **311 API endpoints**.
+- **383 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **313 API endpoints**.
 - Web screens live under `/accounting` (users, roles and the feature switches under `/settings` with the Blade driver); the API under `/api/v1/accounting` (see the prefixes in `config/accounting.php`).
 - *Permission* is the Spatie permission a user needs; a user without it gets 403. A feature that is switched off answers 404 (see *Feature switches* in the README).
 - The API is described in full in [`openapi.yaml`](openapi.yaml) and the [Postman collection](postman_collection.json).
@@ -44,6 +44,7 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 - [FBR invoices](#fbr-invoices) (2)
 - [Chart templates](#chart-templates) (2)
 - [Statement layout](#statement-layout) (5)
+- [Other](#other) (2)
 - [API endpoints](#api-endpoints)
 
 ## Home and overview
@@ -602,6 +603,13 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 | GET | `/accounting/report-mapping` |  | Report lines and the mapping of every account | `report-mapping.manage` |
 | POST | `/accounting/report-mapping/recommended` |  | Map the seeded accounts to their standard lines | `report-mapping.manage` |
 
+## Other
+
+| Method | Screen or action (React) | Blade driver | What it does | Permission |
+|--------|--------|--------------|--------------|------------|
+| GET | `/accounting/account-roles` | `/settings/account-roles` | Which account plays which part for the modules (cash, bank, salary expense, receivables …) | `accounting.manage-settings` |
+| PUT | `/accounting/account-roles` | `/settings/account-roles` | Give roles other accounts | `accounting.manage-settings` |
+
 ## API endpoints
 
 Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorization: Bearer ...`).
@@ -1036,3 +1044,5 @@ Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorizati
 |--------|----------|--------------|------------|
 | GET | `/features` | Every optional module and payroll feature with its switch | `accounting.manage-settings` |
 | PUT | `/features` | Switch features on or off | `accounting.manage-settings` |
+| GET | `/account-roles` | Which account plays which part for the modules (cash, bank, salary expense, receivables …) | `accounting.manage-settings` |
+| PUT | `/account-roles` | Give roles other accounts | `accounting.manage-settings` |
