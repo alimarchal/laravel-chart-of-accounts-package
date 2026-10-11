@@ -24,4 +24,15 @@
             @endforeach
         </select>
     </div>
+    @if(!empty($branches))
+    <div class="md:col-span-2">
+        <x-accounting::label for="branches" value="Branches (who works where)" />
+        <select id="branches" name="branches[]" multiple class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            @foreach($branches as $branch)
+                <option value="{{ $branch['id'] }}" {{ in_array($branch['id'], (array) old('branches', $userBranchIds ?? [])) ? 'selected' : '' }}>{{ $branch['name'] }} ({{ $branch['code'] }})</option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-xs text-gray-500">The user sees and books only the data of these branches (entries, invoices, payments, reports). Leave empty to work in all branches. Admins and super-admins always work in all branches.</p>
+    </div>
+    @endif
 </div>

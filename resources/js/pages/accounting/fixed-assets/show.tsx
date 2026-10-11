@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Account = { id: number; account_code: string; account_name: string; type: string };
 type Asset = {
@@ -25,7 +26,7 @@ export default function FixedAssetShow({ asset, history, accounts, today }: Prop
     const form = useForm({ disposal_date: today, proceeds: '', proceeds_account_id: '', gain_loss_account_id: '', notes: '' });
     const dispose = (event: FormEvent) => {
         event.preventDefault();
-        if (confirm('Dispose of this asset? Cost and accumulated depreciation will be removed.')) form.post(`/accounting/fixed-assets/${asset.id}/dispose`);
+        confirmThen('Dispose of this asset? Cost and accumulated depreciation will be removed.', () => form.post(`/accounting/fixed-assets/${asset.id}/dispose`));
     };
     const facts: Array<[string, string]> = [
         ['Acquired', asset.acquisition_date], ['In service', asset.in_service_date], ['Cost', money(asset.cost)], ['Salvage value', money(asset.salvage_value)],
@@ -42,7 +43,7 @@ export default function FixedAssetShow({ asset, history, accounts, today }: Prop
                         <Badge variant="outline">{asset.status}</Badge>
                         {asset.status === 'active' && permissions['fixed-assets.update'] && <Button asChild variant="outline"><Link href={`/accounting/fixed-assets/${asset.id}/edit`}>Edit</Link></Button>}
                         {permissions['fixed-assets.delete'] && asset.status === 'active' && !asset.acquisition_entry_id && history.length === 0 && (
-                            <Button variant="ghost" onClick={() => confirm('Delete this asset?') && router.delete(`/accounting/fixed-assets/${asset.id}`)}>Delete</Button>
+                            <Button variant="ghost" onClick={() => confirmThen('Delete this asset?', () => router.delete(`/accounting/fixed-assets/${asset.id}`))}>Delete</Button>
                         )}
                     </div>
                 </div>

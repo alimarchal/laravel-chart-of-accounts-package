@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type LeaveRow = { id: number; employee_code: string; employee_name: string; leave_type: string; is_paid: boolean; from_date: string; to_date: string; days: string; status: string; notes: string | null };
 type LeaveType = { id: number; code: string; name: string; is_paid: boolean; annual_days: string; is_active: boolean };
@@ -56,7 +57,7 @@ export default function PayrollLeaves({ leaves, types, employees, balances, year
                             {leaves.map((row) => (
                                 <tr key={row.id} className="border-t">
                                     <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.leave_type}{row.is_paid ? '' : ' (unpaid)'}</td><td>{row.from_date}</td><td>{row.to_date}</td><td className="text-right tabular-nums">{Number(row.days)}</td><td><Badge variant="outline">{row.status}</Badge></td>
-                                    <td className="text-right">{canManage && row.status === 'approved' && <Button variant="ghost" size="sm" onClick={() => confirm('Cancel this leave?') && router.post(`/accounting/payroll/leaves/${row.id}/cancel`)}>Cancel</Button>}</td>
+                                    <td className="text-right">{canManage && row.status === 'approved' && <Button variant="ghost" size="sm" onClick={() => confirmThen('Cancel this leave?', () => router.post(`/accounting/payroll/leaves/${row.id}/cancel`))}>Cancel</Button>}</td>
                                 </tr>
                             ))}
                             {leaves.length === 0 && <tr><td colSpan={7} className="py-4 text-center text-muted-foreground">No leave recorded yet.</td></tr>}
@@ -77,7 +78,7 @@ export default function PayrollLeaves({ leaves, types, employees, balances, year
                     <CardContent className="space-y-4">
                         <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Paid</th><th className="text-right">Days a year</th><th /></tr></thead><tbody>
                             {types.map((row) => (<tr key={row.id} className="border-t"><td className="py-1 font-medium">{row.code}</td><td>{row.name}</td><td>{row.is_paid ? 'yes' : 'no'}</td><td className="text-right tabular-nums">{Number(row.annual_days) || '—'}</td>
-                                <td className="text-right">{canManage && <Button variant="ghost" size="sm" onClick={() => confirm('Delete this leave type?') && router.delete(`/accounting/payroll/leave-types/${row.id}`)}>Delete</Button>}</td></tr>))}
+                                <td className="text-right">{canManage && <Button variant="ghost" size="sm" onClick={() => confirmThen('Delete this leave type?', () => router.delete(`/accounting/payroll/leave-types/${row.id}`))}>Delete</Button>}</td></tr>))}
                         </tbody></table>
                         {canManage && (
                             <form onSubmit={addType} className="grid gap-3 md:grid-cols-5">

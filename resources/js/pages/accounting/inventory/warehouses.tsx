@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Props = { warehouses: Array<{ id: number; code: string; name: string; address: string | null; is_active: boolean }>; filters: Record<string, string | null> };
 
@@ -42,7 +43,7 @@ export default function InventoryWarehouses({ warehouses, filters }: Props) {
                                     <td className="py-2 font-medium">{row.code}</td><td>{row.name}</td><td className="text-muted-foreground">{row.address}</td><td>{row.is_active ? '' : 'inactive'}</td>
                                     <td className="text-right">
                                         {permissions['inventory.manage'] && <Button variant="ghost" size="sm" onClick={() => router.put(`/accounting/inventory/warehouses/${row.id}`, { code: row.code, name: row.name, address: row.address, is_active: !row.is_active })}>{row.is_active ? 'Deactivate' : 'Activate'}</Button>}
-                                        {permissions['inventory.manage'] && <Button variant="ghost" size="sm" onClick={() => confirm('Delete this warehouse?') && router.delete(`/accounting/inventory/warehouses/${row.id}`)}>Delete</Button>}
+                                        {permissions['inventory.manage'] && <Button variant="ghost" size="sm" onClick={() => confirmThen('Delete this warehouse?', () => router.delete(`/accounting/inventory/warehouses/${row.id}`))}>Delete</Button>}
                                     </td>
                                 </tr>
                             ))}

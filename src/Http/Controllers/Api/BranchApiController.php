@@ -24,7 +24,7 @@ class BranchApiController extends Controller
 
         return response()->json([
             'data' => ListFilters::collection(
-                Branch::query()->orderByDesc('is_head_office')->orderBy('name')->get()->map(fn (Branch $branch) => [...$this->present($branch), 'current' => $current === (int) $branch->getKey()])->values(),
+                Branch::query()->when(CurrentBranch::accessibleIds() !== null, fn ($query) => $query->whereIn('id', CurrentBranch::accessibleIds()))->orderByDesc('is_head_office')->orderBy('name')->get()->map(fn (Branch $branch) => [...$this->present($branch), 'current' => $current === (int) $branch->getKey()])->values(),
                 $request, ['code', 'name', 'city', 'address', 'phone'], ['is_active'],
             ),
             'branches_enabled' => CurrentBranch::enabled(),

@@ -202,6 +202,14 @@ component: `ACCOUNTING_BLADE_LAYOUT=layouts::app`.
 | ![The filters of a list, opened with the filter button, in the Livewire starter kit](docs/images/kit-livewire-flux-filters-open.jpg) | ![The filters of a list, opened with the filter button, in Jetstream](docs/images/kit-jetstream-filters-open.jpg) |
 | ![Working in one branch: the Branch switcher above the page limits the list](docs/images/kit-livewire-flux-branch-karachi.jpg) | ![The branches screen in Jetstream](docs/images/kit-jetstream-branches.jpg) |
 
+| Filters: type a value and press *Apply filters* (Livewire 4 kit) | The list after the filter |
+|---|---|
+| ![The filter panel opened with a value typed in, in the Livewire 4 starter kit](docs/images/kit-livewire4-filter-typed.jpg) | ![The list narrowed to the entries that match, in the Livewire 4 starter kit](docs/images/kit-livewire4-filter-applied.jpg) |
+
+| A confirm dialog instead of the browser's own (Jetstream) | The same in React |
+|---|---|
+| ![Delete asks in a modal: Cancel or Delete](docs/images/kit-jetstream-delete-modal.jpg) | ![Delete asks in a modal in React](docs/images/kit-react-delete-modal.jpg) |
+
 Checked with a browser in three real apps (the Laravel Livewire starter kit of Livewire 3 and the current one of Livewire 4, and Jetstream), each after a real `accounting:install`: every one of the 89 list, report and form pages opens without errors, every filter button opens its filters and
 applies them, the "add" forms open and refuse an empty submit, a journal entry can be created from the form, a branch can be created, edited and filtered, and the branch switcher limits lists and reports. The React screens of the branches were checked the same way.
 
@@ -1294,7 +1302,9 @@ After upgrading an existing installation run `php artisan accounting:update` onc
 | Booked to a branch | Journal entries, invoices/bills and payments. An invoice, bill or payment gives its branch to the entry it posts; a reversal keeps the branch of the original; the year-end close is for the whole company. Entries with no branch are "head office / not allocated". |
 | Working branch | Pick it in the **Branch** switcher (above every Blade page and on the React dashboard; add `<BranchSwitcher />` from `@/components/accounting/branch-switcher` to your sidebar), or send `X-Branch: LHR` (code or id) to the API. New records go to it; lists and reports follow it. "All branches" shows the whole company. |
 | Reports by branch | Trial balance, general ledger, account statement, income statement, balance sheet, cash flow, ageing, dashboard KPIs, financial statements. The branches add up to the company. |
-| Who sees what | A user given branches (Branches screen → *People who work in this branch*, or `POST /branches/{id}/users`) works in **those only**: other branches' entries, invoices and reports are not even found, and `X-Branch` of another branch is `403`. A user with no branch, and a super-admin, work in all branches. A user with several branches chooses the branch of each entry. |
+| Who sees what | **Admins and super-admins always work in every branch** (`accounting.branches.unrestricted_roles`). A user given branches (Branches screen → *People who work in this branch*, or `POST /branches/{id}/users`) works in **those only**: other branches' entries, invoices and reports are not even found, and `X-Branch` of another branch is `403`. A user with no branch, and a super-admin, work in all branches. A user with several branches chooses the branch of each entry. |
+| Users | Tick the branches when you create or edit a user (React: *Users*, Blade: *Settings → Users*, API: `branches: [ids]` on `POST/PATCH /users`). The user sees and books only the data of those branches. |
+| What belongs to a branch | Journal entries, invoices/bills, payments, customers/suppliers, bank accounts, employees, fixed assets and warehouses. Anything created while a working branch is picked (or by a user with a single branch) belongs to it; a user of several branches must pick the working branch first. Records without a branch (all data from before branches were turned on) are for people without a branch restriction. Chart of accounts, periods, tax codes and currencies stay company-wide. |
 | Deleting | A branch with entries, invoices, bills or payments cannot be deleted: deactivate it. Inactive branches cannot be chosen. |
 | Permissions | `branches.view`, `branches.create`, `branches.update`, `branches.delete` (admin: all; accountant and auditor: view). |
 

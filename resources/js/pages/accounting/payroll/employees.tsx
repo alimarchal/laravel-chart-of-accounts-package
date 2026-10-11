@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Props = { filters: Record<string, string | null>; costCenters: Array<{ id: number; code: string; name: string }>; employees: Array<{ id: number; code: string; name: string; designation: string | null; join_date: string; leave_date: string | null; base_salary: string; withhold_tax: boolean; is_active: boolean }> };
 
@@ -47,7 +48,7 @@ export default function PayrollEmployees({ employees, filters, costCenters }: Pr
                                     <td className="text-right tabular-nums">{money(row.base_salary)}</td><td>{row.withhold_tax ? 'withheld' : ''}</td>
                                     <td className="text-right">
                                         {permissions['payroll.manage'] && <Button asChild variant="ghost" size="sm"><Link href={`/accounting/payroll/employees/${row.id}/edit`}>Edit</Link></Button>}
-                                        {permissions['payroll.manage'] && <Button variant="ghost" size="sm" onClick={() => confirm('Delete this employee?') && router.delete(`/accounting/payroll/employees/${row.id}`)}>Delete</Button>}
+                                        {permissions['payroll.manage'] && <Button variant="ghost" size="sm" onClick={() => confirmThen('Delete this employee?', () => router.delete(`/accounting/payroll/employees/${row.id}`))}>Delete</Button>}
                                     </td>
                                 </tr>
                             ))}

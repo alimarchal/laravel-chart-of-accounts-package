@@ -110,7 +110,7 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
             ->middleware('can:accounting.view');
         Route::get('overview', AccountingOverviewController::class)
             ->name('overview')
-            ->middleware('can:accounting.view');
+            ->middleware('can:reports.trial-balance.view');
         Route::post('locale', LocaleController::class)
             ->name('locale')
             ->middleware('can:accounting.view');

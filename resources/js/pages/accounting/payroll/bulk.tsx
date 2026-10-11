@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Employee = { id: number; code: string; name: string; salary_grade_id: number | null; base_salary: string; is_active: boolean };
 type Props = {
@@ -95,7 +96,7 @@ export default function PayrollBulk({ employees, components, grades, preview, to
                                 <Who employees={employees} grades={grades} data={raise.data} set={(key, value) => raise.setData(key as 'salary_grade_id', value as never)} errors={raise.errors} />
                                 <div className="flex gap-2">
                                     <Button type="button" variant="outline" disabled={raise.processing} onClick={() => raise.post('/accounting/payroll/revisions/preview', { preserveScroll: true })}>Preview</Button>
-                                    <Button type="button" disabled={raise.processing || !preview} onClick={() => confirm(`Apply to ${preview?.length ?? 0} employees?`) && raise.post('/accounting/payroll/revisions')}>Apply</Button>
+                                    <Button type="button" disabled={raise.processing || !preview} onClick={() => confirmThen(`Apply to ${preview?.length ?? 0} employees?`, () => raise.post('/accounting/payroll/revisions'))}>Apply</Button>
                                 </div>
                                 {preview && (
                                     <div className="overflow-x-auto md:col-span-4">

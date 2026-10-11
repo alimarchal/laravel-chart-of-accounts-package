@@ -21,7 +21,7 @@ class BranchBladeController extends Controller
     {
         abort_unless(CurrentBranch::enabled(), 404);
 
-        $branches = QueryBuilder::for(Branch::query(), request())
+        $branches = QueryBuilder::for(Branch::query()->when(CurrentBranch::accessibleIds() !== null, fn ($query) => $query->whereIn('id', CurrentBranch::accessibleIds())), request())
             ->allowedFilters(
                 AllowedFilter::partial('code'),
                 AllowedFilter::partial('name'),

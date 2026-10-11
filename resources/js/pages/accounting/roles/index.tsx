@@ -5,6 +5,7 @@ import Heading from '@/components/heading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Role = {
     id: number;
@@ -18,15 +19,11 @@ export default function Roles({ roles, filters }: { roles: Role[]; filters: Reco
     const { flash } = useAccounting();
 
     const remove = (role: Role) => {
-        if (
-            window.confirm(
-                `Delete role ${role.name}? ${role.users_count ?? 0} user(s) will lose it.`,
-            )
-        ) {
+        confirmThen(`Delete role ${role.name}? ${role.users_count ?? 0} user(s) will lose it.`, () => {
             router.delete(`/accounting/roles/${role.id}`, {
                 preserveScroll: true,
             });
-        }
+        });
     };
 
     return (

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Statement = 'balance_sheet' | 'income_statement';
 
@@ -420,18 +421,14 @@ export default function ReportMapping({
                                                                     className="size-6"
                                                                     title="Delete line"
                                                                     onClick={() => {
-                                                                        if (
-                                                                            window.confirm(
-                                                                                `Delete the line ${line.name}?`,
-                                                                            )
-                                                                        ) {
+                                                                        confirmThen(`Delete the line ${line.name}?`, () => {
                                                                             router.delete(
                                                                                 `/accounting/report-lines/${line.id}`,
                                                                                 {
                                                                                     preserveScroll: true,
                                                                                 },
                                                                             );
-                                                                        }
+                                                                        });
                                                                     }}
                                                                 >
                                                                     <Trash2 className="size-3.5" />

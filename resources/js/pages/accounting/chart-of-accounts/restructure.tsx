@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Account = {
     id: number;
@@ -332,17 +333,13 @@ export default function Restructure({
                                             target === ''
                                         }
                                         onClick={() => {
-                                            if (
-                                                window.confirm(
-                                                    `Merge ${account.account_code} into ${merge.target.account_code}? This posts a transfer entry and deactivates ${account.account_code}.`,
-                                                )
-                                            ) {
+                                            confirmThen(`Merge ${account.account_code} into ${merge.target.account_code}? This posts a transfer entry and deactivates ${account.account_code}.`, () => {
                                                 post(base + '/merge', {
                                                     target_account_id: target,
                                                     date,
                                                     description,
                                                 });
-                                            }
+                                            });
                                         }}
                                     >
                                         Merge into {merge.target.account_code}

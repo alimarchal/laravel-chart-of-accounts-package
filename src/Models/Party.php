@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasBranch;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -26,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Party extends AccountingModel
 {
     use BelongsToCompany;
+    use HasBranch;
 
     public const TYPES = ['customer', 'supplier', 'both'];
 

@@ -61,7 +61,7 @@ final class CurrentBranch
 
         $user ??= auth()->user();
 
-        if ($user === null || (method_exists($user, 'hasRole') && $user->hasRole('super-admin'))) {
+        if ($user === null || self::unrestricted($user)) {
             return null;
         }
 
@@ -76,6 +76,12 @@ final class CurrentBranch
 
             return $ids === [] ? null : $ids;                       // nothing assigned = every branch
         })();
+    }
+
+    /** Super-admins and admins (accounting.branches.unrestricted_roles) work in every branch whatever is assigned to them. */
+    public static function unrestricted(Authenticatable $user): bool
+    {
+        return method_exists($user, 'hasAnyRole') && $user->hasAnyRole((array) config('accounting.branches.unrestricted_roles', ['super-admin', 'admin']));
     }
 
     /** A restricted user: assigned to some branches only. */

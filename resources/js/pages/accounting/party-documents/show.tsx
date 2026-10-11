@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Props = {
     document: {
@@ -68,7 +69,7 @@ export default function PartyDocumentShow({ document, allocations, openInvoices 
                             <Button
                                 variant="ghost"
                                 onClick={() => {
-                                    if (confirm('Delete this draft?')) router.delete(base);
+                                    confirmThen('Delete this draft?', () => router.delete(base));
                                 }}
                             >
                                 Delete
@@ -78,7 +79,7 @@ export default function PartyDocumentShow({ document, allocations, openInvoices 
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    if (confirm('Void this document? Its entry is reversed.')) act('void');
+                                    confirmThen('Void this document? Its entry is reversed.', () => act('void'));
                                 }}
                             >
                                 Void

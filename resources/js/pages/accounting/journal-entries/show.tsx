@@ -23,6 +23,7 @@ import {
     playErrorSound,
     playSuccessSound,
 } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type TrailStep = { step: string; by: string | null; at: string };
 
@@ -116,9 +117,9 @@ export default function JournalEntryShow({
     const submit = () =>
         router.post(`/accounting/journal-entries/${entry.id}/submit`);
     const approve = () => {
-        if (window.confirm('Approve and post this entry?')) {
+        confirmThen('Approve and post this entry?', () => {
             router.post(`/accounting/journal-entries/${entry.id}/approve`);
-        }
+        });
     };
     const reject = () => {
         const reason = window.prompt('Reason for rejection');

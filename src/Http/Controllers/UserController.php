@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
 use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class UserController extends Controller
     {
         return Inertia::render('accounting/users/form', [
             'user' => null,
+            'branches' => CurrentBranch::options(),
             'roles' => Role::query()->orderBy('name')->pluck('name'),
             'permissionGroups' => null,
         ]);
@@ -60,6 +62,7 @@ class UserController extends Controller
                 ...$this->users->presentUser($user),
                 'role_permissions' => $user->getPermissionsViaRoles()->pluck('name')->unique()->values()->all(),
             ],
+            'branches' => CurrentBranch::options(),
             'roles' => Role::query()->orderBy('name')->pluck('name'),
             'permissionGroups' => $this->users->groupedPermissions()->map(fn ($group) => $group->pluck('name')->values()),
             'isSelf' => $request->user()?->is($user) ?? false,
@@ -71,6 +74,10 @@ class UserController extends Controller
         $user = $this->users->findUser($user);
         $data = $request->validate($this->users->userRules($user));
         $data['roles'] = $data['roles'] ?? [];
+
+        if (CurrentBranch::enabled()) {
+            $data['branches'] = $data['branches'] ?? [];                  // the form always carries the list: none ticked = every branch
+        }
 
         return $this->attempt(function () use ($request, $user, $data) {
             $this->users->updateUser($request->user(), $user, $data);

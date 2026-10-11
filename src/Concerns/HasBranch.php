@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Concerns;
 
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\Branch;
 use Alimarchal\LaravelChartOfAccounts\Support\BranchScope;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
@@ -24,7 +25,14 @@ trait HasBranch
 
         static::creating(function (Model $model): void {
             if (CurrentBranch::enabled() && ! array_key_exists('branch_id', $model->getAttributes())) {
-                $model->setAttribute('branch_id', CurrentBranch::defaultId());
+                $branch = CurrentBranch::defaultId();
+
+                // A user of several branches has to say which one this belongs to (it would be invisible to them with none).
+                if ($branch === null && CurrentBranch::restricted()) {
+                    throw new AccountingException('Choose your working branch first: this has to belong to one of your branches.');
+                }
+
+                $model->setAttribute('branch_id', $branch);
             }
         });
     }

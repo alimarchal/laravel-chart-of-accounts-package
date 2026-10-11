@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Props = {
     preview: { up_to: string; total: string; months: Array<{ month: string; total: string; assets: Array<{ asset_id: number; code: string; name: string; amount: string }> }> };
@@ -27,7 +28,7 @@ export default function FixedAssetDepreciation({ preview, upTo }: Props) {
                         <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="w-40" />
                         <Button variant="outline" onClick={() => router.get('/accounting/fixed-assets/depreciation', { up_to: date }, { preserveState: true })}>Preview</Button>
                         {permissions['fixed-assets.depreciate'] && preview.months.length > 0 && (
-                            <Button onClick={() => confirm(`Book ${money(preview.total)} of depreciation?`) && router.post('/accounting/fixed-assets/depreciation', { up_to: preview.up_to })}>Book {money(preview.total)}</Button>
+                            <Button onClick={() => confirmThen(`Book ${money(preview.total)} of depreciation?`, () => router.post('/accounting/fixed-assets/depreciation', { up_to: preview.up_to }))}>Book {money(preview.total)}</Button>
                         )}
                     </div>
                 </div>

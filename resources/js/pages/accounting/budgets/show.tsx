@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Row = {
     account_id: number;
@@ -91,7 +92,7 @@ export default function BudgetShow({ budget, report, filters, costCenters }: Pro
                             <Button
                                 variant="ghost"
                                 onClick={() => {
-                                    if (confirm('Delete this budget?')) router.delete(`/accounting/budgets/${budget.id}`);
+                                    confirmThen('Delete this budget?', () => router.delete(`/accounting/budgets/${budget.id}`));
                                 }}
                             >
                                 Delete

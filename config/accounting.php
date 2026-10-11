@@ -33,6 +33,8 @@ return [
     'branches' => [
         'enabled' => (bool) env('ACCOUNTING_BRANCHES', false),
         'header' => env('ACCOUNTING_BRANCH_HEADER', 'X-Branch'),
+        // These roles always work in every branch. Anyone else works in the branches given to them (none given = all).
+        'unrestricted_roles' => ['super-admin', 'admin'],
     ],
 
     // REST API switches and limits.
@@ -539,7 +541,6 @@ return [
             'currencies.view',
             'periods.view',
             'chart-of-accounts.view',
-            'branches.view',
             'cost-centers.view',
             'journal-entries.view',
             'attachments.view',
@@ -673,7 +674,6 @@ return [
             'currencies.view',
             'periods.view',
             'chart-of-accounts.view',
-            'branches.view',
             'cost-centers.view',
             'journal-entries.view',
             'attachments.view',

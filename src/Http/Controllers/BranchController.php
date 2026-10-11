@@ -27,7 +27,7 @@ class BranchController extends Controller
 
         return Inertia::render('accounting/branches/index', [
             'filters' => ListFilters::current($request, ['search', 'is_active']),
-            'branches' => ListFilters::collection(Branch::query()->orderByDesc('is_head_office')->orderBy('name')->get()->map(fn (Branch $branch) => [
+            'branches' => ListFilters::collection(Branch::query()->when(CurrentBranch::accessibleIds() !== null, fn ($query) => $query->whereIn('id', CurrentBranch::accessibleIds()))->orderByDesc('is_head_office')->orderBy('name')->get()->map(fn (Branch $branch) => [
                 ...$branch->only(['id', 'code', 'name', 'city', 'address', 'phone', 'is_head_office', 'is_active']),
                 'members' => $this->service->members($branch),
             ])->values(), $request, ['code', 'name', 'city', 'address', 'phone'], ['is_active']),

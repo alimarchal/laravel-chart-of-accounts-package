@@ -17,6 +17,11 @@ return new class extends Migration
         ['accounting_journal_entries', 'acct_journals'],
         ['accounting_party_documents', 'acct_pdocs'],
         ['accounting_party_payments', 'acct_ppay'],
+        ['accounting_parties', 'acct_parties'],
+        ['accounting_bank_accounts', 'acct_bank_accounts'],
+        ['accounting_employees', 'acct_employees'],
+        ['accounting_fixed_assets', 'acct_fassets'],
+        ['accounting_warehouses', 'acct_wh'],
     ];
 
     public function up(): void

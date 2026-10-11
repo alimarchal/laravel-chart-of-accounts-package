@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Member = { id: number; name: string; email: string };
 
@@ -165,9 +166,9 @@ function BranchCard({ branch, users }: { branch: Branch; users: User[] }) {
                             size="icon"
                             aria-label={`Delete ${branch.name}`}
                             onClick={() => {
-                                if (window.confirm(`Delete ${branch.name}?`)) {
+                                confirmThen(`Delete ${branch.name}?`, () => {
                                     router.delete(`/accounting/branches/${branch.id}`, { preserveScroll: true });
-                                }
+                                });
                             }}
                         >
                             <Trash2 className="size-4" />
@@ -210,11 +211,11 @@ function BranchCard({ branch, users }: { branch: Branch; users: User[] }) {
                                         size="icon"
                                         aria-label={`Remove ${member.name}`}
                                         onClick={() => {
-                                            if (window.confirm(`Remove ${member.name} from ${branch.name}?`)) {
+                                            confirmThen(`Remove ${member.name} from ${branch.name}?`, () => {
                                                 router.delete(`/accounting/branches/${branch.id}/users/${member.id}`, {
                                                     preserveScroll: true,
                                                 });
-                                            }
+                                            });
                                         }}
                                     >
                                         <Trash2 className="size-4" />

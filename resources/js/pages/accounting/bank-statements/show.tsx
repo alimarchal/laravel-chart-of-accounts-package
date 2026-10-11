@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Line = {
     id: number;
@@ -104,9 +105,9 @@ export default function BankStatementShow({ statement, lines, accounts }: Props)
                                 <Button
                                     variant="ghost"
                                     onClick={() => {
-                                        if (confirm('Delete this statement? Its matches are released.')) {
+                                        confirmThen('Delete this statement? Its matches are released.', () => {
                                             router.delete(`/accounting/bank-statements/${statement.id}`);
-                                        }
+                                        });
                                     }}
                                 >
                                     Delete

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Grade = { id: number; code: string; name: string; base_salary: string; is_active: boolean; employees: number; components: Array<{ pay_component_id: number; value: string | null }> };
 type Component = { id: number; code: string; name: string; kind: string; method: string; value: string; rate: string; unit: string | null };
@@ -59,7 +60,7 @@ export default function PayrollGrades({ grades, filters, editing, components }: 
                             <tr key={row.id} className="border-t">
                                 <td className="py-2 font-medium">{row.code}</td><td>{row.name} {!row.is_active && <Badge variant="outline">inactive</Badge>}</td><td className="text-right tabular-nums">{money(row.base_salary)}</td><td className="text-right">{row.employees}</td>
                                 <td>{row.components.map((link) => components.find((component) => component.id === link.pay_component_id)?.name).filter(Boolean).join(', ')}</td>
-                                <td className="text-right">{permissions['payroll.manage'] && <><Button variant="ghost" size="sm" asChild><Link href={`/accounting/payroll/grades?edit=${row.id}`}>Edit</Link></Button><Button variant="ghost" size="sm" onClick={() => confirm('Delete this grade?') && router.delete(`/accounting/payroll/grades/${row.id}`)}>Delete</Button></>}</td>
+                                <td className="text-right">{permissions['payroll.manage'] && <><Button variant="ghost" size="sm" asChild><Link href={`/accounting/payroll/grades?edit=${row.id}`}>Edit</Link></Button><Button variant="ghost" size="sm" onClick={() => confirmThen('Delete this grade?', () => router.delete(`/accounting/payroll/grades/${row.id}`))}>Delete</Button></>}</td>
                             </tr>
                         ))}
                         {grades.length === 0 && <tr><td colSpan={6} className="py-4 text-center text-muted-foreground">No grades yet.</td></tr>}

@@ -4,7 +4,10 @@ use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\Branch;
+use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\Party;
+use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Reports\BalanceSheetReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\GeneralLedgerReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\IncomeStatementReport;
@@ -20,6 +23,7 @@ use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 
 const BR_API = '/api/v1/accounting';
 
@@ -265,4 +269,99 @@ it('limits the lists to the branch picked in the session, and forgets a branch t
 
     $this->withSession([CurrentBranch::SESSION_KEY => $this->lahore->id])->getJson(BR_API.'/journal-entries')->assertOk()->assertJsonCount(1, 'data');
     $this->post('/accounting/branch/switch', ['branch_id' => $this->lahore->id])->assertForbidden();
+});
+
+it('lets admins and super-admins work in every branch, whatever branches they are given', function (): void {
+    ($this->at)($this->lahore, fn () => journal(['1101' => 1000, '4101' => -1000]));
+    ($this->at)($this->karachi, fn () => journal(['1101' => 400, '4101' => -400]));
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    $this->branches->grant($this->karachi, $admin);
+    $this->branches->grant($this->karachi, $this->admin);
+    CurrentBranch::flush();
+
+    Sanctum::actingAs($admin);
+    $this->getJson(BR_API.'/journal-entries')->assertOk()->assertJsonCount(2, 'data');
+    Sanctum::actingAs($this->admin);
+    $this->getJson(BR_API.'/journal-entries')->assertOk()->assertJsonCount(2, 'data');
+});
+
+it('gives a user their branches when the user is created or changed, in the API and in the screens', function (): void {
+    Sanctum::actingAs($this->admin);
+    $created = $this->postJson(BR_API.'/users', ['name' => 'Clerk', 'email' => 'clerk@example.com', 'password' => 'secret-pass-1', 'password_confirmation' => 'secret-pass-1', 'roles' => ['accountant'], 'branches' => [$this->karachi->id]])
+        ->assertCreated()->assertJsonPath('data.branches', [$this->karachi->id])->json('data');
+    $user = User::query()->findOrFail($created['id']);
+
+    expect(CurrentBranch::accessibleIds($user))->toBe([$this->karachi->id]);
+
+    $this->patchJson(BR_API."/users/{$user->id}", ['branches' => [$this->lahore->id, $this->karachi->id]])->assertOk()->assertJsonPath('data.branches', [$this->lahore->id, $this->karachi->id]);
+    $this->patchJson(BR_API."/users/{$user->id}", ['branches' => []])->assertOk()->assertJsonPath('data.branches', []);
+    $this->patchJson(BR_API."/users/{$user->id}", ['branches' => [99999]])->assertUnprocessable();
+
+    // The React form: the branches to tick, and the user's own.
+    $this->actingAs($this->admin);
+    $this->patch("/accounting/users/{$user->id}", ['name' => 'Clerk', 'email' => 'clerk@example.com', 'roles' => ['accountant'], 'branches' => [$this->karachi->id]])->assertRedirect();
+    $this->get("/accounting/users/{$user->id}/edit")->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('accounting/users/form')->has('branches', 2)->where('user.branches', [$this->karachi->id]));
+
+    // A form without the field (and so none ticked) means "every branch".
+    $this->patch("/accounting/users/{$user->id}", ['name' => 'Clerk', 'email' => 'clerk@example.com', 'roles' => ['accountant']])->assertRedirect();
+    expect(CurrentBranch::accessibleIds($user->fresh()))->toBeNull();
+
+    // A user who may not change branches cannot hand them out.
+    $manager = User::factory()->create();
+    $manager->givePermissionTo(['user.create', 'user.assign-role', 'user.update', 'user.view']);
+    Sanctum::actingAs($manager);
+    $this->postJson(BR_API.'/users', ['name' => 'X', 'email' => 'x@example.com', 'password' => 'secret-pass-1', 'password_confirmation' => 'secret-pass-1', 'branches' => [$this->karachi->id]])->assertForbidden();
+});
+
+it('keeps customers, bank accounts, employees, assets and warehouses of a branch to its people', function (): void {
+    $models = [
+        'party' => fn (?Branch $b) => ($this->at)($b, fn () => Party::query()->create(['type' => 'customer', 'code' => 'P'.uniqid(), 'name' => 'Parent'])),
+        'warehouse' => fn (?Branch $b) => ($this->at)($b, fn () => Warehouse::query()->create(['code' => 'W'.uniqid(), 'name' => 'Store'])),
+        'employee' => fn (?Branch $b) => ($this->at)($b, fn () => Employee::query()->create(['code' => 'E'.uniqid(), 'name' => 'Emp', 'join_date' => now()->toDateString(), 'base_salary' => 1])),
+    ];
+    $clerk = User::factory()->create();
+    $clerk->assignRole('accountant');
+    $this->branches->grant($this->karachi, $clerk);
+
+    foreach ($models as $name => $make) {
+        $lahore = $make($this->lahore);
+        $karachi = $make($this->karachi);
+        $headOffice = $make(null);
+        $class = $lahore::class;
+
+        expect($lahore->branch_id)->toBe($this->lahore->id)->and($headOffice->branch_id)->toBeNull();
+        $this->actingAs($clerk);
+        CurrentBranch::flush();
+        expect($class::query()->pluck('id')->all())->toBe([$karachi->id], $name);
+
+        $this->actingAs($this->admin);
+        CurrentBranch::flush();
+        expect($class::query()->count())->toBe(3, $name);
+    }
+
+    // A user of several branches has to pick the working branch before creating anything.
+    $this->branches->grant($this->lahore, $clerk);
+    $this->actingAs($clerk);
+    CurrentBranch::flush();
+    expect(fn () => Warehouse::query()->create(['code' => 'W9', 'name' => 'Nope']))->toThrow(AccountingException::class, 'working branch');
+    $made = ($this->at)($this->lahore, fn () => Warehouse::query()->create(['code' => 'W9', 'name' => 'Fine']));
+    expect($made->branch_id)->toBe($this->lahore->id);
+});
+
+it('shows each user only the cards, links and routes their permissions allow', function (): void {
+    $role = Role::query()->firstOrCreate(['name' => 'fee-clerk', 'guard_name' => 'web']);
+    $role->syncPermissions(['accounting.view', 'journal-entries.view']);
+    $clerk = User::factory()->create();
+    $clerk->assignRole($role);
+    $this->actingAs($clerk);
+
+    $this->get('/accounting')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('accounting/dashboard')
+        ->has('summary.postedJournalEntries')->missing('summary.accounts')->missing('summary.currencies')->missing('summary.accountTypes'));
+    $this->get('/accounting/overview')->assertForbidden();
+    $this->get('/accounting/chart-of-accounts')->assertForbidden();
+    $this->get('/accounting/journal-entries')->assertOk();
+    $this->get('/accounting/branches')->assertForbidden();
+    $this->get('/accounting/users')->assertForbidden();
 });

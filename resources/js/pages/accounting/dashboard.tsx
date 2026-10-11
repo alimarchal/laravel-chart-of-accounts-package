@@ -263,7 +263,31 @@ export default function AccountingDashboard({ summary }: Props) {
               ]
             : []),
     ];
-    const sections = allSections.filter((section) => linkEnabled(section.href, disabledPaths));
+    // A link only for what the user may open (the screens answer 403 otherwise).
+    const needs: Record<string, string> = {
+        '/accounting/chart-of-accounts': 'chart-of-accounts.view',
+        '/accounting/journal-entries': 'journal-entries.view',
+        '/accounting/account-types': 'account-types.view',
+        '/accounting/currencies': 'currencies.view',
+        '/accounting/overview': 'reports.trial-balance.view',
+        '/accounting/periods': 'periods.view',
+        '/accounting/cost-centers': 'cost-centers.view',
+        '/accounting/bank-accounts': 'bank-accounts.view',
+        '/accounting/reconciliations': 'reconciliations.view',
+        '/accounting/tax-codes': 'tax-codes.view',
+        '/accounting/tax-rates': 'tax-rates.view',
+        '/accounting/control-accounts': 'control-accounts.manage',
+        '/accounting/voucher-types': 'voucher-types.view',
+        '/accounting/account-balance-snapshots': 'account-balance-snapshots.view',
+        '/accounting/reports/general-ledger': 'reports.general-ledger.view',
+        '/accounting/reports/trial-balance': 'reports.trial-balance.view',
+        '/accounting/reports/balance-sheet': 'reports.balance-sheet.view',
+        '/accounting/reports/income-statement': 'reports.income-statement.view',
+        '/accounting/reports/cash-flow': 'reports.cash-flow.view',
+    };
+    const sections = allSections.filter(
+        (section) => linkEnabled(section.href, disabledPaths) && (!needs[section.href] || permissions[needs[section.href]]),
+    );
 
     return (
         <>

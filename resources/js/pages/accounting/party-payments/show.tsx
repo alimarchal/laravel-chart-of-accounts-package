@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Props = {
     payment: {
@@ -57,7 +58,7 @@ export default function PartyPaymentShow({ payment, openDocuments }: Props) {
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    if (confirm('Void this payment? Its entry is reversed and its allocations released.')) router.post(`${base}/void`, {}, { preserveScroll: true });
+                                    confirmThen('Void this payment? Its entry is reversed and its allocations released.', () => router.post(`${base}/void`, {}, { preserveScroll: true }));
                                 }}
                             >
                                 Void

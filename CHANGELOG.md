@@ -6,6 +6,13 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 Branches: one company, several places of business.
 
+### Also in this release
+- **A confirm dialog instead of the browser's `confirm()`** for delete, void, post, reverse … in the Blade screens (any `onsubmit="return confirm('…')"` or `data-confirm`) and the React screens (`confirmThen()` in `lib/confirm.ts`): an icon, the question, *Cancel* and a red *Delete* (or *Confirm*) button; Esc cancels.
+- **A sound for every result**: a rising chime on success, a lower falling one on an error or a validation error, in Blade (also after a page reload; if the browser keeps audio locked the sound plays with the first click) and React (every flash message once).
+- **People of a branch**: the user form (React, Blade, API) has the branches the user works in; admins and super-admins always work in all branches; customers/suppliers, bank accounts, employees, fixed assets and warehouses belong to a branch too; users created by an administrator are marked verified (starter kits with e-mail verification would otherwise lock them out).
+- **Only what the user may open**: the dashboard (React and Blade) shows cards and links, and the Overview screen needs a report permission; the branch screens list only the user's own branches; `branches.view` is for admins only by default.
+- The description texts of the Blade dashboard showed `&amp;`; fixed.
+
 ### Added
 - **Branches** (`ACCOUNTING_BRANCHES=true`; off by default, nothing changes without it). A company can have a head office, campuses or shops. Journal entries,
   invoices/bills and payments carry a branch; an invoice, bill or payment hands its branch to the entry it posts, a reversal keeps the branch of the original and

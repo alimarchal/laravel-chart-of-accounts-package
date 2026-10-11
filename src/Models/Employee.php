@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasBranch;
 use Carbon\CarbonInterface;
 
 /**
@@ -28,6 +29,7 @@ use Carbon\CarbonInterface;
 class Employee extends AccountingModel
 {
     use BelongsToCompany;
+    use HasBranch;
 
     protected $table = 'accounting_employees';
 

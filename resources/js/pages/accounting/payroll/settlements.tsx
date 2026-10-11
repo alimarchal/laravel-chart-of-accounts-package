@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen, confirmIf } from '@/lib/confirm';
 
 type Row = {
     id: number; employee_code: string; employee_name: string; leave_date: string; status: string; service_years: string; basic: string; gratuity: string; leave_days: string; leave_encashment: string;
@@ -24,7 +25,7 @@ export default function PayrollSettlements({ settlements, filters, preview, toda
     const { permissions, flash } = useAccounting();
     const form = useForm({ employee_id: '', leave_date: today, gratuity: '', leave_days: '', adjustment: '', notes: '' });
     const [account, setAccount] = useState('');
-    const act = (id: number, action: string, body: Record<string, string> = {}, confirmText?: string) => (!confirmText || confirm(confirmText)) && router.post(`/accounting/payroll/settlements/${id}/${action}`, body, { preserveScroll: true });
+    const act = (id: number, action: string, body: Record<string, string> = {}, confirmText?: string) => confirmIf(confirmText, () => router.post(`/accounting/payroll/settlements/${id}/${action}`, body, { preserveScroll: true }));
     const submit = (event: FormEvent) => { event.preventDefault(); form.post('/accounting/payroll/settlements', { onSuccess: () => form.reset('gratuity', 'leave_days', 'adjustment', 'notes') }); };
     const lines = preview ? ([['Years of service', preview.service_years], ['Monthly basic', money(preview.basic)], ['Gratuity', money(preview.gratuity)], [`Leave pay (${Number(preview.leave_days)} days)`, money(preview.leave_encashment)], ['Adjustment', money(preview.adjustment)], ['Loans recovered', `− ${money(preview.loan_recovery)}`], ['Net settlement', money(preview.net)]] as const) : [];
 
@@ -76,7 +77,7 @@ export default function PayrollSettlements({ settlements, filters, preview, toda
                                 <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.leave_date}</td><td className="text-right tabular-nums">{money(row.gratuity)}</td><td className="text-right tabular-nums">{money(row.leave_encashment)}</td><td className="text-right tabular-nums">{money(row.loan_recovery)}</td><td className="text-right font-medium tabular-nums">{money(row.net)}</td><td><Badge variant="outline">{row.status}</Badge></td>
                                 <td className="space-x-1 text-right">
                                     {row.status === 'draft' && permissions['payroll.post'] && <Button size="sm" variant="outline" onClick={() => act(row.id, 'post', {}, 'Post this settlement to the books?')}>Post</Button>}
-                                    {row.status === 'draft' && permissions['payroll.manage'] && <Button size="sm" variant="ghost" onClick={() => confirm('Delete this draft?') && router.delete(`/accounting/payroll/settlements/${row.id}`, { preserveScroll: true })}>Delete</Button>}
+                                    {row.status === 'draft' && permissions['payroll.manage'] && <Button size="sm" variant="ghost" onClick={() => confirmThen('Delete this draft?', () => router.delete(`/accounting/payroll/settlements/${row.id}`, { preserveScroll: true }))}>Delete</Button>}
                                     {row.status === 'posted' && permissions['payroll.post'] && <><select className="h-8 w-48 rounded-md border border-input bg-background px-2 text-xs" value={account} onChange={(event) => setAccount(event.target.value)}><option value="">Paid from…</option>{accounts.map((a) => (<option key={a.id} value={a.id}>{a.account_code} {a.account_name}</option>))}</select><Button size="sm" disabled={!account} onClick={() => act(row.id, 'pay', { account_id: account })}>Pay</Button></>}
                                     {['posted', 'paid'].includes(row.status) && permissions['payroll.void'] && <Button size="sm" variant="ghost" onClick={() => act(row.id, 'void', {}, 'Void this settlement? Its entries are reversed and the loans it recovered open again.')}>Void</Button>}
                                 </td>

@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
+use Alimarchal\LaravelChartOfAccounts\Concerns\HasBranch;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -34,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class FixedAsset extends AccountingModel
 {
     use BelongsToCompany;
+    use HasBranch;
 
     public const METHODS = ['straight_line' => 'Straight line', 'declining_balance' => 'Declining balance'];
 

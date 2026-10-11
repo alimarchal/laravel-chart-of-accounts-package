@@ -3,6 +3,7 @@ import { Download, Paperclip, Trash2, Upload } from 'lucide-react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { confirmThen } from '@/lib/confirm';
 
 export type AttachmentItem = {
     id: number;
@@ -45,11 +46,11 @@ export function AttachmentsPanel({
         Object.entries(errors).find(([key]) => key.startsWith('files.'))?.[1];
 
     const remove = (attachment: AttachmentItem) => {
-        if (window.confirm(`Remove ${attachment.original_name}?`)) {
+        confirmThen(`Remove ${attachment.original_name}?`, () => {
             router.delete(`/accounting/attachments/${attachment.id}`, {
                 preserveScroll: true,
             });
-        }
+        });
     };
 
     return (

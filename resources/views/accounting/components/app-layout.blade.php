@@ -83,6 +83,7 @@ $(document).ready(function() {
             @endif
         @endif
         <x-accounting::kit-theme :kit="$kit" />
+        <x-accounting::feedback />
         <div class="acc-kit acc-kit-{{ $kit }}">
             @if($hostLayout !== 'app-layout' && isset($header))
                 {{-- The layout of a starter kit has no header slot: the page title and its buttons go above the content. --}}
@@ -157,6 +158,7 @@ $(document).ready(function() {
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">{{ $header }}</div>
         </header>
         @endif
+        <x-accounting::feedback />
         <main><x-accounting::company-bar />{{ $slot }}</main>
         @stack('modals')
         @if(class_exists(\Livewire\Livewire::class))

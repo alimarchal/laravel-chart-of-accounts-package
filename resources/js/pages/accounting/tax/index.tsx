@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { confirmThen } from '@/lib/confirm';
 
 type Code = {
     id: number;
@@ -298,9 +299,9 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                                                         size="sm"
                                                         variant="ghost"
                                                         onClick={() => {
-                                                            if (confirm('Void this return? Its entry is reversed and the period can be filed again.')) {
+                                                            confirmThen('Void this return? Its entry is reversed and the period can be filed again.', () => {
                                                                 router.delete(`/accounting/tax/returns/${item.id}`, { preserveScroll: true });
-                                                            }
+                                                            });
                                                         }}
                                                     >
                                                         Void
