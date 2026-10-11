@@ -202,8 +202,8 @@ component: `ACCOUNTING_BLADE_LAYOUT=layouts::app`.
 | ![The filters of a list, opened with the filter button, in the Livewire starter kit](docs/images/kit-livewire-flux-filters-open.jpg) | ![The filters of a list, opened with the filter button, in Jetstream](docs/images/kit-jetstream-filters-open.jpg) |
 | ![Working in one branch: the Branch switcher above the page limits the list](docs/images/kit-livewire-flux-branch-karachi.jpg) | ![The branches screen in Jetstream](docs/images/kit-jetstream-branches.jpg) |
 
-Checked in both kits with a browser: every one of the 89 list, report and form pages opens without errors, every filter button opens its filters and
-applies them, the "add" forms open and refuse an empty submit, a journal entry can be created from the form, and the branch switcher limits lists and reports.
+Checked with a browser in three real apps (the Laravel Livewire starter kit of Livewire 3 and the current one of Livewire 4, and Jetstream), each after a real `accounting:install`: every one of the 89 list, report and form pages opens without errors, every filter button opens its filters and
+applies them, the "add" forms open and refuse an empty submit, a journal entry can be created from the form, a branch can be created, edited and filtered, and the branch switcher limits lists and reports. The React screens of the branches were checked the same way.
 
 <details>
 <summary><b>React: the menu link by hand and (older starter kits) the layout</b></summary>
