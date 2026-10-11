@@ -14,6 +14,7 @@ use Alimarchal\LaravelChartOfAccounts\Support\WhatsApp\PhoneNumber;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function (): void {
@@ -456,3 +457,28 @@ it('shows the setup and sends a test message from the command line', function ()
 
     expect(WhatsAppMessage::query()->count())->toBe(2);
 });
+
+// -- screens ------------------------------------------------------------------------------------------------------------------
+
+it('shows the messages, the set-up checks and the templates on the React screen and sends from its form', function (): void {
+    $this->withoutVite();
+    $this->actingAs($this->user);
+    WhatsApp::template('0300-1234567', 'hello_world');
+
+    $this->get('/accounting/whatsapp?status=sent')->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('accounting/whatsapp/index')->has('messages', 1)->where('whatsapp.mode', 'fake')->where('whatsapp.ready', true)->has('templates', 3)->where('filters.status', 'sent'));
+    $this->get('/accounting/whatsapp?status=failed')->assertInertia(fn (AssertableInertia $page) => $page->has('messages', 0));
+    $this->post('/accounting/whatsapp/messages', ['to' => '0300-1234567', 'text' => 'free text'])->assertRedirect()->assertSessionHas('error');
+    $this->post('/accounting/whatsapp/messages', ['to' => '0300-1234567', 'template' => 'hello_world'])->assertRedirect()->assertSessionHas('success');
+})->skip(fn () => config('accounting.ui_driver') === 'blade', 'React screens are not served with the Blade driver');
+
+it('renders the Blade screen and sends from its form', function (): void {
+    $this->withoutVite();
+    $this->actingAs($this->user);
+    WhatsApp::template('0300-1234567', 'hello_world');
+
+    $this->get(route('accounting.whatsapp.index'))->assertOk()->assertSee('WhatsApp')->assertSee('WHATSAPP_TOKEN')->assertSee('Sandbox (mode fake)')->assertSee('hello_world')->assertSee('wamid.FAKE');
+    $this->post(route('accounting.whatsapp.send'), ['to' => '0300-1234567', 'template' => 'fee_received', 'parameters' => ['student' => 'Ali', 'amount' => '1', 'receipt' => 'R', 'date' => 'D']])->assertRedirect()->assertSessionHas('success');
+
+    expect(WhatsAppMessage::query()->count())->toBe(2);
+})->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');

@@ -2,7 +2,7 @@
 
 Generated from the routes the package registers (`python3 docs/generate-route-catalog.py`); do not edit by hand.
 
-- **383 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **313 API endpoints**.
+- **388 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **320 API endpoints**.
 - Web screens live under `/accounting` (users, roles and the feature switches under `/settings` with the Blade driver); the API under `/api/v1/accounting` (see the prefixes in `config/accounting.php`).
 - *Permission* is the Spatie permission a user needs; a user without it gets 403. A feature that is switched off answers 404 (see *Feature switches* in the README).
 - The API is described in full in [`openapi.yaml`](openapi.yaml) and the [Postman collection](postman_collection.json).
@@ -44,7 +44,7 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 - [FBR invoices](#fbr-invoices) (2)
 - [Chart templates](#chart-templates) (2)
 - [Statement layout](#statement-layout) (5)
-- [Other](#other) (2)
+- [Other](#other) (7)
 - [API endpoints](#api-endpoints)
 
 ## Home and overview
@@ -609,6 +609,11 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 |--------|--------|--------------|--------------|------------|
 | GET | `/accounting/account-roles` | `/settings/account-roles` | Which account plays which part for the modules (cash, bank, salary expense, receivables …) | `accounting.manage-settings` |
 | PUT | `/accounting/account-roles` | `/settings/account-roles` | Give roles other accounts | `accounting.manage-settings` |
+| GET | `/accounting/whatsapp` |  | Messages, the set-up checks (what is set in .env and what is missing) and the configured templates | `whatsapp.view` |
+| POST | `/accounting/whatsapp/messages` |  | Send a message: an approved template with its parameters, or free text | `whatsapp.send` |
+| POST | `/accounting/whatsapp/messages/{message}/retry` |  | Send a failed message again | `whatsapp.send` |
+| POST | `/accounting/whatsapp/messages/{message}/simulate` |  | Sandbox only: move a message on as WhatsApp would | `whatsapp.send` |
+| POST | `/accounting/whatsapp/simulate-reply` |  | Sandbox only: a customer writes back (opens the 24-hour window for free text) | `whatsapp.send` |
 
 ## API endpoints
 
@@ -1046,3 +1051,15 @@ Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorizati
 | PUT | `/features` | Switch features on or off | `accounting.manage-settings` |
 | GET | `/account-roles` | Which account plays which part for the modules (cash, bank, salary expense, receivables …) | `accounting.manage-settings` |
 | PUT | `/account-roles` | Give roles other accounts | `accounting.manage-settings` |
+
+### WhatsApp
+
+| Method | Endpoint | What it does | Permission |
+|--------|----------|--------------|------------|
+| GET | `/whatsapp/webhook` | Meta's webhook verification |  |
+| POST | `/whatsapp/webhook` | Meta's events: message statuses (sent, delivered, read, failed) and customer replies |  |
+| GET | `/whatsapp` | Messages, the set-up checks (what is set in .env and what is missing) and the configured templates | `whatsapp.view` |
+| POST | `/whatsapp/messages` | Send a message: an approved template with its parameters, or free text | `whatsapp.send` |
+| POST | `/whatsapp/messages/{message}/retry` | Send a failed message again | `whatsapp.send` |
+| POST | `/whatsapp/messages/{message}/simulate` | Sandbox only: move a message on as WhatsApp would | `whatsapp.send` |
+| POST | `/whatsapp/simulate-reply` | Sandbox only: a customer writes back (opens the 24-hour window for free text) | `whatsapp.send` |

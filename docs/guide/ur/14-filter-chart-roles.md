@@ -65,4 +65,7 @@ php artisan accounting:account-roles seed erpnext --overwrite
 
 API: `GET /api/v1/accounting/account-roles` اور `PUT /api/v1/accounting/account-roles` (`{"roles": {"cash": [12]}}`)۔
 
+
+[اگلا باب: WhatsApp →](15-whatsapp.md)
+
 </div>

@@ -1,0 +1,11 @@
+flowchart LR
+    A[1. Meta developer account<br/>create an app, add WhatsApp] --> B[2. Test number and hello_world<br/>add your own phone as recipient]
+    B --> C[3. Fill .env<br/>token, phone number ID,<br/>verify token, app secret]
+    C --> D[4. php artisan accounting:whatsapp status<br/>then test +92300...]
+    D --> E[5. Register the webhook in Meta<br/>URL and verify token,<br/>subscribe to messages]
+    E --> F[6. Create and get approved<br/>fee_received template<br/>WhatsApp Manager]
+    F --> G[7. ACCOUNTING_WHATSAPP_MODE=live<br/>WHATSAPP_NOTIFY_RECEIPT=fee_received]
+    G --> H([Every fee receipt<br/>reaches the parent])
+    subgraph Sandbox_without_Meta [Practice first, no Meta needed]
+        S1[mode fake] --> S2[Send, Mark delivered,<br/>Customer replies on the screen]
+    end

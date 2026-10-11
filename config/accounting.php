@@ -190,7 +190,7 @@ return [
     /*
     | Feature switches. Every optional module and payroll sub-feature is on unless it is listed here; an administrator can also switch
     | them from the settings screen (/accounting/settings/features), the API or `php artisan accounting:features`, and what is saved
-    | there wins over this list. Keys: parties, tax, banking, budgets, fixed_assets, inventory, recurring_entries, fx_revaluation, fbr,
+    | there wins over this list. Keys: parties, tax, banking, budgets, fixed_assets, inventory, recurring_entries, fx_revaluation, fbr, whatsapp,
     | attachments, report_mapping, chart_templates, control_accounts, snapshots, audit_log, payroll, payroll_grades, payroll_arrears,
     | payroll_attendance, payroll_loans, payroll_contributions, payroll_bank_file, payroll_payslip_mail, payroll_settlements, payroll_reports.
     | ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets" turns those off by default.

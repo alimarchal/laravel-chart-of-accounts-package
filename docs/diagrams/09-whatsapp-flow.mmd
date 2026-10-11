@@ -1,0 +1,27 @@
+flowchart TD
+    A([School records a fee receipt<br/>or your code calls WhatsApp::template]) --> B{WhatsApp switched on?<br/>ACCOUNTING_WHATSAPP_ENABLED}
+    B -- no --> Z1([Nothing is sent<br/>the receipt is saved as usual])
+    B -- yes --> C[Number to digits with country code<br/>0300-1234567 becomes 923001234567]
+    C --> D{Valid number and<br/>parameters match the template?}
+    D -- no --> E1([Refused before calling WhatsApp<br/>message shown, nothing saved])
+    D -- yes --> F[(Record saved: status queued<br/>text, template, parameters)]
+    F --> G{Queue on?<br/>WHATSAPP_USE_QUEUE}
+    G -- yes --> H[Queue worker<br/>SendWhatsAppMessage<br/>retries 30s, 2m, 10m]
+    G -- no --> I
+    H --> I{Mode}
+    I -- fake sandbox --> J[Local gateway<br/>keeps the 24-hour rule<br/>fake message id wamid.FAKE...]
+    I -- live --> K[POST graph.facebook.com/v25.0/PHONE_NUMBER_ID/messages<br/>Bearer token, template and parameters]
+    K --> L{Meta answer}
+    L -- 200 with message id --> M[(Status sent<br/>wamid saved)]
+    J --> M
+    L -- 5xx, 429, dropped connection --> N[Retry automatically] --> K
+    L -- 4xx error --> O[(Status failed<br/>error code and reason in words)]
+    O --> P([Fix and press Retry<br/>131047 24h window: use a template<br/>131030 number not on the test list<br/>190 token expired])
+    M --> Q[Meta delivers to the phone]
+    Q --> R[Meta calls your webhook<br/>POST /api/v1/accounting/whatsapp/webhook<br/>X-Hub-Signature-256]
+    R --> S{Signature matches<br/>app secret?}
+    S -- no --> T([403 and ignored])
+    S -- yes --> U[(Status delivered, then read<br/>never moves backwards)]
+    U --> V([Parent sees the message<br/>staff see the status on the WhatsApp screen])
+    W([Parent replies]) --> R
+    R --> X[(Reply saved once<br/>opens a 24-hour window for free text)]
