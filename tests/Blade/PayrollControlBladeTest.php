@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PayrollAdjustment;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
+use Spatie\Permission\Models\Permission;
 
 it('submits, approves and posts a run, and adds bonuses, in Blade', function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
@@ -44,4 +45,14 @@ it('submits, approves and posts a run, and adds bonuses, in Blade', function ():
     $this->get("/accounting/payroll/runs/{$run->id}")->assertSee('Approved by')->assertSee('Post');
     $this->post("/accounting/payroll/runs/{$run->id}/post")->assertRedirect()->assertSessionHas('success');
     expect($run->refresh()->status)->toBe('posted');
+});
+
+it('shows one permission with the roles that carry it', function (): void {
+    $this->seed(AccountingDatabaseSeeder::class);
+    $admin = User::factory()->create();
+    $admin->assignRole('super-admin');
+    $this->actingAs($admin);
+    $permission = Permission::query()->where('name', 'payroll.approve')->firstOrFail();
+
+    $this->get('/settings/permissions/'.$permission->id)->assertOk()->assertSee('payroll.approve')->assertSee('approver');
 });

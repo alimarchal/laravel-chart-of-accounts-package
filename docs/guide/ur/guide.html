@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>اکاؤنٹنگ سسٹم — اردو گائیڈ</title>
+<style>
+:root { color-scheme: light dark; --bg:#fff; --fg:#1b1f23; --muted:#5b6670; --line:#d9dee3; --accent:#0b5cad; --code:#f3f5f7; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14181c; --fg:#e6e9ec; --muted:#9aa5b0; --line:#2a3138; --accent:#6fb1ff; --code:#1d2329; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font-family:"Noto Naskh Arabic","Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Segoe UI",Tahoma,Arial,sans-serif; font-size:18px; line-height:2; }
+main { max-width:900px; margin:0 auto; padding:16px 16px 64px; }
+h1 { font-size:1.9em; line-height:1.5; border-bottom:2px solid var(--accent); padding-bottom:.3em; margin-top:2.2em; }
+h2 { font-size:1.45em; line-height:1.6; margin-top:1.8em; } h3 { font-size:1.2em; }
+a { color:var(--accent); }
+img { max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px; display:block; margin:1em auto; direction:ltr; }
+table { border-collapse:collapse; width:100%; display:block; overflow-x:auto; font-size:.92em; line-height:1.7; }
+th, td { border:1px solid var(--line); padding:.4em .7em; text-align:right; vertical-align:top; }
+th { background:var(--code); }
+code, pre { direction:ltr; unicode-bidi:isolate; font-family:Consolas,"SFMono-Regular",Menlo,monospace; font-size:.85em; background:var(--code); border-radius:4px; }
+code { padding:.05em .35em; white-space:pre-wrap; word-break:break-word; }
+pre { padding:.8em 1em; overflow-x:auto; text-align:left; line-height:1.5; } pre code { padding:0; background:none; white-space:pre; }
+blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent); background:var(--code); border-radius:6px; }
+.toc a { display:block; padding:.1em 0; } hr { border:0; border-top:1px solid var(--line); margin:3em 0; }
+@media print { img { break-inside:avoid; } body { font-size:12pt; } }
+</style></head>
+<body><main>
+<section id="top">
+<h1 id="_1">اکاؤنٹنگ سسٹم — مکمل اردو استعمال گائیڈ</h1>
+<p>یہ گائیڈ <strong>Laravel Chart of Accounts</strong> پیکیج کی ہر اسکرین، ہر عمل اور API کو <strong>اردو</strong> میں (اسکرین شاٹس کے ساتھ) سمجھاتی ہے۔ زبان دائیں سے بائیں ہے؛ جہاں انگریزی بٹن، فیلڈ یا کوڈ کا نام ہے وہ انگریزی ہی میں <code>اس طرح</code> لکھا ہے تاکہ آپ اسکرین سے ملا سکیں۔</p>
+<blockquote>
+<p><strong>ایک ہی فائل میں پڑھنا چاہتے ہیں؟</strong> <a href="#top"><code>guide.html</code></a> کھولیں (اپنے براؤزر میں ڈاؤن لوڈ کر کے)؛ یہ پوری گائیڈ ایک صفحے میں، دائیں سے بائیں اور موبائل پر پڑھنے کے قابل ہے۔</p>
+</blockquote>
+<h2 id="_2">فہرست</h2>
+<table>
+<thead>
+<tr>
+<th>باب</th>
+<th>موضوع</th>
+<th>کیا سیکھیں گے</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#01-shuru">1</a></td>
+<td>شروعات</td>
+<td>لاگ اِن، Dashboard، اردو/انگریزی، کمپنی، رولز</td>
+</tr>
+<tr>
+<td><a href="#02-buniyadi">2</a></td>
+<td>بنیادی ڈیٹا</td>
+<td>کھاتوں کا چارٹ، امپورٹ، کرنسی، مدتیں اور کلوزنگ، Cost Center، Voucher Types</td>
+</tr>
+<tr>
+<td><a href="#03-voucher">3</a></td>
+<td>جرنل واؤچر</td>
+<td>بنانا، پوسٹ، منظوری، دستاویزات، پرنٹ، Recurring، FX Revaluation</td>
+</tr>
+<tr>
+<td><a href="#04-reports">4</a></td>
+<td>رپورٹیں</td>
+<td>Trial Balance سے Cash Flow تک، ایکسپورٹ</td>
+</tr>
+<tr>
+<td><a href="#05-bank">5</a></td>
+<td>بینک</td>
+<td>بینک کھاتے، اسٹیٹمنٹ امپورٹ، Auto-match، مفاہمت</td>
+</tr>
+<tr>
+<td><a href="#06-parties">6</a></td>
+<td>گاہک و سپلائر</td>
+<td>انوائس، بل، وصولی/ادائیگی، Ageing</td>
+</tr>
+<tr>
+<td><a href="#07-tax-fbr">7</a></td>
+<td>ٹیکس اور FBR</td>
+<td>Tax Codes، Taxed Document، ٹیکس رپورٹ، FBR انوائسنگ</td>
+</tr>
+<tr>
+<td><a href="#08-planning">8</a></td>
+<td>بجٹ، اثاثے، انوینٹری</td>
+<td>Budget vs Actual، فرسودگی، اسٹاک</td>
+</tr>
+<tr>
+<td><a href="#09-payroll">9</a></td>
+<td>پے رول</td>
+<td>ملازمین، تنخواہ Run، بقایا جات، چھٹی، قرض، EOBI، منظوری، بونس، تصفیہ، ٹیکس سرٹیفکیٹ</td>
+</tr>
+<tr>
+<td><a href="#10-admin">10</a></td>
+<td>انتظامی ٹولز</td>
+<td>صارفین، رولز، <strong>Features آن/آف</strong>، کمپنیاں، Audit Log</td>
+</tr>
+<tr>
+<td><a href="#11-api">11</a></td>
+<td>API گائیڈ</td>
+<td>ٹوکن، curl مثالیں، تمام ماڈیولز کے endpoints</td>
+</tr>
+<tr>
+<td><a href="#12-commands-faq">12</a></td>
+<td>کمانڈیں اور سوالات</td>
+<td>Artisan کمانڈیں، عام مسائل کا حل، اصطلاحات</td>
+</tr>
+<tr>
+<td><a href="#13-zameema">ضمیمہ</a></td>
+<td>بقیہ اسکرینیں</td>
+<td>نیا/تفصیل/ترمیم کے عمومی صفحات</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">مزید وسائل</h2>
+<ul>
+<li><strong>ہر اسکرین اور endpoint کی فہرست (Help Catalog):</strong> <a href="../help-catalog.md"><code>docs/help-catalog.md</code></a></li>
+<li><strong>API کی مکمل تفصیل:</strong> <a href="../openapi.yaml"><code>docs/openapi.yaml</code></a> اور <a href="../postman_collection.json">Postman collection</a></li>
+<li><strong>عملی ٹیسٹ فہرست (UAT):</strong> <a href="../uat.md"><code>docs/uat.md</code></a></li>
+<li><strong>انگریزی README:</strong> <a href="../../README.md"><code>README.md</code></a></li>
+</ul>
+<h2 id="_4">اردو انٹرفیس میں اسکرین</h2>
+<p>نیچے مرکزی صفحہ <strong>اردو (دائیں سے بائیں)</strong> انٹرفیس میں ہے — زبان مینو سے <code>اردو</code> منتخب کرنے پر پورا سسٹم ایسا نظر آتا ہے۔</p>
+<p><img alt="اردو انٹرفیس — Dashboard" src="../images/ur-dashboard.jpg" /></p>
+</section>
+<section id="01-shuru">
+<h1 id="1">باب 1: شروعات — لاگ اِن، مینو، زبان اور رولز</h1>
+<p><a href="#top">← فہرست</a> · <a href="#02-buniyadi">اگلا باب: بنیادی ڈیٹا →</a></p>
+<p>اس باب میں آپ سیکھیں گے کہ سسٹم میں داخل کیسے ہوں، مرکزی صفحہ (Dashboard) کیسے پڑھیں، زبان اردو/انگریزی کیسے بدلیں اور کس صارف کو کیا اختیار ملتا ہے۔</p>
+<blockquote>
+<p><strong>ضروری نوٹ:</strong> اسکرین شاٹس انگریزی انٹرفیس کے ہیں۔ بٹنوں اور فیلڈز کے انگریزی نام اس گائیڈ میں <code>اس طرح</code> لکھے گئے ہیں تاکہ آپ انہیں اسکرین پر آسانی سے پہچان سکیں۔</p>
+</blockquote>
+<h2 id="11">1.1 لاگ اِن اور مرکزی صفحہ</h2>
+<ol>
+<li>اپنے براؤزر میں سسٹم کا پتہ کھولیں، مثلاً <code>https://your-app.test/accounting</code>۔</li>
+<li>اگر آپ لاگ اِن نہیں ہیں تو سسٹم آپ کو <code>Login</code> صفحے پر لے جائے گا۔ اپنا ای میل اور پاس ورڈ لکھیں۔</li>
+<li>لاگ اِن کے بعد <strong>Accounting</strong> کا مرکزی صفحہ کھلتا ہے۔ اسی کو <em>Dashboard</em> کہتے ہیں۔</li>
+</ol>
+<p><img alt="مرکزی صفحہ — Accounting Dashboard" src="../images/accounting-dashboard.jpg" /></p>
+<p>مرکزی صفحے پر ہر ماڈیول کا ایک لنک ہوتا ہے: Chart of Accounts، Journal Entries، Reports، Payroll، Inventory وغیرہ۔ آپ کو صرف وہی لنک نظر آتے ہیں جن کی اجازت (Permission) آپ کے پاس ہے اور جو <strong>Features</strong> میں آن ہیں (دیکھیں باب 10)۔</p>
+<h2 id="12-overview">1.2 Overview — کاروبار کی ایک نظر</h2>
+<p><code>Overview</code> صفحہ نقدی، وصولیاں، ادائیگیاں، آمدنی و اخراجات کے چارٹ اور انتباہات (مثلاً منظوری کے منتظر واؤچرز، بجٹ سے تجاوز) ایک جگہ دکھاتا ہے۔ کسی بھی انتباہ پر کلک کریں تو متعلقہ فہرست کھل جاتی ہے۔</p>
+<p><img alt="Overview — KPIs، چارٹ اور انتباہات" src="../images/accounting-overview.jpg" /></p>
+<h2 id="13">1.3 زبان: اردو (دائیں سے بائیں) اور انگریزی</h2>
+<p>صفحے کے اوپر دائیں/بائیں کونے میں <strong>English</strong> لکھا ایک زبان منتخب کرنے والا مینو ہے۔ اس میں سے <code>اردو</code> منتخب کریں:</p>
+<ul>
+<li>پورا صفحہ دائیں سے بائیں (RTL) ہو جاتا ہے۔</li>
+<li>مینو، بٹن، فارم کے لیبل اور پیغامات اردو میں آ جاتے ہیں۔</li>
+<li>آپ کی پسند محفوظ رہتی ہے، اگلی بار دوبارہ منتخب کرنے کی ضرورت نہیں۔</li>
+<li>اعداد، کوڈ، ای میل اور انگریزی ناموں (مثلاً <code>JV-2026-00001</code>) کی سمت درست رہتی ہے۔</li>
+</ul>
+<h2 id="14-multi-company">1.4 کمپنی تبدیل کرنا (Multi-company)</h2>
+<p>اگر آپ کے ادارے میں ایک سے زیادہ کمپنیاں ہیں تو مرکزی صفحے پر <strong>Company</strong> کا مینو ہوتا ہے۔ کمپنی بدلتے ہی تمام فہرستیں، رپورٹیں اور واؤچر اسی کمپنی کے ہو جاتے ہیں۔ ایک کمپنی کا ڈیٹا دوسری کمپنی کو کبھی نظر نہیں آتا۔</p>
+<p><img alt="کمپنیوں کی فہرست" src="../images/accounting-companies-index.jpg" /></p>
+<p>نئی کمپنی بنانے اور صارفین کو کمپنی تک رسائی دینے کے لیے <code>Companies</code> صفحہ استعمال کریں (صرف <code>companies.manage</code> کی اجازت والے صارفین)۔</p>
+<h2 id="15-roles">1.5 رولز (Roles) — کون کیا کر سکتا ہے</h2>
+<p>سسٹم میں اختیارات کی تقسیم اس اصول پر ہے کہ <strong>ایک ہی شخص واؤچر بنا بھی نہ سکے اور خود منظور بھی نہ کر سکے</strong>۔</p>
+<table>
+<thead>
+<tr>
+<th>رول (Role)</th>
+<th>کیا کر سکتا ہے</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>super-admin</code></td>
+<td>سب کچھ؛ پھر بھی اپنا بنایا ہوا واؤچر خود منظور نہیں کر سکتا</td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td>صارفین، رولز اور اجازتیں سنبھالتا ہے؛ حسابات میں کچھ نہیں لکھتا</td>
+</tr>
+<tr>
+<td><code>accountant</code></td>
+<td>واؤچر بناتا، پوسٹ کرتا، پیرو کلوز کرتا ہے؛ پے رول تیار اور جمع (Submit) کرتا ہے</td>
+</tr>
+<tr>
+<td><code>approver</code></td>
+<td>منظور/مسترد کرتا ہے؛ پے رول منظور (Approve)، پوسٹ اور ادا کرتا ہے؛ خود واؤچر نہیں بناتا</td>
+</tr>
+<tr>
+<td><code>auditor</code></td>
+<td>سب کچھ صرف پڑھ سکتا ہے، بشمول Audit Log</td>
+</tr>
+<tr>
+<td><code>viewer</code></td>
+<td>صرف رپورٹیں اور فہرستیں دیکھ سکتا ہے</td>
+</tr>
+</tbody>
+</table>
+<p>جس عمل کی اجازت نہ ہو، اس پر سسٹم <strong>403 Forbidden</strong> دیتا ہے اور بٹن عموماً نظر ہی نہیں آتا۔ رولز اور اجازتوں کی تفصیل باب 10 میں ہے۔</p>
+<h2 id="16">1.6 عام اصول جو ہر اسکرین پر لاگو ہیں</h2>
+<ul>
+<li><strong>Draft اور Posted:</strong> واؤچر پہلے <em>Draft</em> ہوتا ہے (تبدیلی ممکن)، <code>Post</code> کرنے کے بعد وہ کھاتوں میں درج ہو جاتا ہے اور تبدیل نہیں ہو سکتا؛ غلطی ہو تو <code>Reverse</code> (الٹ) کیا جاتا ہے۔</li>
+<li><strong>بند پیرئیڈ:</strong> بند مدت میں کوئی نیا واؤچر پوسٹ نہیں ہو سکتا۔</li>
+<li><strong>فلٹر اور ترتیب:</strong> فہرستوں کے اوپر فلٹر کے خانے ہوتے ہیں؛ خانہ بھر کر <code>Filter</code>/<code>Search</code> دبائیں، <code>Reset</code> سے فلٹر ہٹائیں۔</li>
+<li><strong>ایکسپورٹ:</strong> رپورٹوں اور کئی فہرستوں پر <code>CSV</code>، <code>Excel</code>، <code>PDF</code> کے بٹن ہوتے ہیں۔</li>
+<li><strong>آڈٹ:</strong> ہر اہم تبدیلی (کس نے، کب، کیا بدلا) Audit Log میں محفوظ ہوتی ہے۔</li>
+</ul>
+<h2 id="17-react-blade">1.7 دو انٹرفیس: React اور Blade</h2>
+<p>یہ پیکیج دو طرح کی اسکرینیں فراہم کرتا ہے: <strong>React (Inertia)</strong> — جدید، تیز، ایک صفحے کی ایپ کی طرح؛ اور <strong>Blade/Livewire</strong> — روایتی سرور سے بننے والے صفحات (Laravel Jetstream کے ساتھ)۔ دونوں میں <strong>ہر اسکرین، ہر بٹن اور ہر قاعدہ ایک جیسا</strong> ہے؛ فرق صرف ظاہری شکل کا ہے۔ آپ کے ادارے میں کون سا انٹرفیس چل رہا ہے یہ آپ کے ڈویلپر نے <code>ACCOUNTING_UI_DRIVER</code> (<code>inertia</code> یا <code>blade</code>) میں طے کیا ہوتا ہے۔ اس گائیڈ کے اسکرین شاٹس React کے ہیں؛ Blade کی چند مثالیں:</p>
+<p><img alt="Blade — مرکزی صفحہ" src="../images/blade-accounting-dashboard.jpg" /></p>
+<p><img alt="Blade — واؤچروں کی فہرست" src="../images/blade-accounting-journal-entries-index.jpg" /></p>
+<p><img alt="Blade — ٹرائل بیلنس" src="../images/blade-accounting-reports-trial-balance.jpg" /></p>
+<p><img alt="Blade — پے رول" src="../images/blade-accounting-payroll-index.jpg" /></p>
+<p><img alt="Blade — پے رول Run" src="../images/blade-accounting-payroll-runs-show.jpg" /></p>
+<p><img alt="Blade — Features" src="../images/blade-accounting-features-index.jpg" /></p>
+<p>Blade میں صارفین، رولز، Permissions اور Features کے صفحات <code>/settings/...</code> کے تحت ہوتے ہیں (مثلاً <code>/settings/users</code>، <code>/settings/roles</code>، <code>/settings/features</code>)؛ باقی سب <code>/accounting/...</code> کے تحت۔ مکمل فہرست <a href="../help-catalog.md">Help Catalog</a> میں "Blade driver" کے کالم میں ہے۔</p>
+</section>
+<section id="02-buniyadi">
+<h1 id="2">باب 2: بنیادی ڈیٹا — کھاتوں کا چارٹ، کرنسی، پیرئیڈ اور دیگر</h1>
+<p><a href="#01-shuru">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#03-voucher">اگلا باب: جرنل واؤچر →</a></p>
+<p>کوئی بھی لین دین درج کرنے سے پہلے یہ بنیادی چیزیں طے ہونی چاہئیں۔ اس باب کی ہر اسکرین کا ایک ہی انداز ہے: <strong>فہرست</strong> (Index) ← <code>Create</code> ← <strong>تفصیل</strong> (Show) ← <code>Edit</code>۔</p>
+<h2 id="21-chart-of-accounts">2.1 کھاتوں کا چارٹ (Chart of Accounts)</h2>
+<p>یہ آپ کے حسابات کی بنیاد ہے: ہر کھاتے کا ایک کوڈ (مثلاً <code>1101</code> Cash In Hand)، نام، قسم (Asset/Liability/Equity/Income/Expense) اور والدین (Parent) ہوتا ہے۔</p>
+<p><img alt="کھاتوں کی فہرست" src="../images/accounting-chart-of-accounts-index.jpg" /></p>
+<p><strong>نیا کھاتہ بنانے کے مراحل</strong></p>
+<ol>
+<li><code>Chart of Accounts</code> ← <code>Create</code> دبائیں۔</li>
+<li><code>Account Code</code> اور <code>Account Name</code> لکھیں۔</li>
+<li><code>Account Type</code> منتخب کریں (Asset، Liability وغیرہ)۔</li>
+<li>اگر یہ کسی گروپ کے نیچے ہے تو <code>Parent</code> منتخب کریں۔ <strong>گروپ</strong> (Group) کھاتے میں براہ راست واؤچر نہیں لکھا جاتا، صرف <strong>پتّے</strong> (Leaf) کھاتوں میں۔</li>
+<li><code>Save</code> دبائیں۔</li>
+</ol>
+<p><img alt="نیا کھاتہ بنانے کا فارم" src="../images/accounting-chart-of-accounts-create.jpg" /></p>
+<p><strong>ٹری (Tree) منظر:</strong> <code>Tree</code> لنک سے پورا چارٹ درخت کی شکل میں کھلتا ہے، ہر شاخ کھولی/بند کی جا سکتی ہے۔</p>
+<p><img alt="کھاتوں کا درخت" src="../images/accounting-chart-of-accounts-tree.jpg" /></p>
+<p>سسٹم ڈیٹا بیس کی سطح پر چارٹ کے اصول نافذ کرتا ہے: کوڈ منفرد، ہر کھاتے کی قسم لازمی، گروپ میں واؤچر ممنوع، اور جس کھاتے میں واؤچر ہو چکے ہوں اس کی قسم نہیں بدلی جا سکتی۔</p>
+<h3 id="_1">چارٹ امپورٹ / ایکسپورٹ</h3>
+<p>بڑا چارٹ ہاتھ سے بنانے کے بجائے CSV یا Excel سے لوڈ کریں:</p>
+<ol>
+<li><code>Import</code> دبائیں، پھر <code>Template</code> سے نمونہ فائل ڈاؤن لوڈ کریں۔</li>
+<li>فائل بھر کر اپ لوڈ کریں۔ سسٹم پہلے <strong>جانچ (Dry-run)</strong> دکھاتا ہے: کون سی قطاریں درست ہیں اور کن میں کیا غلطی ہے۔</li>
+<li>غلطیاں ٹھیک کر کے <code>Import</code> کی توثیق کریں۔</li>
+</ol>
+<p><img alt="چارٹ امپورٹ" src="../images/accounting-chart-of-accounts-import.jpg" /></p>
+<h3 id="restructure">کھاتے ضم کرنا اور کوڈ بدلنا (Restructure)</h3>
+<p>کسی کھاتے کے صفحے سے <code>Restructure</code> کھولیں۔ یہاں آپ (1) کوڈ بدل سکتے ہیں، (2) دو ایک جیسے کھاتوں کو <strong>ضم</strong> (Merge) کر سکتے ہیں — پہلے کھاتے کے تمام واؤچر دوسرے میں منتقل ہو جاتے ہیں — اور (3) شاخ کو نئے والدین کے نیچے لے جا سکتے ہیں۔ ہر کارروائی Audit Log میں درج ہوتی ہے۔</p>
+<p><img alt="کھاتہ تبدیل/ضم کرنے کی اسکرین" src="../images/accounting-chart-of-accounts-restructure.jpg" /></p>
+<h3 id="chart-templates">صنعتی ٹیمپلیٹس (Chart Templates)</h3>
+<p>نیا ادارہ شروع کر رہے ہوں تو <code>Chart Templates</code> سے اپنی صنعت کا تیار چارٹ لگا لیں: Trading، Manufacturing، Services، School، NGO، Healthcare۔</p>
+<p><img alt="چارٹ ٹیمپلیٹس" src="../images/accounting-chart-templates-index.jpg" /></p>
+<h2 id="22-account-types">2.2 اکاؤنٹ ٹائپس (Account Types)</h2>
+<p>یہ پانچ بنیادی اقسام ہیں جن پر پورا حسابی نظام کھڑا ہے۔ عام طور پر انہیں بدلنے کی ضرورت نہیں پڑتی۔</p>
+<p><img alt="Account Types" src="../images/accounting-account-types-index.jpg" /></p>
+<h2 id="23-currencies">2.3 کرنسیاں اور شرحِ تبادلہ (Currencies)</h2>
+<p>ایک کرنسی <strong>بنیادی کرنسی</strong> (Base) ہوتی ہے (مثلاً PKR)؛ باقی غیر ملکی۔ ہر غیر ملکی کرنسی کی شرح (<code>Exchange Rate</code>) تاریخ کے ساتھ درج کی جاتی ہے۔ غیر ملکی کرنسی کا واؤچر لکھتے وقت سسٹم اس تاریخ کی شرح لگا کر بنیادی کرنسی کی رقم نکال لیتا ہے۔</p>
+<p><img alt="کرنسیاں" src="../images/accounting-currencies-index.jpg" /></p>
+<p><img alt="نئی کرنسی" src="../images/accounting-currencies-create.jpg" /></p>
+<h2 id="24-periods">2.4 مالی مدتیں اور کلوزنگ (Periods)</h2>
+<p>ہر مالی سال کی مہینہ وار <strong>مدتیں</strong> (Periods) بنائی جاتی ہیں۔ <code>Generate monthly</code> سے پورے سال کی مدتیں ایک بار میں بن جاتی ہیں۔</p>
+<p><img alt="Accounting Periods" src="../images/accounting-periods-index.jpg" /></p>
+<p><strong>مہینے کے اختتام کی کلوزنگ:</strong> مدت کے صفحے سے <code>Close</code> کھولیں۔ سسٹم <strong>چیک لسٹ</strong> دکھاتا ہے (کوئی Draft واؤچر باقی تو نہیں، منظوری کے منتظر واؤچر، ٹرائل بیلنس برابر ہے یا نہیں)۔ سب ٹھیک ہو تو مدت بند ہو جاتی ہے اور اس کے اختتامی بیلنس کا <strong>اسنیپ شاٹ</strong> محفوظ ہو جاتا ہے۔ غلطی کی صورت میں مدت دوبارہ کھولی جا سکتی ہے۔</p>
+<p><img alt="مہینے/سال کی کلوزنگ" src="../images/accounting-periods-close-show.jpg" /></p>
+<p><strong>سال کے اختتام:</strong> آخری مدت بند کرنے پر سالانہ کلوزنگ ہوتی ہے: آمدنی و اخراجات صفر ہو کر منافع/نقصان <code>Retained Earnings</code> میں منتقل ہوتا ہے۔</p>
+<h2 id="25-cost-centers">2.5 لاگت کے مراکز (Cost Centers)</h2>
+<p>اخراجات و آمدنی کو شعبوں/منصوبوں کے حساب سے الگ دیکھنے کے لیے۔ واؤچر کی ہر لائن پر ایک Cost Center چنا جا سکتا ہے، اور بجٹ و پے رول رپورٹیں انہی کے حساب سے بنتی ہیں۔</p>
+<p><img alt="Cost Centers" src="../images/accounting-cost-centers-index.jpg" /></p>
+<h2 id="26-voucher-types">2.6 واؤچر کی اقسام اور نمبرنگ (Voucher Types)</h2>
+<p>ہر قسم (JV، Cash Payment، Bank Receipt وغیرہ) کا اپنا <strong>بلا خلا</strong> (gapless) نمبر ہوتا ہے، مثلاً <code>JV-2026-00001</code>۔ نمبر کی ترتیب (Prefix، سال، لمبائی، سالانہ ری سیٹ) یہاں سے طے ہوتی ہے۔ نمبر <strong>پوسٹ</strong> کرتے وقت ملتا ہے، Draft پر نہیں۔</p>
+<p><img alt="Voucher Types" src="../images/accounting-voucher-types-index.jpg" /></p>
+<h2 id="27-control-accounts">2.7 کنٹرول اکاؤنٹس (Control Accounts)</h2>
+<p>کسٹمر/سپلائر (Receivable/Payable) جیسے کھاتے <strong>کنٹرول کھاتے</strong> ہوتے ہیں: ان کی تفصیل ذیلی کھاتوں (Parties) میں ہوتی ہے۔ ان میں ہاتھ سے جرنل واؤچر لکھنا خطرناک ہے کیونکہ ذیلی کھاتہ اور کنٹرول کھاتہ ہم آہنگ نہیں رہتے۔ اس صفحے پر آپ سفارش کردہ کنٹرول کھاتے نشان زد کرتے ہیں اور دیکھتے ہیں کہ کن میں ہاتھ سے پوسٹنگ ہوئی۔</p>
+<p><img alt="Control Accounts" src="../images/accounting-control-accounts-index.jpg" /></p>
+<h2 id="28">2.8 بیلنس اسنیپ شاٹس</h2>
+<p>ہر مدت بند ہونے پر ہر کھاتے کا اختتامی بیلنس محفوظ ہوتا ہے تاکہ بڑی رپورٹیں تیز چلیں۔</p>
+<p><img alt="Balance Snapshots" src="../images/accounting-account-balance-snapshots-index.jpg" /></p>
+<h2 id="29">2.9 ہر ماسٹر ڈیٹا کی عمومی اسکرینیں</h2>
+<p>Account Types، Currencies، Periods، Cost Centers، Bank Accounts، Tax Codes، Tax Rates — سب میں یہی چار اسکرینیں ہوتی ہیں: <strong>فہرست</strong>، <strong>نیا</strong>، <strong>تفصیل</strong>، <strong>ترمیم</strong>۔ مثال کے طور پر Cost Center:</p>
+<p><img alt="نیا Cost Center" src="../images/accounting-cost-centers-create.jpg" /></p>
+<p><img alt="Cost Center کی تفصیل" src="../images/accounting-cost-centers-show.jpg" /></p>
+<p><img alt="Cost Center میں ترمیم" src="../images/accounting-cost-centers-edit.jpg" /></p>
+</section>
+<section id="03-voucher">
+<h1 id="3">باب 3: جرنل واؤچر — بنانا، پوسٹ کرنا، منظوری اور پرنٹ</h1>
+<p><a href="#02-buniyadi">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#04-reports">اگلا باب: رپورٹیں →</a></p>
+<p>ہر لین دین <strong>دو طرفہ اندراج</strong> (Double entry) ہے: کل <code>Debit</code> = کل <code>Credit</code>۔ اگر دونوں برابر نہ ہوں تو سسٹم واؤچر محفوظ ہی نہیں کرتا۔</p>
+<h2 id="31">3.1 واؤچروں کی فہرست</h2>
+<p><code>Journal Entries</code> میں تمام واؤچر ہیں۔ اوپر فلٹر سے آپ حیثیت (Draft/Posted/Void)، منظوری کی حیثیت، واؤچر نمبر، تاریخ، قسم اور ماخذ دستاویز (Source document) کے حساب سے تلاش کر سکتے ہیں۔</p>
+<p><img alt="واؤچروں کی فہرست" src="../images/accounting-journal-entries-index.jpg" /></p>
+<h2 id="32">3.2 نیا واؤچر بنانا</h2>
+<ol>
+<li><code>Journal Entries</code> ← <code>New</code> / <code>Create</code>۔</li>
+<li><strong>Journal header</strong> میں <code>Voucher type</code>، تاریخ، <code>Reference</code> اور وضاحت لکھیں۔ غیر ملکی کرنسی ہو تو <code>Currency</code> چنیں۔</li>
+<li><strong>Lines</strong> میں ہر لائن کے لیے <code>Account</code>، <code>Debit</code> یا <code>Credit</code>، اختیاری <code>Cost Center</code> اور <code>Description</code> لکھیں۔ کم از کم دو لائنیں چاہئیں۔</li>
+<li>نیچے کل Debit اور کل Credit نظر آتے ہیں۔ فرق صفر ہونا چاہیے۔</li>
+<li><code>Save</code> دبائیں — واؤچر <strong>Draft</strong> بن جاتا ہے۔</li>
+</ol>
+<p><img alt="نیا واؤچر" src="../images/accounting-journal-entries-create.jpg" /></p>
+<blockquote>
+<p><strong>Source document:</strong> اگر یہ واؤچر کسی بل/رسید سے متعلق ہے تو اس کی قسم اور نمبر لکھیں۔ ایک ہی دستاویز کا دوسرا واؤچر بن ہی نہیں سکتا — اس طرح دوہری اندراج رک جاتی ہے۔</p>
+</blockquote>
+<h2 id="33">3.3 واؤچر کی تفصیل اور کارروائیاں</h2>
+<p>واؤچر کھولیں تو سب لائنیں، رقوم، نمبر، دستاویزات اور ہسٹری نظر آتی ہے۔ اوپر کے بٹن حیثیت کے مطابق بدلتے ہیں:</p>
+<p><img alt="واؤچر کی تفصیل" src="../images/accounting-journal-entries-show.jpg" /></p>
+<table>
+<thead>
+<tr>
+<th>بٹن</th>
+<th>کب نظر آتا ہے</th>
+<th>نتیجہ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Edit</code></td>
+<td>صرف Draft</td>
+<td>لائنیں بدلنا</td>
+</tr>
+<tr>
+<td><code>Post</code></td>
+<td>Draft، اور مدت کھلی ہو</td>
+<td>کھاتوں میں درج، واؤچر نمبر ملتا ہے</td>
+</tr>
+<tr>
+<td><code>Submit for approval</code></td>
+<td>منظوری کا نظام آن ہو اور رقم حد سے زیادہ ہو</td>
+<td>منظوری کے لیے بھیجنا</td>
+</tr>
+<tr>
+<td><code>Approve &amp; post</code></td>
+<td>صرف approver، اور اس نے خود نہ بنایا ہو</td>
+<td>منظور کر کے پوسٹ</td>
+</tr>
+<tr>
+<td><code>Reject</code></td>
+<td>approver</td>
+<td>وجہ لکھ کر واپس</td>
+</tr>
+<tr>
+<td><code>Reverse</code></td>
+<td>Posted</td>
+<td>الٹا واؤچر بن کر اثر ختم</td>
+</tr>
+<tr>
+<td><code>Void</code></td>
+<td>صرف Draft</td>
+<td>منسوخ</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Posted واؤچر کبھی ایڈٹ یا ڈیلیٹ نہیں ہوتا۔</strong> غلطی ہو تو <code>Reverse</code> کریں اور درست واؤچر نیا بنائیں؛ پورا ریکارڈ آڈٹ کے لیے محفوظ رہتا ہے۔</p>
+<p><img alt="واؤچر میں ترمیم (Draft)" src="../images/accounting-journal-entries-edit.jpg" /></p>
+<h2 id="34-makerchecker">3.4 منظوری کا نظام (Maker–Checker)</h2>
+<p>یہ ادارے کی پالیسی ہے، جو ترتیب (config) میں آن/آف ہوتی ہے (<code>ACCOUNTING_APPROVALS_ENABLED</code>)۔ آن ہو تو مقررہ رقم سے اوپر کے واؤچر براہ راست پوسٹ نہیں ہوتے:</p>
+<ol>
+<li>Accountant <code>Submit for approval</code> دبائے۔ واؤچر پر <strong>Awaiting approval</strong> لکھا آتا ہے۔</li>
+<li>Approver کی فہرست میں اسے <code>approval_status = pending</code> فلٹر سے دیکھا جا سکتا ہے۔</li>
+<li>Approver <code>Approve &amp; post</code> یا وجہ لکھ کر <code>Reject</code> کرتا ہے۔</li>
+<li><strong>اصول:</strong> جس نے واؤچر بنایا وہ خود اسے منظور نہیں کر سکتا۔</li>
+</ol>
+<h2 id="35-attachments">3.5 دستاویزات منسلک کرنا (Attachments)</h2>
+<p>Draft واؤچر کے صفحے پر <strong>Attachments</strong> کا خانہ ہے۔ بل، رسید یا معاہدے کی PDF/تصویر <code>Upload</code> کریں۔ فائل کی قسم اور سائز کی جانچ ہوتی ہے۔ دستاویز ڈاؤن لوڈ کی جا سکتی ہے؛ صرف Draft کی دستاویز ہٹائی جا سکتی ہے۔</p>
+<h2 id="36-pdf">3.6 واؤچر پرنٹ اور PDF</h2>
+<p>واؤچر کے صفحے سے <code>Print</code> (پرنٹ کے قابل صفحہ) یا <code>PDF</code> منتخب کریں۔ پرنٹ میں کمپنی کا نام، واؤچر نمبر، لائنیں، رقم الفاظ میں، اور تیار کنندہ/منظور کنندہ کے دستخط کی جگہ ہوتی ہے۔ PDF کے لیے <code>dompdf</code> پیکیج انسٹال ہونا چاہیے۔</p>
+<h2 id="37-recurring-entries">3.7 دہرائے جانے والے واؤچر (Recurring Entries)</h2>
+<p>کرایہ، تنخواہ کی پیشگی، انشورنس جیسے مسلسل واؤچر کے لیے <code>Recurring Entries</code> میں ٹیمپلیٹ بنائیں: تکرار (روزانہ/ہفتہ وار/ماہانہ/سالانہ)، آغاز اور اختتامی تاریخ یا تعداد، اور موڈ — واؤچر <strong>Draft</strong> بنے (آپ خود دیکھ کر پوسٹ کریں) یا <strong>خود بخود پوسٹ</strong> ہو جائے۔ سسٹم روزانہ شیڈولر کے ذریعے مقررہ واؤچر بنا دیتا ہے۔ جو واؤچر پوسٹ نہ ہو سکا (مثلاً مدت بند تھی) وہ وجہ کے ساتھ Draft میں رہ جاتا ہے۔</p>
+<p><img alt="Recurring Entries" src="../images/accounting-recurring-entries-index.jpg" /></p>
+<p><img alt="نیا ٹیمپلیٹ" src="../images/accounting-recurring-entries-create.jpg" /></p>
+<p><img alt="ٹیمپلیٹ کی تفصیل اور آنے والی تاریخیں" src="../images/accounting-recurring-entries-show.jpg" /></p>
+<blockquote>
+<p>شیڈولر چلانے کے لیے سرور پر <code>php artisan schedule:run</code> ہر منٹ چلنا چاہیے، یا ہاتھ سے <code>php artisan accounting:run-recurring</code>۔ اگر <code>Recurring entries</code> فیچر بند ہو (باب 10) تو یہ کمانڈ کچھ نہیں کرتی۔</p>
+</blockquote>
+<h2 id="38-fx-revaluation">3.8 غیر ملکی کرنسی کی از سر نو قدر (FX Revaluation)</h2>
+<p>غیر ملکی کرنسی میں وصولیاں، ادائیگیاں اور بینک بیلنس مدت کے اختتام پر <strong>اختتامی شرح</strong> پر دوبارہ ناپے جاتے ہیں؛ فرق <strong>غیر حقیقی تبادلہ نفع/نقصان</strong> کے طور پر درج ہوتا ہے:</p>
+<ol>
+<li><code>Currency Revaluation</code> کھولیں، <code>As of</code> تاریخ اور ہر کرنسی کی اختتامی شرح لکھیں۔</li>
+<li><code>Preview</code> سے ہر کھاتے کا فرق دیکھیں۔</li>
+<li><code>Post</code> سے واؤچر بنتا ہے؛ اگلی مدت کی پہلی تاریخ پر اس کا الٹ خود بخود بن سکتا ہے (<code>Reversal</code>)۔</li>
+</ol>
+<p><img alt="Currency Revaluation" src="../images/accounting-fx-revaluation-index.jpg" /></p>
+<p><img alt="پیش نظارہ" src="../images/accounting-fx-revaluation-preview.jpg" /></p>
+<p><img alt="پوسٹ شدہ revaluation کی تفصیل" src="../images/accounting-fx-revaluation-show.jpg" /></p>
+</section>
+<section id="04-reports">
+<h1 id="4">باب 4: رپورٹیں اور ایکسپورٹ</h1>
+<p><a href="#03-voucher">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#05-bank">اگلا باب: بینک →</a></p>
+<p>تمام رپورٹیں صرف <strong>Posted</strong> واؤچروں سے بنتی ہیں؛ Draft اور Void شامل نہیں ہوتے۔ ہر رپورٹ کے اوپر تاریخ/کھاتے/Cost Center کے فلٹر ہوتے ہیں، اور نیچے <code>CSV</code>، <code>Excel</code>، <code>PDF</code> ایکسپورٹ۔ بڑی ایکسپورٹ پس منظر (background) میں تیار ہو کر <strong>My exports</strong> میں آ جاتی ہے۔</p>
+<h2 id="41-trial-balance">4.1 ٹرائل بیلنس (Trial Balance)</h2>
+<p>ہر کھاتے کا ابتدائی بیلنس، مدت کی حرکت اور اختتامی بیلنس۔ کل Debit = کل Credit ہونا چاہیے؛ نہ ہو تو کہیں سنگین مسئلہ ہے۔</p>
+<p><img alt="Trial Balance" src="../images/accounting-reports-trial-balance.jpg" /></p>
+<h2 id="42-general-ledger">4.2 جنرل لیجر (General Ledger)</h2>
+<p>کسی کھاتے/تاریخ کی حد کی ایک ایک اندراج، چلتے بیلنس کے ساتھ۔ صفحہ بندی (pagination) ہے اور کل رقوم <strong>پورے فلٹر</strong> کی ہوتی ہیں، صرف موجودہ صفحے کی نہیں۔</p>
+<p><img alt="General Ledger" src="../images/accounting-reports-general-ledger.jpg" /></p>
+<h2 id="43-account-statement">4.3 اکاؤنٹ اسٹیٹمنٹ (Account Statement)</h2>
+<p>ایک کھاتے کا بینک اسٹیٹمنٹ جیسا گوشوارہ: ابتدائی بیلنس، ہر اندراج پر چلتا بیلنس، اختتامی بیلنس۔ پہلے <code>Account</code> منتخب کریں، تب ہی ڈیٹا لوڈ ہوتا ہے۔</p>
+<p><img alt="Account Statement" src="../images/accounting-reports-account-statement.jpg" /></p>
+<h2 id="44-balance-sheet">4.4 بیلنس شیٹ (Balance Sheet)</h2>
+<p>کسی تاریخ تک اثاثے، واجبات اور ملکیت۔ سال کے اختتام سے پہلے بھی یہ متوازن رہتی ہے کیونکہ جاری سال کا منافع <code>Unclosed earnings</code> کے طور پر ملکیت میں آتا ہے۔</p>
+<p><img alt="Balance Sheet" src="../images/accounting-reports-balance-sheet.jpg" /></p>
+<h2 id="45-income-statement">4.5 آمدنی کا گوشوارہ (Income Statement)</h2>
+<p>مدت کی آمدنی، اخراجات اور خالص منافع/نقصان۔</p>
+<p><img alt="Income Statement" src="../images/accounting-reports-income-statement.jpg" /></p>
+<h2 id="46-cash-flow">4.6 نقدی کا بہاؤ (Cash Flow)</h2>
+<p>مدت میں نقدی کہاں سے آئی اور کہاں گئی: آپریٹنگ، سرمایہ کاری اور مالیاتی سرگرمیاں۔ بالواسطہ (Indirect) طریقے کی لائنیں <code>Report Mapping</code> میں اپنی مرضی سے بنائی جا سکتی ہیں۔</p>
+<p><img alt="Cash Flow" src="../images/accounting-reports-cash-flow.jpg" /></p>
+<h2 id="47">4.7 بینک بُک اور کیش بُک</h2>
+<p>نقدی/بینک کھاتوں کی روزانہ حرکت۔ ذیلی بینک کھاتے خود شامل ہو جاتے ہیں۔</p>
+<p><img alt="Bank Book" src="../images/accounting-reports-bank-book.jpg" /></p>
+<p><img alt="Cash Book" src="../images/accounting-reports-cash-book.jpg" /></p>
+<h2 id="48-aged-receivables-payables">4.8 وصولیوں/ادائیگیوں کی عمر (Aged Receivables / Payables)</h2>
+<p>کون سا گاہک/سپلائر کتنے دن سے رقم روکے بیٹھا ہے: Current، 1–30، 31–60، 61–90، 90+ دن کے خانے، جن کا مجموعہ کل بقایا کے برابر ہوتا ہے۔</p>
+<p><img alt="Aged Receivables" src="../images/accounting-reports-aged-receivables.jpg" /></p>
+<p><img alt="Aged Payables" src="../images/accounting-reports-aged-payables.jpg" /></p>
+<h2 id="49">4.9 مالیاتی گوشوارے اور رپورٹ میپنگ</h2>
+<p><code>Financial Statements</code> میں گوشواروں کی ترتیب (مثلاً "Current Assets" کے ذیل میں کون سے کھاتے) آپ کی مرضی کے مطابق بنتی ہے۔ ترتیب <code>Report Mapping</code> میں طے ہوتی ہے: ہر کھاتے کو ایک <strong>لائن</strong> سے جوڑیں؛ اور Cash Flow کی لائنیں بھی یہیں بنتی ہیں۔</p>
+<p><img alt="Financial Statements" src="../images/accounting-reports-financial-statements.jpg" /></p>
+<p><img alt="Report Mapping" src="../images/accounting-report-mapping-index.jpg" /></p>
+<h2 id="410-consolidated">4.10 مجموعی رپورٹ (Consolidated)</h2>
+<p>اگر ایک سے زیادہ کمپنیاں ہوں تو <code>Consolidated Reports</code> میں ٹرائل بیلنس وغیرہ سب کمپنیوں کا مجموعہ نکلتا ہے (صرف ان کمپنیوں کا جن تک آپ کی رسائی ہے)۔</p>
+<p><img alt="Consolidated Reports" src="../images/accounting-reports-consolidated.jpg" /></p>
+<h2 id="411-my-exports">4.11 My Exports — پس منظر کی ایکسپورٹ</h2>
+<p>بڑی رپورٹ (ہزاروں قطاریں) کی Excel/PDF فوراً نہیں بنتی؛ سسٹم اسے قطار (queue) میں ڈالتا ہے اور تیار ہونے پر <code>My exports</code> میں <code>Download</code> کا لنک آ جاتا ہے۔ صرف ایکسپورٹ کرنے والا اپنی فائل دیکھ/ڈاؤن لوڈ/ڈیلیٹ کر سکتا ہے۔ پرانی فائلیں <code>php artisan accounting:prune-exports</code> سے صاف ہوتی ہیں۔</p>
+<p><img alt="My exports" src="../images/accounting-exports-index.jpg" /></p>
+</section>
+<section id="05-bank">
+<h1 id="5">باب 5: بینک — بینک کھاتے، اسٹیٹمنٹ امپورٹ اور مفاہمت</h1>
+<p><a href="#04-reports">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#06-parties">اگلا باب: گاہک و سپلائر →</a></p>
+<h2 id="51-bank-accounts">5.1 بینک اکاؤنٹس (Bank Accounts)</h2>
+<p>ہر حقیقی بینک کھاتے کو چارٹ کے ایک Asset کھاتے سے جوڑیں۔ بینک کا نام، اکاؤنٹ نمبر اور IBAN یہاں لکھیں۔</p>
+<p><img alt="Bank Accounts" src="../images/accounting-bank-accounts-index.jpg" /></p>
+<p><img alt="نیا بینک کھاتہ" src="../images/accounting-bank-accounts-create.jpg" /></p>
+<p><img alt="بینک کھاتے کی تفصیل" src="../images/accounting-bank-accounts-show.jpg" /></p>
+<h2 id="52-bank-statements">5.2 بینک اسٹیٹمنٹ امپورٹ (Bank Statements)</h2>
+<p>بینک سے ملنے والی اسٹیٹمنٹ (CSV/Excel) کو سسٹم میں لا کر اپنی کتابوں سے ملانے کا تیز طریقہ:</p>
+<ol>
+<li><code>Bank Statements</code> ← <code>Import</code>۔</li>
+<li>بینک کھاتہ منتخب کریں اور فائل اپ لوڈ کریں۔ سسٹم کالم (تاریخ، تفصیل، Debit/Credit یا رقم، بیلنس) خود پہچان لیتا ہے۔</li>
+<li>ایک ہی فائل دوبارہ اپ لوڈ ہو جائے تو سسٹم ڈپلیکیٹ قطاریں رد کر دیتا ہے۔</li>
+</ol>
+<p><img alt="اسٹیٹمنٹ امپورٹ" src="../images/accounting-bank-statements-import.jpg" /></p>
+<p><img alt="امپورٹ شدہ اسٹیٹمنٹ" src="../images/accounting-bank-statements-index.jpg" /></p>
+<h2 id="53-matching">5.3 خودکار مماثلت (Matching)</h2>
+<p>امپورٹ کے بعد اسٹیٹمنٹ کھولیں۔</p>
+<ol>
+<li><code>Auto-match</code> دبائیں: سسٹم رقم، تاریخ کی قربت اور حوالہ نمبر کے حساب سے مماثل اندراج خود جوڑ دیتا ہے۔</li>
+<li>جو قطاریں رہ جائیں ان کے سامنے <code>Match / book</code> کھولیں: یا تو فہرست میں سے <strong>موجودہ اندراج</strong> چنیں، یا وہیں نیا اندراج <strong>بُک</strong> کریں (مثلاً بینک چارجز یا منافع)۔</li>
+<li>جس قطار کا آپ کے حسابات سے تعلق نہیں اسے <code>Ignore</code> کریں؛ غلطی ہو تو <code>Restore</code>۔</li>
+<li>غلط مماثلت کو <code>Unmatch</code> کر کے دوبارہ کریں۔</li>
+<li>جب کوئی قطار غیر مماثل نہ رہے تو <code>Reconcile</code> کا بٹن چالو ہو جاتا ہے؛ اسے دبا کر اسٹیٹمنٹ مکمل کریں۔</li>
+<li>غلط فائل اپ لوڈ ہو گئی ہو تو <code>Delete</code> — اس کی مماثلتیں آزاد ہو جاتی ہیں۔</li>
+</ol>
+<p><img alt="اسٹیٹمنٹ کی قطاریں اور مماثلت" src="../images/accounting-bank-statements-show.jpg" /></p>
+<p><img alt="کسی قطار کے امیدوار اندراجات" src="../images/accounting-bank-statements-lines-candidates.jpg" /></p>
+<h2 id="54-reconciliations">5.4 مفاہمت (Reconciliations)</h2>
+<p>مفاہمت کا مطلب ہے بینک کی اسٹیٹمنٹ اور آپ کی کتابوں کا ایک تاریخ پر برابر ہونا:</p>
+<ol>
+<li><code>Reconciliations</code> ← <code>Create</code>: بینک کھاتہ، اسٹیٹمنٹ کی تاریخ اور اسٹیٹمنٹ کا اختتامی بیلنس لکھیں۔</li>
+<li><code>Match</code> کھولیں اور کتابوں کے وہ اندراجات نشان زد کریں جو بینک میں کلیئر ہو چکے۔</li>
+<li><strong>فرق صفر</strong> ہو جائے تو مفاہمت مکمل کریں۔</li>
+</ol>
+<p><img alt="Reconciliations" src="../images/accounting-reconciliations-index.jpg" /></p>
+<p><img alt="نئی مفاہمت" src="../images/accounting-reconciliations-create.jpg" /></p>
+<p><img alt="اندراجات کی مماثلت" src="../images/accounting-reconciliations-match.jpg" /></p>
+<p><img alt="مفاہمت کی تفصیل" src="../images/accounting-reconciliations-show.jpg" /></p>
+</section>
+<section id="06-parties">
+<h1 id="6">باب 6: گاہک، سپلائر، انوائس، بل اور ادائیگیاں</h1>
+<p><a href="#05-bank">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#07-tax-fbr">اگلا باب: ٹیکس اور FBR →</a></p>
+<p>یہ ماڈیول <strong>ادھار کی فروخت اور خریداری</strong> سنبھالتا ہے۔ ہر انوائس/بل/رسید خود بخود صحیح کنٹرول کھاتوں میں واؤچر بنا دیتی ہے؛ آپ کو ہاتھ سے جرنل نہیں لکھنا پڑتا۔</p>
+<h2 id="61-parties">6.1 گاہک اور سپلائر (Parties)</h2>
+<p>ایک <em>Party</em> گاہک بھی ہو سکتی ہے، سپلائر بھی، یا دونوں (<code>both</code>)۔ ہر Party کا کوڈ، نام، رابطہ، ادائیگی کی مدت (Credit days) اور حد (Credit limit) ہوتی ہے۔</p>
+<p><img alt="Customers &amp; Suppliers" src="../images/accounting-parties-index.jpg" /></p>
+<p><img alt="نئی Party" src="../images/accounting-parties-create.jpg" /></p>
+<p>Party کی تفصیل میں <strong>اسٹیٹمنٹ</strong> (کس نے کتنا دینا/لینا ہے)، کھلے بل اور ادائیگیاں ایک ساتھ نظر آتی ہیں:</p>
+<p><img alt="Party کی تفصیل اور اسٹیٹمنٹ" src="../images/accounting-parties-show.jpg" /></p>
+<h2 id="62-invoices-bills">6.2 انوائس اور بل (Invoices &amp; Bills)</h2>
+<p>اقسام: <code>Invoice</code> (فروخت)، <code>Bill</code> (خریداری)، <code>Credit note</code> اور <code>Debit note</code>۔</p>
+<ol>
+<li><code>Invoices &amp; Bills</code> ← <code>New</code>۔</li>
+<li>Party، تاریخ اور <strong>آخری تاریخ ادائیگی</strong> (Due date) لکھیں۔</li>
+<li>لائنیں: بیان، مقدار، قیمت، <strong>ٹیکس کوڈ</strong> اور کھاتہ (آمدنی/خرچ)۔ ٹیکس خود حساب ہوتا ہے۔</li>
+<li><code>Save</code> — دستاویز Draft رہتی ہے۔ <code>Post</code> کرنے پر واؤچر بنتا ہے: Debit Receivable، Credit Revenue اور Tax۔</li>
+</ol>
+<p><img alt="Invoices &amp; Bills" src="../images/accounting-party-documents-index.jpg" /></p>
+<p><img alt="نئی انوائس" src="../images/accounting-party-documents-create.jpg" /></p>
+<p><img alt="انوائس کی تفصیل" src="../images/accounting-party-documents-show.jpg" /></p>
+<p><img alt="Draft انوائس میں ترمیم" src="../images/accounting-party-documents-edit.jpg" /></p>
+<h2 id="63-receipts-payments">6.3 وصولی اور ادائیگی (Receipts &amp; Payments)</h2>
+<ol>
+<li><code>Receipts &amp; Payments</code> ← <code>Receive Payment</code> (گاہک سے) یا <code>Make Payment</code> (سپلائر کو)۔</li>
+<li>Party، رقم، تاریخ اور رقم جس کھاتے (کیش/بینک) میں آئی/گئی اسے منتخب کریں۔</li>
+<li><strong>تخصیص (Allocation):</strong> رقم کو ایک یا کئی کھلی دستاویزات پر بانٹیں۔ بچی ہوئی رقم <strong>پیشگی</strong> (Advance) بن کر Party کے کھاتے میں رہتی ہے اور بعد میں کسی نئی انوائس پر لگ سکتی ہے۔</li>
+</ol>
+<p><img alt="Receipts &amp; Payments" src="../images/accounting-party-payments-index.jpg" /></p>
+<p><img alt="گاہک سے ادائیگی وصول کرنا" src="../images/accounting-party-payments-create.jpg" /></p>
+<p><img alt="رسید کی تفصیل اور تخصیص" src="../images/accounting-party-payments-show.jpg" /></p>
+<h2 id="64-ageing">6.4 عمر کا تجزیہ (Ageing)</h2>
+<p><code>Receivables aging</code> ہر گاہک کے بقایا کو عمر کے خانوں میں بانٹ کر دکھاتا ہے۔ ریکوری کی ترجیح یہیں سے طے کریں؛ CSV ایکسپورٹ بھی ہے۔</p>
+<p><img alt="Aged Receivables by Customer" src="../images/accounting-receivables-aging.jpg" /></p>
+</section>
+<section id="07-tax-fbr">
+<h1 id="7-fbr">باب 7: ٹیکس اور FBR</h1>
+<p><a href="#06-parties">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#08-planning">اگلا باب: منصوبہ بندی →</a></p>
+<h2 id="71">7.1 ٹیکس کوڈ اور شرحیں</h2>
+<p><strong>Tax Code</strong> ٹیکس کی قسم ہے (مثلاً <code>GST17</code> سیلز ٹیکس، Withholding)؛ ہر کوڈ کی <strong>Tax Rate</strong> تاریخ کے ساتھ درج ہوتی ہے تاکہ شرح بدلنے پر پرانے لین دین پرانی شرح ہی پر رہیں۔ کوڈ کی نوعیت: Output (فروخت پر واجب)، Input (خریداری پر قابل واپسی)، Withheld (کٹوتی) اور Advance (پیشگی ٹیکس)۔</p>
+<p><img alt="Tax Codes" src="../images/accounting-tax-codes-index.jpg" /></p>
+<p><img alt="نیا Tax Code" src="../images/accounting-tax-codes-create.jpg" /></p>
+<p><img alt="Tax Rates" src="../images/accounting-tax-rates-index.jpg" /></p>
+<p><img alt="نئی شرح" src="../images/accounting-tax-rates-create.jpg" /></p>
+<h2 id="72-taxed-document">7.2 ٹیکس والا اندراج (Taxed Document)</h2>
+<p>انوائس/بل کے بغیر بھی فوری ٹیکس والا اندراج بن سکتا ہے: <code>Tax</code> ← <code>Taxed Document</code>۔ قسم (Sale، Purchase، Credit/Debit Note، Withholding) منتخب کریں؛ رقم ٹیکس <strong>شامل</strong> (inclusive) یا <strong>علاوہ</strong> (exclusive) لکھیں؛ سسٹم Base، Tax اور Total الگ کر کے واؤچر بنا دیتا ہے (پیسے تک درست، کوئی فرق نہیں)۔</p>
+<p><img alt="Tax" src="../images/accounting-tax-index.jpg" /></p>
+<p><img alt="ٹیکس والا دستاویز" src="../images/accounting-tax-entries-create.jpg" /></p>
+<h2 id="73">7.3 ٹیکس رپورٹ اور ریٹرن</h2>
+<p><code>Tax Report</code> کسی مدت کا Output ٹیکس، Input ٹیکس، کٹوتی شدہ ٹیکس اور <strong>خالص قابل ادائیگی</strong> دکھاتا ہے۔ ریٹرن تیار ہونے پر <code>Return</code> بنا کر ٹیکس کھاتے کو سرکاری ادائیگی کے کھاتے میں منتقل کیا جاتا ہے؛ ایک مدت کا ریٹرن دوبارہ نہیں بنتا۔</p>
+<p><img alt="Tax Report" src="../images/accounting-tax-returns-report.jpg" /></p>
+<h2 id="74-fbr">7.4 FBR سیلز ٹیکس انوائسنگ</h2>
+<p>پوسٹ شدہ سیلز انوائس/کریڈٹ نوٹ FBR کو بھیجے جاتے ہیں اور FBR کا انوائس نمبر واپس درج ہوتا ہے۔</p>
+<ul>
+<li><strong>ترتیب:</strong> <code>ACCOUNTING_FBR_ENABLED=true</code>، موڈ <code>fake</code> (آزمائش)، <code>live</code> (اصلی) یا اپنا gateway؛ URL <strong>لازماً https</strong> ہو، ٹوکن کبھی سادہ http پر نہیں جاتا۔</li>
+<li><strong>استعمال:</strong> <code>FBR invoices</code> کھولیں، انوائس کے سامنے <code>Submit</code> دبائیں۔ نتیجہ: <code>accepted</code> (FBR نمبر کے ساتھ) یا <code>failed</code> (وجہ کے ساتھ؛ دوبارہ کوشش ممکن)۔</li>
+<li>اس فیچر کو <strong>Features</strong> سے بند بھی کیا جا سکتا ہے (باب 10)۔</li>
+</ul>
+<p><img alt="FBR invoices" src="../images/accounting-fbr-index.jpg" /></p>
+</section>
+<section id="08-planning">
+<h1 id="8">باب 8: بجٹ، مستقل اثاثے اور انوینٹری</h1>
+<p><a href="#07-tax-fbr">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#09-payroll">اگلا باب: پے رول →</a></p>
+<h2 id="81-budgets">8.1 بجٹ (Budgets)</h2>
+<p>بجٹ آمدنی اور اخراجات کی منصوبہ بندی <strong>کھاتے</strong> (اور اختیاری <strong>Cost Center</strong>) اور <strong>مہینے</strong> کے حساب سے کرتا ہے، پھر اصل (Actual) نتائج سے موازنہ دکھاتا ہے۔</p>
+<p><img alt="Budgets" src="../images/accounting-budgets-index.jpg" /></p>
+<p><strong>نیا بجٹ بنانے کے مراحل</strong></p>
+<ol>
+<li><code>Budgets</code> ← <code>New budget</code>۔</li>
+<li>بجٹ کا نام، پہلا اور آخری مہینہ (زیادہ سے زیادہ 24 ماہ) لکھیں۔</li>
+<li><code>Add account</code> سے ہر کھاتے کی لائن بنائیں: یا <strong>سالانہ رقم</strong> (جو مہینوں میں برابر بٹتی ہے) یا <strong>ماہانہ رقوم</strong> الگ الگ۔</li>
+<li><code>Save</code> — بجٹ <strong>Draft</strong> ہے۔ پچھلے سال کے اصل نتائج کی بنیاد پر بنانے کے لیے "Build from last year" (فیصد کمی/اضافے کے ساتھ) استعمال کریں۔</li>
+</ol>
+<p><img alt="نیا بجٹ" src="../images/accounting-budgets-create.jpg" /></p>
+<p><strong>منظوری:</strong> Accountant منصوبہ بناتا ہے اور <code>budgets.approve</code> رکھنے والا صارف <code>Approve</code> کرتا ہے۔ ایک مہینے پر صرف ایک منظور شدہ بجٹ لاگو ہو سکتا ہے۔ ضرورت پر <code>Close</code> / <code>Reopen</code> اور اگلے سال کے لیے <code>Copy budget</code> (فیصد تبدیلی کے ساتھ)۔</p>
+<p><strong>Budget vs Actual:</strong> بجٹ کا صفحہ ہر کھاتے کے لیے بجٹ، اصل، <strong>فرق</strong> (Variance)، استعمال کا فیصد اور حالت دکھاتا ہے: <code>ok</code>، <code>warning</code> (خرچ بجٹ کے 90% پر)، <code>over</code> (بجٹ سے زیادہ)، <code>behind</code> (آمدنی منصوبے سے کم)، <code>unbudgeted</code> (بغیر بجٹ والا خرچ)۔ کسی قطار پر کلک سے مہینہ وار تفصیل کھلتی ہے۔ <code>Apply</code> سے مہینوں کی حد/Cost Center کا فلٹر لگتا ہے؛ CSV/Excel/PDF ایکسپورٹ ہے۔</p>
+<p><img alt="Budget vs Actual" src="../images/accounting-budgets-show.jpg" /></p>
+<blockquote>
+<p><strong>اختیاری روک:</strong> ترتیب <code>ACCOUNTING_BUDGET_CONTROL=block</code> ہو تو منظور شدہ بجٹ سے زیادہ کا خرچ پوسٹ ہی نہیں ہوتا (جمع شدہ ماہانہ بجٹ تک)۔ <code>budgets.override</code> کی اجازت والے صارفین پھر بھی پوسٹ کر سکتے ہیں۔ ڈیفالٹ: <code>off</code>۔</p>
+</blockquote>
+<h2 id="82-fixed-assets">8.2 مستقل اثاثے (Fixed Assets)</h2>
+<p>اثاثوں کا رجسٹر: کوڈ، لاگت، بچی ہوئی قدر (Salvage)، کارآمد عمر، فرسودگی کا طریقہ (سیدھی لکیر یا گھٹتا توازن) اور تین کھاتے — اثاثہ، جمع شدہ فرسودگی، فرسودگی کا خرچ۔</p>
+<p><img alt="Fixed Assets" src="../images/accounting-fixed-assets-index.jpg" /></p>
+<p><strong>اثاثہ رجسٹر کرنا</strong></p>
+<ol>
+<li><code>Fixed assets</code> ← <code>New asset</code>۔</li>
+<li>کوڈ، نام، خریداری کی تاریخ، سروس میں آنے کی تاریخ، لاگت، Salvage، عمر (مہینوں میں)، طریقہ اور تینوں کھاتے لکھیں۔</li>
+<li><strong>Offset account</strong> (کیش/بینک/سپلائر) دیں تو خریداری کا واؤچر بھی خود بن جاتا ہے۔</li>
+</ol>
+<p><img alt="نیا اثاثہ" src="../images/accounting-fixed-assets-create.jpg" /></p>
+<p><strong>ماہانہ فرسودگی (Depreciation):</strong> <code>Depreciation</code> کھولیں، مہینہ منتخب کریں، <code>Preview</code> سے دیکھیں کہ کس اثاثے پر کتنی فرسودگی بنتی ہے، پھر بُک کریں۔ ہر مہینے کا ایک واؤچر، مہینے کی آخری تاریخ کے ساتھ۔ ایک مہینہ ایک اثاثے پر ایک ہی بار بُک ہوتا ہے، اس لیے دوبارہ چلانے سے نقصان نہیں؛ چھوٹے ہوئے مہینے ترتیب سے پورے ہو جاتے ہیں۔</p>
+<p><img alt="ماہانہ فرسودگی" src="../images/accounting-fixed-assets-depreciation.jpg" /></p>
+<p><strong>فروخت یا اسکریپ:</strong> اثاثے کے صفحے سے <code>Sell or scrap</code> / <code>Dispose</code>: فرسودگی تصرف کی تاریخ سے ایک مہینہ پہلے تک پوری کی جاتی ہے، لاگت اور جمع شدہ فرسودگی ہٹتی ہے، وصولی منتخب کھاتے میں آتی ہے اور نفع/نقصان منتخب کھاتے میں۔</p>
+<p><img alt="اثاثے کی تفصیل" src="../images/accounting-fixed-assets-show.jpg" /></p>
+<p><img alt="اثاثے میں ترمیم" src="../images/accounting-fixed-assets-edit.jpg" /></p>
+<blockquote>
+<p>رجسٹر کا مجموعہ اور چارٹ کا بیلنس کا فرق صفر ہونا چاہیے؛ صفحہ یہ فرق دکھاتا ہے۔ جس اثاثے پر خریداری یا فرسودگی کا اندراج ہو چکا ہو اس کی لاگت، عمر، طریقہ اور کھاتے مقفل ہو جاتے ہیں۔</p>
+</blockquote>
+<h2 id="83-inventory">8.3 انوینٹری (Inventory)</h2>
+<p>اسٹاک اور اس کی قدر <strong>حرکتی اوسط لاگت</strong> (Moving Average Cost) پر۔</p>
+<p><img alt="Inventory" src="../images/accounting-inventory-index.jpg" /></p>
+<p><strong>آئٹم بنانا:</strong> <code>New item</code> — SKU، نام، اکائی، انوینٹری کھاتہ، Cost of Goods Sold کھاتہ اور Reorder level۔</p>
+<p><img alt="نیا آئٹم" src="../images/accounting-inventory-items-create.jpg" /></p>
+<p><strong>گودام (Warehouses):</strong> ایک یا زیادہ گودام بنائیں؛ اسٹاک ہر گودام میں الگ گنا جاتا ہے۔</p>
+<p><img alt="Warehouses" src="../images/accounting-inventory-warehouses-index.jpg" /></p>
+<p><strong>اسٹاک کی حرکت (<code>Move stock</code>)</strong> — چار اقسام:</p>
+<table>
+<thead>
+<tr>
+<th>قسم</th>
+<th>کام</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Receive</code></td>
+<td>مال آیا: مقدار، فی اکائی لاگت اور ادائیگی/واجب کا کھاتہ؛ انوینٹری Debit ہوتی ہے</td>
+</tr>
+<tr>
+<td><code>Issue</code></td>
+<td>مال گیا: موجودہ اوسط لاگت پر نکلتا ہے اور Cost of Goods Sold Debit ہوتا ہے</td>
+</tr>
+<tr>
+<td><code>Adjust</code></td>
+<td>گنتی کا فرق: زیادتی اوسط لاگت پر، کمی نفع/نقصان کھاتے میں</td>
+</tr>
+<tr>
+<td><code>Transfer</code></td>
+<td>ایک گودام سے دوسرے میں؛ صرف مقدار منتقل، قدر نہیں بدلتی</td>
+</tr>
+</tbody>
+</table>
+<p>ہر حرکت اور اس کا واؤچر ایک ہی لین دین میں بنتے ہیں؛ بند مدت میں حرکت نہیں ہو سکتی؛ اسٹاک <strong>منفی</strong> نہیں ہو سکتا۔</p>
+<p><img alt="اسٹاک کی حرکت درج کرنا" src="../images/accounting-inventory-movements-create.jpg" /></p>
+<p><img alt="حرکتوں کی فہرست" src="../images/accounting-inventory-movements-index.jpg" /></p>
+<p><strong>آئٹم کا اسٹاک کارڈ:</strong> آئٹم کے صفحے پر ہر حرکت اور چلتا بیلنس۔ مرکزی صفحہ ہر آئٹم/گودام کی مقدار، اوسط لاگت اور قدر کسی بھی تاریخ تک دکھاتا ہے، Reorder level پر یا اس سے نیچے والے آئٹم نشان زد ہوتے ہیں اور اسٹاک بہی کا انوینٹری کھاتوں سے موازنہ بھی ہوتا ہے؛ <code>Export</code> سے CSV/Excel/PDF۔</p>
+<p><img alt="آئٹم کی تفصیل اور اسٹاک کارڈ" src="../images/accounting-inventory-items-show.jpg" /></p>
+<p><img alt="آئٹم میں ترمیم" src="../images/accounting-inventory-items-edit.jpg" /></p>
+</section>
+<section id="09-payroll">
+<h1 id="9">باب 9: پے رول — ملازمین، تنخواہ، بقایا جات، چھٹی، قرض، ٹیکس اور تصفیہ</h1>
+<p><a href="#08-planning">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#10-admin">اگلا باب: انتظامی ٹولز →</a></p>
+<p>یہ باب سب سے بڑا ہے کیونکہ پے رول میں سب سے زیادہ کام ہوتا ہے۔ پہلے <strong>ہر ماہ کا مختصر طریقہ</strong> دیکھیں، پھر ہر اسکرین کی تفصیل۔</p>
+<h2 id="90">9.0 ہر ماہ کا طریقہ — ایک نظر میں</h2>
+<ol>
+<li><strong>حاضری درج کریں</strong> (<code>Attendance</code>): غیر حاضر دن، اوور ٹائم گھنٹے۔ چھٹیاں <code>Leave</code> میں۔</li>
+<li><strong>ایک بار کی ادائیگیاں</strong> (<code>Bonuses</code>): بونس، جرمانہ وغیرہ۔</li>
+<li><strong>Run بنائیں</strong>: <code>Payroll</code> ← مہینہ لکھ کر <code>Calculate</code>۔ ہر ملازم کی پے سلپ خود بن جاتی ہے۔</li>
+<li>جانچیں: ہر پے سلپ کھول کر رقوم دیکھیں؛ غلطی ہو تو ملازم/حاضری درست کر کے <code>Recalculate</code>۔</li>
+<li>(اگر منظوری کا نظام آن ہے) <code>Submit for approval</code> ← فنانس <code>Approve</code>۔</li>
+<li><code>Post</code> — حسابات میں اندراج۔ (approver)</li>
+<li><code>Pay</code> — بینک/کیش سے ادائیگی؛ اور <code>Bank salary file</code> بینک کو بھیجیں۔</li>
+<li>پے سلپس ای میل کریں (<code>E-mail payslips</code>)۔</li>
+<li>مہینے کے آخر میں <code>Reports</code> اور سال کے آخر میں <code>Tax</code> دیکھیں۔</li>
+</ol>
+<h2 id="91-payroll">9.1 مرکزی صفحہ — Payroll</h2>
+<p>صفحے پر سال بھر کے مہینہ وار جمع (Gross، Tax، Net) اور تمام Runs کی فہرست ہے۔ اوپر کے بٹن ہر ذیلی صفحے تک لے جاتے ہیں: <code>Employees</code>، <code>Allowances &amp; deductions</code>، <code>Grades</code>، <code>Bulk changes</code>، <code>Arrears</code>، <code>Attendance</code>، <code>Leave</code>، <code>Loans</code>، <code>Contributions</code>، <code>Bonuses</code>، <code>Settlements</code>، <code>Reports</code>، <code>Tax</code>۔ جو فیچر <strong>Features</strong> میں بند ہو اس کا بٹن نظر نہیں آتا۔</p>
+<p><img alt="Payroll — مرکزی صفحہ" src="../images/accounting-payroll-index.jpg" /></p>
+<h2 id="92-employees">9.2 ملازمین (Employees)</h2>
+<p><img alt="Employees" src="../images/accounting-payroll-employees-index.jpg" /></p>
+<p><strong>نیا ملازم:</strong> <code>Employees</code> ← <code>New employee</code>:</p>
+<table>
+<thead>
+<tr>
+<th>فیلڈ</th>
+<th>مطلب</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Code</code>، <code>Name</code></td>
+<td>شناخت</td>
+</tr>
+<tr>
+<td><code>National ID</code></td>
+<td>شناختی کارڈ نمبر (ٹیکس سرٹیفکیٹ میں آتا ہے)</td>
+</tr>
+<tr>
+<td><code>E-mail</code></td>
+<td>یہاں پے سلپ بھیجی جاتی ہے</td>
+</tr>
+<tr>
+<td><code>Designation</code>، <code>Cost center</code></td>
+<td>عہدہ اور لاگت کا مرکز</td>
+</tr>
+<tr>
+<td><code>Joined</code> / <code>Left</code></td>
+<td>شمولیت/علیحدگی کی تاریخ؛ نئے آنے/جانے والے کو صرف ملازمت کے دنوں کی تنخواہ ملتی ہے</td>
+</tr>
+<tr>
+<td><code>Monthly basic salary</code></td>
+<td>بنیادی ماہانہ تنخواہ (Grade دی ہو تو خالی چھوڑ سکتے ہیں)</td>
+</tr>
+<tr>
+<td><code>Bank</code>، <code>Bank account</code></td>
+<td>تنخواہ کی ادائیگی کی فائل کے لیے</td>
+</tr>
+<tr>
+<td><code>Salary grade</code></td>
+<td>گریڈ؛ ملازم گریڈ کے الاؤنس خود لے لیتا ہے</td>
+</tr>
+<tr>
+<td><code>Withhold income tax</code></td>
+<td>انکم ٹیکس کاٹا جائے یا نہیں</td>
+</tr>
+<tr>
+<td><code>Paid overtime</code></td>
+<td>اوور ٹائم کا مستحق ہے</td>
+</tr>
+<tr>
+<td>الاؤنس/کٹوتیاں</td>
+<td>ملازم کے اپنے الاؤنس؛ گریڈ والے کو یہ اوور رائیڈ کرتے ہیں</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="نیا ملازم" src="../images/accounting-payroll-employees-create.jpg" /></p>
+<p><img alt="ملازم میں ترمیم" src="../images/accounting-payroll-employees-edit.jpg" /></p>
+<h2 id="93-components">9.3 الاؤنس اور کٹوتیاں (Components)</h2>
+<p>ہر <strong>Component</strong> ایک کمائی (Earning) یا کٹوتی (Deduction) ہے: مثلاً House Rent، Conveyance، Fuel، Medical، Advance Tax۔</p>
+<table>
+<thead>
+<tr>
+<th>طریقہ (Method)</th>
+<th>مثال</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fixed</code> — مقررہ رقم</td>
+<td>Conveyance = 3,100</td>
+</tr>
+<tr>
+<td><code>percent_of_basic</code> — بنیادی تنخواہ کا فیصد</td>
+<td>House Rent = 10%</td>
+</tr>
+<tr>
+<td><code>quantity_rate</code> — مقدار × نرخ</td>
+<td>Fuel = 75 لٹر × 280 روپے</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Quantity × Rate:</strong> نرخ Component پر محفوظ ہوتا ہے اور مقدار ہر ملازم کے لیے۔ پٹرول کا نرخ ایک جگہ بدلیں تو اگلی تنخواہ پر <strong>سب</strong> ملازمین کی رقم خود بدل جاتی ہے۔</li>
+<li>کمائی ایک <strong>خرچ کھاتے</strong> میں جاتی ہے؛ کٹوتی اس <strong>واجب کھاتے</strong> میں جس کو رقم دینی ہے۔</li>
+<li><code>Taxable</code> نشان لگا ہو تو یہ رقم انکم ٹیکس کے حساب میں شامل ہوتی ہے۔</li>
+</ul>
+<p><img alt="Allowances and deductions" src="../images/accounting-payroll-components-index.jpg" /></p>
+<h2 id="94-grades">9.4 سیلری گریڈ (Grades)</h2>
+<p>گریڈ = ایک بنیادی تنخواہ اور اس کے الاؤنس/کٹوتیوں کا پیکج (مثلاً "Grade 17")۔ جو ملازم اس گریڈ پر ہوں وہ گریڈ کے ساتھ چلتے ہیں: گریڈ کا کوئی الاؤنس بدلیں تو اگلی بار سب کو نئی رقم ملتی ہے۔ ملازم کا اپنا الاؤنس/رقم گریڈ پر غالب رہتی ہے۔</p>
+<p><img alt="Salary grades" src="../images/accounting-payroll-grades-index.jpg" /></p>
+<h2 id="95-bulk-changes">9.5 اجتماعی تبدیلیاں (Bulk changes)</h2>
+<p>بہت سے ملازمین پر ایک ساتھ تبدیلی — پہلے <strong>پیش نظارہ</strong> (Preview)، پھر اطلاق (Apply):</p>
+<ul>
+<li>کوئی Component سب کو دینا یا سب سے ہٹانا؛</li>
+<li>ملازمین کا گروپ ایک Grade میں منتقل کرنا (اختیاری طور پر ان کی تنخواہ بھی)؛</li>
+<li><strong>تنخواہ میں اضافہ</strong>: فیصد کے حساب سے، مقررہ رقم سے، یا ایک نئی رقم مقرر کر کے؛ رقم کو رائونڈ کرنے کا اختیار بھی؛</li>
+<li>کس پر لاگو ہو: منتخب ملازمین، ورنہ گریڈ کے سب ملازمین، ورنہ تمام فعال ملازمین۔</li>
+</ul>
+<p><img alt="Bulk changes" src="../images/accounting-payroll-bulk.jpg" /></p>
+<h2 id="951-salary-history">9.5.1 تنخواہ کی تاریخ (Salary history)</h2>
+<p>ملازم کی ہر تنخواہ تبدیلی ایک <strong>ریویژن</strong> ہے: تاریخ جس سے لاگو ہو اور وجہ۔ مہینے کے بیچ میں اضافہ ہو تو پرانی تنخواہ اس سے پہلے کے دنوں کی اور نئی اس دن سے آگے کی ادا ہوتی ہے۔</p>
+<p><img alt="تنخواہ کی تاریخ" src="../images/accounting-payroll-employees-revisions.jpg" /></p>
+<h2 id="96-arrears">9.6 بقایا جات (Arrears)</h2>
+<p><strong>مسئلہ:</strong> 100 ملازمین کی تنخواہ جنوری سے بڑھی، لیکن اضافہ اکتوبر میں لاگو ہوا۔ جنوری تا ستمبر کا فرق ادا کرنا ہے۔</p>
+<p><strong>حل — <code>Arrears</code> اسکرین:</strong></p>
+<ol>
+<li><code>Preview</code>: <strong>From month</strong> (جنوری) اور <strong>Payment month</strong> (جس ماہ ادائیگی ہوگی) لکھیں۔ سسٹم پوسٹ شدہ پے سلپوں اور تنخواہ کی تاریخ کا فرق مہینہ بہ مہینہ نکال کر ہر ملازم کی رقم دکھاتا ہے (فیصد والے الاؤنس کا فرق بھی)۔</li>
+<li>درست ہو تو <strong>Create</strong> سے مسودے (Drafts) بنائیں۔</li>
+<li>approver <code>Approve</code> (یا <code>Approve all</code>) کرے۔</li>
+<li>ادائیگی کے مہینے کا Payroll Run انہیں <strong>Arrears</strong> کی الگ لائن کے طور پر خود شامل کر لیتا ہے۔</li>
+</ol>
+<p><strong>ٹیکس:</strong> بقایا پر ٹیکس یوں نکلتا ہے گویا یہ انہی مہینوں میں ملا ہوتا، تاکہ ایک مہینے میں بڑی رقم ملنے سے ملازم اونچے سلیب میں نہ چلا جائے؛ یہ "Income tax on arrears" کی الگ لائن میں آتا ہے۔ ایک مہینہ دو بار کلیم نہیں ہوتا؛ جس مہینے ملازم کو زیادہ ادا ہوا ہو وہ واپس نہیں لیا جاتا۔ Run حذف/Void ہو تو بقایا منظور شدہ قطار میں واپس چلا جاتا ہے۔</p>
+<p><img alt="Arrears" src="../images/accounting-payroll-arrears-index.jpg" /></p>
+<h2 id="97">9.7 حاضری، چھٹی اور اوور ٹائم</h2>
+<p><strong>حاضری (<code>Attendance</code>):</strong> مہینہ منتخب کر کے ہر ملازم کے لیے <code>Absent days</code> (آدھا دن بھی ممکن) اور <code>Overtime hours</code> لکھیں، <code>Save attendance</code> دبائیں۔ غیر حاضر دن اور بلا تنخواہ چھٹی بنیادی تنخواہ اور مقررہ الاؤنس سے <strong>دن کے حساب</strong> سے کٹتی ہے؛ فیصد الاؤنس بنیادی تنخواہ کے ساتھ گھٹتے ہیں۔ جس مہینے کی تنخواہ پوسٹ ہو چکی اس کی حاضری نہیں بدل سکتی۔</p>
+<p><img alt="Attendance" src="../images/accounting-payroll-attendance-index.jpg" /></p>
+<p><strong>چھٹیاں (<code>Leave</code>):</strong> پہلے <strong>Leave type</strong> بنائیں (<code>Code</code>، <code>Name</code>، <code>Paid leave</code>، سالانہ حق <code>Annual days</code>)۔ پھر <code>Record leave</code> سے ملازم، قسم، تاریخیں اور آدھا دن لکھیں۔ سسٹم آپس میں ٹکراتی چھٹیاں اور Paid قسم کے بیلنس سے زیادہ چھٹی <strong>مسترد</strong> کرتا ہے۔ <code>Leave balances</code> میں ہر ملازم/قسم کا حق، لی گئی اور بقیہ چھٹیاں۔</p>
+<p><img alt="Leave" src="../images/accounting-payroll-leaves-index.jpg" /></p>
+<p><img alt="Leave types" src="../images/accounting-payroll-leave-types-index.jpg" /></p>
+<p><img alt="چھٹیوں کا بیلنس" src="../images/accounting-payroll-leaves-balances.jpg" /></p>
+<p><strong>اوور ٹائم:</strong> جس ملازم پر <code>Paid overtime</code> نشان ہو اسے گھنٹے × (تنخواہ ÷ ماہانہ گھنٹے) × ضرب (عام دن کی الگ، چھٹی کے دن کی الگ) ملتا ہے؛ یہ پے سلپ پر <strong>Overtime</strong> کی قابل ٹیکس لائن بنتی ہے۔ ضرب اور ماہانہ گھنٹے ترتیب <code>accounting.payroll.overtime</code> میں۔</p>
+<h2 id="98-loans-advances">9.8 قرض اور پیشگی (Loans &amp; Advances)</h2>
+<ol>
+<li><code>Loans</code> ← نیا قرض: ملازم، قسم (<code>Loan</code> یا <code>Salary advance</code>)، رقم <code>Amount</code>، قسطوں کی تعداد <code>Instalments</code>، پہلی کٹوتی کا مہینہ <code>First salary it comes out of</code>۔</li>
+<li>قسطیں برابر بنتی ہیں (آخری قسط پیسوں کا فرق سنبھالتی ہے)؛ قرض <strong>Draft</strong> ہے، کٹوتی ابھی شروع نہیں ہوتی۔</li>
+<li>approver <code>Pay out</code> دبائے: اور بینک/کیش کھاتہ دے۔ Debit "Employee Advances" (1105)، Credit بینک۔ قرض <strong>Active</strong> ہو جاتا ہے۔</li>
+<li>ہر Payroll Run واجب الادا قسط کو کٹوتی کے طور پر لے لیتا ہے ("Loan instalment 2/12")۔ Run حذف/Void/دوبارہ حساب ہو تو قسط واپس آ جاتی ہے۔</li>
+<li><code>Skip next</code> — اگلی قسط شیڈول کے آخر میں چلی جاتی ہے۔ <code>Settle</code> — ملازم بقیہ رقم نقد واپس کر دے۔ پوری وصولی پر قرض <strong>Closed</strong>۔</li>
+<li>Draft قرض <code>Cancel</code> ہو سکتا ہے۔</li>
+</ol>
+<p><img alt="Loans and advances" src="../images/accounting-payroll-loans-index.jpg" /></p>
+<h2 id="99-eobi-pessisessi-contributions">9.9 شراکتیں — EOBI، PESSI/SESSI، پراویڈنٹ فنڈ (Contributions)</h2>
+<p>ہر <strong>Scheme</strong> میں: بنیاد (<code>basic</code>، <code>gross</code> یا <code>fixed</code>)، ملازم کا فیصد/رقم، آجر کا فیصد/رقم، <strong>حد</strong> <code>Ceiling</code> (بنیاد کی زیادہ سے زیادہ رقم جو گنی جائے)، اور تین کھاتے۔</p>
+<ul>
+<li><strong>ملازم کا حصہ:</strong> تنخواہ سے کٹوتی؛ جس واجب کھاتے کو رقم جانی ہے وہ <code>Employee account</code> ہے۔</li>
+<li><strong>آجر کا حصہ:</strong> ادارے کا خرچ (Employer expense) جو کسی واجب کھاتے (Employer liability) میں جاتا ہے؛ یہ ملازم کی خالص تنخواہ کا حصہ <strong>نہیں</strong> ہوتا لیکن Run کے ساتھ بُک ہوتا ہے اور پے سلپ پر "Employer contributions" میں دکھایا جاتا ہے۔</li>
+<li><code>Applies to every employee</code> یا مخصوص ملازمین کو <code>Assign</code>؛ اختیاری طور پر بقایا جات پر بھی لاگو۔</li>
+</ul>
+<blockquote>
+<p>شرحیں آپ کے ہاتھ میں ہیں — انہیں موجودہ سرکاری قوانین سے ضرور ملا لیں۔</p>
+</blockquote>
+<p><img alt="Contributions" src="../images/accounting-payroll-schemes-index.jpg" /></p>
+<h2 id="910-bonuses">9.10 ایک بار کی ادائیگیاں اور بونس (Bonuses)</h2>
+<ul>
+<li><strong>ایک ملازم:</strong> ملازم، مہینہ، وجہ، رقم؛ قسم <strong>Earning</strong> (بونس/الاؤنس) یا <strong>Deduction</strong> (جرمانہ/وصولی)؛ Pay component اختیاری؛ <code>Taxable</code> کا نشان۔ Component نہ ہو تو سادہ بونس <code>accounting.payroll.bonus_account</code> میں (ڈیفالٹ: تنخواہ کا خرچ کھاتہ) جاتا ہے، اور جرمانے کے لیے وہ واجب کھاتہ دینا ہوتا ہے جسے رقم جائے گی۔</li>
+<li><strong>ہر فعال ملازم کو:</strong> ایک ہی رقم، یا ہر ایک کی بنیادی تنخواہ کا فیصد (مثلاً عید بونس = بنیادی تنخواہ کا 50%)۔ جو ملازم اس مہینے ملازمت میں نہ ہو اسے چھوڑ دیا جاتا ہے اور فہرست "left out" میں بتائی جاتی ہے۔</li>
+<li>اسی مہینے کا Run انہیں خود شامل کرتا ہے۔ جو اندراج ابھی کسی Run میں نہیں گیا اسے <code>Cancel</code> کر سکتے ہیں۔ جس مہینے کا Run جمع/منظور/پوسٹ ہو چکا اس میں نیا اندراج نہیں بن سکتا۔</li>
+</ul>
+<p><img alt="Bonuses and one-off pay" src="../images/accounting-payroll-adjustments-index.jpg" /></p>
+<h2 id="911-run">9.11 پے رول Run — بنانا، منظوری، پوسٹ، ادائیگی</h2>
+<p><code>Payroll</code> پر مہینہ (<code>Month</code>) لکھ کر <code>Calculate</code> دبائیں۔ ایک مہینے کا ایک ہی Run ہو سکتا ہے۔ سسٹم ہر فعال ملازم کی پے سلپ بناتا ہے: نئے آنے/جانے والے کو ملازمت کے دن، فیصد الاؤنس، گریڈ، حاضری/چھٹی، اوور ٹائم، بقایا جات، شراکتیں، قرض کی قسطیں، بونس، اور انکم ٹیکس (<code>accounting.payroll.tax_slabs</code> کے سلیب سے؛ ڈیفالٹ مثال کے طور پر ہیں، انہیں موجودہ قوانین سے ملا لیں)۔ <strong>منفی خالص تنخواہ</strong> رد ہو جاتی ہے۔</p>
+<p><img alt="Run کی تفصیل (Draft)" src="../images/accounting-payroll-runs-show.jpg" /></p>
+<table>
+<thead>
+<tr>
+<th>بٹن</th>
+<th>کب</th>
+<th>کیا کرتا ہے</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Recalculate</code></td>
+<td>Draft</td>
+<td>ملازمین/حاضری/الاؤنس بدلنے کے بعد پے سلپیں دوبارہ بناتا ہے</td>
+</tr>
+<tr>
+<td><code>Delete</code></td>
+<td>Draft</td>
+<td>Run ہٹاتا ہے (قرض/بقایا/بونس واپس)</td>
+</tr>
+<tr>
+<td><code>Submit for approval</code></td>
+<td>Draft، منظوری کا نظام آن</td>
+<td>Run کو فنانس کے پاس بھیج کر مقفل کرتا ہے</td>
+</tr>
+<tr>
+<td><code>Approve</code> / <code>Send back</code></td>
+<td>Submitted، <code>payroll.approve</code></td>
+<td>منظور، یا وجہ لکھ کر HR کو واپس</td>
+</tr>
+<tr>
+<td><code>Withdraw</code></td>
+<td>Submitted/Approved</td>
+<td>Run کو Draft میں واپس لیتا ہے</td>
+</tr>
+<tr>
+<td><code>Post</code></td>
+<td>Draft (یا Approved)</td>
+<td>حسابات میں اندراج: بنیادی تنخواہ و کمائیاں خرچ، کٹوتیاں/ٹیکس واجب، خالص تنخواہ <code>Net salary payable</code> (2103) میں</td>
+</tr>
+<tr>
+<td><code>Pay</code></td>
+<td>Posted</td>
+<td>واجب تنخواہ کو بینک/کیش کھاتے سے ادا کرتا ہے</td>
+</tr>
+<tr>
+<td><code>Void</code></td>
+<td>Posted/Paid</td>
+<td>ادائیگی اور تنخواہ کا اندراج الٹ دیتا ہے؛ مہینہ دوبارہ بن سکتا ہے</td>
+</tr>
+</tbody>
+</table>
+<p><strong>منظوری کا نظام (HR → فنانس):</strong> ترتیب <code>accounting.payroll.require_approval</code> یا <strong>Features</strong> میں "Run approval" آن ہو تو HR (<code>payroll.run</code>) <code>Submit for approval</code> کرتا ہے، فنانس (<code>payroll.approve</code>) <code>Approve</code> یا <code>Send back</code> — وجہ لازمی؛ <strong>جس نے Submit کیا وہ خود Approve نہیں کر سکتا</strong>۔ منظوری کے بعد ہی <code>Post</code> ممکن ہے۔ ہر مرحلہ Audit Log میں درج ہوتا ہے۔</p>
+<h2 id="912">9.12 پے سلپ</h2>
+<p>Run میں ملازم کے نام پر کلک سے اس کی پے سلپ کھلتی ہے: کمائیاں (بنیادی، الاؤنس، اوور ٹائم، بقایا)، کٹوتیاں (ٹیکس، قرض، شراکتیں)، آجر کی شراکتیں اور <strong>خالص تنخواہ</strong>۔</p>
+<p><img alt="پے سلپ" src="../images/accounting-payroll-payslips-show.jpg" /></p>
+<ul>
+<li><code>Print</code> — پرنٹ کے قابل صفحہ؛ <code>PDF</code> — PDF فائل (PDF لائبریری نہ ہو تو HTML)؛</li>
+<li><code>E-mail</code> — ملازم کے ای میل پر؛ Run کے صفحے پر <code>E-mail payslips</code> سب کو ایک ساتھ بھیجتا ہے؛ جن ملازمین کا ای میل درج نہیں وہ "skipped" کی فہرست میں آتے ہیں۔</li>
+</ul>
+<h2 id="913-bank-file">9.13 بینک تنخواہ فائل (Bank file)</h2>
+<p>Posted Run کے صفحے پر <strong>Bank salary file</strong>: اپنے بینک کے فارمیٹ (<code>standard</code>، <code>IBAN</code> یا آپ کا بنایا ہوا) کا <code>CSV</code> یا <code>Excel</code> ڈاؤن لوڈ کریں۔ جن ملازمین کا بینک اکاؤنٹ درج نہیں ان کا نام فائل سے باہر رہتا ہے اور اسکرین پر الگ دکھایا جاتا ہے۔ اس کے لیے <code>payroll.post</code> کی اجازت چاہیے۔</p>
+<h2 id="914-final-settlement">9.14 حتمی تصفیہ (Final Settlement)</h2>
+<p>ملازم ادارہ چھوڑے تو <code>Settlements</code> میں:</p>
+<ol>
+<li>ملازم اور <strong>آخری دن</strong> منتخب کریں؛ اختیاری طور پر <code>Gratuity</code>، <code>Leave days paid</code> اور <code>Adjustment</code> (+ادائیگی/− وصولی) خود لکھیں۔</li>
+<li><code>Preview</code>: <strong>گریجویٹی</strong> = (سالانہ دن ÷ 30) × بنیادی تنخواہ × سالِ ملازمت (کم از کم مدت کے بعد)؛ <strong>چھٹی کی ادائیگی</strong> = بچی ہوئی چھٹیاں × روزانہ اجرت؛ <strong>قرض</strong> جو ملازم کے ذمہ ہے خود منہا؛ نتیجہ <strong>Net settlement</strong>۔</li>
+<li><code>Save draft</code> — پھر approver <code>Post</code> (حسابات میں اندراج، قرض Closed) اور <code>Pay</code>؛ غلطی ہو تو <code>Void</code> (قرض دوبارہ کھل جاتے ہیں)۔</li>
+<li>ایک ملازم کا Posted/Paid تصفیہ ہو جائے تو دوسرا نہیں بن سکتا؛ Draft کی جگہ نیا Draft لے لیتا ہے۔</li>
+</ol>
+<p>قواعد <code>accounting.payroll.gratuity</code> میں (دن فی سال، کم از کم سال، کھاتے، چھٹی کی قسم)۔</p>
+<p><img alt="Final settlements" src="../images/accounting-payroll-settlements-index.jpg" /></p>
+<h2 id="915">9.15 ٹیکس گوشوارہ اور سرٹیفکیٹ</h2>
+<p><code>Tax</code> میں ٹیکس سال (ڈیفالٹ جولائی تا جون؛ <code>accounting.payroll.tax_year_start_month</code>) کے لیے ہر ملازم کی قابل ٹیکس آمدنی، کٹوتی شدہ ٹیکس اور خالص تنخواہ — Posted Run سے۔ <code>CSV</code>/<code>Excel</code>/<code>PDF</code> میں ایکسپورٹ۔ ملازم منتخب کر کے <code>Open certificate</code> سے اس کا <strong>ٹیکس سرٹیفکیٹ</strong> کھلتا ہے، جسے <code>Print</code> کیا جا سکتا ہے۔</p>
+<p><img alt="Salary tax statement" src="../images/accounting-payroll-tax-index.jpg" /></p>
+<p><img alt="ٹیکس سرٹیفکیٹ" src="../images/accounting-payroll-tax-certificate.jpg" /></p>
+<h2 id="916">9.16 پے رول رپورٹیں</h2>
+<p><code>Reports</code>: <strong>مہینہ بہ مہینہ</strong> (ملازمین، Gross، Tax، Net، آجر کی شراکتیں، کل لاگت، فی ملازم لاگت اور پچھلے مہینے سے تبدیلی)، <strong>Cost center</strong> کے حساب سے لاگت، اور <strong>Headcount</strong> (کتنے آئے، گئے، کتنے پے رول پر ہیں)۔ تینوں <code>CSV</code>/<code>Excel</code>/<code>PDF</code> میں۔</p>
+<p><img alt="Payroll reports" src="../images/accounting-payroll-reports-index.jpg" /></p>
+<h2 id="917-run">9.17 خودکار Run</h2>
+<p>ہر مہینے Run خود بنوانے کے لیے <code>php artisan accounting:payroll-run [--month=2026-10] [--company=1]</code> (ڈیفالٹ: پچھلا مہینہ؛ جس مہینے کا Run موجود ہو اسے چھوڑ دیتی ہے)۔ ہر ماہ خودکار چلانے کے لیے ترتیب <code>accounting.payroll.auto_run</code> آن کریں۔ Run <strong>Draft</strong> بنتا ہے — جانچ، منظوری اور Post پھر بھی آپ ہی کرتے ہیں۔</p>
+<h2 id="918">9.18 اجازتیں اور فرائض کی تقسیم</h2>
+<table>
+<thead>
+<tr>
+<th>اجازت</th>
+<th>کیا</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>payroll.view</code></td>
+<td>پے رول دیکھنا</td>
+</tr>
+<tr>
+<td><code>payroll.manage</code></td>
+<td>ملازمین، الاؤنس، گریڈ، حاضری، قرض، بونس وغیرہ میں ترمیم</td>
+</tr>
+<tr>
+<td><code>payroll.run</code></td>
+<td>Run بنانا/دوبارہ حساب/حذف/Submit</td>
+</tr>
+<tr>
+<td><code>payroll.approve</code></td>
+<td>Run منظور/واپس</td>
+</tr>
+<tr>
+<td><code>payroll.post</code></td>
+<td>Post، Pay، قرض کی ادائیگی، بقایا کی منظوری، بینک فائل</td>
+</tr>
+<tr>
+<td><code>payroll.void</code></td>
+<td>Void</td>
+</tr>
+</tbody>
+</table>
+<p>عام ترتیب: Accountant تیار کرتا ہے؛ Approver منظور، Post، Pay اور Void — تاکہ ایک ہی شخص پورا چکر خود نہ کر سکے۔</p>
+</section>
+<section id="10-admin">
+<h1 id="10">باب 10: انتظامی ٹولز — صارفین، رولز، فیچرز، کمپنیاں اور آڈٹ</h1>
+<p><a href="#09-payroll">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#11-api">اگلا باب: API گائیڈ →</a></p>
+<h2 id="101-users">10.1 صارفین (Users)</h2>
+<p><code>Users</code> میں تمام صارف ہیں۔ <code>New user</code> سے نام، ای میل، پاس ورڈ اور <strong>رول</strong> دے کر نیا صارف بنائیں۔ صارف کو <strong>براہ راست اجازتیں</strong> (Permissions) بھی دی جا سکتی ہیں، رول کے علاوہ۔ ہر تبدیلی Audit Log میں جاتی ہے۔</p>
+<p><img alt="Users" src="../images/accounting-users-index.jpg" /></p>
+<p><img alt="نیا صارف" src="../images/accounting-users-create.jpg" /></p>
+<p><img alt="صارف میں ترمیم — رول اور اجازتیں" src="../images/accounting-users-edit.jpg" /></p>
+<blockquote>
+<p>صارف کو ڈیلیٹ کرنے کے بجائے اس کے رول ہٹا دینا زیادہ محفوظ ہے، تاکہ پرانا ریکارڈ (کس نے کیا بنایا) محفوظ رہے۔</p>
+</blockquote>
+<h2 id="102-roles-permissions">10.2 رولز اور اجازتیں (Roles &amp; Permissions)</h2>
+<p><code>Roles</code> میں رولز کی فہرست، ہر رول کے ارکان کی تعداد اور اجازتیں ہیں۔ رول کھول کر <strong>اجازتوں کا میٹرکس</strong> نظر آتا ہے: ہر ماڈیول کی <code>view</code>، <code>create</code>، <code>update</code>، <code>delete</code>، <code>post</code>، <code>approve</code> وغیرہ کے خانے۔ <code>super-admin</code> کو حذف یا گھٹایا نہیں جا سکتا۔</p>
+<p><img alt="Roles" src="../images/accounting-roles-index.jpg" /></p>
+<p><img alt="نیا رول" src="../images/accounting-roles-create.jpg" /></p>
+<p><img alt="رول میں ترمیم — اجازتوں کا میٹرکس" src="../images/accounting-roles-edit.jpg" /></p>
+<p><strong>ڈیفالٹ رولز</strong> کا خلاصہ باب 1 میں ہے۔ اپنے ادارے کی ضرورت کے مطابق نیا رول بنائیں (مثلاً "Payroll officer": <code>payroll.view</code>، <code>payroll.manage</code>، <code>payroll.run</code>)۔ کمانڈ لائن پر <code>php artisan accounting:roles</code> موجودہ رولز دکھاتی/لگاتی ہے۔</p>
+<h2 id="103-feature-switches">10.3 فیچرز — ہر چیز آن/آف (Feature Switches)</h2>
+<p><strong>مقصد:</strong> جو ماڈیول آپ کے کام کا نہیں اسے بند کر دیں تاکہ مینو صاف رہے اور عملہ غلطی سے وہاں نہ جائے؛ ضرورت پڑے تو دوبارہ آن۔</p>
+<p><code>Features</code> (<code>/accounting/features</code>، Blade میں <code>/settings/features</code>) صرف <code>accounting.manage-settings</code> والے صارف کے لیے ہے۔ فہرست دو حصوں میں ہے: <strong>Modules</strong> (Customers &amp; suppliers، Tax، Banking، Budgets، Fixed assets، Inventory، Recurring entries، FX revaluation، FBR، Attachments، Statement layout، Chart templates، Control accounts، Snapshots، Audit log، Payroll) اور <strong>Payroll</strong> کے ذیلی فیچر (Grades، Arrears، Attendance، Loans، Contributions، Bank file، Payslip e-mail، Bonuses، Run approval، Settlements، Reports &amp; tax)۔</p>
+<p><img alt="Features" src="../images/accounting-features-index.jpg" /></p>
+<p><strong>طریقہ:</strong> خانہ ہٹائیں/لگائیں ← <code>Save</code>۔</p>
+<p><strong>بند کرنے کا اثر:</strong></p>
+<ul>
+<li>مینو اور Dashboard سے لنک غائب؛</li>
+<li>اس فیچر کی ہر ویب اسکرین اور API <strong>404</strong> دیتی ہے؛</li>
+<li><strong>ڈیٹا ڈیلیٹ نہیں ہوتا</strong> — دوبارہ آن کرتے ہی سب واپس؛</li>
+<li>ذیلی فیچر اپنے والدین (Parent) کے بند ہونے پر خود بند ہو جاتا ہے (مثلاً Payroll بند تو Loans بھی)؛</li>
+<li>Payroll انجن بند فیچر کو چھوڑ دیتا ہے (قرض کی قسط، حاضری، شراکت، بقایا، بونس شامل نہیں ہوتے)؛</li>
+<li>Recurring اور Payroll کی کمانڈیں اپنا ماڈیول بند ہو تو کچھ نہیں کرتیں؛</li>
+<li>ہر تبدیلی Audit Log میں <code>FEATURE_ENABLED</code> / <code>FEATURE_DISABLED</code> کے طور پر۔</li>
+</ul>
+<p><strong>Core</strong> (چارٹ، واؤچر، پیرئیڈ، رپورٹیں، صارفین) بند نہیں ہو سکتا۔ منظوری کا نظام اور Multi-company کے اپنے سوئچ ترتیب (config) میں ہیں۔</p>
+<p><strong>کمانڈ لائن سے:</strong></p>
+<pre><code class="language-bash">php artisan accounting:features                    # list
+php artisan accounting:features disable inventory fixed_assets
+php artisan accounting:features enable payroll_loans
+php artisan accounting:features reset budgets      # back to the config default
+</code></pre>
+<p><strong>ڈیفالٹ بند رکھنے کے لیے:</strong> <code>.env</code> میں <code>ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets"</code>۔ اسکرین/API/کمانڈ سے محفوظ کی گئی ترتیب اس پر غالب رہتی ہے۔</p>
+<h2 id="104-companies">10.4 کمپنیاں (Companies)</h2>
+<p>Multi-company آن ہو (<code>ACCOUNTING_MULTI_COMPANY=true</code>) تو <code>Companies</code> میں کمپنیاں بنائیں اور ہر کمپنی کے صارف مقرر کریں۔ ہر کمپنی کا اپنا چارٹ، واؤچر، نمبرنگ، مدتیں اور رپورٹیں ہیں۔ کمانڈ: <code>php artisan accounting:create-company</code>۔</p>
+<h2 id="105-audit-logs">10.5 آڈٹ لاگ (Audit Logs)</h2>
+<p><code>Audit Logs</code> میں ہر اہم عمل: کس صارف نے، کب، کس IP سے، کون سا ریکارڈ، پرانی اور نئی قدریں۔ فلٹر سے کھاتہ/صارف/عمل/تاریخ کے حساب سے تلاش کریں۔ لاگ میں ترمیم یا حذف کا کوئی بٹن نہیں — یہ صرف پڑھنے کے لیے ہے۔</p>
+<p><img alt="Audit Logs" src="../images/accounting-audit-logs-index.jpg" /></p>
+<p><img alt="لاگ کی تفصیل" src="../images/accounting-audit-logs-show.jpg" /></p>
+<h2 id="106-profile-security-appearance">10.6 ذاتی ترتیبات (Profile، Security، Appearance)</h2>
+<p>اوپر دائیں کونے سے اپنے نام پر کلک ← <strong>Settings</strong>: <code>Profile</code> (نام/ای میل)، <code>Security</code> (پاس ورڈ بدلنا اور سیکیورٹی کی ترتیبات)، <code>Appearance</code> (روشن/تاریک تھیم)۔</p>
+<p><img alt="Settings" src="../images/profile-edit.jpg" /></p>
+<h2 id="107">10.7 نیا ادارہ شروع کرنے کی ترتیب (تجویز)</h2>
+<ol>
+<li>چارٹ ٹیمپلیٹ لگائیں (باب 2.1)۔</li>
+<li>بنیادی کرنسی اور شرحیں، پھر مالی سال کی مدتیں (<code>Generate monthly</code>)۔</li>
+<li>Cost Centers، Voucher Types، بینک اکاؤنٹس۔</li>
+<li>ابتدائی بیلنس کا ایک واؤچر (Opening Balance Equity کے ساتھ)۔</li>
+<li>صارف اور رولز؛ غیر ضروری ماڈیول <strong>Features</strong> میں بند۔</li>
+<li><code>php artisan accounting:health-check</code> سے جانچ۔</li>
+</ol>
+</section>
+<section id="11-api">
+<h1 id="11-api-rest">باب 11: API گائیڈ — ہر ماڈیول کا REST انٹرفیس</h1>
+<p><a href="#10-admin">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#12-commands-faq">اگلا باب: کمانڈیں اور عام سوالات →</a></p>
+<p>ہر وہ کام جو اسکرین پر ہوتا ہے، API سے بھی ہو سکتا ہے — موبائل ایپ، ویب سائٹ، یا دوسرے سافٹ ویئر (مثلاً POS) کو جوڑنے کے لیے۔ تمام <strong>311 endpoints</strong> کی مکمل فہرست (انگریزی میں، اجازت کے ساتھ) <a href="../help-catalog.md">Help Catalog</a> میں ہے؛ اس باب میں استعمال کا طریقہ ہے۔</p>
+<h2 id="111">11.1 بنیادی معلومات</h2>
+<table>
+<thead>
+<tr>
+<th>چیز</th>
+<th>قدر</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base URL</td>
+<td><code>https://your-app.test/api/v1/accounting</code> (<code>ACCOUNTING_API_PREFIX</code> سے بدلتا ہے)</td>
+</tr>
+<tr>
+<td>تصدیق</td>
+<td>Laravel <strong>Sanctum</strong> ٹوکن: <code>Authorization: Bearer &lt;token&gt;</code></td>
+</tr>
+<tr>
+<td>ہیڈر</td>
+<td><code>Accept: application/json</code> اور <code>Content-Type: application/json</code></td>
+</tr>
+<tr>
+<td>کمپنی (Multi-company)</td>
+<td><code>X-Company: &lt;id یا code&gt;</code> — نہ دیں تو آپ کی ڈیفالٹ کمپنی</td>
+</tr>
+<tr>
+<td>رفتار کی حد</td>
+<td>ڈیفالٹ 120 درخواستیں فی منٹ فی صارف (<code>ACCOUNTING_API_RATE_LIMIT</code>)</td>
+</tr>
+<tr>
+<td>اجازت</td>
+<td>ہر endpoint ایک Permission مانگتا ہے؛ نہ ہو تو <strong>403</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="112">11.2 ٹوکن بنانا</h2>
+<pre><code class="language-bash">php artisan tinker --execute=&quot;echo App\Models\User::first()-&gt;createToken('erp')-&gt;plainTextToken;&quot;
+</code></pre>
+<p>اس ٹوکن کو محفوظ رکھیں؛ یہ صارف کے تمام اختیارات کے ساتھ آتا ہے۔ الگ ایپ کے لیے الگ صارف (کم اختیارات والا رول) بنائیں۔</p>
+<h2 id="1121">11.2.1 پہلی کال</h2>
+<pre><code class="language-bash">TOKEN=1|xxxxxxxx
+API=http://localhost:8000/api/v1/accounting
+H=(-H &quot;Accept: application/json&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H &quot;Content-Type: application/json&quot;)
+
+# is everything installed?
+curl &quot;${H[@]}&quot; $API/health
+</code></pre>
+<h2 id="113">11.3 واؤچر بنانا اور پوسٹ کرنا</h2>
+<pre><code class="language-bash"># simplest entry: debit one account, credit another (posts at once)
+curl &quot;${H[@]}&quot; -X POST $API/journal-entries/simple \
+  -H &quot;Idempotency-Key: rent-2026-10&quot; \
+  -d '{&quot;debit_account_code&quot;:&quot;5102&quot;,&quot;credit_account_code&quot;:&quot;1101&quot;,&quot;amount&quot;:2500,&quot;description&quot;:&quot;Office rent&quot;}'
+
+# several lines, by account code
+curl &quot;${H[@]}&quot; -X POST $API/journal-entries -d '{
+  &quot;entry_date&quot;: &quot;2026-10-04&quot;, &quot;reference&quot;: &quot;INV-1001&quot;, &quot;auto_post&quot;: true,
+  &quot;lines&quot;: [
+    {&quot;account_code&quot;: &quot;1103&quot;, &quot;debit&quot;: 1500, &quot;credit&quot;: 0, &quot;cost_center_code&quot;: &quot;ADMIN&quot;},
+    {&quot;account_code&quot;: &quot;4101&quot;, &quot;debit&quot;: 0, &quot;credit&quot;: 1500}
+  ]}'
+</code></pre>
+<ul>
+<li><strong><code>Idempotency-Key</code></strong>: ایک ہی درخواست دوبارہ بھیجی جائے (نیٹ ورک ٹوٹنے پر) تو سسٹم واؤچر دوبارہ نہیں بناتا بلکہ پہلا ہی لوٹاتا ہے (<code>Idempotent-Replayed: true</code>)۔</li>
+<li><code>auto_post: true</code> — فوراً پوسٹ؛ ورنہ Draft۔ بعد میں <code>POST /journal-entries/{id}/post</code>۔</li>
+<li>منظوری کا نظام آن ہو تو <code>POST /journal-entries/{id}/submit</code> اور پھر approver <code>…/approve</code> یا <code>…/reject</code>۔</li>
+<li>غلطی درست کرنے کے لیے <code>…/reverse</code>؛ Draft کے لیے <code>…/void</code>۔</li>
+</ul>
+<h2 id="114">11.4 رپورٹیں</h2>
+<pre><code class="language-bash">curl &quot;${H[@]}&quot; &quot;$API/chart-of-accounts/tree&quot;
+curl &quot;${H[@]}&quot; &quot;$API/reports/trial-balance&quot;
+curl &quot;${H[@]}&quot; &quot;$API/reports/income-statement?date_from=2026-01-01&amp;date_to=2026-12-31&quot;
+curl &quot;${H[@]}&quot; &quot;$API/reports/balance-sheet?as_of_date=2026-12-31&quot;
+curl &quot;${H[@]}&quot; &quot;$API/reports/general-ledger?account_id=1&amp;per_page=50&amp;page=2&quot;
+# download (same filters)
+curl &quot;${H[@]}&quot; -o tb.csv &quot;$API/reports/trial-balance/export/csv&quot;
+</code></pre>
+<p>بڑی Excel/PDF پر جواب <strong>202</strong> کے ساتھ آتا ہے؛ اس کی فائل <code>GET /exports</code> سے ڈھونڈ کر <code>…/download</code> کریں۔</p>
+<h2 id="115">11.5 فہرستوں کے فلٹر، ترتیب اور صفحہ بندی</h2>
+<ul>
+<li>فلٹر: <code>?filter[name]=cash&amp;filter[status]=posted</code></li>
+<li>ترتیب: <code>?sort=entry_date</code> یا الٹی <code>?sort=-entry_date</code></li>
+<li>صفحہ: <code>?page=2&amp;per_page=50</code> (زیادہ سے زیادہ <code>ACCOUNTING_API_MAX_PER_PAGE</code>، ڈیفالٹ 100)</li>
+<li>واؤچر پر اضافی: <code>filter[approval_status]=pending</code>، <code>filter[voucher_number]</code>، <code>filter[entry_date_from]</code>/<code>filter[entry_date_to]</code>، <code>include=lines</code></li>
+</ul>
+<h2 id="116">11.6 غلطیاں</h2>
+<table>
+<thead>
+<tr>
+<th>کوڈ</th>
+<th>مطلب</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>401</code></td>
+<td>ٹوکن نہیں / غلط</td>
+</tr>
+<tr>
+<td><code>403</code></td>
+<td>اجازت نہیں</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>ریکارڈ نہیں ملا، یا اس <strong>فیچر</strong> کو Features میں بند کیا گیا ہے</td>
+</tr>
+<tr>
+<td><code>422</code></td>
+<td>ڈیٹا غلط (<code>errors</code> میں فیلڈ وار) یا حسابی اصول کی خلاف ورزی (<code>message</code> میں وجہ)</td>
+</tr>
+<tr>
+<td><code>429</code></td>
+<td>رفتار کی حد</td>
+</tr>
+</tbody>
+</table>
+<h2 id="117-api">11.7 ماڈیول وار API — آپ کیا کر سکتے ہیں</h2>
+<table>
+<thead>
+<tr>
+<th>ماڈیول</th>
+<th>مثالیں (راستہ <code>/api/v1/accounting</code> کے بعد)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>چارٹ اور ماسٹر ڈیٹا</strong></td>
+<td><code>/chart-of-accounts</code> (+ <code>/tree</code>, <code>/{id}/balance</code>, <code>/import</code>, <code>/export/{format}</code>, <code>/{id}/merge</code>, <code>/{id}/renumber</code>, <code>/{id}/control-type</code>), <code>/account-types</code>, <code>/currencies</code>, <code>/cost-centers</code>, <code>/voucher-types</code>, <code>/periods</code> (+ <code>/generate-monthly</code>, <code>/{id}/close-checklist</code>, <code>/{id}/close</code>, <code>/{id}/reopen</code>, <code>/{id}/close-fiscal-year</code>)</td>
+</tr>
+<tr>
+<td><strong>واؤچر</strong></td>
+<td><code>/journal-entries</code> (+ <code>/simple</code>, <code>/{id}/post</code>, <code>/reverse</code>, <code>/void</code>, <code>/submit</code>, <code>/approve</code>, <code>/reject</code>, <code>/attachments</code>, <code>/pdf</code>)</td>
+</tr>
+<tr>
+<td><strong>رپورٹیں</strong></td>
+<td><code>/reports/{trial-balance، balance-sheet، income-statement، general-ledger، cash-flow، bank-book، cash-book، aged-receivables، aged-payables، account-statement}</code> اور <code>/export/{csv\|xlsx\|pdf}</code></td>
+</tr>
+<tr>
+<td><strong>بینک</strong></td>
+<td><code>/bank-accounts</code>, <code>/reconciliations</code>, <code>/bank-statements</code> (+ <code>/import</code>, <code>/{id}/auto-match</code>, <code>/{id}/reconcile</code>)</td>
+</tr>
+<tr>
+<td><strong>گاہک و سپلائر</strong></td>
+<td><code>/parties</code>, <code>/party-documents</code> (+ <code>/{id}/post</code>, <code>/{id}/void</code>, <code>/{id}/apply</code>), <code>/party-payments</code> (+ <code>/{id}/allocate</code>, <code>/{id}/void</code>), <code>/reports/aged-receivables</code></td>
+</tr>
+<tr>
+<td><strong>ٹیکس / FBR</strong></td>
+<td><code>/tax-codes</code>, <code>/tax-rates</code>, <code>/tax/calculate</code>, <code>/tax/entries</code>, <code>/tax/returns</code>, <code>/fbr</code>, <code>/fbr/documents/{id}/submit</code></td>
+</tr>
+<tr>
+<td><strong>بجٹ</strong></td>
+<td><code>/budgets</code> (+ <code>/{id}/approve</code>, <code>/{id}/close</code>, <code>/{id}/reopen</code>, <code>/{id}/copy</code>, <code>/{id}/export/{format}</code>)</td>
+</tr>
+<tr>
+<td><strong>تکرار والے واؤچر / FX</strong></td>
+<td><code>/recurring-entries</code> (+ <code>/{id}/run</code>, <code>/{id}/pause</code>, <code>/{id}/resume</code>)، <code>/fx-revaluation</code> (+ <code>/preview</code>, <code>/rates</code>, <code>/{id}/reverse</code>)</td>
+</tr>
+<tr>
+<td><strong>اثاثے / انوینٹری</strong></td>
+<td><code>/fixed-assets</code> (+ <code>/depreciation</code>, <code>/{id}/dispose</code>, <code>/export/{format}</code>)، <code>/inventory</code> (+ <code>/items</code>, <code>/warehouses</code>, <code>/movements</code>, <code>/export/{format}</code>)</td>
+</tr>
+<tr>
+<td><strong>پے رول</strong></td>
+<td><code>/payroll/employees</code>, <code>/payroll/components</code>, <code>/payroll/grades</code>, <code>/payroll/runs</code> (+ <code>/{id}/recalculate</code>, <code>/post</code>, <code>/pay</code>, <code>/void</code>, <code>/submit</code>, <code>/withdraw</code>, <code>/approve</code>, <code>/reject</code>, <code>/bank-file/{format}</code>, <code>/email-payslips</code>), <code>/payroll/attendance</code>, <code>/payroll/leaves</code>, <code>/payroll/loans</code>, <code>/payroll/schemes</code>, <code>/payroll/arrears</code>, <code>/payroll/adjustments</code>, <code>/payroll/settlements</code>, <code>/payroll/reports</code>, <code>/payroll/tax</code></td>
+</tr>
+<tr>
+<td><strong>انتظام</strong></td>
+<td><code>/users</code>, <code>/roles</code>, <code>/permissions</code>, <code>/companies</code>, <code>/features</code>, <code>/account-balance-snapshots</code>, <code>/exports</code>, <code>/attachments</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>تفصیلی فہرست (ہر endpoint کا طریقہ، اجازت اور مختصر وضاحت): <a href="../help-catalog.md">Help Catalog</a>۔ پیرامیٹر اور جوابات کی مکمل شکل: <a href="../openapi.yaml"><code>openapi.yaml</code></a> — اسے Swagger UI/Redoc میں کھولیں یا Postman/Insomnia میں امپورٹ کریں۔</p>
+</blockquote>
+<h2 id="118-api">11.8 پے رول کا مکمل API مثال</h2>
+<pre><code class="language-bash"># 1) create the month's run
+curl &quot;${H[@]}&quot; -X POST $API/payroll/runs -d '{&quot;period_month&quot;:&quot;2026-10-01&quot;}'
+
+# 2) (when approval is on) HR submits, finance approves
+curl &quot;${H[@]}&quot; -X POST $API/payroll/runs/12/submit
+curl &quot;${H[@]}&quot; -X POST $API/payroll/runs/12/approve
+
+# 3) post and pay
+curl &quot;${H[@]}&quot; -X POST $API/payroll/runs/12/post
+curl &quot;${H[@]}&quot; -X POST $API/payroll/runs/12/pay -d '{&quot;account_id&quot;: 7, &quot;date&quot;: &quot;2026-10-31&quot;}'
+
+# 4) bank file and payslip e-mail
+curl &quot;${H[@]}&quot; -o salary.csv &quot;$API/payroll/runs/12/bank-file/csv?layout=standard&quot;
+curl &quot;${H[@]}&quot; -X POST $API/payroll/runs/12/email-payslips
+
+# 5) Eid bonus for everybody: 50% of basic salary
+curl &quot;${H[@]}&quot; -X POST $API/payroll/adjustments/bulk \
+  -d '{&quot;month&quot;:&quot;2026-10-01&quot;,&quot;description&quot;:&quot;Eid bonus&quot;,&quot;method&quot;:&quot;percent_of_basic&quot;,&quot;value&quot;:50}'
+</code></pre>
+<h2 id="119-api">11.9 فیچرز کا API</h2>
+<pre><code class="language-bash">curl &quot;${H[@]}&quot; $API/features                                      # list
+curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;inventory&quot;:false,&quot;payroll_loans&quot;:false}}'
+</code></pre>
+<p>بند فیچر کے endpoints پھر <code>404</code> دیں گے۔</p>
+<h2 id="1110">11.10 ویب ہکس اور ایونٹس</h2>
+<p>ہر اہم واقعہ (واؤچر پوسٹ، رد، پیرئیڈ بند وغیرہ) پر Laravel Event چلتا ہے؛ ترتیب <code>accounting.webhooks.urls</code> میں ایڈریس دیں تو سسٹم دستخط (HMAC) کے ساتھ آپ کے سرور کو POST بھی کرتا ہے۔ وصول کنندہ دستخط جانچ کر درخواست کی تصدیق کرے۔</p>
+</section>
+<section id="12-commands-faq">
+<h1 id="12">باب 12: کمانڈیں، عام سوالات اور اصطلاحات</h1>
+<p><a href="#11-api">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#13-zameema">ضمیمہ →</a></p>
+<h2 id="121-artisan">12.1 Artisan کمانڈیں</h2>
+<p>سرور کے ٹرمنل میں پروجیکٹ کے فولڈر میں چلائیں:</p>
+<table>
+<thead>
+<tr>
+<th>کمانڈ</th>
+<th>کام</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>php artisan accounting:install</code></td>
+<td>پیکیج کی ابتدائی تنصیب: ترتیب، مائیگریشن، رولز، ڈیفالٹ ڈیٹا</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:update</code></td>
+<td>اپ ڈیٹ کے بعد نئی مائیگریشن/اجازتیں لگانا (<code>--views</code> سے شائع شدہ Blade اسکرینیں بھی نئی)</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:seed</code></td>
+<td>ڈیفالٹ چارٹ/اقسام/کرنسیاں لگانا (<code>--company=</code> کے ساتھ ایک کمپنی کے لیے)</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:health-check</code></td>
+<td>جانچ کہ سب کچھ درست انسٹال ہے (<code>503</code> اگر نہیں)</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:verify</code></td>
+<td>حسابات کی سالمیت کی جانچ: ہر واؤچر متوازن، ٹرائل بیلنس برابر</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:roles</code></td>
+<td>رولز اور اجازتیں دکھانا/لگانا (<code>--config</code> سے ڈیفالٹ)</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:create-company</code></td>
+<td>نئی کمپنی بنانا (Multi-company)</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:close-period {id}</code></td>
+<td>مہینے کی کلوزنگ</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:open-period {id}</code></td>
+<td>بند مدت دوبارہ کھولنا</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:close-fiscal-year {id}</code></td>
+<td>سال کے اختتام کی کلوزنگ</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:rebuild-snapshots</code></td>
+<td>بیلنس اسنیپ شاٹ دوبارہ بنانا</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:run-recurring</code></td>
+<td>دہرائے جانے والے واؤچر بنانا (شیڈولر روزانہ خود چلاتا ہے)</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:payroll-run</code></td>
+<td>پچھلے مہینے کا پے رول Run (Draft) بنانا</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:features</code></td>
+<td>فیچرز کی فہرست / <code>enable</code> / <code>disable</code> / <code>reset</code></td>
+</tr>
+<tr>
+<td><code>php artisan accounting:chart-templates</code></td>
+<td>صنعتی چارٹ ٹیمپلیٹ لگانا</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:prune-exports</code></td>
+<td>پرانی ایکسپورٹ فائلیں صاف کرنا</td>
+</tr>
+<tr>
+<td><code>php artisan accounting:sync-db-objects</code></td>
+<td>ڈیٹا بیس کی سطح کے اصول (triggers) دوبارہ ہم آہنگ کرنا</td>
+</tr>
+</tbody>
+</table>
+<p><strong>شیڈولر:</strong> سرور کی cron میں <code>* * * * * php /path/artisan schedule:run</code> ہونا چاہیے۔ اس سے Recurring اور (اگر آن ہو) خودکار پے رول Run چلتے ہیں۔</p>
+<h2 id="122">12.2 عام سوالات</h2>
+<p><strong>س: واؤچر پوسٹ نہیں ہو رہا — "period is closed" یا "not balanced"؟</strong>
+ج: تاریخ جس مدت میں ہے وہ بند ہے (<code>Periods</code> میں دیکھیں، یا کھولیں)، یا Debit ≠ Credit۔</p>
+<p><strong>س: میں کسی ماڈیول (مثلاً Inventory) کا لنک نہیں دیکھ پا رہا؟</strong>
+ج: دو وجوہات: (1) آپ کے رول کے پاس اس کی <code>view</code> اجازت نہیں؛ (2) <strong>Features</strong> میں وہ فیچر بند ہے۔ بند ہو تو ایڈمن سے <code>Features</code> میں آن کروائیں۔</p>
+<p><strong>س: پوسٹ شدہ واؤچر میں غلطی ہو گئی؟</strong>
+ج: ایڈٹ/ڈیلیٹ ممکن نہیں۔ <code>Reverse</code> کریں اور درست واؤچر نیا بنائیں۔</p>
+<p><strong>س: دو لوگوں نے ایک ہی بل کا واؤچر بنا دیا؟</strong>
+ج: Source document (قسم+نمبر) کی وجہ سے دوسرا واؤچر بنتا ہی نہیں؛ سسٹم پہلے والے کا لنک دکھاتا ہے۔</p>
+<p><strong>س: پے رول Run میں کسی ملازم کا نام نہیں؟</strong>
+ج: وہ فعال (Active) نہیں، یا اس کی <code>Joined</code> تاریخ اس مہینے کے بعد ہے، یا <code>Left</code> تاریخ مہینے کے آغاز سے پہلے ہے۔</p>
+<p><strong>س: Run میں "negative net salary" کی غلطی؟</strong>
+ج: کٹوتیاں (قرض کی قسط، شراکتیں، جرمانے) تنخواہ سے زیادہ ہیں۔ قسط کو <code>Skip next</code> کریں، یا کٹوتی گھٹائیں، پھر <code>Recalculate</code>۔</p>
+<p><strong>س: میں نے Run Post کر دیا، اب حاضری یا بونس بدلنا ہے؟</strong>
+ج: Post شدہ مہینے کی حاضری/بونس نہیں بدلتی۔ <code>Void</code> کریں (approver)، تبدیلی کریں، پھر نیا Run بنائیں؛ یا اگلے مہینے میں بونس/جرمانہ ڈالیں۔</p>
+<p><strong>س: پے سلپ ای میل نہیں گئی؟</strong>
+ج: ملازم کا <code>E-mail</code> درج نہیں ہوگا — وہ "skipped" میں شمار ہوتا ہے۔ سرور پر ای میل (SMTP) کی ترتیب بھی چیک کریں۔</p>
+<p><strong>س: API 404 دیتی ہے لیکن راستہ درست ہے؟</strong>
+ج: متعلقہ فیچر <code>Features</code> میں بند ہوگا (404 کا مطلب "یہ فیچر موجود نہیں")۔</p>
+<p><strong>س: انگریزی الفاظ اردو اسکرین پر آ رہے ہیں؟</strong>
+ج: کچھ فقرے ابھی ترجمہ کی فہرست (<code>resources/lang/ur.json</code>) میں نہیں۔ فہرست میں انگریزی فقرے کے سامنے اردو لکھ دیں؛ اسکرین پر وہ فوراً بدل جائے گا۔</p>
+<h2 id="123">12.3 اہم اصطلاحات</h2>
+<table>
+<thead>
+<tr>
+<th>انگریزی</th>
+<th>اردو مفہوم</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Journal Entry / Voucher</td>
+<td>جرنل اندراج / واؤچر</td>
+</tr>
+<tr>
+<td>Debit / Credit</td>
+<td>ڈیبٹ (مدین) / کریڈٹ (دائن)</td>
+</tr>
+<tr>
+<td>Chart of Accounts</td>
+<td>کھاتوں کا چارٹ</td>
+</tr>
+<tr>
+<td>Posting / Post</td>
+<td>کھاتوں میں درج کرنا</td>
+</tr>
+<tr>
+<td>Reverse / Void</td>
+<td>الٹانا / منسوخ کرنا</td>
+</tr>
+<tr>
+<td>Draft</td>
+<td>مسودہ (ابھی درج نہیں)</td>
+</tr>
+<tr>
+<td>Period / Fiscal Year</td>
+<td>مالی مدت / مالی سال</td>
+</tr>
+<tr>
+<td>Trial Balance</td>
+<td>ٹرائل بیلنس (کھاتوں کا میزان)</td>
+</tr>
+<tr>
+<td>Balance Sheet</td>
+<td>بیلنس شیٹ (مالی حیثیت کا گوشوارہ)</td>
+</tr>
+<tr>
+<td>Income Statement</td>
+<td>آمدنی کا گوشوارہ (منافع و نقصان)</td>
+</tr>
+<tr>
+<td>Cash Flow</td>
+<td>نقدی کا بہاؤ</td>
+</tr>
+<tr>
+<td>Receivable / Payable</td>
+<td>وصولی / قابل ادائیگی (ادھار)</td>
+</tr>
+<tr>
+<td>Ageing</td>
+<td>بقایا کی عمر کا تجزیہ</td>
+</tr>
+<tr>
+<td>Reconciliation</td>
+<td>مفاہمت (بینک سے ملانا)</td>
+</tr>
+<tr>
+<td>Accrual / Prepayment</td>
+<td>واجب الادا خرچ / پیشگی ادا شدہ</td>
+</tr>
+<tr>
+<td>Depreciation</td>
+<td>فرسودگی</td>
+</tr>
+<tr>
+<td>Gratuity</td>
+<td>گریجویٹی</td>
+</tr>
+<tr>
+<td>Arrears</td>
+<td>بقایا جات</td>
+</tr>
+<tr>
+<td>Payslip</td>
+<td>پے سلپ (تنخواہ کی پرچی)</td>
+</tr>
+<tr>
+<td>Gross / Net</td>
+<td>مجموعی / خالص</td>
+</tr>
+<tr>
+<td>Withholding Tax</td>
+<td>روکا ہوا (کٹوتی شدہ) ٹیکس</td>
+</tr>
+<tr>
+<td>Maker–Checker</td>
+<td>بنانے والا اور جانچنے والا (دو آنکھیں)</td>
+</tr>
+<tr>
+<td>Permission / Role</td>
+<td>اجازت / رول</td>
+</tr>
+<tr>
+<td>Feature switch</td>
+<td>فیچر آن/آف کا سوئچ</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="13-zameema">
+<h1 id="_1">ضمیمہ: بقیہ اسکرینیں — نیا، تفصیل اور ترمیم کے صفحات</h1>
+<p><a href="#12-commands-faq">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
+<p>پچھلے ابواب میں ہر ماڈیول کی بنیادی اسکرینیں آ چکی ہیں۔ یہاں وہ <strong>عمومی</strong> صفحات ہیں جو کئی ماڈیولز میں اسی انداز سے دہرائے جاتے ہیں۔ ہر ماسٹر ڈیٹا (Account Types، Currencies، Periods، Cost Centers، Bank Accounts، Reconciliations، Tax Codes، Tax Rates) میں <strong>چار</strong> صفحے ہوتے ہیں:</p>
+<table>
+<thead>
+<tr>
+<th>صفحہ</th>
+<th>کب</th>
+<th>کام</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>فہرست (Index)</td>
+<td>ہمیشہ</td>
+<td>تلاش/فلٹر، <code>Create</code> کا بٹن، ہر قطار سے تفصیل/ترمیم</td>
+</tr>
+<tr>
+<td>نیا (Create)</td>
+<td><code>.create</code> اجازت</td>
+<td>فارم بھر کر <code>Save</code></td>
+</tr>
+<tr>
+<td>تفصیل (Show)</td>
+<td><code>.view</code> اجازت</td>
+<td>مکمل ریکارڈ، متعلقہ ڈیٹا</td>
+</tr>
+<tr>
+<td>ترمیم (Edit)</td>
+<td><code>.update</code> اجازت</td>
+<td>فارم میں تبدیلی؛ استعمال میں آ چکے ریکارڈ کے کچھ فیلڈ مقفل ہوتے ہیں</td>
+</tr>
+</tbody>
+</table>
+<p>حذف (<code>Delete</code>) کا بٹن صرف اسی ریکارڈ پر آتا ہے جو کہیں استعمال نہ ہوا ہو۔</p>
+<h2 id="_2">اکاؤنٹ ٹائپس</h2>
+<p><img alt="نیا Account Type" src="../images/accounting-account-types-create.jpg" /></p>
+<p><img alt="Account Type کی تفصیل" src="../images/accounting-account-types-show.jpg" /></p>
+<p><img alt="Account Type میں ترمیم" src="../images/accounting-account-types-edit.jpg" /></p>
+<h2 id="_3">کرنسیاں</h2>
+<p><img alt="Currency کی تفصیل" src="../images/accounting-currencies-show.jpg" /></p>
+<p><img alt="Currency میں ترمیم" src="../images/accounting-currencies-edit.jpg" /></p>
+<h2 id="_4">مالی مدتیں</h2>
+<p><img alt="نئی مدت" src="../images/accounting-periods-create.jpg" /></p>
+<p><img alt="مدت کی تفصیل" src="../images/accounting-periods-show.jpg" /></p>
+<p><img alt="مدت میں ترمیم" src="../images/accounting-periods-edit.jpg" /></p>
+<h2 id="_5">کھاتے، بینک اکاؤنٹ، مفاہمت</h2>
+<p><img alt="کھاتے میں ترمیم" src="../images/accounting-chart-of-accounts-edit.jpg" /></p>
+<p><img alt="بینک اکاؤنٹ میں ترمیم" src="../images/accounting-bank-accounts-edit.jpg" /></p>
+<p><img alt="مفاہمت میں ترمیم" src="../images/accounting-reconciliations-edit.jpg" /></p>
+<h2 id="_6">ٹیکس کوڈ اور شرح</h2>
+<p><img alt="Tax Code کی تفصیل" src="../images/accounting-tax-codes-show.jpg" /></p>
+<p><img alt="Tax Code میں ترمیم" src="../images/accounting-tax-codes-edit.jpg" /></p>
+<p><img alt="Tax Rate کی تفصیل" src="../images/accounting-tax-rates-show.jpg" /></p>
+<p><img alt="Tax Rate میں ترمیم" src="../images/accounting-tax-rates-edit.jpg" /></p>
+<h2 id="party">Party، دہرائے جانے والے واؤچر، بیلنس اسنیپ شاٹ</h2>
+<p><img alt="Customer/Supplier میں ترمیم" src="../images/accounting-parties-edit.jpg" /></p>
+<p><img alt="Recurring Entry میں ترمیم" src="../images/accounting-recurring-entries-edit.jpg" /></p>
+<p><img alt="Balance Snapshot کی تفصیل" src="../images/accounting-account-balance-snapshots-show.jpg" /></p>
+<h2 id="_7">ذاتی ترتیبات</h2>
+<p><img alt="Security" src="../images/security-edit.jpg" /></p>
+<p><img alt="Appearance" src="../images/appearance-edit.jpg" /></p>
+<h2 id="json">ڈیٹا کے راستے جو براؤزر میں JSON دکھاتے ہیں</h2>
+<p>پے رول کے کچھ راستے (مثلاً <code>/accounting/payroll/loans/{id}</code>، <code>/payroll/grades/{id}</code>، <code>/payroll/schemes/{id}</code>، <code>/payroll/settlements/{id}</code>) اسکرین نہیں بلکہ <strong>ڈیٹا کے راستے</strong> ہیں: ان پر براؤزر میں JSON ملتا ہے۔ یہ اسکرینوں کے اندر کی ٹیبلوں اور API کو ڈیٹا دیتے ہیں؛ ان کی مکمل فہرست <a href="../help-catalog.md">Help Catalog</a> میں ہے۔</p>
+</section>
+</main></body></html>
