@@ -205,7 +205,13 @@ it('refuses a URL prefix that the starter kit uses and an unknown screen type or
     $this->artisan('accounting:install', ['--setup-only' => true, '--no-interaction' => true, '--chart' => 'nope'])->assertExitCode(2);
 });
 
-function declineGroups(PendingCommand $command, array $except = []): PendingCommand
+/**
+ * The yes/no question of every optional topic, in the order they are asked: "no" unless the topic has a closure in $accept, which says "yes"
+ * and adds the expectations of the questions that follow (they are asked right after the yes).
+ *
+ * @param  array<string, Closure(PendingCommand): mixed>  $accept
+ */
+function declineGroups(PendingCommand $command, array $accept = []): PendingCommand
 {
     $gates = [
         'api' => 'Do you want to use the REST API? (needs Laravel Sanctum: "php artisan install:api")',
@@ -220,7 +226,11 @@ function declineGroups(PendingCommand $command, array $except = []): PendingComm
     ];
 
     foreach ($gates as $key => $question) {
-        $command->expectsConfirmation($question, in_array($key, $except, true) ? 'yes' : 'no');
+        $command->expectsConfirmation($question, isset($accept[$key]) ? 'yes' : 'no');
+
+        if (isset($accept[$key])) {
+            $accept[$key]($command);
+        }
     }
 
     return $command;
@@ -239,15 +249,17 @@ it('asks the setup questions and applies the answers', function (): void {
         ->expectsQuestion('Entries from which amount (in the base currency) need approval? (0 = every entry)', '100000')
         ->expectsConfirmation('May a user approve an entry that he or she made themselves? (not recommended)', 'no')
         ->expectsQuestion('URL of the accounting screens (https://your-app/<this>)', 'books');
-    declineGroups($command, ['api'])
+    $exit = declineGroups($command, ['api' => fn ($c) => $c
         ->expectsQuestion('URL of the API', 'api/v1/accounting')
         ->expectsQuestion('API calls per minute and user (0 = no limit)', '60')
-        ->expectsQuestion('Most rows an API list returns in one page', '100')
+        ->expectsQuestion('Most rows an API list returns in one page', '100')])
         ->expectsQuestion('Email of the administrator (super-admin)', 'head@school.test')
         ->expectsQuestion('Name of the administrator', 'Head Teacher')
         ->expectsQuestion('Password for head@school.test (at least 8 characters)', 'a-good-password')
         ->expectsQuestion('Repeat the password', 'a-good-password')
-        ->assertSuccessful();
+        ->run();
+
+    expect($exit)->toBe(0);
 
     $env = new EnvFile($this->project.'/.env');
 
@@ -268,30 +280,36 @@ it('asks for the WhatsApp credentials only in live mode, and the FBR and webhook
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting', '--admin-email' => 'nobody'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'no')
         ->expectsConfirmation('Should entries be approved by a second person (maker-checker)?', 'no');
-    declineGroups($command, ['whatsapp', 'fbr', 'webhooks'])
-        ->expectsChoice('WhatsApp mode: fake (sandbox, nothing is sent) or live (Meta)', 'live', ['fake', 'live'])
-        ->expectsQuestion('WhatsApp access token (system user token) (empty = leave unset)', 'EAAG-token')
-        ->expectsQuestion('WhatsApp phone number ID', '1055550000')
-        ->expectsQuestion('WhatsApp Business Account ID (to list templates)', '2066660000')
-        ->expectsQuestion('Meta app secret (signs the webhook calls) (empty = leave unset)', 'app-secret')
-        ->expectsQuestion('Verify token for Meta\'s webhook (empty = generate a random one)', 'my-verify-word')
-        ->expectsQuestion('Country code for numbers written with a leading 0 (92 for Pakistan)', '92')
-        ->expectsQuestion('Language code of your WhatsApp templates (en, en_US, ur …)', 'en')
-        ->expectsQuestion('Template to send the customer when a receipt is recorded (empty = none)', 'fee_received')
-        ->expectsConfirmation('Send the automatic messages through the queue?', 'yes')
-        ->expectsChoice('FBR mode: fake (accepted locally) or live', 'fake', ['fake', 'live'])
-        ->expectsQuestion('Seller name', 'Green School')
-        ->expectsQuestion('Seller NTN', '1234567-8')
-        ->expectsQuestion('Seller province', 'Punjab')
-        ->expectsQuestion('Seller address', 'Lahore')
-        ->expectsQuestion('Province to use when a customer has none', 'Punjab')
-        ->expectsQuestion('Default HS code of your items', '9999.0000')
-        ->expectsConfirmation('Send an invoice to FBR as soon as it is posted?', 'no')
-        ->expectsQuestion('Webhook URL(s), comma separated', 'https://school.test/hooks/accounting')
-        ->expectsQuestion('Secret that signs the webhooks (empty = generate a random one)', '')
-        ->expectsQuestion('Delivery attempts', '5')
-        ->expectsQuestion('Seconds to wait for the receiver', '10')
-        ->assertSuccessful();
+    $exit = declineGroups($command, [
+        'whatsapp' => fn ($c) => $c
+            ->expectsChoice('WhatsApp mode: fake (sandbox, nothing is sent) or live (Meta)', 'live', ['fake', 'live'])
+            ->expectsQuestion('WhatsApp access token (system user token) (empty = leave unset)', 'EAAG-token')
+            ->expectsQuestion('WhatsApp phone number ID', '1055550000')
+            ->expectsQuestion('WhatsApp Business Account ID (to list templates)', '2066660000')
+            ->expectsQuestion('Meta app secret (signs the webhook calls) (empty = leave unset)', 'app-secret')
+            ->expectsQuestion('Verify token for Meta\'s webhook (empty = generate a random one)', 'my-verify-word')
+            ->expectsQuestion('Country code for numbers written with a leading 0 (92 for Pakistan)', '92')
+            ->expectsQuestion('Language code of your WhatsApp templates (en, en_US, ur …)', 'en')
+            ->expectsQuestion('Template to send the customer when a receipt is recorded (empty = none)', 'fee_received')
+            ->expectsConfirmation('Send the automatic messages through the queue?', 'yes'),
+        'fbr' => fn ($c) => $c
+            ->expectsChoice('FBR mode: fake (accepted locally) or live', 'fake', ['fake', 'live'])
+            ->expectsQuestion('Seller name', 'Green School')
+            ->expectsQuestion('Seller NTN', '1234567-8')
+            ->expectsQuestion('Seller province', 'Punjab')
+            ->expectsQuestion('Seller address', 'Lahore')
+            ->expectsQuestion('Province to use when a customer has none', 'Punjab')
+            ->expectsQuestion('Default HS code of your items', '9999.0000')
+            ->expectsConfirmation('Send an invoice to FBR as soon as it is posted?', 'no'),
+        'webhooks' => fn ($c) => $c
+            ->expectsQuestion('Webhook URL(s), comma separated', 'https://school.test/hooks/accounting')
+            ->expectsQuestion('Secret that signs the webhooks (empty = generate a random one)', '')
+            ->expectsQuestion('Delivery attempts', '5')
+            ->expectsQuestion('Seconds to wait for the receiver', '10'),
+    ])
+        ->run();
+
+    expect($exit)->toBe(0);
 
     $env = new EnvFile($this->project.'/.env');
 
@@ -325,7 +343,7 @@ it('rejects an administrator password that was typed differently the second time
         ->expectsQuestion('Name of the administrator', 'Head')
         ->expectsQuestion('Password for head@school.test (at least 8 characters)', 'password-one')
         ->expectsQuestion('Repeat the password', 'password-two')
-        ->assertSuccessful();
+        ->run();
 
     expect(User::query()->count())->toBe(0);
 });

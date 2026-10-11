@@ -5,8 +5,10 @@ use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
+use Illuminate\View\DynamicComponent;
 
 beforeEach(function (): void {
+    DynamicComponent::flushCache();                                          // it keeps the compiler of the first application of the test run
     $this->seed(AccountingDatabaseSeeder::class);
     $user = User::factory()->create();
     $user->assignRole('super-admin');
@@ -19,7 +21,10 @@ beforeEach(function (): void {
     app('view')->getFinder()->setPaths([$this->host]);
 });
 
-afterEach(fn () => File::deleteDirectory($this->host));
+afterEach(function (): void {
+    File::deleteDirectory($this->host);
+    DynamicComponent::flushCache();
+});
 
 it('renders in the layout of the Livewire 4 starter kit (layouts::app) with the page title above the content', function (): void {
     file_put_contents($this->host.'/layouts/app.blade.php', '<html><body class="host-livewire-4"><main>{{ $slot }}</main></body></html>');
