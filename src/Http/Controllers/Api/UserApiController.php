@@ -21,7 +21,7 @@ class UserApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $page = $this->users->userQuery((array) $request->input('filter', []))->paginate($this->perPage())->withQueryString();
+        $page = $this->users->userQuery($request)->paginate($this->perPage())->withQueryString();
 
         return response()->json([
             'data' => collect($page->items())->map(fn ($user) => $this->users->presentUser($user))->all(),

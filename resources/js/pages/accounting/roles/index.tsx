@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ type Role = {
     is_super_admin: boolean;
 };
 
-export default function Roles({ roles }: { roles: Role[] }) {
+export default function Roles({ roles, filters }: { roles: Role[]; filters: Record<string, string | null> }) {
     const { flash } = useAccounting();
 
     const remove = (role: Role) => {
@@ -59,6 +60,8 @@ export default function Roles({ roles }: { roles: Role[] }) {
                         <AlertDescription>{flash.error}</AlertDescription>
                     </Alert>
                 ) : null}
+
+                <FilterBar path="/accounting/roles" values={filters} fields={[{ name: 'search', label: 'Search', placeholder: 'Role name' }]} />
 
                 <div className="overflow-x-auto rounded-lg border">
                     <table className="w-full min-w-[560px] text-sm">

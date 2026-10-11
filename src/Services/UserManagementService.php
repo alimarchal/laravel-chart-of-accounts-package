@@ -3,11 +3,13 @@
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +18,7 @@ use Spatie\Permission\Guard;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Users, roles and permissions — shared by the Blade screens, the React screens and the API.
@@ -54,14 +57,19 @@ class UserManagementService
      * @param  array{name?: string|null, email?: string|null, role?: string|null}  $filters
      * @return Builder<Model>
      */
-    public function userQuery(array $filters = []): Builder
+    /**
+     * The users list: ?filter[search]=… (name or e-mail), filter[name], filter[email], filter[role]=<role name>, sort=name|email|created_at.
+     *
+     * @return QueryBuilder<Model>
+     */
+    public function userQuery(Request $request): QueryBuilder
     {
-        return ($this->userModel())::query()
-            ->with('roles')
-            ->when($filters['name'] ?? null, fn (Builder $query, string $name) => $query->where('name', 'like', "%{$name}%"))
-            ->when($filters['email'] ?? null, fn (Builder $query, string $email) => $query->where('email', 'like', "%{$email}%"))
-            ->when($filters['role'] ?? null, fn (Builder $query, string $role) => $query->whereHas('roles', fn ($roles) => $roles->where('name', $role)))
-            ->latest();
+        return ListFilters::for(($this->userModel())::query()->with('roles'), $request, [
+            ListFilters::search('search', ['name', 'email']),
+            ListFilters::search('name', ['name']),
+            ListFilters::search('email', ['email']),
+            ListFilters::custom('role', fn ($query, string $role) => $query->whereHas('roles', fn ($roles) => $roles->whereIn('name', explode(',', $role)))),
+        ], sorts: ['name', 'email', 'created_at'], defaultSort: '-created_at');
     }
 
     /**
@@ -307,13 +315,17 @@ class UserManagementService
      *
      * @return EloquentCollection<int, Role>
      */
-    public function rolesWithCounts(): EloquentCollection
+    public function rolesWithCounts(?Request $request = null): EloquentCollection
     {
         $pivot = config('permission.table_names.model_has_roles', 'model_has_roles');
         $roles = config('permission.table_names.roles', 'roles');
         $roleKey = config('permission.column_names.role_pivot_key') ?: 'role_id';
 
-        return Role::query()
+        $roleQuery = $request === null
+            ? Role::query()
+            : ListFilters::for(Role::query(), $request, [ListFilters::search('search', ['name']), ListFilters::search('name', ['name']), ListFilters::exact('guard_name')], sorts: ['name', 'created_at']);
+
+        return $roleQuery
             ->withCount('permissions')
             ->addSelect(['users_count' => DB::table($pivot)
                 ->selectRaw('count(*)')

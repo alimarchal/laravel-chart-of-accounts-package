@@ -180,3 +180,24 @@ it('shows the filter bar on the Blade list screens when the Blade driver is acti
         }
     }
 })->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
+
+it('filters users and roles with the shared filters', function (): void {
+    $this->user->syncRoles(['super-admin']);
+    $make = fn (string $name, string $email, string $role) => tap(User::factory()->create(['name' => $name, 'email' => $email]), fn (User $user) => $user->assignRole($role));
+    $ann = $make('Ann Auditor', 'ann@example.test', 'viewer');
+    $bob = $make('Bob Booker', 'bob@example.test', 'accountant');
+    $names = fn (string $query) => collect($this->getJson("/api/v1/accounting/users?{$query}")->assertOk()->json('data'))->pluck('name')->all();
+
+    expect($names('filter[search]=booker'))->toBe(['Bob Booker'])
+        ->and($names('search=ann@'))->toBe(['Ann Auditor'])
+        ->and($names('filter[name]=auditor'))->toBe(['Ann Auditor'])
+        ->and($names('filter[email]=bob@'))->toBe(['Bob Booker'])
+        ->and($names('filter[role]=viewer'))->toBe(['Ann Auditor'])
+        ->and($names('filter[role]=viewer,accountant&sort=name'))->toBe(['Ann Auditor', 'Bob Booker'])
+        ->and($names('filter[search]=zzz'))->toBe([]);
+
+    $roles = fn (string $query) => collect($this->getJson("/api/v1/accounting/roles?{$query}")->assertOk()->json('data'))->pluck('name')->all();
+    expect($roles('search=account'))->toContain('accountant')->not->toContain('viewer')
+        ->and($roles('filter[search]=viewer'))->toBe(['viewer'])
+        ->and($roles('search=zzz'))->toBe([]);
+});

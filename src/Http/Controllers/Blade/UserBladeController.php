@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Services\UserManagementService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -36,23 +37,12 @@ class UserBladeController extends Controller
 
     public function index(Request $request): View
     {
-        $query = ($this->getUserModel())::with('roles')->latest();
-
-        if ($request->filled('filter.name')) {
-            $query->where('name', 'like', '%'.$request->input('filter.name').'%');
-        }
-
-        if ($request->filled('filter.email')) {
-            $query->where('email', 'like', '%'.$request->input('filter.email').'%');
-        }
-
-        if ($request->filled('filter.role')) {
-            $query->whereHas('roles', fn ($q) => $q->where('name', $request->input('filter.role')));
-        }
+        $query = app(UserManagementService::class)->userQuery($request);
 
         return view('accounting::users.index', [
             'users' => $query->paginate(25)->withQueryString(),
             'roles' => Role::orderBy('name')->get(),
+            'filters' => ListFilters::current($request, ['search', 'name', 'email', 'role']),
         ]);
     }
 
@@ -86,6 +76,7 @@ class UserBladeController extends Controller
         return view('accounting::users.edit', [
             'user' => $user,
             'roles' => Role::orderBy('name')->get(),
+            'filters' => ListFilters::current($request, ['search', 'name', 'email', 'role']),
         ]);
     }
 
