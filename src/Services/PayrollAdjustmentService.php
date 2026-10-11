@@ -14,11 +14,13 @@ use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SalaryHistory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Variable pay: one-off earnings (bonus, extra allowance) and deductions (fine, recovery) of an employee in a month, recorded one at a
@@ -154,14 +156,15 @@ class PayrollAdjustmentService
     }
 
     /**
+     * @param  Builder<PayrollAdjustment>|QueryBuilder<PayrollAdjustment>|null  $base
      * @return list<array<string, mixed>>
      */
-    public function present(?string $month = null, ?string $status = null): array
+    public function present(?string $month = null, ?string $status = null, Builder|QueryBuilder|null $base = null): array
     {
         $names = Employee::query()->pluck('name', 'id');
         $codes = Employee::query()->pluck('code', 'id');
 
-        return PayrollAdjustment::query()
+        return ($base ?? PayrollAdjustment::query())
             ->when($month, fn ($query, $value) => $query->whereDate('month', Carbon::parse($value.'-01')->toDateString()))
             ->when($status, fn ($query, $value) => $query->where('status', $value))
             ->orderByDesc('month')->orderBy('id')->limit(500)->get()

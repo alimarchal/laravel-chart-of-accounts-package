@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\Loan;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollLoanService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,9 +26,18 @@ class PayrollLoanController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $status = $request->validate(['status' => ['nullable', 'in:draft,active,closed,cancelled']])['status'] ?? null;
+        $status = $request->validate(['status' => ['nullable', 'in:draft,active,closed,cancelled'], 'issued_from' => ['nullable', 'date'], 'issued_to' => ['nullable', 'date']])['status'] ?? null;
         $employees = Employee::query()->get(['id', 'code', 'name'])->keyBy('id');
-        $rows = Loan::query()->when($status, fn ($query, $value) => $query->where('status', $value))->orderByDesc('id')->limit(300)->get()
+        $rows = ListFilters::for(Loan::query(), $request, [
+            ListFilters::exact('status'),
+            ListFilters::exact('kind'),
+            ListFilters::exact('employee_id'),
+            ListFilters::employee('search', Employee::class, ['notes']),
+            ListFilters::from('issued_from', 'issued_on'),
+            ListFilters::to('issued_to', 'issued_on'),
+            ListFilters::min('min_principal', 'principal'),
+            ListFilters::max('max_principal', 'principal'),
+        ], sorts: ['issued_on', 'principal', 'id'], defaultSort: '-id')->limit(300)->get()
             ->map(fn (Loan $loan): array => $this->loans->present($loan, $employees[$loan->employee_id] ?? null))->values();
 
         if ($request->expectsJson()) {
@@ -35,7 +45,7 @@ class PayrollLoanController extends Controller
         }
 
         return $this->render('loans', [
-            'loans' => $rows, 'status' => $status, 'employees' => $employees->values()->where('id', '>', 0)->values(), 'today' => now()->toDateString(),
+            'loans' => $rows, 'status' => $status, 'filters' => ListFilters::current($request, ['search', 'status', 'kind', 'employee_id', 'issued_from', 'issued_to', 'min_principal', 'max_principal']), 'employees' => $employees->values()->where('id', '>', 0)->values(), 'today' => now()->toDateString(),
             'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name']),
         ]);
     }

@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Support;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -97,6 +98,34 @@ final class ListFilters
                             }
                         });
                     });
+                }
+            });
+        });
+    }
+
+    /**
+     * Rows of the people whose code or name contains the text (for lists that hold an employee_id), or whose own columns do.
+     *
+     * @param  class-string<Model>  $employeeModel
+     * @param  list<string>  $columns  columns of the list itself that are searched as well
+     */
+    public static function employee(string $name, string $employeeModel, array $columns = [], string $column = 'employee_id'): AllowedFilter
+    {
+        return AllowedFilter::callback($name, function ($query, $value) use ($employeeModel, $columns, $column): void {
+            $term = self::like(self::text($value));
+
+            if ($term === '') {
+                return;
+            }
+
+            $grammar = $query->getQuery()->getGrammar();
+            $like = fn (string $field): string => $grammar->wrap($field)." like ? escape '!'";
+
+            $query->where(function ($inner) use ($employeeModel, $columns, $column, $term, $like): void {
+                $inner->orWhereIn($column, $employeeModel::query()->select('id')->where(fn ($match) => $match->whereRaw($like('code'), ["%{$term}%"])->orWhereRaw($like('name'), ["%{$term}%"])));
+
+                foreach ($columns as $own) {
+                    $inner->orWhereRaw($like($own), ["%{$term}%"]);
                 }
             });
         });

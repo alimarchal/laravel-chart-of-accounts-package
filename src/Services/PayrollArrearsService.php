@@ -16,11 +16,13 @@ use Alimarchal\LaravelChartOfAccounts\Models\SalaryRevision;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SalaryHistory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Back pay: when a raise is applied late, the difference between what was paid and what should have been paid for the
@@ -209,11 +211,12 @@ class PayrollArrearsService
     /**
      * The arrears register: every row with its employee, and totals by status and by month of payment.
      *
+     * @param  Builder<PayrollArrear>|QueryBuilder<PayrollArrear>|null  $base
      * @return array{rows: list<array<string, mixed>>, totals: array<string, mixed>}
      */
-    public function report(?string $status = null, ?string $paymentMonth = null): array
+    public function report(?string $status = null, ?string $paymentMonth = null, Builder|QueryBuilder|null $base = null): array
     {
-        $query = PayrollArrear::query()->orderByDesc('payment_month')->orderBy('id');
+        $query = ($base ?? PayrollArrear::query())->orderByDesc('payment_month')->orderBy('id');
 
         if ($status) {
             $query->where('status', $status);

@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FeatureLink } from '@/components/accounting/feature-link';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -12,14 +13,14 @@ import { useAccounting } from '@/lib/accounting';
 
 type Row = { id: number; employee_code: string; employee_name: string; month: string; kind: string; description: string; amount: string; taxable: boolean; status: string; notes: string | null };
 type Props = {
-    adjustments: Row[]; month: string; status: string;
+    adjustments: Row[]; month: string; status: string; filters: Record<string, string | null>;
     employees: Array<{ id: number; code: string; name: string }>; components: Array<{ id: number; code: string; name: string; kind: string }>; accounts: Array<{ id: number; account_code: string; account_name: string }>;
 };
 
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
-export default function PayrollAdjustments({ adjustments, month, status, employees, components, accounts }: Props) {
+export default function PayrollAdjustments({ adjustments, month, status, filters, employees, components, accounts }: Props) {
     const { permissions, flash } = useAccounting();
     const single = useForm({ employee_id: '', month: `${month}-01`, kind: 'earning', pay_component_id: '', account_id: '', description: '', amount: '', taxable: true, notes: '' });
     const bulk = useForm({ month: `${month}-01`, description: '', method: 'fixed', value: '', pay_component_id: '', taxable: true });
@@ -74,6 +75,16 @@ export default function PayrollAdjustments({ adjustments, month, status, employe
                         </Card></form>
                     </div>
                 )}
+                <FilterBar
+                    path="/accounting/payroll/adjustments"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Employee, description or notes' },
+                        { name: 'employee_id', label: 'Employee', type: 'select', options: Object.fromEntries(employees.map((row) => [String(row.id), `${row.code} ${row.name}`])) },
+                        { name: 'kind', label: 'Kind', type: 'select', options: { earning: 'Earning', deduction: 'Deduction' } },
+                        { name: 'taxable', label: 'Taxable', type: 'select', options: { '1': 'Yes', '0': 'No' } },
+                    ]}
+                />
                 <Card><CardContent className="overflow-x-auto pt-6">
                     <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Month</th><th>What for</th><th>Kind</th><th className="text-right">Amount</th><th>Status</th><th /></tr></thead><tbody>
                         {adjustments.map((row) => (

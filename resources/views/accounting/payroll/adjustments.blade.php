@@ -38,6 +38,12 @@
                 </form>
             </div>
         @endcan
+        <x-accounting::list-filters :action="route('accounting.payroll.adjustments.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Employee, description or notes'],
+            ['name' => 'employee_id', 'label' => 'Employee', 'type' => 'select', 'options' => collect($employees)->mapWithKeys(fn ($row) => [$row['id'] ?? $row->id => (($row['code'] ?? $row->code).' '.($row['name'] ?? $row->name))])->all()],
+            ['name' => 'kind', 'label' => 'Kind', 'type' => 'select', 'options' => ['earning' => 'Earning', 'deduction' => 'Deduction']],
+            ['name' => 'taxable', 'label' => 'Taxable', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No']],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Employee</th><th class="py-2 px-3 text-left font-medium text-gray-600">Month</th><th class="py-2 px-3 text-left font-medium text-gray-600">What for</th><th class="py-2 px-3 text-left font-medium text-gray-600">Kind</th><th class="py-2 px-3 text-right font-medium text-gray-600">Amount</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th><th></th></tr></thead>
             <tbody>

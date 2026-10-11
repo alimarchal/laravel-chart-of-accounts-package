@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\Settlement;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollSettlementService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,14 +26,23 @@ class PayrollSettlementController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $rows = $this->settlements->present();
+        $request->validate(['leave_from' => ['nullable', 'date'], 'leave_to' => ['nullable', 'date']]);
+        $rows = $this->settlements->present(ListFilters::for(Settlement::query(), $request, [
+            ListFilters::exact('status'),
+            ListFilters::exact('employee_id'),
+            ListFilters::employee('search', Employee::class, ['notes']),
+            ListFilters::from('leave_from', 'leave_date'),
+            ListFilters::to('leave_to', 'leave_date'),
+            ListFilters::min('min_net', 'net'),
+            ListFilters::max('max_net', 'net'),
+        ], sorts: ['leave_date', 'net', 'id'], defaultSort: '-id')->limit(300)->get());
 
         if ($request->expectsJson()) {
             return response()->json(['data' => $rows]);
         }
 
         return $this->render('settlements', [
-            'settlements' => $rows, 'preview' => session('settlement_preview'), 'today' => now()->toDateString(),
+            'settlements' => $rows, 'filters' => ListFilters::current($request, ['search', 'status', 'employee_id', 'leave_from', 'leave_to', 'min_net', 'max_net']), 'preview' => session('settlement_preview'), 'today' => now()->toDateString(),
             'employees' => Employee::query()->orderBy('code')->get(['id', 'code', 'name']),
             'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name']),
         ]);

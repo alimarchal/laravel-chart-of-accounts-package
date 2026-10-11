@@ -17,6 +17,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollBankFileService;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollStructureService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -39,11 +40,17 @@ class PayrollController extends Controller
     public function index(Request $request): Response|View|JsonResponse
     {
         $year = (int) ($request->validate(['year' => ['nullable', 'integer', 'min:2000', 'max:2100']])['year'] ?? now()->format('Y'));
-        $runs = PayrollRun::query()->orderByDesc('period_month')->orderByDesc('id')->limit(60)->get()->map(fn (PayrollRun $run): array => $this->presentRun($run))->values();
+        $request->validate(['status' => ['nullable', 'string'], 'period_from' => ['nullable', 'date'], 'period_to' => ['nullable', 'date']]);
+        $runs = ListFilters::for(PayrollRun::query(), $request, [
+            ListFilters::exact('status'),
+            ListFilters::search('search', ['notes']),
+            ListFilters::from('period_from', 'period_month'),
+            ListFilters::to('period_to', 'period_month'),
+        ], sorts: ['period_month', 'net', 'gross', 'id'], defaultSort: '-period_month')->orderByDesc('id')->limit(60)->get()->map(fn (PayrollRun $run): array => $this->presentRun($run))->values();
 
         return $request->expectsJson()
             ? response()->json(['data' => $runs])
-            : $this->render('index', ['runs' => $runs, 'summary' => $this->payroll->summary($year), 'year' => $year, 'defaultMonth' => now()->startOfMonth()->toDateString()]);
+            : $this->render('index', ['runs' => $runs, 'summary' => $this->payroll->summary($year), 'year' => $year, 'defaultMonth' => now()->startOfMonth()->toDateString(), 'filters' => ListFilters::current($request, ['search', 'status', 'period_from', 'period_to'])]);
     }
 
     public function runStore(Request $request): RedirectResponse|JsonResponse
@@ -118,9 +125,20 @@ class PayrollController extends Controller
 
     public function employees(Request $request): Response|View|JsonResponse
     {
-        $employees = Employee::query()->orderBy('code')->get()->map(fn (Employee $employee): array => $this->presentEmployee($employee))->values();
+        $request->validate(['joined_from' => ['nullable', 'date'], 'joined_to' => ['nullable', 'date']]);
+        $employees = ListFilters::for(Employee::query(), $request, [
+            ListFilters::search('search', ['code', 'name', 'national_id', 'designation', 'bank_name']),
+            ListFilters::bool('active', 'is_active'),
+            ListFilters::bool('withhold_tax', 'withhold_tax'),
+            ListFilters::exact('cost_center_id'),
+            ListFilters::exact('designation'),
+            ListFilters::from('joined_from', 'join_date'),
+            ListFilters::to('joined_to', 'join_date'),
+            ListFilters::min('min_salary', 'base_salary'),
+            ListFilters::max('max_salary', 'base_salary'),
+        ], sorts: ['code', 'name', 'join_date', 'base_salary'], defaultSort: 'code')->get()->map(fn (Employee $employee): array => $this->presentEmployee($employee))->values();
 
-        return $request->expectsJson() ? response()->json(['data' => $employees]) : $this->render('employees', ['employees' => $employees]);
+        return $request->expectsJson() ? response()->json(['data' => $employees]) : $this->render('employees', ['employees' => $employees, 'filters' => ListFilters::current($request, ['search', 'active', 'withhold_tax', 'cost_center_id', 'joined_from', 'joined_to', 'min_salary', 'max_salary']), 'costCenters' => CostCenter::query()->orderBy('code')->get(['id', 'code', 'name'])]);
     }
 
     public function employeeCreate(): Response|View

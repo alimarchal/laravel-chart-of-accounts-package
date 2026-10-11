@@ -172,7 +172,7 @@ it('shows the filter bar on the Blade list screens when the Blade driver is acti
     $this->withoutVite();
     $this->actingAs($this->user);
 
-    foreach (['/accounting/fixed-assets', '/accounting/inventory', '/accounting/inventory/movements', '/accounting/inventory/warehouses', '/accounting/budgets', '/accounting/bank-statements', '/accounting/recurring-entries', '/accounting/parties', '/accounting/party-documents', '/accounting/party-payments'] as $path) {
+    foreach (['/accounting/fixed-assets', '/accounting/inventory', '/accounting/inventory/movements', '/accounting/inventory/warehouses', '/accounting/budgets', '/accounting/bank-statements', '/accounting/recurring-entries', '/accounting/parties', '/accounting/party-documents', '/accounting/party-payments', '/accounting/payroll', '/accounting/payroll/employees', '/accounting/payroll/loans', '/accounting/payroll/arrears', '/accounting/payroll/adjustments', '/accounting/payroll/settlements'] as $path) {
         $html = $this->get($path.'?search=zzz-nothing')->assertOk()->getContent();
 
         foreach (['role="search"', 'value="zzz-nothing"', 'Reset (1)'] as $needle) {
