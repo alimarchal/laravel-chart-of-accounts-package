@@ -6,6 +6,10 @@
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif
         @if(session("error"))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session("error") }}</div>@endif
         <x-accounting::validation-errors />
+        <x-accounting::list-filters :action="route('accounting.inventory.warehouses.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Code, name or address'],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Inactive']],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5"><table class="w-full text-sm"><tbody>
             @forelse ($warehouses as $warehouse)
                 <tr class="border-t first:border-0"><td class="py-2 font-medium">{{ $warehouse['code'] }}</td><td>{{ $warehouse['name'] }}</td><td class="text-gray-500">{{ $warehouse['address'] }}</td><td>{{ $warehouse['is_active'] ? '' : 'inactive' }}</td>

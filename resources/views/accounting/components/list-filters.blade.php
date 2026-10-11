@@ -1,6 +1,7 @@
 @props(['action', 'fields', 'values' => []])
-{{-- Filter bar shared by the list screens. Fields: name, label, type (text|select|date|number), options (value => label). The same names work as ?name=… and ?filter[name]=… on the API. --}}
-@php($active = collect($values)->filter(fn ($value) => $value !== null && $value !== '')->count())
+{{-- Filter bar shared by the list screens. Fields: name, label, type (text|select|date|number), options (value => label), quiet (a setting such as "as of" that is always present and does not count as a filter). The same names work as ?name=… and ?filter[name]=… on the API. --}}
+@php($quiet = collect($fields)->where('quiet', true)->pluck('name')->all())
+@php($active = collect($values)->except($quiet)->filter(fn ($value) => $value !== null && $value !== '')->count())
 <form method="GET" action="{{ $action }}" class="flex flex-wrap items-end gap-3" role="search">
     @foreach ($fields as $field)
         @php($type = $field['type'] ?? 'text')

@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { PiggyBank, Plus } from 'lucide-react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ const style: Record<Budget['status'], string> = {
     closed: 'bg-muted text-muted-foreground',
 };
 
-export default function Budgets({ budgets }: { budgets: Budget[] }) {
+export default function Budgets({ budgets, filters }: { budgets: Budget[]; filters: Record<string, string | null> }) {
     const { permissions, flash } = useAccounting();
 
     return (
@@ -56,6 +57,16 @@ export default function Budgets({ budgets }: { budgets: Budget[] }) {
                     </Alert>
                 ) : null}
 
+                <FilterBar
+                    path="/accounting/budgets"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Name or notes' },
+                        { name: 'status', label: 'Status', type: 'select', options: { draft: 'Draft', approved: 'Approved', closed: 'Closed' } },
+                        { name: 'date_from', label: 'Starts from', type: 'date' },
+                        { name: 'date_to', label: 'Ends by', type: 'date' },
+                    ]}
+                />
                 <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50 text-left">

@@ -10,6 +10,8 @@ export type FilterField = {
     type?: 'text' | 'select' | 'date' | 'number';
     options?: Record<string, string>;
     placeholder?: string;
+    /** A setting such as "as of" that is always present and does not count as an active filter. */
+    quiet?: boolean;
 };
 
 type Props = {
@@ -29,7 +31,7 @@ export default function FilterBar({ path, fields, values }: Props) {
     const [state, setState] = useState<Record<string, string>>(() =>
         Object.fromEntries(fields.map((field) => [field.name, String(values[field.name] ?? '')])),
     );
-    const active = fields.filter((field) => String(values[field.name] ?? '') !== '').length;
+    const active = fields.filter((field) => !field.quiet && String(values[field.name] ?? '') !== '').length;
     const apply = (event: FormEvent) => {
         event.preventDefault();
         router.get(path, Object.fromEntries(Object.entries(state).filter(([, value]) => value !== '')), { preserveScroll: true });

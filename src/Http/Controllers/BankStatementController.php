@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Services\BankStatementService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -32,11 +33,18 @@ class BankStatementController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $statements = BankStatement::query()->with('bankAccount:id,account_name,bank_name')->withCount([
+        $request->validate(['bank_account_id' => ['nullable', 'integer'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date']]);
+        $statements = ListFilters::for(BankStatement::query()->with('bankAccount:id,account_name,bank_name')->withCount([
             'lines as unmatched_count' => fn ($query) => $query->where('status', 'unmatched'),
-        ])->orderByDesc('to_date')->orderByDesc('id')->limit(200)->get()->map(fn (BankStatement $statement): array => $this->presentStatement($statement))->values();
+        ]), $request, [
+            ListFilters::exact('bank_account_id'),
+            ListFilters::search('search', ['file_name'], ['bankAccount' => ['account_name', 'bank_name']]),
+            ListFilters::from('date_from', 'to_date'),
+            ListFilters::to('date_to', 'from_date'),
+            ListFilters::custom('unmatched', fn ($query, string $flag) => filter_var($flag, FILTER_VALIDATE_BOOLEAN) ? $query->whereHas('lines', fn ($lines) => $lines->where('status', 'unmatched')) : null),
+        ], sorts: ['to_date', 'from_date', 'file_name', 'id'], defaultSort: '-to_date')->orderByDesc('id')->limit(200)->get()->map(fn (BankStatement $statement): array => $this->presentStatement($statement))->values();
 
-        return $request->expectsJson() ? response()->json(['data' => $statements]) : $this->render('index', ['statements' => $statements]);
+        return $request->expectsJson() ? response()->json(['data' => $statements]) : $this->render('index', ['statements' => $statements, 'banks' => $this->banks(), 'filters' => ListFilters::current($request, ['search', 'bank_account_id', 'date_from', 'date_to', 'unmatched'])]);
     }
 
     public function create(Request $request): Response|View

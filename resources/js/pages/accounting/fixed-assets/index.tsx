@@ -1,27 +1,23 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
 
 type Row = { id: number; code: string; name: string; category: string | null; acquisition_date: string; status: string; cost: string; accumulated: string; book_value: string };
 type Props = {
     register: { as_of: string; rows: Row[]; totals: { cost: string; accumulated: string; book_value: string } };
     reconcile: { ledger: string; register: string; difference: string };
-    filters: { as_of: string; status: string };
+    categories: string[];
+    filters: Record<string, string | null>;
 };
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
-const selectClass = 'h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function FixedAssetsIndex({ register, reconcile, filters }: Props) {
+export default function FixedAssetsIndex({ register, reconcile, filters, categories }: Props) {
     const { permissions, flash } = useAccounting();
-    const [asOf, setAsOf] = useState(filters.as_of);
-    const [status, setStatus] = useState(filters.status);
-    const apply = () => router.get('/accounting/fixed-assets', { as_of: asOf, status: status || undefined }, { preserveState: true });
 
     return (
         <>
@@ -30,18 +26,25 @@ export default function FixedAssetsIndex({ register, reconcile, filters }: Props
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title="Fixed assets" description="Register of what the company owns, with depreciation and book value" />
                     <div className="flex flex-wrap items-center gap-2">
-                        <Input type="date" value={asOf} onChange={(event) => setAsOf(event.target.value)} className="w-40" />
-                        <select className={selectClass} value={status} onChange={(event) => setStatus(event.target.value)}>
-                            <option value="">All</option>
-                            <option value="active">Active</option>
-                            <option value="disposed">Disposed</option>
-                        </select>
-                        <Button variant="outline" onClick={apply}>Update</Button>
                         <Button asChild variant="outline"><a href={`/accounting/fixed-assets/export/xlsx?as_of=${register.as_of}`}>Export</a></Button>
                         {permissions['fixed-assets.view'] && <Button asChild variant="outline"><Link href="/accounting/fixed-assets/depreciation">Depreciation</Link></Button>}
                         {permissions['fixed-assets.create'] && <Button asChild><Link href="/accounting/fixed-assets/create">New asset</Link></Button>}
                     </div>
                 </div>
+                <FilterBar
+                    path="/accounting/fixed-assets"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Code, name or category' },
+                        { name: 'as_of', label: 'As of', type: 'date', quiet: true },
+                        { name: 'status', label: 'Status', type: 'select', options: { active: 'Active', disposed: 'Disposed' } },
+                        { name: 'category', label: 'Category', type: 'select', options: Object.fromEntries(categories.map((name) => [name, name])) },
+                        { name: 'acquired_from', label: 'Acquired from', type: 'date' },
+                        { name: 'acquired_to', label: 'Acquired to', type: 'date' },
+                        { name: 'min_cost', label: 'Cost from', type: 'number' },
+                        { name: 'max_cost', label: 'Cost up to', type: 'number' },
+                    ]}
+                />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 <div className="grid gap-4 sm:grid-cols-3">
                     {([['Cost', register.totals.cost], ['Accumulated depreciation', register.totals.accumulated], ['Book value', register.totals.book_value]] as const).map(([label, value]) => (

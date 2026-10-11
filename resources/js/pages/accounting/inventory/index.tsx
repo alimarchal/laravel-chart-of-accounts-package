@@ -1,10 +1,9 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
 
 type Row = {
@@ -14,18 +13,15 @@ type Row = {
 type Props = {
     valuation: { as_of: string; rows: Row[]; totals: { value: string }; reconcile: { ledger: string; stock: string; difference: string } };
     warehouses: Array<{ id: number; code: string; name: string }>;
-    filters: { as_of: string; warehouse_id: string | number };
+    categories: string[];
+    filters: Record<string, string | number | null>;
 };
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 const qty = (value: string) => Number(value).toLocaleString(undefined, { maximumFractionDigits: 4 });
-const selectClass = 'h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function InventoryIndex({ valuation, warehouses, filters }: Props) {
+export default function InventoryIndex({ valuation, warehouses, filters, categories }: Props) {
     const { permissions, flash } = useAccounting();
-    const [asOf, setAsOf] = useState(filters.as_of);
-    const [warehouse, setWarehouse] = useState(String(filters.warehouse_id ?? ''));
-    const apply = () => router.get('/accounting/inventory', { as_of: asOf, warehouse_id: warehouse || undefined }, { preserveState: true });
 
     return (
         <>
@@ -34,12 +30,6 @@ export default function InventoryIndex({ valuation, warehouses, filters }: Props
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title="Inventory" description="Stock on hand and its value at moving average cost" />
                     <div className="flex flex-wrap items-center gap-2">
-                        <Input type="date" value={asOf} onChange={(event) => setAsOf(event.target.value)} className="w-40" />
-                        <select className={selectClass} value={warehouse} onChange={(event) => setWarehouse(event.target.value)}>
-                            <option value="">All warehouses</option>
-                            {warehouses.map((row) => (<option key={row.id} value={row.id}>{row.name}</option>))}
-                        </select>
-                        <Button variant="outline" onClick={apply}>Update</Button>
                         <Button asChild variant="outline"><a href={`/accounting/inventory/export/xlsx?as_of=${valuation.as_of}`}>Export</a></Button>
                         <Button asChild variant="outline"><Link href="/accounting/inventory/movements">Movements</Link></Button>
                         <Button asChild variant="outline"><Link href="/accounting/inventory/warehouses">Warehouses</Link></Button>
@@ -47,6 +37,17 @@ export default function InventoryIndex({ valuation, warehouses, filters }: Props
                         {permissions['inventory.manage'] && <Button asChild><Link href="/accounting/inventory/items/create">New item</Link></Button>}
                     </div>
                 </div>
+                <FilterBar
+                    path="/accounting/inventory"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'SKU, name or category' },
+                        { name: 'as_of', label: 'As of', type: 'date', quiet: true },
+                        { name: 'warehouse_id', label: 'Warehouse', type: 'select', options: Object.fromEntries(warehouses.map((row) => [String(row.id), row.name])) },
+                        { name: 'category', label: 'Category', type: 'select', options: Object.fromEntries(categories.map((name) => [name, name])) },
+                        { name: 'low_stock', label: 'Stock level', type: 'select', options: { '1': 'At or below reorder level' } },
+                    ]}
+                />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 <Card>
                     <CardHeader>

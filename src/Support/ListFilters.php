@@ -26,10 +26,13 @@ use Spatie\QueryBuilder\QueryBuilder;
 final class ListFilters
 {
     /**
-     * @param  Builder<*>|Relation<*, *, *>  $query
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>|Relation<TModel, *, *>  $query
      * @param  list<AllowedFilter>  $filters
      * @param  list<string>  $sorts
      * @param  array<string, string>  $aliases  short parameter => filter name, when they differ
+     * @return QueryBuilder<TModel>
      */
     public static function for(Builder|Relation $query, Request $request, array $filters, array $sorts = [], ?string $defaultSort = null, array $aliases = []): QueryBuilder
     {

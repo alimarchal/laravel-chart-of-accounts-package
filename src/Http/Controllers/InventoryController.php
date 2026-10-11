@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\StockMovement;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingReportExporter;
 use Alimarchal\LaravelChartOfAccounts\Services\InventoryService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\QueryBuilder\QueryBuilder;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
@@ -28,18 +30,46 @@ class InventoryController extends Controller
     public function index(Request $request): Response|View|JsonResponse
     {
         $filters = $request->validate(['as_of' => ['nullable', 'date'], 'warehouse_id' => ['nullable', 'integer']]);
-        $valuation = $this->inventory->valuation($filters['as_of'] ?? null, isset($filters['warehouse_id']) ? (int) $filters['warehouse_id'] : null);
+        $valuation = $this->inventory->valuation($filters['as_of'] ?? null, isset($filters['warehouse_id']) ? (int) $filters['warehouse_id'] : null, $this->filteredItems($request));
+        $valuation['rows'] = $this->onlyLow($request, $valuation['rows']);
 
         return $request->expectsJson()
             ? response()->json(['data' => $valuation])
-            : $this->render('index', ['valuation' => $valuation, 'warehouses' => $this->warehouseOptions(), 'filters' => ['as_of' => $valuation['as_of'], 'warehouse_id' => $filters['warehouse_id'] ?? '']]);
+            : $this->render('index', ['valuation' => $valuation, 'warehouses' => $this->warehouseOptions(), 'categories' => InventoryItem::query()->whereNotNull('category')->distinct()->orderBy('category')->pluck('category'), 'filters' => ['as_of' => $valuation['as_of'], 'warehouse_id' => $filters['warehouse_id'] ?? '', ...ListFilters::current($request, self::ITEM_FILTERS)]]);
+    }
+
+    private const ITEM_FILTERS = ['search', 'category', 'unit', 'low_stock'];
+
+    /** @return QueryBuilder<InventoryItem> */
+    private function filteredItems(Request $request): QueryBuilder
+    {
+        return ListFilters::for(InventoryItem::query(), $request, [
+            ListFilters::search('search', ['sku', 'name', 'category']),
+            ListFilters::exact('category'),
+            ListFilters::exact('unit'),
+            ListFilters::bool('active', 'is_active'),
+        ], sorts: ['sku', 'name']);
+    }
+
+    /**
+     * Items at or below their reorder level (the figure is computed from the stock ledger, so it is applied to the result).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function onlyLow(Request $request, array $rows): array
+    {
+        $flag = filter_var(((array) $request->query('filter', []))['low_stock'] ?? $request->query('low_stock'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+        return $flag === true ? array_values(array_filter($rows, fn (array $row): bool => (bool) $row['low'])) : $rows;
     }
 
     public function export(Request $request, string $format, AccountingReportExporter $exporter): HttpResponse
     {
         abort_unless(in_array($format, ['csv', 'xlsx', 'pdf'], true), 404);
         $filters = $request->validate(['as_of' => ['nullable', 'date'], 'warehouse_id' => ['nullable', 'integer']]);
-        $valuation = $this->inventory->valuation($filters['as_of'] ?? null, isset($filters['warehouse_id']) ? (int) $filters['warehouse_id'] : null);
+        $valuation = $this->inventory->valuation($filters['as_of'] ?? null, isset($filters['warehouse_id']) ? (int) $filters['warehouse_id'] : null, $this->filteredItems($request));
+        $valuation['rows'] = $this->onlyLow($request, $valuation['rows']);
         $rows = collect($valuation['rows'])->map(fn (array $row): array => collect($row)->only(['sku', 'name', 'unit', 'quantity', 'average_cost', 'value'])->all());
 
         return $exporter->download($rows, 'stock-valuation', $format, ['title' => 'Stock valuation', 'filters' => ['As of' => $valuation['as_of']]]);
@@ -100,9 +130,12 @@ class InventoryController extends Controller
 
     public function warehouses(Request $request): Response|View|JsonResponse
     {
-        $warehouses = Warehouse::query()->orderBy('code')->get(['id', 'code', 'name', 'address', 'is_active']);
+        $warehouses = ListFilters::for(Warehouse::query(), $request, [
+            ListFilters::search('search', ['code', 'name', 'address']),
+            ListFilters::bool('active', 'is_active'),
+        ], sorts: ['code', 'name'], defaultSort: 'code')->get(['id', 'code', 'name', 'address', 'is_active']);
 
-        return $request->expectsJson() ? response()->json(['data' => $warehouses]) : $this->render('warehouses', ['warehouses' => $warehouses]);
+        return $request->expectsJson() ? response()->json(['data' => $warehouses]) : $this->render('warehouses', ['warehouses' => $warehouses, 'filters' => ListFilters::current($request, ['search', 'active'])]);
     }
 
     public function warehouseStore(Request $request): RedirectResponse|JsonResponse
@@ -132,14 +165,20 @@ class InventoryController extends Controller
 
     public function movements(Request $request): Response|View|JsonResponse
     {
-        $filters = $request->validate(['item_id' => ['nullable', 'integer'], 'warehouse_id' => ['nullable', 'integer'], 'type' => ['nullable', 'in:'.implode(',', StockMovement::TYPES)]]);
-        $rows = StockMovement::query()->when($filters['item_id'] ?? null, fn ($query, $id) => $query->where('item_id', $id))->when($filters['warehouse_id'] ?? null, fn ($query, $id) => $query->where('warehouse_id', $id))
-            ->when($filters['type'] ?? null, fn ($query, $type) => $query->where('type', $type))->orderByDesc('movement_date')->orderByDesc('id')->limit(200)->get()
+        $request->validate(['item_id' => ['nullable', 'integer'], 'warehouse_id' => ['nullable', 'integer'], 'type' => ['nullable', 'in:'.implode(',', StockMovement::TYPES)], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date']]);
+        $rows = ListFilters::for(StockMovement::query(), $request, [
+            ListFilters::exact('item_id'),
+            ListFilters::exact('warehouse_id'),
+            ListFilters::exact('type'),
+            ListFilters::search('search', ['reference', 'notes']),
+            ListFilters::from('date_from', 'movement_date'),
+            ListFilters::to('date_to', 'movement_date'),
+        ], sorts: ['movement_date', 'quantity', 'value', 'id'], defaultSort: '-movement_date')->orderByDesc('id')->limit(200)->get()
             ->map(fn (StockMovement $move): array => ['id' => $move->id, 'date' => $move->movement_date->toDateString(), 'type' => $move->type, 'item_id' => $move->item_id, 'warehouse_id' => $move->warehouse_id, 'quantity' => $move->quantity, 'unit_cost' => $move->unit_cost, 'value' => $move->value, 'reference' => $move->reference, 'journal_entry_id' => $move->journal_entry_id])->values();
 
         return $request->expectsJson()
             ? response()->json(['data' => $rows])
-            : $this->render('movements', ['movements' => $rows, 'items' => $this->itemOptions(), 'warehouses' => $this->warehouseOptions(), 'filters' => ['item_id' => $filters['item_id'] ?? '', 'warehouse_id' => $filters['warehouse_id'] ?? '', 'type' => $filters['type'] ?? '']]);
+            : $this->render('movements', ['movements' => $rows, 'items' => $this->itemOptions(), 'warehouses' => $this->warehouseOptions(), 'filters' => ListFilters::current($request, ['item_id', 'warehouse_id', 'type', 'search', 'date_from', 'date_to'])]);
     }
 
     public function movementCreate(Request $request): Response|View

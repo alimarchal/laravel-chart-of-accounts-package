@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Pause, Play, Plus, Repeat, Zap } from 'lucide-react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,7 @@ type Entry = {
     amount: string;
 };
 
-type Props = { entries: Entry[] };
+type Props = { entries: Entry[]; filters: Record<string, string | null> };
 
 const statusStyle: Record<Entry['status'], string> = {
     active: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
@@ -40,7 +41,7 @@ const every = (entry: Entry) =>
         ? `every ${entry.interval} ${units[entry.frequency] ?? entry.frequency}`
         : entry.frequency;
 
-export default function RecurringEntries({ entries }: Props) {
+export default function RecurringEntries({ entries, filters }: Props) {
     const { permissions, flash } = useAccounting();
     const act = (entry: Entry, action: 'pause' | 'resume' | 'run') =>
         router.post(
@@ -81,6 +82,17 @@ export default function RecurringEntries({ entries }: Props) {
                     </Alert>
                 ) : null}
 
+                <FilterBar
+                    path="/accounting/recurring-entries"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Name, reference or description' },
+                        { name: 'frequency', label: 'Repeats', type: 'select', options: { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' } },
+                        { name: 'mode', label: 'Creates', type: 'select', options: { draft: 'Draft', post: 'Posted entry' } },
+                        { name: 'active', label: 'State', type: 'select', options: { '1': 'Active', '0': 'Paused' } },
+                        { name: 'due_by', label: 'Due by', type: 'date' },
+                    ]}
+                />
                 <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50 text-left">

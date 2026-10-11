@@ -13,6 +13,12 @@
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
         <p class="text-sm text-gray-600">Plan income and expenses by account and month, then follow budget against actual.</p>
+        <x-accounting::list-filters :action="route('accounting.budgets.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Name or notes'],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'approved' => 'Approved', 'closed' => 'Closed']],
+            ['name' => 'date_from', 'label' => 'Starts from', 'type' => 'date'],
+            ['name' => 'date_to', 'label' => 'Ends by', 'type' => 'date'],
+        ]" />
         <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Name</th><th class="py-2 px-3 text-left font-medium text-gray-600">Period</th><th class="py-2 px-3 text-right font-medium text-gray-600">Amounts</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th></tr></thead>
             <tbody>

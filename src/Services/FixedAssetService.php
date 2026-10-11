@@ -10,11 +10,13 @@ use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * The fixed asset register: what the company owns, what it cost, how it loses value and what happened when it left.
@@ -371,9 +373,10 @@ class FixedAssetService
     /**
      * The register at a date: cost, accumulated depreciation and book value of every asset, with totals.
      *
+     * @param  Builder<FixedAsset>|QueryBuilder<FixedAsset>|null  $assets
      * @return array{as_of: string, rows: list<array<string, mixed>>, totals: array<string, string>}
      */
-    public function register(?string $asOf = null, ?string $status = null): array
+    public function register(?string $asOf = null, ?string $status = null, Builder|QueryBuilder|null $assets = null): array
     {
         $asOf = Carbon::parse($asOf ?? now())->toDateString();
         $upTo = Carbon::parse($asOf)->startOfMonth()->toDateString();
@@ -381,7 +384,7 @@ class FixedAssetService
         $totals = ['cost' => 0, 'accumulated' => 0, 'book_value' => 0];
         $rows = [];
 
-        foreach (FixedAsset::query()->whereDate('acquisition_date', '<=', $asOf)->when($status, fn ($query) => $query->where('status', $status))->orderBy('code')->get() as $asset) {
+        foreach (($assets ?? FixedAsset::query())->whereDate('acquisition_date', '<=', $asOf)->when($status, fn ($query) => $query->where('status', $status))->orderBy('code')->get() as $asset) {
             $gone = $asset->disposed_at !== null && Carbon::parse($asset->disposed_at)->toDateString() <= $asOf;
             $cost = Money::toCents($asset->cost);
             $accumulated = $gone ? Money::toCents($asset->accumulated_depreciation) : Money::toCents((string) ($depreciation[$asset->id] ?? 0));

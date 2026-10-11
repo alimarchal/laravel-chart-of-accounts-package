@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\FixedAsset;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingReportExporter;
 use Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\QueryBuilder\QueryBuilder;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
@@ -29,12 +31,30 @@ class FixedAssetController extends Controller
     public function index(Request $request): Response|View|JsonResponse
     {
         $filters = $request->validate(['as_of' => ['nullable', 'date'], 'status' => ['nullable', 'in:active,disposed']]);
-        $register = $this->assets->register($filters['as_of'] ?? null, $filters['status'] ?? null);
+        $register = $this->assets->register($filters['as_of'] ?? null, $filters['status'] ?? null, $this->filtered($request));
         $reconcile = $this->assets->reconcile($filters['as_of'] ?? null);
 
         return $request->expectsJson()
             ? response()->json(['data' => [...$register, 'reconcile' => $reconcile]])
-            : $this->render('index', ['register' => $register, 'reconcile' => $reconcile, 'filters' => ['as_of' => $register['as_of'], 'status' => $filters['status'] ?? '']]);
+            : $this->render('index', ['register' => $register, 'reconcile' => $reconcile, 'filters' => ['as_of' => $register['as_of'], 'status' => $filters['status'] ?? '', ...ListFilters::current($request, self::FILTERS)], 'categories' => FixedAsset::query()->whereNotNull('category')->distinct()->orderBy('category')->pluck('category')]);
+    }
+
+    private const FILTERS = ['search', 'category', 'acquired_from', 'acquired_to', 'min_cost', 'max_cost'];
+
+    /** @return QueryBuilder<FixedAsset> */
+    private function filtered(Request $request): QueryBuilder
+    {
+        $request->validate(['acquired_from' => ['nullable', 'date'], 'acquired_to' => ['nullable', 'date']]);
+
+        return ListFilters::for(FixedAsset::query(), $request, [
+            ListFilters::search('search', ['code', 'name', 'category', 'description']),
+            ListFilters::exact('category'),
+            ListFilters::from('acquired_from', 'acquisition_date'),
+            ListFilters::to('acquired_to', 'acquisition_date'),
+            ListFilters::min('min_cost', 'cost'),
+            ListFilters::max('max_cost', 'cost'),
+            ListFilters::exact('method'),
+        ], sorts: ['code', 'name', 'acquisition_date', 'cost']);
     }
 
     public function create(): Response|View
@@ -127,7 +147,7 @@ class FixedAssetController extends Controller
     {
         abort_unless(in_array($format, ['csv', 'xlsx', 'pdf'], true), 404);
         $filters = $request->validate(['as_of' => ['nullable', 'date'], 'status' => ['nullable', 'in:active,disposed']]);
-        $register = $this->assets->register($filters['as_of'] ?? null, $filters['status'] ?? null);
+        $register = $this->assets->register($filters['as_of'] ?? null, $filters['status'] ?? null, $this->filtered($request));
         $rows = collect($register['rows'])->map(fn (array $row): array => collect($row)->only(['code', 'name', 'category', 'acquisition_date', 'status', 'cost', 'accumulated', 'book_value'])->all());
 
         return $exporter->download($rows, 'fixed-asset-register', $format, ['title' => 'Fixed asset register', 'filters' => ['As of' => $register['as_of']]]);

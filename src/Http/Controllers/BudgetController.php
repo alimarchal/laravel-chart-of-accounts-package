@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingReportExporter;
 use Alimarchal\LaravelChartOfAccounts\Services\BudgetService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -28,9 +29,15 @@ class BudgetController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $budgets = Budget::query()->withCount('lines')->orderByDesc('start_date')->orderBy('name')->get()->map(fn (Budget $budget): array => $this->present($budget))->values();
+        $request->validate(['status' => ['nullable', 'in:draft,approved,closed'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date']]);
+        $budgets = ListFilters::for(Budget::query()->withCount('lines'), $request, [
+            ListFilters::search('search', ['name', 'notes']),
+            ListFilters::exact('status'),
+            ListFilters::from('date_from', 'start_date'),
+            ListFilters::to('date_to', 'end_date'),
+        ], sorts: ['name', 'start_date', 'end_date', 'status'], defaultSort: '-start_date')->orderBy('name')->get()->map(fn (Budget $budget): array => $this->present($budget))->values();
 
-        return $request->expectsJson() ? response()->json(['data' => $budgets]) : $this->render('index', ['budgets' => $budgets]);
+        return $request->expectsJson() ? response()->json(['data' => $budgets]) : $this->render('index', ['budgets' => $budgets, 'filters' => ListFilters::current($request, ['search', 'status', 'date_from', 'date_to'])]);
     }
 
     public function create(): Response|View

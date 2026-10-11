@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { Landmark, Upload } from 'lucide-react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -25,8 +26,12 @@ const money = (value: string | null) =>
 
 export default function BankStatements({
     statements,
+    banks,
+    filters,
 }: {
     statements: Statement[];
+    banks: Array<{ id: number; name: string }>;
+    filters: Record<string, string | null>;
 }) {
     const { permissions, flash } = useAccounting();
 
@@ -62,6 +67,17 @@ export default function BankStatements({
                     </Alert>
                 ) : null}
 
+                <FilterBar
+                    path="/accounting/bank-statements"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'File or bank account' },
+                        { name: 'bank_account_id', label: 'Bank account', type: 'select', options: Object.fromEntries(banks.map((bank) => [String(bank.id), bank.name])) },
+                        { name: 'date_from', label: 'Period from', type: 'date' },
+                        { name: 'date_to', label: 'Period to', type: 'date' },
+                        { name: 'unmatched', label: 'Lines', type: 'select', options: { '1': 'With unmatched lines' } },
+                    ]}
+                />
                 <div className="overflow-x-auto rounded-md border">
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50 text-left">
