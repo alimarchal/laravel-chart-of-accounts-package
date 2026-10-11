@@ -183,9 +183,15 @@ class PayrollController extends Controller
 
     public function components(Request $request): Response|View|JsonResponse
     {
-        $components = PayComponent::query()->orderBy('kind')->orderBy('code')->get()->map(fn (PayComponent $component): array => $this->presentComponent($component))->values();
+        $components = ListFilters::for(PayComponent::query(), $request, [
+            ListFilters::search('search', ['code', 'name']),
+            ListFilters::exact('kind'),
+            ListFilters::exact('method'),
+            ListFilters::bool('active', 'is_active'),
+            ListFilters::bool('taxable', 'taxable'),
+        ], sorts: ['code', 'name', 'kind'])->orderBy('kind')->orderBy('code')->get()->map(fn (PayComponent $component): array => $this->presentComponent($component))->values();
 
-        return $request->expectsJson() ? response()->json(['data' => $components]) : $this->render('components', ['components' => $components, 'accounts' => $this->accountOptions()]);
+        return $request->expectsJson() ? response()->json(['data' => $components]) : $this->render('components', ['components' => $components, 'accounts' => $this->accountOptions(), 'filters' => ListFilters::current($request, ['search', 'kind', 'method', 'active', 'taxable'])]);
     }
 
     public function componentStore(Request $request): RedirectResponse|JsonResponse

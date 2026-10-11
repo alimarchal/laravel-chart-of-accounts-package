@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FeatureLink } from '@/components/accounting/feature-link';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +13,12 @@ import { useAccounting } from '@/lib/accounting';
 
 type Grade = { id: number; code: string; name: string; base_salary: string; is_active: boolean; employees: number; components: Array<{ pay_component_id: number; value: string | null }> };
 type Component = { id: number; code: string; name: string; kind: string; method: string; value: string; rate: string; unit: string | null };
-type Props = { grades: Grade[]; editing: Grade | null; components: Component[] };
+type Props = { filters: Record<string, string | null>; grades: Grade[]; editing: Grade | null; components: Component[] };
 
 const money = (value: string) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 });
 const basis = (component: Component) => (component.method === 'percent_of_basic' ? '% of basic' : component.method === 'quantity_rate' ? `${component.unit ?? 'units'} x ${Number(component.rate)}` : 'per month');
 
-export default function PayrollGrades({ grades, editing, components }: Props) {
+export default function PayrollGrades({ grades, filters, editing, components }: Props) {
     const { permissions, flash } = useAccounting();
     const form = useForm({
         code: editing?.code ?? '', name: editing?.name ?? '', base_salary: editing?.base_salary ?? '', is_active: editing?.is_active ?? true,
@@ -42,6 +43,16 @@ export default function PayrollGrades({ grades, editing, components }: Props) {
                 </div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
+                <FilterBar
+                    path="/accounting/payroll/grades"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Code or name' },
+                        { name: 'active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                        { name: 'min_salary', label: 'Basic from', type: 'number' },
+                        { name: 'max_salary', label: 'Basic up to', type: 'number' },
+                    ]}
+                />
                 <Card><CardContent className="overflow-x-auto pt-6">
                     <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th className="text-right">Basic salary</th><th className="text-right">Employees</th><th>Allowances</th><th /></tr></thead><tbody>
                         {grades.map((row) => (

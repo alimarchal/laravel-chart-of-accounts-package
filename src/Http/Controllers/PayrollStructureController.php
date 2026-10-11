@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryGradeComponent;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollStructureService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +29,12 @@ class PayrollStructureController extends Controller
 
     public function grades(Request $request): Response|View|JsonResponse
     {
-        $grades = SalaryGrade::query()->orderBy('code')->get()->map(fn (SalaryGrade $grade): array => $this->presentGrade($grade))->values();
+        $grades = ListFilters::for(SalaryGrade::query(), $request, [
+            ListFilters::search('search', ['code', 'name']),
+            ListFilters::bool('active', 'is_active'),
+            ListFilters::min('min_salary', 'base_salary'),
+            ListFilters::max('max_salary', 'base_salary'),
+        ], sorts: ['code', 'name', 'base_salary'], defaultSort: 'code')->get()->map(fn (SalaryGrade $grade): array => $this->presentGrade($grade))->values();
 
         if ($request->expectsJson()) {
             return response()->json(['data' => $grades]);
@@ -36,6 +42,7 @@ class PayrollStructureController extends Controller
 
         return $this->render('grades', [
             'grades' => $grades,
+            'filters' => ListFilters::current($request, ['search', 'active', 'min_salary', 'max_salary']),
             'editing' => $request->integer('edit') ? $grades->firstWhere('id', $request->integer('edit')) : null,
             'components' => PayComponent::query()->where('is_active', true)->orderBy('kind')->orderBy('code')->get(['id', 'code', 'name', 'kind', 'method', 'value', 'rate', 'unit']),
         ]);

@@ -8,6 +8,12 @@
         @if(session("error"))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session("error") }}</div>@endif
         <x-accounting::validation-errors />
         <p class="text-sm text-gray-600">EOBI, PESSI/SESSI, provident fund: the employee's share comes out of pay, the employer's share is a cost owed to the fund.</p>
+        <x-accounting::list-filters :action="route('accounting.payroll.schemes.index')" :values="$filters" :fields="[
+            ['name' => 'search', 'label' => 'Search', 'placeholder' => 'Code or name'],
+            ['name' => 'base', 'label' => 'Base', 'type' => 'select', 'options' => ['basic' => 'Percent of basic', 'gross' => 'Percent of gross', 'fixed' => 'Fixed amount']],
+            ['name' => 'applies_to_all', 'label' => 'Who', 'type' => 'select', 'options' => ['1' => 'Everyone', '0' => 'Chosen employees']],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select', 'options' => ['1' => 'Active', '0' => 'Inactive']],
+        ]" />
         <div class="bg-white shadow rounded-lg p-5 overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-gray-500"><th class="py-1">Code</th><th>Name</th><th>Base</th><th class="text-right">Employee</th><th class="text-right">Employer</th><th class="text-right">Ceiling</th><th>Who</th><th></th></tr></thead><tbody>
             @forelse ($schemes as $row)
                 <tr class="border-t"><td class="py-2 font-medium">{{ $row['code'] }}</td><td>{{ $row['name'] }} @unless($row['is_active'])<span class="ml-1 rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-600">inactive</span>@endunless</td><td>{{ $row['base'] }}</td><td class="text-right tabular-nums">{{ $rate($row, 'employee') }}</td><td class="text-right tabular-nums">{{ $rate($row, 'employer') }}</td><td class="text-right tabular-nums">{{ $row['ceiling'] ? number_format((float) $row['ceiling'], 2) : '—' }}</td><td>{{ $row['applies_to_all'] ? 'everybody' : $row['employees'].' employees' }}</td>

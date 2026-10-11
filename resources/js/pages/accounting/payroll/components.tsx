@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -10,13 +11,14 @@ import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 
 type Props = {
+    filters: Record<string, string | null>;
     components: Array<{ id: number; code: string; name: string; kind: string; method: string; value: string; rate: string; unit: string | null; taxable: boolean; account_id: number; is_active: boolean }>;
     accounts: Array<{ id: number; account_code: string; account_name: string; type: string }>;
 };
 
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function PayrollComponents({ components, accounts }: Props) {
+export default function PayrollComponents({ components, accounts, filters }: Props) {
     const { permissions, flash } = useAccounting();
     const form = useForm({ code: '', name: '', kind: 'earning', method: 'fixed', value: '', rate: '', unit: '', taxable: true, account_id: '' });
     const add = (event: FormEvent) => {
@@ -32,6 +34,17 @@ export default function PayrollComponents({ components, accounts }: Props) {
                 <div className="flex items-end justify-between"><Heading title="Allowances and deductions" description="Earnings are booked to an expense account, deductions to the liability they are owed to" /><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
+                <FilterBar
+                    path="/accounting/payroll/components"
+                    values={filters}
+                    fields={[
+                        { name: 'search', label: 'Search', placeholder: 'Code or name' },
+                        { name: 'kind', label: 'Kind', type: 'select', options: { earning: 'Earning', deduction: 'Deduction' } },
+                        { name: 'method', label: 'Method', type: 'select', options: { fixed: 'Fixed amount', percent_of_basic: 'Percent of basic', quantity_rate: 'Quantity x rate' } },
+                        { name: 'taxable', label: 'Taxable', type: 'select', options: { '1': 'Yes', '0': 'No' } },
+                        { name: 'active', label: 'Status', type: 'select', options: { '1': 'Active', '0': 'Inactive' } },
+                    ]}
+                />
                 <Card><CardContent className="overflow-x-auto pt-6">
                     <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Kind</th><th>Amount</th><th>Account</th><th /></tr></thead><tbody>
                         {components.map((row) => (

@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ContributionScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollContributionService;
+use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,14 +26,19 @@ class PayrollSchemeController extends Controller
 
     public function index(Request $request): Response|View|JsonResponse
     {
-        $rows = ContributionScheme::query()->orderBy('code')->get()->map(fn (ContributionScheme $scheme): array => $this->schemes->present($scheme))->values();
+        $rows = ListFilters::for(ContributionScheme::query(), $request, [
+            ListFilters::search('search', ['code', 'name']),
+            ListFilters::exact('base'),
+            ListFilters::bool('active', 'is_active'),
+            ListFilters::bool('applies_to_all', 'applies_to_all'),
+        ], sorts: ['code', 'name'], defaultSort: 'code')->get()->map(fn (ContributionScheme $scheme): array => $this->schemes->present($scheme))->values();
 
         if ($request->expectsJson()) {
             return response()->json(['data' => $rows]);
         }
 
         return $this->render('schemes', [
-            'schemes' => $rows, 'editing' => $request->integer('edit') ? $rows->firstWhere('id', $request->integer('edit')) : null,
+            'schemes' => $rows, 'filters' => ListFilters::current($request, ['search', 'base', 'active', 'applies_to_all']), 'editing' => $request->integer('edit') ? $rows->firstWhere('id', $request->integer('edit')) : null,
             'employees' => Employee::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
             'accounts' => ChartOfAccount::query()->with('accountType:id,code')->where('is_group', false)->where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name', 'account_type_id'])
                 ->map(fn (ChartOfAccount $account): array => ['id' => $account->id, 'account_code' => $account->account_code, 'account_name' => $account->account_name, 'type' => $account->accountType->code])->values(),

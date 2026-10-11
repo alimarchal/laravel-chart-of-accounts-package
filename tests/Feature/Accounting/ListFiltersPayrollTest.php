@@ -2,11 +2,14 @@
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Models\ContributionScheme;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\Loan;
+use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollAdjustment;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollArrear;
 use Alimarchal\LaravelChartOfAccounts\Models\PayrollRun;
+use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
 use Alimarchal\LaravelChartOfAccounts\Models\Settlement;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
@@ -106,4 +109,33 @@ it('filters loans, adjustments, arrears and settlements by employee name or code
         ->and(($this->ids)('/api/v1/accounting/payroll/settlements?search=amina'))->toBe([$small->id])
         ->and(($this->ids)('/api/v1/accounting/payroll/settlements?min_net=50000'))->toBe([$large->id])
         ->and(($this->ids)('/api/v1/accounting/payroll/settlements?leave_to='.$this->month->copy()->addDays(10)->toDateString()))->toBe([$small->id]);
+});
+
+it('filters pay components, salary grades and contribution schemes', function (): void {
+    $component = fn (string $code, string $name, string $kind, string $method, bool $taxable) => PayComponent::query()->forceCreate(['code' => $code, 'name' => $name, 'kind' => $kind, 'method' => $method, 'value' => 100, 'taxable' => $taxable, 'is_active' => true, 'account_id' => account('5101')->id, 'company_id' => $this->amina->company_id]);
+    $house = $component('HRA', 'House rent', 'earning', 'percent_of_basic', true);
+    $fine = $component('FINE', 'Late fine', 'deduction', 'fixed', false);
+
+    expect(($this->ids)('/api/v1/accounting/payroll/components?search=rent', 'code'))->toBe(['HRA'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/components?kind=deduction', 'code'))->toBe(['FINE'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/components?method=percent_of_basic', 'code'))->toBe(['HRA'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/components?taxable=0', 'code'))->toBe(['FINE'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/components?filter[kind]=earning,deduction&sort=-code', 'code'))->toBe(['HRA', 'FINE'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/components?search=zzz', 'code'))->toBe([]);
+
+    $grade = fn (string $code, string $name, string $salary, bool $active) => SalaryGrade::query()->forceCreate(['code' => $code, 'name' => $name, 'base_salary' => $salary, 'is_active' => $active, 'company_id' => $this->amina->company_id]);
+    $grade('G1', 'Junior', '30000', true);
+    $grade('G2', 'Senior', '80000', true);
+    $grade('G3', 'Retired', '60000', false);
+    expect(($this->ids)('/api/v1/accounting/payroll/grades?search=senior', 'code'))->toBe(['G2'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/grades?min_salary=50000', 'code'))->toBe(['G2', 'G3'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/grades?min_salary=50000&active=1', 'code'))->toBe(['G2'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/grades?sort=-base_salary', 'code'))->toBe(['G2', 'G3', 'G1']);
+
+    $scheme = fn (string $code, string $name, string $base, bool $all, bool $active) => ContributionScheme::query()->forceCreate(['code' => $code, 'name' => $name, 'base' => $base, 'employee_rate' => 1, 'employer_rate' => 1, 'employee_fixed' => 0, 'employer_fixed' => 0, 'applies_to_all' => $all, 'is_active' => $active, 'employee_account_id' => account('2103')->id, 'employer_expense_account_id' => account('5101')->id, 'employer_liability_account_id' => account('2103')->id, 'company_id' => $this->amina->company_id]);
+    $scheme('EOBI', 'Old age benefit', 'fixed', true, true);
+    $scheme('PF', 'Provident fund', 'basic', false, true);
+    expect(($this->ids)('/api/v1/accounting/payroll/schemes?search=provident', 'code'))->toBe(['PF'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/schemes?base=fixed', 'code'))->toBe(['EOBI'])
+        ->and(($this->ids)('/api/v1/accounting/payroll/schemes?applies_to_all=0', 'code'))->toBe(['PF']);
 });
