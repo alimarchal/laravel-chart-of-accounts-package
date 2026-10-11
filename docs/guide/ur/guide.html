@@ -113,6 +113,11 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <td>WhatsApp</td>
 <td>ایک فنکشن کال سے پیغام، اسکول فیس کی مثال، سینڈ باکس، اصل نمبر پر لے جانا</td>
 </tr>
+<tr>
+<td><a href="#16-tansib">16</a></td>
+<td>تنصیب</td>
+<td>انسٹالر کے سوالات، ایڈمن یوزر، سائیڈ بار میں مینو، لاگ اِن</td>
+</tr>
 </tbody>
 </table>
 <h2 id="_3">مزید وسائل</h2>
@@ -1166,7 +1171,7 @@ curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;i
 <tbody>
 <tr>
 <td><code>php artisan accounting:install</code></td>
-<td>پیکیج کی ابتدائی تنصیب: ترتیب، مائیگریشن، رولز، ڈیفالٹ ڈیٹا (<code>--chart=erpnext\|general\|school</code> سے چارٹ کا انتخاب)</td>
+<td>پیکیج کی تنصیب: سوالات، <code>.env</code>، ایڈمن یوزر، مائیگریشن، رولز، ڈیفالٹ ڈیٹا اور سائیڈ بار کا مینو (<code>--chart=erpnext\|general\|school</code>، <code>--ui</code>، <code>--currency</code>، <code>--prefix</code>، <code>--admin-email</code>، <code>--setup-only</code>) (باب 16)</td>
 </tr>
 <tr>
 <td><code>php artisan accounting:update</code></td>
@@ -1623,5 +1628,86 @@ WhatsApp::text('+92 300 1234567', 'آپ کی رسید تیار ہے۔');   // ص
 </tbody>
 </table>
 <p>API: <code>GET /api/v1/accounting/whatsapp</code>، <code>POST /api/v1/accounting/whatsapp/messages</code> (<code>{"to": "0300-1234567", "template": "fee_received", "parameters": {...}}</code>)، <code>POST .../messages/{id}/retry</code>۔ اجازتیں: <code>whatsapp.view</code> (دیکھنا) اور <code>whatsapp.send</code> (بھیجنا)۔</p>
+<p><a href="#16-tansib">اگلا باب: تنصیب →</a></p>
+</section>
+<section id="16-tansib">
+<h1 id="16">باب 16: تنصیب — سوالات، ایڈمن یوزر اور مینو</h1>
+<p><a href="#15-whatsapp">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
+<h2 id="161-3">16.1 تنصیب کے 3 قدم</h2>
+<pre><code class="language-bash">composer require alimarchal/laravel-chart-of-accounts
+</code></pre>
+<p>پھر <code>app/Models/User.php</code> میں Spatie کا ٹریٹ لگائیں:</p>
+<pre><code class="language-php">use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    use HasFactory, HasRoles, Notifiable;
+}
+</code></pre>
+<p>اور انسٹالر چلائیں:</p>
+<pre><code class="language-bash">php artisan accounting:install
+</code></pre>
+<h2 id="162">16.2 انسٹالر کیا پوچھتا ہے</h2>
+<p>انسٹالر خود سوال پوچھتا ہے اور جواب <code>.env</code> میں لکھ دیتا ہے، اس لیے ہاتھ سے کچھ بدلنا نہیں پڑتا:</p>
+<table>
+<thead>
+<tr>
+<th>سوال</th>
+<th>مطلب</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Which screens do you want?</td>
+<td><strong>Livewire / Blade</strong>، <strong>React / Inertia</strong> یا صرف <strong>REST API</strong>۔ آپ کے اسٹارٹر کٹ کے مطابق خود تجویز دیتا ہے (Vue اور Svelte کٹ والے Blade چنیں)</td>
+</tr>
+<tr>
+<td>Base currency</td>
+<td>بنیادی کرنسی، مثلاً PKR</td>
+</tr>
+<tr>
+<td>Which chart of accounts</td>
+<td>ERPNext، عمومی یا <strong>School chart</strong></td>
+</tr>
+<tr>
+<td>Multi-company</td>
+<td>کیا ایک سے زیادہ کمپنیوں کا حساب رکھنا ہے، اور پہلی کمپنی کا مختصر کوڈ</td>
+</tr>
+<tr>
+<td>Maker-checker</td>
+<td>کیا انٹری دوسرا شخص منظور کرے، کس رقم سے اوپر، اور کیا کوئی اپنی انٹری خود منظور کر سکے (مناسب نہیں)</td>
+</tr>
+<tr>
+<td>URL of the accounting screens</td>
+<td>صفحات کا پتہ، مثلاً <code>accounting</code>۔ <code>settings</code>، <code>dashboard</code>، <code>login</code> جیسے آپ کی ایپ کے اپنے نام <strong>قبول نہیں</strong> ہوتے</td>
+</tr>
+<tr>
+<td>Email، name، password</td>
+<td>ایڈمن یوزر۔ اگر یہ یوزر نہیں ہے تو انسٹالر <strong>خود بنا دیتا ہے</strong> (پاس ورڈ دو بار لکھیں، کم از کم 8 حروف) اور اسے <code>super-admin</code> دیتا ہے</td>
+</tr>
+</tbody>
+</table>
+<p>اس کے بعد ہر موضوع پر <strong>ایک ہاں/نہیں</strong> کا سوال آتا ہے: REST API، <strong>WhatsApp</strong>، <strong>FBR</strong>، ویب ہُک، پے رول، بجٹ اور بینک اسٹیٹمنٹ، PDF/ایکسپورٹ/اٹیچمنٹ، زبان، اور وہ ماڈیول جو آپ استعمال نہیں کریں گے۔ "ہاں" کہیں تو اس موضوع کی ساری سیٹنگز پوچھی جاتی ہیں (موجودہ یا ڈیفالٹ ویلیو سامنے دکھائی جاتی ہے؛ خالی چھوڑیں تو ڈیفالٹ رہتا ہے)۔ WhatsApp کا ٹوکن وغیرہ صرف <code>live</code> موڈ میں پوچھا جاتا ہے، اور ویب ہُک/ویریفائی ٹوکن آپ کے لیے خود بنایا جا سکتا ہے۔ سب کچھ ایک ساتھ پوچھنا ہو تو <code>--advanced</code> لگائیں۔</p>
+<p>اس کے بعد انسٹالر ٹیبلز بناتا، کھاتوں کا چارٹ، کرنسی، مالی سال، رولز اور ٹیکس کوڈ بھر دیتا اور جانچ کرتا ہے۔ دوبارہ چلانا محفوظ ہے۔</p>
+<h2 id="163">16.3 مینو خود لگ جاتا ہے</h2>
+<p>انسٹالر آپ کے اسٹارٹر کٹ کے سائیڈ بار میں <strong>Dashboard</strong> کے برابر <strong>Accounting</strong> کا لنک خود لگا دیتا ہے:</p>
+<ul>
+<li><strong>Livewire:</strong> <code>resources/views/layouts/app/sidebar.blade.php</code></li>
+<li><strong>React:</strong> <code>resources/js/components/app-sidebar.tsx</code> اور <code>app-header.tsx</code></li>
+</ul>
+<p>Blade کے لیے <code>resources/css/app.css</code> میں پیکیج کے صفحات کا Tailwind source بھی لگ جاتا ہے؛ ایک بار <code>npm run build</code> چلا دیں۔ مینو نہ چاہیے تو <code>--no-menu</code> لگائیں۔</p>
+<h2 id="164">16.4 لاگ اِن کیسے کریں</h2>
+<ol>
+<li>براؤزر میں اپنی ایپ کا <code>/login</code> کھولیں (لاگ اِن آپ کے اسٹارٹر کٹ کا ہے، پیکیج کا نہیں)۔</li>
+<li>وہی ای میل اور پاس ورڈ لکھیں جو انسٹالر میں دیا تھا۔</li>
+<li>سائیڈ بار میں <strong>Accounting</strong> پر دبائیں، یا <code>/accounting</code> کھولیں۔</li>
+</ol>
+<h2 id="165">16.5 بغیر سوال کے (اسکرپٹ سے)</h2>
+<pre><code class="language-bash">php artisan accounting:install --no-interaction --ui=blade --currency=PKR --chart=school \
+  --prefix=accounting --admin-email=you@school.test --admin-name=&quot;Ali&quot; --admin-password=&quot;مضبوط-پاس-ورڈ&quot;
+</code></pre>
+<p><code>--setup-only</code> صرف سوال، <code>.env</code>، ایڈمن یوزر اور مینو کرتا ہے (ٹیبلز دوبارہ نہیں بناتا)۔ <code>--no-env</code> سے <code>.env</code> کو چھوا نہیں جاتا۔</p>
+<h2 id="166-allowed-memory-size-exhausted-500">16.6 عام مسئلہ: "Allowed memory size exhausted" (500)</h2>
+<p>پرانے ورژن میں Livewire اسٹارٹر کٹ پر ہر Blade صفحہ میموری ختم ہو کر 500 دیتا تھا۔ <strong>ورژن 2.36.0 میں یہ ٹھیک ہے</strong>: <code>composer update alimarchal/laravel-chart-of-accounts</code> چلائیں، پھر <code>php artisan view:clear</code>۔ صفحات اب Livewire کٹ کی اپنی لے آؤٹ (سائیڈ بار سمیت) میں کھلتے ہیں۔ اپنی لے آؤٹ منتخب کرنی ہو تو <code>.env</code> میں <code>ACCOUNTING_BLADE_LAYOUT=layouts::app</code> لکھیں۔</p>
 </section>
 </main></body></html>

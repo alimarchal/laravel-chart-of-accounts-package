@@ -113,41 +113,72 @@ composer require alimarchal/laravel-chart-of-accounts
 php artisan install:api            # Sanctum, for the REST API (skip if already installed)
 ```
 
-**2. Add two traits to `app/Models/User.php`**
+**2. Add the Spatie trait to `app/Models/User.php`** (and `HasApiTokens` if you use the REST API)
 
 ```php
-use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 }
 ```
 
-**3. Run the installer**
+**3. Run the installer, and answer its questions**
 
 ```bash
-php artisan accounting:install --admin-email=you@example.com
+php artisan accounting:install
 ```
 
-That's it — open `/accounting`. The installer is idempotent (safe to re-run) and takes about two seconds. It
-publishes config and migrations, migrates, seeds a ready-to-use chart of accounts (the ERPNext standard chart; `--chart=general` or `--chart=school` for another, see below), currencies, the current
-fiscal year, roles and tax codes, creates the database views and triggers, gives `super-admin` to your user,
-and verifies everything. If a trait is missing it prints the exact lines to add.
+The installer asks what it needs, so there is nothing to edit by hand afterwards:
 
-**Choose your UI** (in `.env`, before step 3):
+| Question | What it does |
+|---|---|
+| Which screens do you want? | Livewire / Blade, React / Inertia or REST API only (it suggests the one that matches your starter kit) → `ACCOUNTING_UI_DRIVER` |
+| Base currency | `ACCOUNTING_BASE_CURRENCY` (PKR, USD, …) |
+| Chart of accounts | ERPNext standard chart, general business chart or school chart → `ACCOUNTING_CHART_PRESET` |
+| Several companies? | `ACCOUNTING_MULTI_COMPANY` and the short code of your first company → `ACCOUNTING_DEFAULT_COMPANY` |
+| Approval by a second person? | maker-checker, its threshold and whether one may approve their own entry → `ACCOUNTING_APPROVALS_ENABLED`, `ACCOUNTING_APPROVAL_THRESHOLD`, `ACCOUNTING_ALLOW_SELF_APPROVAL` |
+| URL of the screens | default `accounting`; the starter kit's own URLs (`settings`, `dashboard`, `login`, …) are refused → `ACCOUNTING_ROUTE_PREFIX` |
+| Email, name and password of the administrator | the user is **created** when it does not exist, verified, and given `super-admin` |
+
+Then one yes/no question per topic, and a "yes" asks that topic's settings (each shows the current or default value; an empty answer
+leaves the package default): **REST API** (prefix, rate limit, page size), **WhatsApp** (sandbox or live, token, phone number ID, business account ID, app secret,
+verify token, country code, language, receipt template, queue), **FBR** (mode, URL, token, seller NTN, name, province, address, HS code, auto-submit), **signed
+webhooks** (URLs, secret, attempts, timeout), **payroll** (days per month, approval, automatic run, overtime, gratuity, tax year), **budgets and bank statements**,
+**PDF, exports and attachments**, **language** and **modules you will not use** (switched off through `ACCOUNTING_FEATURES_DISABLED`). Secrets (verify token,
+webhook secret) can be generated for you. `--advanced` asks every topic without the yes/no. Every key the package reads is covered by these questions
+or the ones above; `.env` keys that are not asked keep their documented defaults.
+
+Your answers are written to `.env`. Then the installer publishes the config and migrations, migrates, seeds the chart of accounts,
+currencies, the current fiscal year, roles and tax codes, creates the database views and triggers, and verifies everything. It adds
+the **Accounting** link next to **Dashboard** in the sidebar of the Laravel starter kit (Livewire: `resources/views/layouts/app/sidebar.blade.php`;
+React: `resources/js/components/app-sidebar.tsx` and `app-header.tsx`) and, for Blade, adds the package's screens to the Tailwind sources
+in `resources/css/app.css` (run `npm run build` once). It is safe to re-run.
+
+Everything can be given as an option instead (no questions): `--ui=blade|inertia|api`, `--currency=PKR`, `--chart=erpnext|general|school`,
+`--prefix=accounting`, `--admin-email=… --admin-name=… --admin-password=…`; `--no-menu` keeps your sidebar untouched, `--no-env` leaves
+`.env` alone, and `--setup-only` asks the questions, writes `.env`, creates the administrator and adds the menu without publishing, migrating or seeding.
+The starter kits of Vue and Svelte are supported through the Blade screens (the installer tells you which plain link to add to your sidebar).
+
+Log in with the administrator you entered (the login page is your starter kit's) and open **Accounting** in the sidebar, or `/accounting`.
+
+**Your UI** (the installer sets it in `.env`):
 
 | `ACCOUNTING_UI_DRIVER` | You get | Notes |
 |---|---|---|
-| `inertia` (default) | React pages in `resources/js/pages/accounting` | Run `npm run build` afterwards |
-| `blade` | Blade + Livewire pages | `composer require livewire/livewire` |
+| `inertia` (default) | React pages in `resources/js/pages/accounting` | React starter kit; run `npm run build` afterwards |
+| `blade` | Blade pages inside your layout | Livewire starter kit (also Vue and Svelte kits); `composer require livewire/livewire` |
 | `api` | REST API only | Lightest: no web routes, views or Livewire |
 
-<details>
-<summary><b>React: add the menu link and (older starter kits) the layout</b></summary>
+With the Livewire starter kit the screens are rendered in the kit's own layout (`livewire.component_layout`), so the sidebar stays. With
+Breeze they use `<x-app-layout>`, and with anything else the package's own page layout. To name your own layout component:
+`ACCOUNTING_BLADE_LAYOUT=layouts::app`.
 
-Add Accounting to `resources/js/components/app-sidebar.tsx`:
+<details>
+<summary><b>React: the menu link by hand and (older starter kits) the layout</b></summary>
+
+The installer adds this itself; to do it by hand add Accounting to `resources/js/components/app-sidebar.tsx`:
 
 ```tsx
 import { Calculator } from 'lucide-react';
