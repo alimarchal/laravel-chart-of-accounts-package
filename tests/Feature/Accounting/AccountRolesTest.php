@@ -43,7 +43,10 @@ it('refuses roles it cannot honour', function (): void {
     $put = fn (array $roles) => $this->putJson('/api/v1/accounting/account-roles', ['roles' => $roles]);
 
     $put(['cash' => [account('1101')->id, account('1108')->id]])->assertStatus(422)->assertJsonValidationErrors('roles.cash');   // one account only
-    $put(['cash' => [account('1100')->id]])->assertStatus(422)->assertJsonValidationErrors('roles.cash');                          // a group
+    $put(['employee_advances' => [account('1100')->id]])->assertStatus(422)->assertJsonValidationErrors('roles.employee_advances');    // a group, where only a posting account will do
+    $put(['cash' => [account('1100')->id]])->assertOk();                                                                            // the cash book adds up a group's sub-accounts
+    $put(['aging.receivables' => [account('1100')->id]])->assertOk();
+    AccountRoles::set('cash', [account('1101')->id]);
     $put(['cash' => [999999]])->assertStatus(422);
     $put(['moon' => [account('1101')->id]])->assertStatus(422)->assertJsonValidationErrors('roles.moon');
 

@@ -33,7 +33,7 @@ class AccountRoleController extends Controller
             'roles' => $rows,
             'chart' => AccountRoles::preset(),
             'presets' => AccountRoles::presets(),
-            'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name'])->all(),
+            'accounts' => ChartOfAccount::query()->where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name', 'is_group'])->all(),
         ];
 
         return config('accounting.ui_driver') === 'blade' ? view('accounting::account-roles.index', $props) : Inertia::render('accounting/account-roles/index', $props);
@@ -66,10 +66,11 @@ class AccountRoleController extends Controller
                 throw ValidationException::withMessages(["roles.{$role}" => "This role is fixed by the configuration ({$registry[$role]['config']}); remove it there to choose the account here."]);
             }
 
-            $valid = ChartOfAccount::query()->whereIn('id', $ids)->where('is_group', false)->where('is_active', true)->pluck('account_code', 'id');
+            $valid = ChartOfAccount::query()->whereIn('id', $ids)->where('is_active', true)
+                ->when(! in_array($role, AccountRoles::GROUP_ROLES, true), fn ($query) => $query->where('is_group', false))->pluck('account_code', 'id');
 
             if ($valid->count() !== count($ids)) {
-                throw ValidationException::withMessages(["roles.{$role}" => 'Choose active posting accounts of this company.']);
+                throw ValidationException::withMessages(["roles.{$role}" => in_array($role, AccountRoles::GROUP_ROLES, true) ? 'Choose active accounts of this company.' : 'Choose active posting accounts of this company (a group cannot be posted to).']);
             }
 
             $before[$role] = AccountRoles::codes($role);

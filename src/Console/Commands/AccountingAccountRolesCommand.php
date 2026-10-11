@@ -70,11 +70,12 @@ class AccountingAccountRolesCommand extends Command
             return self::INVALID;
         }
 
-        $accounts = ChartOfAccount::query()->whereIn('account_code', $codes)->where('is_group', false)->where('is_active', true)->pluck('id', 'account_code');
+        $accounts = ChartOfAccount::query()->whereIn('account_code', $codes)->where('is_active', true)
+            ->when(! in_array($role, AccountRoles::GROUP_ROLES, true), fn ($query) => $query->where('is_group', false))->pluck('id', 'account_code');
         $missing = array_diff($codes, $accounts->keys()->map(fn ($code) => (string) $code)->all());
 
         if ($missing !== []) {
-            $this->error('No active posting account with code: '.implode(', ', $missing));
+            $this->error('No active '.(in_array($role, AccountRoles::GROUP_ROLES, true) ? 'account' : 'posting account').' with code: '.implode(', ', $missing));
 
             return self::FAILURE;
         }

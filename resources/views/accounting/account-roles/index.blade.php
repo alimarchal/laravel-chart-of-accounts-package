@@ -16,12 +16,12 @@
                             <span class="text-gray-700">{{ collect($row['accounts'])->map(fn ($account) => $account['account_code'].' '.$account['account_name'])->implode(', ') ?: '—' }}</span>
                         @elseif ($row['multiple'])
                             <select name="roles[{{ $row['role'] }}][]" multiple size="6" class="border-gray-300 rounded-md shadow-sm w-full text-sm">
-                                @foreach ($accounts as $account)<option value="{{ $account->id }}" @selected(in_array($account->id, $chosen))>{{ $account->account_code }} {{ $account->account_name }}</option>@endforeach
+                                @foreach ($accounts as $account)@if ($row['groups'] || ! $account->is_group)<option value="{{ $account->id }}" @selected(in_array($account->id, $chosen))>{{ $account->account_code }} {{ $account->account_name }}{{ $account->is_group ? ' (group)' : '' }}</option>@endif @endforeach
                             </select>
                         @else
                             <select name="roles[{{ $row['role'] }}][]" class="border-gray-300 rounded-md shadow-sm w-full text-sm">
                                 <option value="">— the chart's default —</option>
-                                @foreach ($accounts as $account)<option value="{{ $account->id }}" @selected(in_array($account->id, $chosen))>{{ $account->account_code }} {{ $account->account_name }}</option>@endforeach
+                                @foreach ($accounts as $account)@if ($row['groups'] || ! $account->is_group)<option value="{{ $account->id }}" @selected(in_array($account->id, $chosen))>{{ $account->account_code }} {{ $account->account_name }}{{ $account->is_group ? ' (group)' : '' }}</option>@endif @endforeach
                             </select>
                         @endif
                     </label>

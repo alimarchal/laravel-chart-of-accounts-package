@@ -201,9 +201,15 @@ final class AccountRoles
     }
 
     /**
+     * Roles whose account may be a group: the report adds up the group's sub-accounts as well (the cash book of `1100 Cash In Hand`
+     * takes `1110 Cash`, the ageing of a receivables group takes every debtor under it).
+     */
+    public const GROUP_ROLES = ['cash', 'bank', 'aging.receivables', 'aging.payables'];
+
+    /**
      * The roles with their accounts, for the Account roles screen and API.
      *
-     * @return list<array{role: string, label: string, multiple: bool, config: string|null, overridden: bool, accounts: list<array{id: int, account_code: string, account_name: string}>}>
+     * @return list<array{role: string, label: string, multiple: bool, groups: bool, config: string|null, overridden: bool, accounts: list<array{id: int, account_code: string, account_name: string}>}>
      */
     public static function overview(): array
     {
@@ -215,7 +221,7 @@ final class AccountRoles
             $configured = $entry['config'] === null ? null : config($entry['config']);
 
             $rows[] = [
-                'role' => $role, 'label' => $entry['label'], 'multiple' => $entry['multiple'], 'config' => $entry['config'],
+                'role' => $role, 'label' => $entry['label'], 'multiple' => $entry['multiple'], 'groups' => in_array($role, self::GROUP_ROLES, true), 'config' => $entry['config'],
                 'overridden' => $configured !== null && $configured !== '' && $configured !== [],
                 'accounts' => collect($codes)->map(fn (string $code) => $accounts->get($code))->filter()->map(fn (ChartOfAccount $account): array => ['id' => $account->id, 'account_code' => $account->account_code, 'account_name' => $account->account_name])->values()->all(),
             ];

@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounting } from '@/lib/accounting';
 
-type Role = { role: string; label: string; multiple: boolean; config: string | null; overridden: boolean; accounts: Array<{ id: number; account_code: string; account_name: string }> };
-type Account = { id: number; account_code: string; account_name: string };
+type Role = { role: string; label: string; multiple: boolean; groups: boolean; config: string | null; overridden: boolean; accounts: Array<{ id: number; account_code: string; account_name: string }> };
+type Account = { id: number; account_code: string; account_name: string; is_group: boolean };
 type Props = { roles: Role[]; chart: string; presets: Record<string, string>; accounts: Account[] };
 
 const selectClass = 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -47,7 +47,7 @@ export default function AccountRoles({ roles, chart, presets, accounts }: Props)
                                     onChange={(event) => setState({ ...state, [row.role]: Array.from(event.target.selectedOptions).map((option) => Number(option.value)).filter((id) => id > 0) })}
                                 >
                                     {!row.multiple && <option value="0">— the chart's default —</option>}
-                                    {accounts.map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}
+                                    {accounts.filter((account) => row.groups || !account.is_group).map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}{account.is_group ? ' (group)' : ''}</option>))}
                                 </select>
                             </label>
                         ))}
