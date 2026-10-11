@@ -1,6 +1,7 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
+use Alimarchal\LaravelChartOfAccounts\Support\BladeKit;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
@@ -72,3 +73,41 @@ it('uses Breeze\'s app-layout component and its header slot when the application
 
     expect($html)->toContain('host-breeze')->and($html)->toContain('Chart of Accounts');
 })->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
+
+it('prints the stacks a host layout leaves out, so the filter button and the select boxes work in the Livewire kit', function (): void {
+    file_put_contents($this->host.'/layouts/app.blade.php', '<html><body class="host-livewire-4"><main>{{ $slot }}</main></body></html>');
+    View::addNamespace('layouts', $this->host.'/layouts');
+    Blade::anonymousComponentPath($this->host.'/layouts', 'layouts');
+    config(['livewire.component_layout' => 'layouts::app']);
+    BladeKit::flush();
+
+    $html = $this->get('/accounting/chart-of-accounts')->assertOk()->getContent();
+
+    expect($html)->toContain('getElementById("filters")')               // the 'modals' stack: the filter toggle
+        ->and($html)->toContain('select2')                                 // the 'scripts' stack
+        ->and($html)->toContain('acc-kit-plain');                          // no Flux in the test application
+})->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
+
+it('does not print a stack twice when the host layout prints it already', function (): void {
+    file_put_contents($this->host.'/components/app-layout.blade.php', '<html><body class="host-jetstream">{{ $slot }}@stack(\'modals\')@stack(\'scripts\')</body></html>');
+    BladeKit::flush();
+
+    $html = $this->get('/accounting/chart-of-accounts')->assertOk()->getContent();
+
+    expect(substr_count($html, 'getElementById("filters")'))->toBe(1)
+        ->and(substr_count($html, 'jquery@3.7.1'))->toBe(1);
+})->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
+
+it('themes the screens for the kit it runs in (accounting.blade_kit)', function (string $kit, string $needle): void {
+    file_put_contents($this->host.'/components/app-layout.blade.php', '<html><body>{{ $slot }}</body></html>');
+    config(['accounting.blade_kit' => $kit]);
+    BladeKit::flush();
+
+    $html = $this->get('/accounting/chart-of-accounts')->assertOk()->getContent();
+
+    expect($html)->toContain("acc-kit-{$kit}")->and($html)->toContain($needle);
+})->with([
+    'flux' => ['flux', '.dark .acc-kit '],
+    'jetstream' => ['jetstream', 'prefers-color-scheme: dark'],
+    'breeze' => ['breeze', '.dark .acc-kit '],
+])->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');

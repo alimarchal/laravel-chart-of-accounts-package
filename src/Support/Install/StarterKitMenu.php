@@ -19,7 +19,7 @@ final class StarterKitMenu
         $results = [];
 
         if ($driver === 'blade') {
-            foreach (['resources/views/layouts/app/sidebar.blade.php', 'resources/views/components/layouts/app/sidebar.blade.php', 'resources/views/layouts/app/header.blade.php', 'resources/views/components/layouts/app/header.blade.php'] as $file) {
+            foreach (['resources/views/layouts/app/sidebar.blade.php', 'resources/views/components/layouts/app/sidebar.blade.php', 'resources/views/layouts/app/header.blade.php', 'resources/views/components/layouts/app/header.blade.php', 'resources/views/navigation-menu.blade.php', 'resources/views/layouts/navigation.blade.php'] as $file) {
                 if (is_file($basePath.'/'.$file)) {
                     $results[] = $this->livewire($basePath, $file, $routeName);
                 }
@@ -58,7 +58,7 @@ final class StarterKitMenu
         }
 
         if (preg_match('/@import\s+[\'"]tailwindcss[\'"][^;]*;/', $css) !== 1) {
-            return 'none';                                          // Tailwind 3 (tailwind.config.js content) or no Tailwind: nothing to add here
+            return $this->tailwindThree($basePath);                 // Tailwind 3 (Jetstream, Breeze): the content list of tailwind.config.js
         }
 
         $lines = explode("\n", $css);
@@ -76,6 +76,36 @@ final class StarterKitMenu
         return 'added';
     }
 
+    /** @return 'added'|'present'|'none' */
+    private function tailwindThree(string $basePath): string
+    {
+        foreach (['tailwind.config.js', 'tailwind.config.mjs', 'tailwind.config.cjs', 'tailwind.config.ts'] as $name) {
+            $path = $basePath.'/'.$name;
+
+            if (! is_file($path)) {
+                continue;
+            }
+
+            $config = (string) file_get_contents($path);
+
+            if (str_contains($config, 'alimarchal/laravel-chart-of-accounts')) {
+                return 'present';
+            }
+
+            $updated = preg_replace('/(content\s*:\s*\[)(\s*)/', "$1$2'./vendor/alimarchal/laravel-chart-of-accounts/resources/views/**/*.blade.php',$2", $config, 1, $count);
+
+            if ($count !== 1 || $updated === null) {
+                return 'none';
+            }
+
+            file_put_contents($path, $updated);
+
+            return 'added';
+        }
+
+        return 'none';
+    }
+
     /**
      * @return array{file: string, status: 'added'|'present'|'manual', message: string}
      */
@@ -88,9 +118,10 @@ final class StarterKitMenu
             return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting link'];
         }
 
-        // Every Dashboard item of the kit (the header layout has one in the top bar and one in the mobile menu):
-        // <flux:sidebar.item|navlist.item|navbar.item … route('dashboard') …>…</flux:…>
-        $pattern = '/^([ \t]*)(<flux:(sidebar\.item|navlist\.item|navbar\.item)\b(?:(?!<\/flux:\3>).)*?route\(\s*[\'"]dashboard[\'"]\s*\)(?:(?!<\/flux:\3>).)*?<\/flux:\3>)/ms';
+        // Every Dashboard item of the kit (the header layout has one in the top bar and one in the mobile menu; Jetstream and Breeze one in the
+        // top bar and one in the mobile menu too): <flux:sidebar.item|navlist.item|navbar.item …> or <x-nav-link|x-responsive-nav-link …>
+        // with route('dashboard') inside, up to the matching closing tag.
+        $pattern = '/^([ \t]*)(<(flux:sidebar\.item|flux:navlist\.item|flux:navbar\.item|x-nav-link|x-responsive-nav-link)\b(?:(?!<\/\3>).)*?route\(\s*[\'"]dashboard[\'"]\s*\)(?:(?!<\/\3>).)*?<\/\3>)/ms';
 
         if (preg_match_all($pattern, $source, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE) < 1) {
             return ['file' => $file, 'status' => 'manual', 'message' => 'no Dashboard item found to copy'];

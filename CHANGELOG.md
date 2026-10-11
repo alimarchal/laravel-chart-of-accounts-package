@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [2.37.0] - 2026-11-20
+
+Three kinds of screens (React, Blade for Jetstream / Breeze, Livewire for the Livewire starter kit), and the filters work in the Livewire kit.
+
+### Added
+- **Jetstream and Breeze in the installer.** `php artisan accounting:install` offers *Livewire starter kit (Flux)*, *Blade (Jetstream / Breeze)*, *React (Inertia)*
+  and *REST API only* (`--ui=livewire|blade|inertia|api`, `react` is accepted too) and suggests the one that matches the application. The Accounting link is added
+  to `navigation-menu.blade.php` (Jetstream) and `layouts/navigation.blade.php` (Breeze), top bar and mobile menu; with Tailwind 3 the package's screens are added
+  to the `content` list of `tailwind.config.js`. Jetstream's own URLs (`/teams`, `/profile`, …) are refused as the URL of the accounting screens.
+- **`ACCOUNTING_BLADE_KIT`** (`auto`, `flux`, `jetstream`, `breeze`, `plain`): the Blade screens are dressed for the shell they run in. `flux` gives the look of
+  the Livewire starter kit (flat bordered cards, zinc colours, Flux-style buttons, dark mode with the kit's `.dark` class); `jetstream` and `breeze` get a dark mode.
+  `Support\BladeKit` detects the kit.
+
+### Fixed
+- **Filters did not open and select boxes were plain in the Livewire starter kit and in Jetstream.** The screens push their scripts to `@stack('modals')`,
+  `@stack('scripts')` and `@stack('styles')`; the layouts of these kits print some or none of them. The package now prints the stacks the host layout leaves out
+  (and never twice).
+
 ## [2.36.0] - 2026-11-19
 
 The installer sets everything up, and the Blade screens no longer crash in the Livewire starter kit.

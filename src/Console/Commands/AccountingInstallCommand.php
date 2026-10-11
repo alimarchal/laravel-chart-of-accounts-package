@@ -7,11 +7,13 @@ use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvFile;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvQuestions;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\StarterKitMenu;
+use Flux\Flux;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Laravel\Jetstream\Jetstream;
 use Laravel\Sanctum\Sanctum;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
@@ -24,7 +26,7 @@ class AccountingInstallCommand extends Command
         {--admin-password= : Password of the administrator, used when the user has to be created (asked for when interactive)}
         {--views : Also publish the Blade views for customisation (not needed otherwise)}
         {--chart= : Chart of accounts to start from: erpnext (default), general or school}
-        {--ui= : Screens to install: blade (Livewire), inertia (React) or api}
+        {--ui= : Screens to install: livewire (Flux starter kit), blade (Jetstream / Breeze), inertia (React) or api}
         {--currency= : Base currency code, for example PKR}
         {--prefix= : URL prefix of the accounting screens (default accounting)}
         {--no-menu : Do not add the Accounting link to the starter kit navigation}
@@ -75,7 +77,7 @@ class AccountingInstallCommand extends Command
             $this->info('   Log in and open '.url('/'.trim((string) config('accounting.route_prefix', 'accounting'), '/')).($driver === 'inertia' ? '  (run "npm run build" once for the React pages)' : '  (run "npm run build" once so the styles of the screens are compiled)'));
         }
         $this->newLine();
-        $this->line('   UI driver: '.$driver.' (ACCOUNTING_UI_DRIVER = inertia | blade | api).');
+        $this->line('   UI driver: '.$driver.' (ACCOUNTING_UI_DRIVER = inertia | blade | api; for blade, ACCOUNTING_BLADE_KIT = auto | flux | jetstream | breeze | plain).');
         $this->line('   REST API: /'.trim((string) config('accounting.api_prefix'), '/').' — see docs/openapi.yaml.');
         $this->newLine();
         $this->line('   Run "php artisan accounting:update" after future package upgrades.');
@@ -231,21 +233,29 @@ class AccountingInstallCommand extends Command
         $current = fn (string $key, string $fallback): string => $envFile->get($key) ?? $fallback;
 
         // 1. The screens
-        $uis = ['blade' => 'Livewire / Blade', 'inertia' => 'React / Inertia', 'api' => 'REST API only'];
-        $ui = (string) $this->option('ui');
+        $uis = ['livewire' => 'Livewire starter kit (Flux)', 'blade' => 'Blade (Jetstream / Breeze)', 'inertia' => 'React (Inertia)', 'api' => 'REST API only'];
+        $ui = strtolower((string) $this->option('ui'));
+        $ui = $ui === 'react' ? 'inertia' : $ui;
 
         if ($ui !== '' && ! array_key_exists($ui, $uis)) {
-            $this->error("Unknown --ui \"{$ui}\": use blade, inertia or api.");
+            $this->error("Unknown --ui \"{$ui}\": use livewire, blade, inertia or api.");
 
             return false;
         }
 
         if ($ui === '' && $interactive) {
-            $default = $envFile->get('ACCOUNTING_UI_DRIVER') ?: $this->detectUi();
-            $ui = (string) array_search($this->choice('Which screens do you want?', array_values($uis), $uis[$default] ?? $uis['blade']), $uis, true);
+            $saved = $envFile->get('ACCOUNTING_UI_DRIVER');
+            $default = $saved === 'blade' ? ($envFile->get('ACCOUNTING_BLADE_KIT') === 'flux' ? 'livewire' : 'blade') : ($saved ?: $this->detectUi());
+            $ui = (string) array_search($this->choice('Which screens do you want?', array_values($uis), $uis[$default] ?? $uis['livewire']), $uis, true);
         }
 
-        $this->remember('ACCOUNTING_UI_DRIVER', $ui !== '' ? $ui : null, 'accounting.ui_driver');
+        // Livewire and Blade are the same screens (the Blade driver); the kit they are dressed for is told to the layout.
+        $this->remember('ACCOUNTING_UI_DRIVER', match ($ui) {
+            '' => null, 'livewire' => 'blade', default => $ui
+        }, 'accounting.ui_driver');
+        $this->remember('ACCOUNTING_BLADE_KIT', match ($ui) {
+            'livewire' => 'flux', 'blade' => 'auto', default => null
+        }, 'accounting.blade_kit');
 
         // 2. Currency
         $currency = strtoupper(trim((string) $this->option('currency')));
@@ -477,14 +487,22 @@ class AccountingInstallCommand extends Command
             return 'inertia';
         }
 
+        if (class_exists(Jetstream::class) || is_file(resource_path('views/navigation-menu.blade.php')) || is_file(resource_path('views/layouts/navigation.blade.php'))) {
+            return 'blade';                                         // Jetstream (Livewire) and Breeze (Blade)
+        }
+
+        if (class_exists(Flux::class) || is_file(resource_path('views/components/layouts/app/sidebar.blade.php')) || is_file(resource_path('views/layouts/app/sidebar.blade.php'))) {
+            return 'livewire';
+        }
+
         return $this->vueOrSvelteKit() || is_dir(resource_path('views/layouts')) || class_exists(Livewire::class) ? 'blade' : (string) config('accounting.ui_driver', 'inertia');
     }
 
     /** The Vue and Svelte starter kits: the accounting screens are React (Inertia) or Blade, so these apps use the Blade screens. */
     private function vueOrSvelteKit(): bool
     {
-        foreach (['AppSidebar.vue', 'app-sidebar.vue', 'AppSidebar.svelte', 'app-sidebar.svelte', 'AppHeader.vue', 'app-header.svelte'] as $file) {
-            if (is_file(resource_path('js/components/'.$file))) {
+        foreach (['components/AppSidebar.vue', 'components/app-sidebar.vue', 'components/AppSidebar.svelte', 'components/app-sidebar.svelte', 'components/AppHeader.vue', 'components/app-header.svelte', 'Layouts/AppLayout.vue'] as $file) {
+            if (is_file(resource_path('js/'.$file))) {
                 return true;
             }
         }
@@ -619,21 +637,21 @@ class AccountingInstallCommand extends Command
             $this->line('   Vue/Svelte starter kit: the accounting screens are separate pages, not Inertia pages. Add a plain link, not an Inertia Link:  <a href="'.$url.'">Accounting</a>');
         } elseif ($results === []) {
             $this->line($driver === 'blade'
-                ? '   No Livewire starter kit sidebar found: link to route(\''.$routeName.'\') from your own menu.'
+                ? '   No starter kit menu found (Flux sidebar, Jetstream or Breeze navigation): link to route(\''.$routeName.'\') from your own menu.'
                 : '   No React starter kit sidebar found: add { title: \'Accounting\', href: \''.$url.'\', icon: Calculator } to mainNavItems.');
         } elseif (in_array('manual', array_column($results, 'status'), true)) {
             $this->line($driver === 'blade'
-                ? '   Add to your sidebar:  <flux:sidebar.item icon="calculator" :href="route(\''.$routeName.'\')">{{ __(\'Accounting\') }}</flux:sidebar.item>'
+                ? '   Add to your menu:  Flux  <flux:sidebar.item icon="calculator" :href="route(\''.$routeName.'\')">{{ __(\'Accounting\') }}</flux:sidebar.item>   |   Jetstream / Breeze  <x-nav-link :href="route(\''.$routeName.'\')">{{ __(\'Accounting\') }}</x-nav-link>'
                 : '   Add to mainNavItems:  { title: \'Accounting\', href: \''.$url.'\', icon: Calculator }');
         }
 
         if ($driver === 'blade' && $menu->tailwindSource(base_path()) === 'added') {
-            $this->line('   resources/css/app.css: Tailwind now also scans the package\'s screens (run "npm run build" or keep "npm run dev" running).');
+            $this->line('   Tailwind (resources/css/app.css or tailwind.config.js) now also scans the package\'s screens (run "npm run build" or keep "npm run dev" running).');
         }
     }
 
     /** URL segments the starter kits use for their own screens: the accounting screens must not take them over. */
-    private const RESERVED_PREFIXES = ['settings', 'dashboard', 'login', 'logout', 'register', 'password', 'user', 'email', 'two-factor', 'livewire', 'api', 'up', 'storage', 'sanctum', 'forgot-password', 'reset-password', 'verify-email', 'confirm-password'];
+    private const RESERVED_PREFIXES = ['settings', 'dashboard', 'login', 'logout', 'register', 'password', 'user', 'email', 'two-factor', 'livewire', 'api', 'up', 'storage', 'sanctum', 'forgot-password', 'reset-password', 'verify-email', 'confirm-password', 'teams', 'profile', 'terms-of-service', 'privacy-policy', 'two-factor-challenge'];
 
     private function spatiePermissionMigrationExists(): bool
     {

@@ -11,6 +11,8 @@ return [
     // Blade driver: the layout component of your application the screens are rendered in ("app-layout", "layouts::app" …). null = Breeze's
     // <x-app-layout> when your application has it, otherwise the package's own page layout.
     'blade_layout' => env('ACCOUNTING_BLADE_LAYOUT'),
+    // Blade driver: which shell the screens should look native in: auto | flux (Livewire starter kit) | jetstream | breeze | plain.
+    'blade_kit' => env('ACCOUNTING_BLADE_KIT', 'auto'),
     // Table referenced by created_by / updated_by / posted_by foreign keys in the package migrations.
     'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),

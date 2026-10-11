@@ -240,7 +240,7 @@ it('asks the setup questions and applies the answers', function (): void {
     setupProject($this);
 
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true])
-        ->expectsChoice('Which screens do you want?', 'React / Inertia', ['Livewire / Blade', 'React / Inertia', 'REST API only'])
+        ->expectsChoice('Which screens do you want?', 'React (Inertia)', ['Livewire starter kit (Flux)', 'Blade (Jetstream / Breeze)', 'React (Inertia)', 'REST API only'])
         ->expectsQuestion('Base currency code (ISO 4217, for example PKR, USD, EUR)', 'pkr')
         ->expectsChoice('Which chart of accounts should the company start with?', 'School chart', ['ERPNext standard chart (recommended)', 'General business chart', 'School chart'])
         ->expectsConfirmation('Will you keep the books of more than one company (multi-company)?', 'yes')
@@ -367,4 +367,52 @@ it('patches the real files of the official Laravel starter kits (Livewire sideba
         ->and(substr_count($header, "route('accounting.dashboard')"))->toBe(2)                    // the top bar and the mobile menu each have a Dashboard item
         ->and(substr_count($sidebar, "route('accounting.dashboard')"))->toBe(1)
         ->and(file_get_contents($this->project.'/resources/js/components/app-sidebar.tsx'))->toContain('icon: Calculator }, // accounting:menu');
+});
+
+it('patches the real navigation of Jetstream and Breeze: the top bar and the mobile menu, once', function (string $fixture, string $file): void {
+    $original = (string) file_get_contents(__DIR__.'/../../Fixtures/starter-kits/'.$fixture);
+    writeFile($this->project.'/'.$file, $original);
+    $menu = new StarterKitMenu;
+
+    $first = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $second = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $result = (string) file_get_contents($this->project.'/'.$file);
+
+    expect($first[0]['status'])->toBe('added')->and($second[0]['status'])->toBe('present')
+        ->and(substr_count($result, "route('accounting.dashboard')"))->toBe(2)                       // x-nav-link and x-responsive-nav-link
+        ->and($result)->toContain("routeIs('accounting.*')")->toContain("__('Accounting')")->toContain('{{-- accounting:menu --}}')
+        ->and(substr_count($result, "route('dashboard')"))->toBe(substr_count($original, "route('dashboard')"));   // the Dashboard items are untouched
+})->with([
+    'Jetstream (Livewire)' => ['jetstream-navigation-menu.blade.php', 'resources/views/navigation-menu.blade.php'],
+    'Breeze' => ['breeze-navigation.blade.php', 'resources/views/layouts/navigation.blade.php'],
+]);
+
+it('lets Tailwind 3 (Jetstream, Breeze) scan the screens of the package through tailwind.config.js', function (): void {
+    writeFile($this->project.'/resources/css/app.css', "@tailwind base;\n@tailwind components;\n@tailwind utilities;\n");
+    writeFile($this->project.'/tailwind.config.js', "export default {\n    content: [\n        './resources/views/**/*.blade.php',\n    ],\n};\n");
+    $menu = new StarterKitMenu;
+
+    expect($menu->tailwindSource($this->project))->toBe('added')->and($menu->tailwindSource($this->project))->toBe('present')
+        ->and(file_get_contents($this->project.'/tailwind.config.js'))->toContain("'./vendor/alimarchal/laravel-chart-of-accounts/resources/views/**/*.blade.php',")
+        ->toContain("'./resources/views/**/*.blade.php'");
+});
+
+it('has three kinds of screens: --ui=livewire dresses the Blade screens for Flux, --ui=blade lets them follow Jetstream / Breeze', function (string $ui, string $driver, string $kit): void {
+    setupProject($this, "APP_NAME=Laravel\n");
+
+    $this->artisan('accounting:install', ['--setup-only' => true, '--no-interaction' => true, '--no-menu' => true, '--ui' => $ui, '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])->assertSuccessful();
+    $env = new EnvFile($this->project.'/.env');
+
+    expect($env->get('ACCOUNTING_UI_DRIVER'))->toBe($driver)->and($env->get('ACCOUNTING_BLADE_KIT'))->toBe($kit);
+})->with([
+    'livewire' => ['livewire', 'blade', 'flux'],
+    'blade (Jetstream / Breeze)' => ['blade', 'blade', 'auto'],
+]);
+
+it('writes no kit for React', function (): void {
+    setupProject($this, "APP_NAME=Laravel\n");
+
+    $this->artisan('accounting:install', ['--setup-only' => true, '--no-interaction' => true, '--no-menu' => true, '--ui' => 'react', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting'])->assertSuccessful();
+
+    expect((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_UI_DRIVER'))->toBe('inertia')->and((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_BLADE_KIT'))->toBeNull();
 });

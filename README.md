@@ -134,7 +134,7 @@ The installer asks what it needs, so there is nothing to edit by hand afterwards
 
 | Question | What it does |
 |---|---|
-| Which screens do you want? | Livewire / Blade, React / Inertia or REST API only (it suggests the one that matches your starter kit) → `ACCOUNTING_UI_DRIVER` |
+| Which screens do you want? | Livewire starter kit (Flux), Blade (Jetstream / Breeze), React (Inertia) or REST API only (it suggests the one that matches your starter kit) → `ACCOUNTING_UI_DRIVER` and `ACCOUNTING_BLADE_KIT` |
 | Base currency | `ACCOUNTING_BASE_CURRENCY` (PKR, USD, …) |
 | Chart of accounts | ERPNext standard chart, general business chart or school chart → `ACCOUNTING_CHART_PRESET` |
 | Several companies? | `ACCOUNTING_MULTI_COMPANY` and the short code of your first company → `ACCOUNTING_DEFAULT_COMPANY` |
@@ -152,11 +152,12 @@ or the ones above; `.env` keys that are not asked keep their documented defaults
 
 Your answers are written to `.env`. Then the installer publishes the config and migrations, migrates, seeds the chart of accounts,
 currencies, the current fiscal year, roles and tax codes, creates the database views and triggers, and verifies everything. It adds
-the **Accounting** link next to **Dashboard** in the sidebar of the Laravel starter kit (Livewire: `resources/views/layouts/app/sidebar.blade.php`;
-React: `resources/js/components/app-sidebar.tsx` and `app-header.tsx`) and, for Blade, adds the package's screens to the Tailwind sources
-in `resources/css/app.css` (run `npm run build` once). It is safe to re-run.
+the **Accounting** link next to **Dashboard** in the menu of your starter kit (Livewire/Flux: `resources/views/layouts/app/sidebar.blade.php`;
+Jetstream: `resources/views/navigation-menu.blade.php`; Breeze: `resources/views/layouts/navigation.blade.php`; React: `resources/js/components/app-sidebar.tsx`
+and `app-header.tsx`) and, for Blade, adds the package's screens to the Tailwind sources (`resources/css/app.css` for Tailwind 4, `tailwind.config.js`
+for Tailwind 3 as in Jetstream and Breeze; run `npm run build` once). It is safe to re-run.
 
-Everything can be given as an option instead (no questions): `--ui=blade|inertia|api`, `--currency=PKR`, `--chart=erpnext|general|school`,
+Everything can be given as an option instead (no questions): `--ui=livewire|blade|inertia|api`, `--currency=PKR`, `--chart=erpnext|general|school`,
 `--prefix=accounting`, `--admin-email=… --admin-name=… --admin-password=…`; `--no-menu` keeps your sidebar untouched, `--no-env` leaves
 `.env` alone, and `--setup-only` asks the questions, writes `.env`, creates the administrator and adds the menu without publishing, migrating or seeding.
 The starter kits of Vue and Svelte are supported through the Blade screens (the installer tells you which plain link to add to your sidebar).
@@ -168,12 +169,29 @@ Log in with the administrator you entered (the login page is your starter kit's)
 | `ACCOUNTING_UI_DRIVER` | You get | Notes |
 |---|---|---|
 | `inertia` (default) | React pages in `resources/js/pages/accounting` | React starter kit; run `npm run build` afterwards |
-| `blade` | Blade pages inside your layout | Livewire starter kit (also Vue and Svelte kits); `composer require livewire/livewire` |
+| `blade` | Blade pages inside your layout | Livewire starter kit, Jetstream, Breeze (also Vue and Svelte kits) |
 | `api` | REST API only | Lightest: no web routes, views or Livewire |
 
-With the Livewire starter kit the screens are rendered in the kit's own layout (`livewire.component_layout`), so the sidebar stays. With
-Breeze they use `<x-app-layout>`, and with anything else the package's own page layout. To name your own layout component:
-`ACCOUNTING_BLADE_LAYOUT=layouts::app`.
+The installer offers **three kinds of screens**: **React**, **Blade for Jetstream / Breeze** and **Livewire for the Laravel Livewire starter kit (Flux)**.
+The two Blade kinds are the same pages (`ACCOUNTING_UI_DRIVER=blade`); `ACCOUNTING_BLADE_KIT` tells them which shell to look native in:
+
+| `ACCOUNTING_BLADE_KIT` | For | Look |
+|---|---|---|
+| `auto` (default) | whatever your application has | Jetstream, else Flux (Livewire kit), else Breeze |
+| `flux` | Livewire starter kit | Flux style: flat bordered cards, zinc colours, buttons as in Flux, dark mode with the kit's `.dark` switch |
+| `jetstream` | Laravel Jetstream | Jetstream cards, dark mode follows the system setting |
+| `breeze` | Laravel Breeze | Breeze cards, dark mode with the `.dark` class |
+| `plain` | none | the package's own page layout |
+
+Matches the official starter kits ([laravel.com/docs/starter-kits](https://laravel.com/docs/starter-kits)): **Livewire** (Flux, sidebar or header layout, also
+with teams or WorkOS) gets the Flux look; **React** gets the React pages and the sidebar/header link; **Vue** and **Svelte** have no Blade layout, so the
+Blade screens use the package's own page layout and you add one plain `<a href="/accounting">` link (not an Inertia `Link`); Jetstream and Breeze (no longer
+developed by Laravel, still widely used) are supported as described above. In the Flux sidebar layout the pages use the full width next to the sidebar.
+
+The screens are rendered in your application's layout: Jetstream and Breeze `<x-app-layout>`, the Livewire kit its `livewire.component_layout`
+(`layouts::app`), so the sidebar stays; anything else gets the package's own layout. Scripts and styles that the screens need (the filter button,
+the select boxes) are printed for you when your layout has no `@stack('scripts')`, `@stack('styles')` or `@stack('modals')`. To name your own layout
+component: `ACCOUNTING_BLADE_LAYOUT=layouts::app`.
 
 <details>
 <summary><b>React: the menu link by hand and (older starter kits) the layout</b></summary>
