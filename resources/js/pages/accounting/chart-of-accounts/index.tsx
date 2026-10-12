@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Dropdown } from '@/components/accounting/dropdown';
 import {
     Download,
     Edit,
@@ -20,13 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     useAccounting,
     playErrorSound,
@@ -323,7 +317,7 @@ export default function ChartOfAccountsIndex({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Posting</Label>
-                                        <Select
+                                        <Dropdown
                                             value={filterForm.data.is_group}
                                             onValueChange={(value) =>
                                                 filterForm.setData(
@@ -332,25 +326,23 @@ export default function ChartOfAccountsIndex({
                                                 )
                                             }
                                         >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
+                                            
+                                            
+                                                <option value="all">
                                                     All
-                                                </SelectItem>
-                                                <SelectItem value="0">
+                                                </option>
+                                                <option value="0">
                                                     Posting only
-                                                </SelectItem>
-                                                <SelectItem value="1">
+                                                </option>
+                                                <option value="1">
                                                     Group only
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                                </option>
+                                            
+                                        </Dropdown>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Status</Label>
-                                        <Select
+                                        <Dropdown
                                             value={filterForm.data.is_active}
                                             onValueChange={(value) =>
                                                 filterForm.setData(
@@ -359,21 +351,19 @@ export default function ChartOfAccountsIndex({
                                                 )
                                             }
                                         >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
+                                            
+                                            
+                                                <option value="all">
                                                     All
-                                                </SelectItem>
-                                                <SelectItem value="1">
+                                                </option>
+                                                <option value="1">
                                                     Active
-                                                </SelectItem>
-                                                <SelectItem value="0">
+                                                </option>
+                                                <option value="0">
                                                     Inactive
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                                </option>
+                                            
+                                        </Dropdown>
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-2">

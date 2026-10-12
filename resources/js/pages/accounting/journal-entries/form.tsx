@@ -1,7 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save, Scale, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { SearchableSelect } from '@/components/accounting/searchable-select';
+import { Dropdown } from '@/components/accounting/dropdown';
+import type { DropdownOption } from '@/components/accounting/dropdown';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -16,19 +18,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Dropdown } from '@/components/accounting/dropdown';
 
 type Account = {
     id: number;
     account_code: string;
     account_name: string;
+    type?: string | null;
 };
 
 type Currency = {
@@ -97,11 +92,25 @@ type Props = {
     defaultBranchId?: number | null;
 };
 
+const num = (value: string | number | null | undefined): number => {
+    const parsed = parseFloat(String(value ?? '').replace(/,/g, ''));
+
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+const round = (value: number): number => Math.round(value * 100) / 100;
+const money = (value: string | number): string =>
+    num(value) > 0 ? num(value).toFixed(2) : '';
+const fmt = (value: number): string =>
+    value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
 const emptyLine = (): JournalLine => ({
     chart_of_account_id: '',
     cost_center_id: 'none',
-    debit: '0',
-    credit: '0',
+    debit: '',
+    credit: '',
     description: '',
 });
 
@@ -122,17 +131,29 @@ export default function JournalEntryForm({
     const baseCurrency =
         currencies.find((currency) => currency.is_base) ?? currencies[0];
     const today = new Date().toISOString().slice(0, 10);
-    const accountOptions = accounts.map((account) => ({
-        value: String(account.id),
-        label: `${account.account_code} - ${account.account_name}`,
-    }));
-    const costCenterOptions = [
-        { value: 'none', label: 'None' },
-        ...costCenters.map((costCenter) => ({
-            value: String(costCenter.id),
-            label: `${costCenter.code} - ${costCenter.name}`,
-        })),
-    ];
+    const accountOptions = useMemo<DropdownOption[]>(
+        () => [
+            { value: '', label: 'Choose an account' },
+            ...accounts.map((account) => ({
+                value: String(account.id),
+                label: `${account.account_code} - ${account.account_name}`,
+                code: account.account_code,
+                name: account.account_name,
+                tag: account.type ?? undefined,
+            })),
+        ],
+        [accounts],
+    );
+    const costCenterOptions = useMemo<DropdownOption[]>(
+        () => [
+            { value: 'none', label: 'No cost center' },
+            ...costCenters.map((costCenter) => ({
+                value: String(costCenter.id),
+                label: `${costCenter.code} - ${costCenter.name}`,
+            })),
+        ],
+        [costCenters],
+    );
 
     const form = useForm({
         branch_id: String(entry?.branch_id ?? defaultBranchId ?? ''),
@@ -162,63 +183,165 @@ export default function JournalEntryForm({
             cost_center_id: line.cost_center_id
                 ? String(line.cost_center_id)
                 : 'none',
-            debit: String(line.debit ?? '0'),
-            credit: String(line.credit ?? '0'),
+            debit: money(line.debit ?? '0'),
+            credit: money(line.credit ?? '0'),
             description: line.description ?? '',
             tax_code_id: line.tax_code_id ? String(line.tax_code_id) : '',
             tax_role: line.tax_role ?? '',
-            tax_rate: line.tax_rate === null || line.tax_rate === undefined ? '' : String(line.tax_rate),
+            tax_rate:
+                line.tax_rate === null || line.tax_rate === undefined
+                    ? ''
+                    : String(line.tax_rate),
         })) ?? [emptyLine(), emptyLine()],
     });
 
     // Laravel returns array validation errors with dotted keys (lines.0.debit), which useForm's error type does not model.
     const errors = form.errors as Record<string, string | undefined>;
+    const [problems, setProblems] = useState<string[]>([]);
+    const [badLines, setBadLines] = useState<number[]>([]);
+    const [sourceOpen, setSourceOpen] = useState(
+        Boolean(
+            (entry?.source_document_type && entry.source_document_type !== '') ||
+                entry?.source_document_number,
+        ),
+    );
+    const rowsRef = useRef<HTMLTableSectionElement>(null);
+
+    const lines = form.data.lines;
+    const totalDebit = round(lines.reduce((sum, line) => sum + num(line.debit), 0));
+    const totalCredit = round(lines.reduce((sum, line) => sum + num(line.credit), 0));
+    const diff = round(totalDebit - totalCredit);
+    const balanced = Math.abs(diff) < 0.005 && totalDebit > 0;
+    const foreign =
+        form.data.currency_id !== '' &&
+        baseCurrency !== undefined &&
+        form.data.currency_id !== String(baseCurrency.id);
 
     const setLine = (
         index: number,
-        field: keyof JournalLine,
-        value: string,
+        patch: Partial<JournalLine>,
     ) => {
         form.setData(
             'lines',
-            form.data.lines.map((line, lineIndex) =>
-                lineIndex === index ? { ...line, [field]: value } : line,
+            lines.map((line, lineIndex) =>
+                lineIndex === index ? { ...line, ...patch } : line,
             ),
         );
     };
 
+    const setAmount = (index: number, side: 'debit' | 'credit', raw: string) => {
+        const value = raw.replace(/[^0-9.,]/g, '');
+        const other = side === 'debit' ? 'credit' : 'debit';
+
+        setLine(
+            index,
+            num(value) > 0 ? { [side]: value, [other]: '' } : { [side]: value },
+        );
+    };
+
     const addLine = () => {
-        form.setData('lines', [...form.data.lines, emptyLine()]);
+        const line = emptyLine();
+
+        // The new line starts with what is still missing, on the opposite side.
+        if (diff > 0.004) {
+            line.credit = diff.toFixed(2);
+        } else if (diff < -0.004) {
+            line.debit = Math.abs(diff).toFixed(2);
+        }
+
+        form.setData('lines', [...lines, line]);
     };
 
     const removeLine = (index: number) => {
-        if (form.data.lines.length <= 2) {
+        if (lines.length <= 2) {
             return;
         }
 
         form.setData(
             'lines',
-            form.data.lines.filter((_, lineIndex) => lineIndex !== index),
+            lines.filter((_, lineIndex) => lineIndex !== index),
         );
     };
 
-    const submit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const balanceTo = (index: number) => {
+        const need = round(
+            lines.reduce(
+                (sum, line, lineIndex) =>
+                    lineIndex === index ? sum : sum + num(line.debit) - num(line.credit),
+                0,
+            ),
+        );
+
+        if (need > 0) {
+            setLine(index, { credit: need.toFixed(2), debit: '' });
+        } else if (need < 0) {
+            setLine(index, { debit: Math.abs(need).toFixed(2), credit: '' });
+        }
+    };
+
+    const check = (): boolean => {
+        const found: string[] = [];
+        const bad: number[] = [];
+        let valid = 0;
+
+        lines.forEach((line, index) => {
+            const amount = num(line.debit) + num(line.credit);
+
+            if (line.chart_of_account_id === '' && amount === 0) {
+                return;
+            }
+
+            if (line.chart_of_account_id === '') {
+                found.push(`Line ${index + 1}: choose an account.`);
+                bad.push(index);
+            } else if (amount === 0) {
+                found.push(`Line ${index + 1}: enter a debit or a credit amount.`);
+                bad.push(index);
+            } else {
+                valid++;
+            }
+        });
+
+        if (found.length === 0 && valid < 2) {
+            found.push('An entry needs at least two lines with an account and an amount.');
+        }
+
+        if (found.length === 0 && !balanced) {
+            found.push(`Debits and credits must balance (difference ${fmt(Math.abs(diff))}).`);
+        }
+
+        setProblems(found);
+        setBadLines(bad);
+
+        return found.length === 0;
+    };
+
+    const submit = (event?: FormEvent<HTMLFormElement>) => {
+        event?.preventDefault();
+
+        if (!check() || form.processing) {
+            return;
+        }
 
         form.transform((data) => ({
             ...data,
-            ...(branches.length > 0 ? { branch_id: data.branch_id === '' ? null : data.branch_id } : { branch_id: undefined }),
+            ...(branches.length > 0
+                ? { branch_id: data.branch_id === '' ? null : data.branch_id }
+                : { branch_id: undefined }),
             source_document_type:
                 data.source_document_type === 'none'
                     ? ''
                     : data.source_document_type,
-            lines: data.lines.map((line) => ({
-                ...line,
-                cost_center_id:
-                    line.cost_center_id === 'none' ? '' : line.cost_center_id,
-                debit: line.debit === '' ? '0' : line.debit,
-                credit: line.credit === '' ? '0' : line.credit,
-            })),
+            // Rows left empty are not sent.
+            lines: data.lines
+                .filter((line) => line.chart_of_account_id !== '')
+                .map((line) => ({
+                    ...line,
+                    cost_center_id:
+                        line.cost_center_id === 'none' ? '' : line.cost_center_id,
+                    debit: String(num(line.debit)),
+                    credit: String(num(line.credit)),
+                })),
         }));
 
         if (method === 'put') {
@@ -230,6 +353,24 @@ export default function JournalEntryForm({
         form.post(action);
     };
 
+    // Ctrl/Cmd + S saves.
+    const submitRef = useRef(submit);
+    submitRef.current = submit;
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+                event.preventDefault();
+                submitRef.current();
+            }
+        };
+
+        window.addEventListener('keydown', onKey);
+
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
+
+    const fieldClass = 'flex flex-col gap-1.5';
+
     return (
         <>
             <Head title={title} />
@@ -237,7 +378,7 @@ export default function JournalEntryForm({
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <Heading
                         title={title}
-                        description="Build a balanced journal entry before posting it to the ledger."
+                        description="Build a balanced journal entry. It is saved as a draft; you review and post it afterwards."
                     />
                     <Button asChild variant="outline">
                         <Link href="/accounting/journal-entries">Back</Link>
@@ -245,53 +386,87 @@ export default function JournalEntryForm({
                 </div>
 
                 <form onSubmit={submit} className="grid gap-6">
+                    {problems.length > 0 ? (
+                        <div
+                            role="alert"
+                            className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+                        >
+                            <strong className="block">Check the entry before saving</strong>
+                            <ul className="mt-1 list-disc pl-5">
+                                {problems.map((problem) => (
+                                    <li key={problem}>{problem}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    ) : null}
+
                     <Card className="rounded-lg">
                         <CardHeader>
-                            <CardTitle>Journal header</CardTitle>
+                            <CardTitle>Entry details</CardTitle>
                             <CardDescription>
-                                Voucher type, date, currency, reference, and
-                                summary. The voucher number is issued when the
-                                entry is posted.
+                                Who, when and why. The voucher number and the
+                                accounting period are set when the entry is
+                                posted.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-                                <div className="flex flex-col gap-2">
-                                    <Label>Voucher type</Label>
-                                    <Select
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                <div className={fieldClass}>
+                                    <Label htmlFor="voucher_type_id">Voucher type</Label>
+                                    <Dropdown
+                                        id="voucher_type_id"
+                                        required
                                         value={form.data.voucher_type_id}
-                                        onValueChange={(value) =>
-                                            form.setData(
-                                                'voucher_type_id',
-                                                value,
-                                            )
+                                        onChange={(event) =>
+                                            form.setData('voucher_type_id', event.target.value)
                                         }
                                     >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {voucherTypes.map((type) => (
-                                                <SelectItem
-                                                    key={type.id}
-                                                    value={String(type.id)}
-                                                >
-                                                    {type.code} - {type.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError
-                                        message={form.errors.voucher_type_id}
+                                        {voucherTypes.map((type) => (
+                                            <option key={type.id} value={String(type.id)}>
+                                                {type.code} - {type.name}
+                                            </option>
+                                        ))}
+                                    </Dropdown>
+                                    <InputError message={form.errors.voucher_type_id} />
+                                </div>
+
+                                <div className={fieldClass}>
+                                    <Label htmlFor="entry_date">Entry date</Label>
+                                    <Input
+                                        id="entry_date"
+                                        type="date"
+                                        value={form.data.entry_date}
+                                        onChange={(event) =>
+                                            form.setData('entry_date', event.target.value)
+                                        }
                                     />
+                                    <InputError message={form.errors.entry_date} />
+                                </div>
+
+                                <div className={fieldClass}>
+                                    <Label htmlFor="currency_id">Currency</Label>
+                                    <Dropdown
+                                        id="currency_id"
+                                        required
+                                        value={form.data.currency_id}
+                                        onChange={(event) =>
+                                            form.setData('currency_id', event.target.value)
+                                        }
+                                    >
+                                        {currencies.map((currency) => (
+                                            <option key={currency.id} value={String(currency.id)}>
+                                                {currency.code} - {currency.name}
+                                            </option>
+                                        ))}
+                                    </Dropdown>
+                                    <InputError message={form.errors.currency_id} />
                                 </div>
 
                                 {branches.length > 0 ? (
-                                    <div className="flex flex-col gap-2">
+                                    <div className={fieldClass}>
                                         <Label htmlFor="branch_id">Branch</Label>
                                         <Dropdown
                                             id="branch_id"
-                                            className="h-9 rounded-md border bg-transparent px-3 text-sm"
                                             value={form.data.branch_id}
                                             onChange={(event) =>
                                                 form.setData('branch_id', event.target.value)
@@ -299,7 +474,7 @@ export default function JournalEntryForm({
                                         >
                                             <option value="">Head office / not allocated</option>
                                             {branches.map((branch) => (
-                                                <option key={branch.id} value={branch.id}>
+                                                <option key={branch.id} value={String(branch.id)}>
                                                     {branch.code} - {branch.name}
                                                 </option>
                                             ))}
@@ -308,348 +483,262 @@ export default function JournalEntryForm({
                                     </div>
                                 ) : null}
 
-                                <div className="flex flex-col gap-2">
-                                    <Label htmlFor="entry_date">
-                                        Entry Date
-                                    </Label>
-                                    <Input
-                                        id="entry_date"
-                                        type="date"
-                                        value={form.data.entry_date}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'entry_date',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={form.errors.entry_date}
-                                    />
-                                </div>
+                                {foreign ? (
+                                    <div className={fieldClass}>
+                                        <Label htmlFor="fx_rate_to_base">
+                                            Exchange rate to {baseCurrency?.code}
+                                        </Label>
+                                        <Input
+                                            id="fx_rate_to_base"
+                                            type="number"
+                                            step="0.00000001"
+                                            className="text-right tabular-nums"
+                                            value={form.data.fx_rate_to_base}
+                                            onChange={(event) =>
+                                                form.setData('fx_rate_to_base', event.target.value)
+                                            }
+                                        />
+                                        <InputError message={form.errors.fx_rate_to_base} />
+                                    </div>
+                                ) : null}
 
-                                <div className="flex flex-col gap-2">
-                                    <Label>Currency</Label>
-                                    <Select
-                                        value={form.data.currency_id}
-                                        onValueChange={(value) =>
-                                            form.setData('currency_id', value)
-                                        }
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select currency" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {currencies.map((currency) => (
-                                                <SelectItem
-                                                    key={currency.id}
-                                                    value={String(currency.id)}
-                                                >
-                                                    {currency.code} -{' '}
-                                                    {currency.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError
-                                        message={form.errors.currency_id}
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-2">
-                                    <Label htmlFor="fx_rate_to_base">
-                                        FX Rate
-                                    </Label>
-                                    <Input
-                                        id="fx_rate_to_base"
-                                        type="number"
-                                        step="0.00000001"
-                                        value={form.data.fx_rate_to_base}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'fx_rate_to_base',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={form.errors.fx_rate_to_base}
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-2">
+                                <div className={fieldClass}>
                                     <Label htmlFor="reference">Reference</Label>
                                     <Input
                                         id="reference"
+                                        placeholder="Cheque no., slip no. …"
                                         value={form.data.reference}
                                         onChange={(event) =>
-                                            form.setData(
-                                                'reference',
-                                                event.target.value,
-                                            )
+                                            form.setData('reference', event.target.value)
                                         }
                                     />
-                                    <InputError
-                                        message={form.errors.reference}
+                                    <InputError message={form.errors.reference} />
+                                </div>
+
+                                <div className={`${fieldClass} md:col-span-2 xl:col-span-4`}>
+                                    <Label htmlFor="description">Description</Label>
+                                    <Input
+                                        id="description"
+                                        placeholder="What is this entry for?"
+                                        value={form.data.description}
+                                        onChange={(event) =>
+                                            form.setData('description', event.target.value)
+                                        }
                                     />
+                                    <InputError message={form.errors.description} />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-4 rounded-md border border-dashed p-3 md:grid-cols-3">
-                                <div className="flex flex-col gap-2">
-                                    <Label>Source document</Label>
-                                    <Select
-                                        value={form.data.source_document_type}
-                                        onValueChange={(value) =>
-                                            form.setData(
-                                                'source_document_type',
-                                                value,
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="None" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">
-                                                None
-                                            </SelectItem>
-                                            {Object.entries(documentTypes).map(
-                                                ([key, label]) => (
-                                                    <SelectItem
-                                                        key={key}
-                                                        value={key}
-                                                    >
+                            <div>
+                                <button
+                                    type="button"
+                                    className="text-sm font-semibold text-primary hover:underline"
+                                    onClick={() => setSourceOpen((open) => !open)}
+                                    aria-expanded={sourceOpen}
+                                >
+                                    {sourceOpen ? '− ' : '+ '}Link a source document{' '}
+                                    <span className="font-normal text-muted-foreground">
+                                        (invoice, bill or receipt — optional)
+                                    </span>
+                                </button>
+                                {sourceOpen ? (
+                                    <div className="mt-3 grid grid-cols-1 gap-4 rounded-md border border-dashed p-3 md:grid-cols-3">
+                                        <div className={fieldClass}>
+                                            <Label htmlFor="source_document_type">Document type</Label>
+                                            <Dropdown
+                                                id="source_document_type"
+                                                value={form.data.source_document_type}
+                                                onChange={(event) =>
+                                                    form.setData('source_document_type', event.target.value)
+                                                }
+                                            >
+                                                <option value="none">None</option>
+                                                {Object.entries(documentTypes).map(([key, label]) => (
+                                                    <option key={key} value={key}>
                                                         {label}
-                                                    </SelectItem>
-                                                ),
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError
-                                        message={
-                                            form.errors.source_document_type
-                                        }
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <Label htmlFor="source_document_number">
-                                        Document number
-                                    </Label>
-                                    <Input
-                                        id="source_document_number"
-                                        placeholder="INV-1001"
-                                        value={form.data.source_document_number}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'source_document_number',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={
-                                            form.errors.source_document_number
-                                        }
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <Label htmlFor="source_document_date">
-                                        Document date
-                                    </Label>
-                                    <Input
-                                        id="source_document_date"
-                                        type="date"
-                                        value={form.data.source_document_date}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'source_document_date',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={
-                                            form.errors.source_document_date
-                                        }
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground md:col-span-3">
-                                    The invoice, bill or receipt this entry
-                                    records. A document can be posted only once;
-                                    reverse the entry to post it again.
-                                </p>
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="description">Description</Label>
-                                <textarea
-                                    id="description"
-                                    value={form.data.description}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'description',
-                                            event.target.value,
-                                        )
-                                    }
-                                    className="min-h-24 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                />
-                                <InputError message={form.errors.description} />
+                                                    </option>
+                                                ))}
+                                            </Dropdown>
+                                            <InputError message={form.errors.source_document_type} />
+                                        </div>
+                                        <div className={fieldClass}>
+                                            <Label htmlFor="source_document_number">Document number</Label>
+                                            <Input
+                                                id="source_document_number"
+                                                placeholder="INV-1001"
+                                                value={form.data.source_document_number}
+                                                onChange={(event) =>
+                                                    form.setData('source_document_number', event.target.value)
+                                                }
+                                            />
+                                            <InputError message={form.errors.source_document_number} />
+                                        </div>
+                                        <div className={fieldClass}>
+                                            <Label htmlFor="source_document_date">Document date</Label>
+                                            <Input
+                                                id="source_document_date"
+                                                type="date"
+                                                value={form.data.source_document_date}
+                                                onChange={(event) =>
+                                                    form.setData('source_document_date', event.target.value)
+                                                }
+                                            />
+                                            <InputError message={form.errors.source_document_date} />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground md:col-span-3">
+                                            A document can be posted only once; reverse the entry to post it again.
+                                        </p>
+                                    </div>
+                                ) : null}
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="rounded-lg">
-                        <CardHeader>
-                            <CardTitle>Lines</CardTitle>
-                            <CardDescription>
-                                Every journal must balance: total debit must
-                                equal total credit.
-                            </CardDescription>
+                        <CardHeader className="flex flex-row items-start justify-between gap-3">
+                            <div className="space-y-1.5">
+                                <CardTitle>Lines</CardTitle>
+                                <CardDescription>
+                                    Pick the account by its number or name. Debits must equal credits.
+                                </CardDescription>
+                            </div>
+                            <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                                <Plus className="size-4" />
+                                Add line
+                            </Button>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="overflow-hidden rounded-lg border">
-                                <table className="w-full min-w-[980px] text-sm">
-                                    <thead className="bg-muted/50 text-left">
+                        <CardContent>
+                            <div className="overflow-x-auto rounded-lg border">
+                                <table className="w-full min-w-[1100px] text-sm">
+                                    <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                                         <tr>
-                                            <th className="p-3">Account</th>
-                                            <th className="p-3">Cost Center</th>
-                                            <th className="p-3">Debit</th>
-                                            <th className="p-3">Credit</th>
-                                            <th className="p-3">Description</th>
-                                            <th className="w-12 p-3"></th>
+                                            <th className="w-10 p-3">#</th>
+                                            <th className="min-w-72 p-3">Account</th>
+                                            <th className="w-52 p-3">Cost center</th>
+                                            <th className="w-36 p-3 text-right">Debit</th>
+                                            <th className="w-36 p-3 text-right">Credit</th>
+                                            <th className="min-w-48 p-3">Note</th>
+                                            <th className="w-24 p-3"></th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        {form.data.lines.map((line, index) => (
+                                    <tbody ref={rowsRef}>
+                                        {lines.map((line, index) => (
                                             <tr
                                                 key={index}
-                                                className="border-t"
+                                                className={`border-t align-top ${badLines.includes(index) ? 'bg-destructive/5' : ''}`}
                                             >
-                                                <td className="p-3">
-                                                    <SearchableSelect
-                                                        value={
-                                                            line.chart_of_account_id
-                                                        }
+                                                <td className="p-2 pt-4 text-center text-xs text-muted-foreground">
+                                                    {index + 1}
+                                                </td>
+                                                <td className="p-2">
+                                                    <Dropdown
+                                                        aria-label="Account"
+                                                        value={line.chart_of_account_id}
                                                         options={accountOptions}
-                                                        placeholder="Search account"
-                                                        onChange={(value) =>
-                                                            setLine(
-                                                                index,
-                                                                'chart_of_account_id',
-                                                                value,
-                                                            )
+                                                        search
+                                                        placeholder="Choose an account"
+                                                        onChange={(event) =>
+                                                            setLine(index, {
+                                                                chart_of_account_id: event.target.value,
+                                                            })
                                                         }
                                                     />
                                                     <InputError
-                                                        message={
-                                                            errors[
-                                                                `lines.${index}.chart_of_account_id`
-                                                            ]
-                                                        }
+                                                        message={errors[`lines.${index}.chart_of_account_id`]}
                                                     />
                                                 </td>
-                                                <td className="p-3">
-                                                    <SearchableSelect
-                                                        value={
-                                                            line.cost_center_id
-                                                        }
-                                                        options={
-                                                            costCenterOptions
-                                                        }
-                                                        placeholder="Search cost center"
-                                                        onChange={(value) =>
-                                                            setLine(
-                                                                index,
-                                                                'cost_center_id',
-                                                                value,
-                                                            )
+                                                <td className="p-2">
+                                                    <Dropdown
+                                                        aria-label="Cost center"
+                                                        value={line.cost_center_id}
+                                                        options={costCenterOptions}
+                                                        onChange={(event) =>
+                                                            setLine(index, {
+                                                                cost_center_id: event.target.value,
+                                                            })
                                                         }
                                                     />
                                                     <InputError
-                                                        message={
-                                                            errors[
-                                                                `lines.${index}.cost_center_id`
-                                                            ]
-                                                        }
+                                                        message={errors[`lines.${index}.cost_center_id`]}
                                                     />
                                                 </td>
-                                                <td className="p-3">
+                                                <td className="p-2">
                                                     <Input
-                                                        type="number"
-                                                        step="0.01"
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        autoComplete="off"
+                                                        aria-label="Debit"
+                                                        placeholder="0.00"
+                                                        className="text-right tabular-nums"
                                                         value={line.debit}
+                                                        onFocus={(event) => event.target.select()}
                                                         onChange={(event) =>
-                                                            setLine(
-                                                                index,
-                                                                'debit',
-                                                                event.target
-                                                                    .value,
-                                                            )
+                                                            setAmount(index, 'debit', event.target.value)
+                                                        }
+                                                        onBlur={() =>
+                                                            setLine(index, { debit: money(line.debit) })
                                                         }
                                                     />
-                                                    <InputError
-                                                        message={
-                                                            errors[
-                                                                `lines.${index}.debit`
-                                                            ]
-                                                        }
-                                                    />
+                                                    <InputError message={errors[`lines.${index}.debit`]} />
                                                 </td>
-                                                <td className="p-3">
+                                                <td className="p-2">
                                                     <Input
-                                                        type="number"
-                                                        step="0.01"
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        autoComplete="off"
+                                                        aria-label="Credit"
+                                                        placeholder="0.00"
+                                                        className="text-right tabular-nums"
                                                         value={line.credit}
+                                                        onFocus={(event) => event.target.select()}
                                                         onChange={(event) =>
-                                                            setLine(
-                                                                index,
-                                                                'credit',
-                                                                event.target
-                                                                    .value,
-                                                            )
+                                                            setAmount(index, 'credit', event.target.value)
+                                                        }
+                                                        onBlur={() =>
+                                                            setLine(index, { credit: money(line.credit) })
                                                         }
                                                     />
-                                                    <InputError
-                                                        message={
-                                                            errors[
-                                                                `lines.${index}.credit`
-                                                            ]
-                                                        }
-                                                    />
+                                                    <InputError message={errors[`lines.${index}.credit`]} />
                                                 </td>
-                                                <td className="p-3">
+                                                <td className="p-2">
                                                     <Input
+                                                        aria-label="Note"
+                                                        placeholder="Optional"
                                                         value={line.description}
                                                         onChange={(event) =>
-                                                            setLine(
-                                                                index,
-                                                                'description',
-                                                                event.target
-                                                                    .value,
-                                                            )
+                                                            setLine(index, { description: event.target.value })
                                                         }
+                                                        onKeyDown={(event) => {
+                                                            if (event.key === 'Enter') {
+                                                                event.preventDefault();
+
+                                                                if (index === lines.length - 1) {
+                                                                    addLine();
+                                                                }
+                                                            }
+                                                        }}
                                                     />
-                                                    <InputError
-                                                        message={
-                                                            errors[
-                                                                `lines.${index}.description`
-                                                            ]
-                                                        }
-                                                    />
+                                                    <InputError message={errors[`lines.${index}.description`]} />
                                                 </td>
-                                                <td className="p-3">
+                                                <td className="whitespace-nowrap p-2 text-right">
+                                                    {Math.abs(diff) >= 0.005 ? (
+                                                        <Button
+                                                            type="button"
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            title="Put the amount that balances the entry on this line"
+                                                            onClick={() => balanceTo(index)}
+                                                        >
+                                                            <Scale className="size-4" />
+                                                        </Button>
+                                                    ) : null}
                                                     <Button
                                                         type="button"
                                                         size="icon"
                                                         variant="ghost"
-                                                        onClick={() =>
-                                                            removeLine(index)
-                                                        }
-                                                        disabled={
-                                                            form.data.lines
-                                                                .length <= 2
-                                                        }
+                                                        title="Remove line"
+                                                        onClick={() => removeLine(index)}
+                                                        disabled={lines.length <= 2}
                                                     >
                                                         <Trash2 className="size-4" />
                                                     </Button>
@@ -657,51 +746,62 @@ export default function JournalEntryForm({
                                             </tr>
                                         ))}
                                     </tbody>
+                                    <tfoot className="border-t bg-muted/50 font-semibold">
+                                        <tr>
+                                            <td colSpan={3} className="p-3 text-right">
+                                                Totals
+                                            </td>
+                                            <td className="p-3 text-right tabular-nums">{fmt(totalDebit)}</td>
+                                            <td className="p-3 text-right tabular-nums">{fmt(totalCredit)}</td>
+                                            <td colSpan={2}></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
-                            </div>
-
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={addLine}
-                                >
-                                    <Plus className="size-4" />
-                                    Add line
-                                </Button>
-                                <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-                                    <Checkbox
-                                        id="auto_post"
-                                        checked={form.data.auto_post}
-                                        onCheckedChange={(checked) =>
-                                            form.setData(
-                                                'auto_post',
-                                                checked === true,
-                                            )
-                                        }
-                                    />
-                                    <Label htmlFor="auto_post">
-                                        Post after saving
-                                    </Label>
-                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <div className="flex gap-2">
-                        <Button type="submit" disabled={form.processing}>
-                            <Save className="size-4" />
-                            {method === 'put'
-                                ? 'Update journal'
-                                : 'Save journal'}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => form.reset()}
-                        >
-                            Reset
-                        </Button>
+                    <div className="sticky bottom-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background px-4 py-3 shadow-lg">
+                        <div className="flex flex-wrap items-center gap-3">
+                            {balanced ? (
+                                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                    ● Balanced — ready to save
+                                </span>
+                            ) : (
+                                <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-800 dark:bg-rose-500/15 dark:text-rose-300">
+                                    ●{' '}
+                                    {totalDebit === 0 && totalCredit === 0
+                                        ? 'Enter the amounts'
+                                        : `Out of balance by ${fmt(Math.abs(diff))} (${diff > 0 ? 'credit' : 'debit'} short)`}
+                                </span>
+                            )}
+                            <span className="text-xs text-muted-foreground">Ctrl + S saves</span>
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="auto_post"
+                                    checked={form.data.auto_post}
+                                    onCheckedChange={(checked) =>
+                                        form.setData('auto_post', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="auto_post" className="text-sm font-normal">
+                                    Post after saving
+                                </Label>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button asChild variant="outline" type="button">
+                                <Link href="/accounting/journal-entries">Cancel</Link>
+                            </Button>
+                            <Button type="submit" disabled={form.processing || !balanced}>
+                                <Save className="size-4" />
+                                {form.processing
+                                    ? 'Saving…'
+                                    : method === 'put'
+                                      ? 'Update journal'
+                                      : 'Save journal'}
+                            </Button>
+                        </div>
                     </div>
                 </form>
             </div>

@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Edit, Eye, Filter, Plus, X } from 'lucide-react';
+import { Edit, Filter, Plus, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { SearchableSelect } from '@/components/accounting/searchable-select';
@@ -10,13 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     useAccounting,
     playErrorSound,
@@ -34,7 +27,31 @@ type Entry = {
     reference: string | null;
     description: string | null;
     status: string;
+    approval_status?: string | null;
+    total_debit?: string | number | null;
+    lines_count?: number;
+    currency?: { id: number; code: string } | null;
 };
+
+const statusStyle: Record<string, string> = {
+    draft: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+    posted: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
+    void: 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300',
+    pending: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
+    approved: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
+    rejected: 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300',
+};
+
+function StatusPill({ status, label }: { status: string; label?: string }) {
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${statusStyle[status] ?? 'bg-muted text-muted-foreground'}`}
+        >
+            <span className="size-1.5 rounded-full bg-current" />
+            {label ?? status.charAt(0).toUpperCase() + status.slice(1)}
+        </span>
+    );
+}
 
 type Props = {
     entries: {
@@ -295,7 +312,7 @@ export default function JournalEntriesIndex({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Status</Label>
-                                        <Select
+                                        <Dropdown
                                             value={filterForm.data.status}
                                             onValueChange={(value) =>
                                                 filterForm.setData(
@@ -304,24 +321,22 @@ export default function JournalEntriesIndex({
                                                 )
                                             }
                                         >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
+                                            
+                                            
+                                                <option value="all">
                                                     All
-                                                </SelectItem>
-                                                <SelectItem value="draft">
+                                                </option>
+                                                <option value="draft">
                                                     Draft
-                                                </SelectItem>
-                                                <SelectItem value="posted">
+                                                </option>
+                                                <option value="posted">
                                                     Posted
-                                                </SelectItem>
-                                                <SelectItem value="void">
+                                                </option>
+                                                <option value="void">
                                                     Void
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                                </option>
+                                            
+                                        </Dropdown>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Currency</Label>
@@ -397,82 +412,103 @@ export default function JournalEntriesIndex({
                         </CardContent>
                     </Card>
                 ) : null}
-                <div className="overflow-hidden rounded-lg border">
-                    <table className="w-full min-w-[760px] text-sm">
-                        <thead className="bg-muted/50 text-left">
+                <div className="overflow-x-auto rounded-lg border">
+                    <table className="w-full min-w-[860px] text-sm">
+                        <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                             <tr>
                                 <th className="p-3">Voucher</th>
                                 <th className="p-3">Date</th>
-                                <th className="p-3">Reference</th>
-                                <th className="p-3">Description</th>
+                                <th className="p-3">Reference / description</th>
+                                {branches.length > 0 ? <th className="p-3">Branch</th> : null}
+                                <th className="p-3 text-right">Amount</th>
                                 <th className="p-3">Status</th>
-                                <th className="p-3 text-right">Actions</th>
+                                <th className="p-3 text-right"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {entries.data.map((entry) => (
-                                <tr key={entry.id} className="border-t">
+                                <tr key={entry.id} className="border-t hover:bg-muted/40">
                                     <td className="p-3 whitespace-nowrap">
-                                        {entry.voucher_number ? (
-                                            <span className="font-mono">
-                                                {entry.voucher_number}
-                                            </span>
-                                        ) : (
-                                            <span className="text-muted-foreground">
-                                                {entry.voucher_type?.code ??
-                                                    'JV'}{' '}
-                                                draft #{entry.id}
-                                            </span>
-                                        )}
+                                        <Link
+                                            href={`/accounting/journal-entries/${entry.id}`}
+                                            className={`font-mono ${entry.voucher_number ? 'font-semibold text-primary hover:underline' : 'text-muted-foreground hover:underline'}`}
+                                        >
+                                            {entry.voucher_number ??
+                                                `${entry.voucher_type?.code ?? 'JV'} draft #${entry.id}`}
+                                        </Link>
                                     </td>
                                     <td className="p-3 whitespace-nowrap">
                                         {entry.entry_date.slice(0, 10)}
-                                        {entry.branch ? (
-                                            <div className="text-xs text-muted-foreground">
-                                                {entry.branch.code}
-                                            </div>
+                                    </td>
+                                    <td className="max-w-md p-3">
+                                        <div className="truncate font-medium">
+                                            {entry.reference || entry.description}
+                                        </div>
+                                        <div className="truncate text-xs text-muted-foreground">
+                                            {entry.reference && entry.description
+                                                ? `${entry.description} · `
+                                                : ''}
+                                            {entry.source_document_number ? (
+                                                <span className="font-mono">
+                                                    {entry.source_document_number}
+                                                    {' · '}
+                                                </span>
+                                            ) : null}
+                                            {entry.lines_count !== undefined
+                                                ? `${entry.lines_count} ${entry.lines_count === 1 ? 'line' : 'lines'}`
+                                                : null}
+                                        </div>
+                                    </td>
+                                    {branches.length > 0 ? (
+                                        <td className="p-3">
+                                            {entry.branch ? (
+                                                <span
+                                                    title={entry.branch.name}
+                                                    className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                                                >
+                                                    {entry.branch.code}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground">—</span>
+                                            )}
+                                        </td>
+                                    ) : null}
+                                    <td className="whitespace-nowrap p-3 text-right tabular-nums">
+                                        {entry.total_debit !== undefined && entry.total_debit !== null
+                                            ? Number(entry.total_debit).toLocaleString('en-US', {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2,
+                                              })
+                                            : ''}{' '}
+                                        <span className="text-xs text-muted-foreground">
+                                            {entry.currency?.code}
+                                        </span>
+                                    </td>
+                                    <td className="whitespace-nowrap p-3">
+                                        <StatusPill status={entry.status} />{' '}
+                                        {entry.approval_status ? (
+                                            <StatusPill
+                                                status={entry.approval_status}
+                                                label={
+                                                    entry.approval_status === 'pending'
+                                                        ? 'Awaiting approval'
+                                                        : undefined
+                                                }
+                                            />
                                         ) : null}
                                     </td>
                                     <td className="p-3">
-                                        {entry.reference}
-                                        {entry.source_document_number ? (
-                                            <div className="font-mono text-xs text-muted-foreground">
-                                                {entry.source_document_number}
-                                            </div>
-                                        ) : null}
-                                    </td>
-                                    <td className="p-3">{entry.description}</td>
-                                    <td className="p-3">{entry.status}</td>
-                                    <td className="p-3">
-                                        <div className="flex justify-end gap-2">
-                                            {permissions[
-                                                'journal-entries.update'
-                                            ] === true &&
+                                        <div className="flex justify-end gap-1">
+                                            {permissions['journal-entries.update'] === true &&
                                                 entry.status === 'draft' && (
-                                                    <Button
-                                                        asChild
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        title="Edit"
-                                                    >
-                                                        <Link
-                                                            href={`/accounting/journal-entries/${entry.id}/edit`}
-                                                        >
+                                                    <Button asChild size="icon" variant="ghost" title="Edit">
+                                                        <Link href={`/accounting/journal-entries/${entry.id}/edit`}>
                                                             <Edit className="size-4" />
                                                         </Link>
                                                     </Button>
                                                 )}
-                                            <Button
-                                                asChild
-                                                size="icon"
-                                                variant="ghost"
-                                                title="View"
-                                            >
-                                                <Link
-                                                    href={`/accounting/journal-entries/${entry.id}`}
-                                                >
-                                                    <Eye className="size-4" />
-                                                </Link>
+                                            <Button asChild size="sm" variant="outline" title="Open">
+                                                <Link href={`/accounting/journal-entries/${entry.id}`}>Open</Link>
                                             </Button>
                                         </div>
                                     </td>

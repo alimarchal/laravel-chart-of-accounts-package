@@ -614,6 +614,26 @@ tick the permissions a role has; give a user extra permissions on the user's own
 
 ---
 
+## Screens, design and dropdowns
+
+All three front ends (React/Inertia, Blade with Livewire, the REST API) share the same screens; the Blade screens run inside the layout of your starter kit (Livewire/Flux, Jetstream, Breeze) and follow its light/dark mode.
+
+| Livewire (Flux) | Livewire 4 |
+|---|---|
+| ![Journal form, Livewire Flux](docs/images/ui-lwflux-journal-form-filled.jpg) | ![Journal form, Livewire 4](docs/images/ui-lw4-journal-form-filled.jpg) |
+| **Jetstream** | **React** |
+| ![Journal form, Jetstream](docs/images/ui-jetstream-journal-form-filled.jpg) | ![Journal form, React](docs/images/ui-react-journal-form-filled.jpg) |
+
+- **Every dropdown is searchable.** Blade screens use Select2 (add `class="no-select2"` to a `<select>` to keep it native); React screens use `components/accounting/dropdown.tsx`, which takes the same `<option>` children and `onChange` as a native `<select>`. An `<option data-code="1101" data-name="Cash" data-tag="Asset">` is drawn as number + name + type.
+- **The journal entry form** lists every account (number and name) as soon as the dropdown opens; type a number or part of a name to narrow it. Debit and credit are typed once, a line's *balance* button fills in what is missing, the bar at the bottom shows *Balanced* or the difference, **Ctrl + S** saves.
+- **Filters**: the *Filters* button shows how many are active, the panel opens by itself when a filter is applied, and what is filtered is shown as chips with *Clear all*.
+
+| Journal entries, filters open | Account dropdown with search |
+|---|---|
+| ![Journal entries](docs/images/ui-lwflux-journal-index.jpg) | ![Account dropdown](docs/images/ui-lwflux-journal-form-accounts.jpg) |
+
+The look lives in one file, `resources/views/accounting/components/ui-styles.blade.php` (CSS variables such as `--acc-accent`, scoped to `.acc-kit`); publish the views (`php artisan vendor:publish --tag=accounting-views`) and change the variables to match your brand.
+
 ## Dashboard
 
 `/accounting/overview` (and `GET /api/v1/accounting/dashboard?as_of=&months=`) shows what an accountant opens the system for:

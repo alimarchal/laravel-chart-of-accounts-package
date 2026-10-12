@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Dropdown } from '@/components/accounting/dropdown';
 import { Save } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
@@ -15,13 +16,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 
 type Field = {
     name: string;
@@ -143,7 +137,7 @@ export default function AccountingResourceForm({
                                                 className="flex flex-col gap-2"
                                             >
                                                 <Label>{field.label}</Label>
-                                                <Select
+                                                <Dropdown
                                                     value={String(
                                                         form.data[field.name] ??
                                                             '',
@@ -155,12 +149,8 @@ export default function AccountingResourceForm({
                                                         )
                                                     }
                                                 >
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue
-                                                            placeholder={`Select ${field.label.toLowerCase()}`}
-                                                        />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
+                                                    
+                                                    
                                                         {Object.entries(
                                                             field.options ?? {},
                                                         ).map(
@@ -168,18 +158,18 @@ export default function AccountingResourceForm({
                                                                 value,
                                                                 label,
                                                             ]) => (
-                                                                <SelectItem
+                                                                <option
                                                                     key={value}
                                                                     value={
                                                                         value
                                                                     }
                                                                 >
                                                                     {label}
-                                                                </SelectItem>
+                                                                </option>
                                                             ),
                                                         )}
-                                                    </SelectContent>
-                                                </Select>
+                                                    
+                                                </Dropdown>
                                                 <InputError message={error} />
                                             </div>
                                         );

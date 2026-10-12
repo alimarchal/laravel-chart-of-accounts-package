@@ -45,6 +45,8 @@ type Props = {
     onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
     onValueChange?: (value: string) => void;
     children?: ReactNode;
+    /** Ready-made options (memoise them): skips reading <option> children, which matters for long lists such as the chart of accounts. */
+    options?: DropdownOption[];
     placeholder?: string;
     disabled?: boolean;
     required?: boolean;
@@ -141,6 +143,7 @@ export function Dropdown({
     onChange,
     onValueChange,
     children,
+    options: given,
     placeholder = 'Select…',
     disabled = false,
     required = false,
@@ -171,7 +174,7 @@ export function Dropdown({
 
     const controlled = value !== undefined;
     const current = String(controlled ? (value ?? '') : inner);
-    const options = useMemo(() => parseOptions(children), [children]);
+    const options = useMemo(() => given ?? parseOptions(children), [given, children]);
     const first = options[0];
     const emptyIsPlaceholder =
         !!first &&
