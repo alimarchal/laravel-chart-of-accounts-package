@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type LeaveRow = { id: number; employee_code: string; employee_name: string; leave_type: string; is_paid: boolean; from_date: string; to_date: string; days: string; status: string; notes: string | null };
 type LeaveType = { id: number; code: string; name: string; is_paid: boolean; annual_days: string; is_active: boolean };
@@ -40,8 +41,8 @@ export default function PayrollLeaves({ leaves, types, employees, balances, year
                     <form onSubmit={addLeave}><Card>
                         <CardHeader><CardTitle>Record leave</CardTitle></CardHeader>
                         <CardContent className="grid gap-4 md:grid-cols-4">
-                            <div className="space-y-1"><Label>Employee</Label><select className={selectClass} value={leave.data.employee_id} onChange={(event) => leave.setData('employee_id', event.target.value)}><option value="">Choose…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</select><InputError message={leave.errors.employee_id} /></div>
-                            <div className="space-y-1"><Label>Leave type</Label><select className={selectClass} value={leave.data.leave_type_id} onChange={(event) => leave.setData('leave_type_id', event.target.value)}><option value="">Choose…</option>{types.filter((row) => row.is_active).map((row) => (<option key={row.id} value={row.id}>{row.name}{row.is_paid ? '' : ' (unpaid)'}</option>))}</select><InputError message={leave.errors.leave_type_id} /></div>
+                            <div className="space-y-1"><Label>Employee</Label><Dropdown className={selectClass} value={leave.data.employee_id} onChange={(event) => leave.setData('employee_id', event.target.value)}><option value="">Choose…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</Dropdown><InputError message={leave.errors.employee_id} /></div>
+                            <div className="space-y-1"><Label>Leave type</Label><Dropdown className={selectClass} value={leave.data.leave_type_id} onChange={(event) => leave.setData('leave_type_id', event.target.value)}><option value="">Choose…</option>{types.filter((row) => row.is_active).map((row) => (<option key={row.id} value={row.id}>{row.name}{row.is_paid ? '' : ' (unpaid)'}</option>))}</Dropdown><InputError message={leave.errors.leave_type_id} /></div>
                             <div className="space-y-1"><Label>From</Label><Input type="date" value={leave.data.from_date} onChange={(event) => leave.setData('from_date', event.target.value)} /><InputError message={leave.errors.from_date} /></div>
                             <div className="space-y-1"><Label>To</Label><Input type="date" value={leave.data.to_date} onChange={(event) => leave.setData('to_date', event.target.value)} /><InputError message={leave.errors.to_date} /></div>
                             <div className="space-y-1"><Label>Days (blank = all the dates; 0.5 = half day)</Label><Input type="number" step="0.5" value={leave.data.days} onChange={(event) => leave.setData('days', event.target.value)} /><InputError message={leave.errors.days} /></div>

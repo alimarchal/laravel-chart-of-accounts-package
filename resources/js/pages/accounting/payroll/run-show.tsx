@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen, confirmIf } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Slip = { id: number; employee_code: string; employee_name: string; basic: string; gross: string; deductions: string; tax: string; net: string; days_paid: string; days_in_month: string };
 type Props = {
@@ -63,9 +64,9 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                         <CardHeader><CardTitle>Pay salaries</CardTitle></CardHeader>
                         <CardContent className="flex flex-wrap items-end gap-3">
                             <div className="w-72 space-y-1"><Label htmlFor="account_id">Paid from</Label>
-                                <select id="account_id" className={selectClass} value={pay.data.account_id} onChange={(event) => pay.setData('account_id', event.target.value)}>
+                                <Dropdown id="account_id" className={selectClass} value={pay.data.account_id} onChange={(event) => pay.setData('account_id', event.target.value)}>
                                     <option value="">Choose bank or cash…</option>{accounts.filter((account) => account.type === 'ASSET').map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}
-                                </select></div>
+                                </Dropdown></div>
                             <div className="space-y-1"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={pay.data.date} onChange={(event) => pay.setData('date', event.target.value)} /></div>
                             <Button disabled={!pay.data.account_id} onClick={() => pay.post(`${base}/pay`)}>Pay {money(run.net)}</Button>
                         </CardContent>

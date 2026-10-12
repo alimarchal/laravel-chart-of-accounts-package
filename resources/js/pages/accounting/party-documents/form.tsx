@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Line = { chart_of_account_id: string; description: string; cost_center_id: string; quantity: string; unit_price: string; tax_code_id: string };
 type Props = {
@@ -109,14 +110,14 @@ export default function PartyDocumentForm({ document, kind, parties, accounts, c
                     <CardContent className="grid gap-4 md:grid-cols-4">
                         <div className="grid gap-2 md:col-span-2">
                             <Label htmlFor="party_id">{kind === 'invoice' || kind === 'credit_note' ? 'Customer' : 'Supplier'}</Label>
-                            <select id="party_id" className={selectClass} value={form.data.party_id} onChange={(event) => form.setData('party_id', event.target.value)}>
+                            <Dropdown id="party_id" className={selectClass} value={form.data.party_id} onChange={(event) => form.setData('party_id', event.target.value)}>
                                 <option value="">Select</option>
                                 {parties.map((party) => (
                                     <option key={party.id} value={party.id}>
                                         {party.code} - {party.name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.party_id} />
                         </div>
                         <div className="grid gap-2">
@@ -148,38 +149,38 @@ export default function PartyDocumentForm({ document, kind, parties, accounts, c
                         {form.data.lines.map((line, index) => (
                             <div key={index} className="grid gap-2 rounded-md border p-3">
                                 <div className="grid gap-2 md:grid-cols-[2fr_2fr_1fr_1fr_1.4fr_auto] md:items-center">
-                                    <select className={selectClass} value={line.chart_of_account_id} onChange={(event) => setLine(index, { chart_of_account_id: event.target.value })} aria-label="Account">
+                                    <Dropdown className={selectClass} value={line.chart_of_account_id} onChange={(event) => setLine(index, { chart_of_account_id: event.target.value })} aria-label="Account">
                                         <option value="">Account</option>
                                         {accounts.map((account) => (
                                             <option key={account.id} value={account.id}>
                                                 {account.account_code} - {account.account_name}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Dropdown>
                                     <Input placeholder="Description" value={line.description} onChange={(event) => setLine(index, { description: event.target.value })} aria-label="Description" />
                                     <Input type="number" step="any" min="0" placeholder="Qty" value={line.quantity} onChange={(event) => setLine(index, { quantity: event.target.value })} aria-label="Quantity" />
                                     <Input type="number" step="any" min="0" placeholder="Price" value={line.unit_price} onChange={(event) => setLine(index, { unit_price: event.target.value })} aria-label="Unit price" />
-                                    <select className={selectClass} value={line.tax_code_id} onChange={(event) => setLine(index, { tax_code_id: event.target.value })} aria-label="Tax code">
+                                    <Dropdown className={selectClass} value={line.tax_code_id} onChange={(event) => setLine(index, { tax_code_id: event.target.value })} aria-label="Tax code">
                                         <option value="">No tax</option>
                                         {taxCodes.map((code) => (
                                             <option key={code.id} value={code.id}>
                                                 {code.code} {code.rate === null ? '' : `(${Number(code.rate)}%)`}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Dropdown>
                                     <Button type="button" size="icon" variant="ghost" title="Remove" onClick={() => form.data.lines.length > 1 && form.setData('lines', form.data.lines.filter((_, position) => position !== index))}>
                                         <Trash2 className="size-4" />
                                     </Button>
                                 </div>
                                 {costCenters.length > 0 ? (
-                                    <select className={`${selectClass} md:w-64`} value={line.cost_center_id} onChange={(event) => setLine(index, { cost_center_id: event.target.value })} aria-label="Cost center">
+                                    <Dropdown className={`${selectClass} md:w-64`} value={line.cost_center_id} onChange={(event) => setLine(index, { cost_center_id: event.target.value })} aria-label="Cost center">
                                         <option value="">No cost center</option>
                                         {costCenters.map((center) => (
                                             <option key={center.id} value={center.id}>
                                                 {center.code} - {center.name}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Dropdown>
                                 ) : null}
                                 <InputError message={errors[`lines.${index}.chart_of_account_id`] ?? errors[`lines.${index}.unit_price`]} />
                             </div>

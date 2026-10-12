@@ -21,7 +21,7 @@ class JournalEntryBladeController extends Controller
 {
     public function index(): View
     {
-        $entries = QueryBuilder::for(CurrentBranch::constrain(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name', 'branch:id,code,name'])->withCount('lines'), 'accounting_journal_entries.branch_id'), request())
+        $entries = QueryBuilder::for(CurrentBranch::constrain(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name', 'branch:id,code,name'])->withCount('lines')->withSum('lines as total_debit', 'debit'), 'accounting_journal_entries.branch_id'), request())
             ->allowedFilters(
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('voucher_number'),

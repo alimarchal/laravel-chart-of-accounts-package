@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type ControlAccount = {
     id: number;
@@ -280,7 +281,7 @@ export default function ControlAccounts({
                         </div>
                         <div className="flex flex-col gap-1">
                             <Label htmlFor="control_type">Controls</Label>
-                            <select
+                            <Dropdown
                                 id="control_type"
                                 className="h-9 rounded-md border bg-transparent px-3 text-sm"
                                 value={form.data.control_type}
@@ -297,7 +298,7 @@ export default function ControlAccounts({
                                         {label}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.control_type} />
                         </div>
                         <Button

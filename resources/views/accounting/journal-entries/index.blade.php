@@ -1,60 +1,71 @@
 <x-accounting::app-layout>
     <x-slot name="header">
-        <x-accounting::page-header title="Journal Entries" :createRoute="route('accounting.journal-entries.create')" createLabel="New Entry" createPermission="journal-entries.create" backRoute="accounting.dashboard" />
+        <x-accounting::page-header title="Journal Entries" subtitle="Every posting in the books: drafts, posted vouchers and reversals." :createRoute="route('accounting.journal-entries.create')" createLabel="New entry" createPermission="journal-entries.create" backRoute="accounting.dashboard" />
     </x-slot>
     <x-accounting::filter-section :action="route('accounting.journal-entries.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div><x-accounting::label for="filter_voucher_number" value="Voucher No." /><x-accounting::input id="filter_voucher_number" name="filter[voucher_number]" type="text" class="mt-1 block w-full" placeholder="JV-2026-00012" :value="request('filter.voucher_number')" /></div>
-            <div><x-accounting::label for="filter_source_document_number" value="Document No." /><x-accounting::input id="filter_source_document_number" name="filter[source_document_number]" type="text" class="mt-1 block w-full" placeholder="BILL-778" :value="request('filter.source_document_number')" /></div>
-            <div><x-accounting::label for="filter_reference" value="Reference" /><x-accounting::input id="filter_reference" name="filter[reference]" type="text" class="mt-1 block w-full" :value="request('filter.reference')" /></div>
-            <div><x-accounting::label for="filter_status" value="Status" />
-                <select id="filter_status" name="filter[status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All</option>
-                    <option value="draft" {{ request('filter.status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="posted" {{ request('filter.status') === 'posted' ? 'selected' : '' }}>Posted</option>
-                    <option value="void" {{ request('filter.status') === 'void' ? 'selected' : '' }}>Void</option>
+        <div class="acc-grid">
+            <div class="acc-field"><x-accounting::label for="filter_voucher_number" value="Voucher no." /><x-accounting::input id="filter_voucher_number" name="filter[voucher_number]" type="text" placeholder="JV-2026-00012" :value="request('filter.voucher_number')" /></div>
+            <div class="acc-field"><x-accounting::label for="filter_source_document_number" value="Document no." /><x-accounting::input id="filter_source_document_number" name="filter[source_document_number]" type="text" placeholder="BILL-778" :value="request('filter.source_document_number')" /></div>
+            <div class="acc-field"><x-accounting::label for="filter_reference" value="Reference" /><x-accounting::input id="filter_reference" name="filter[reference]" type="text" :value="request('filter.reference')" /></div>
+            <div class="acc-field"><x-accounting::label for="filter_status" value="Status" />
+                <select id="filter_status" name="filter[status]" class="acc-select">
+                    <option value="">All statuses</option>
+                    <option value="draft" @selected(request('filter.status') === 'draft')>Draft</option>
+                    <option value="posted" @selected(request('filter.status') === 'posted')>Posted</option>
+                    <option value="void" @selected(request('filter.status') === 'void')>Void</option>
                 </select>
             </div>
             @if(!empty($branches))
-            <div><x-accounting::label for="filter_branch_id" value="Branch" />
-                <select id="filter_branch_id" name="filter[branch_id]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All</option>
-                    @foreach($branches as $branch)<option value="{{ $branch['id'] }}" {{ (string) request('filter.branch_id') === (string) $branch['id'] ? 'selected' : '' }}>{{ $branch['code'] }} - {{ $branch['name'] }}</option>@endforeach
+            <div class="acc-field"><x-accounting::label for="filter_branch_id" value="Branch" />
+                <select id="filter_branch_id" name="filter[branch_id]" class="acc-select">
+                    <option value="">All branches</option>
+                    @foreach($branches as $branch)<option value="{{ $branch['id'] }}" @selected((string) request('filter.branch_id') === (string) $branch['id'])>{{ $branch['code'] }} - {{ $branch['name'] }}</option>@endforeach
                 </select>
             </div>
             @endif
-            <div><x-accounting::label for="filter_approval_status" value="Approval" />
-                <select id="filter_approval_status" name="filter[approval_status]" class="select2 border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All</option>
-                    <option value="pending" {{ request('filter.approval_status') === 'pending' ? 'selected' : '' }}>Awaiting approval</option>
-                    <option value="approved" {{ request('filter.approval_status') === 'approved' ? 'selected' : '' }}>Approved</option>
-                    <option value="rejected" {{ request('filter.approval_status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+            <div class="acc-field"><x-accounting::label for="filter_approval_status" value="Approval" />
+                <select id="filter_approval_status" name="filter[approval_status]" class="acc-select">
+                    <option value="">Any approval state</option>
+                    <option value="pending" @selected(request('filter.approval_status') === 'pending')>Awaiting approval</option>
+                    <option value="approved" @selected(request('filter.approval_status') === 'approved')>Approved</option>
+                    <option value="rejected" @selected(request('filter.approval_status') === 'rejected')>Rejected</option>
                 </select>
             </div>
-            <div><x-accounting::label for="filter_date_from" value="Date From" /><x-accounting::input id="filter_date_from" name="filter[entry_date_from]" type="date" class="mt-1 block w-full" :value="request('filter.entry_date_from')" /></div>
-            <div><x-accounting::label for="filter_date_to" value="Date To" /><x-accounting::input id="filter_date_to" name="filter[entry_date_to]" type="date" class="mt-1 block w-full" :value="request('filter.entry_date_to')" /></div>
+            <div class="acc-field"><x-accounting::label for="filter_date_from" value="Date from" /><x-accounting::input id="filter_date_from" name="filter[entry_date_from]" type="date" :value="request('filter.entry_date_from')" /></div>
+            <div class="acc-field"><x-accounting::label for="filter_date_to" value="Date to" /><x-accounting::input id="filter_date_to" name="filter[entry_date_to]" type="date" :value="request('filter.entry_date_to')" /></div>
         </div>
     </x-accounting::filter-section>
+    @php($showBranch = \Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch::enabled())
     <x-accounting::data-table :items="$journalEntries"
-        :headers="[['label'=>'#','align'=>'text-center'],['label'=>'Voucher'],['label'=>'Date'],['label'=>'Reference'],['label'=>'Description'],['label'=>'Status','align'=>'text-center'],['label'=>'Lines','align'=>'text-center'],['label'=>'Actions','align'=>'text-center']]"
-        emptyMessage="No journal entries found." :emptyRoute="route('accounting.journal-entries.create')" emptyLinkText="Create one">
-        @foreach ($journalEntries as $i => $je)
-        <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
-            <td class="py-1 px-2 text-center">{{ $journalEntries->firstItem() + $i }}</td>
-            <td class="py-1 px-2 whitespace-nowrap">@if ($je->voucher_number)<span class="font-mono">{{ $je->voucher_number }}</span>@else<span class="text-gray-500">{{ $je->voucherType?->code ?? 'JV' }} draft #{{ $je->id }}</span>@endif</td>
-            <td class="py-1 px-2">{{ $je->entry_date->format('Y-m-d') }}</td>
-            <td class="py-1 px-2 font-mono">{{ $je->reference }}@if ($je->source_document_number)<div class="text-xs text-gray-500">{{ $je->source_document_number }}</div>@endif</td>
-            <td class="py-1 px-2">{{ Str::limit($je->description, 50) }}</td>
-            <td class="py-1 px-2 text-center">
-                <span @class(['px-2 py-0.5 rounded text-xs font-medium', 'bg-yellow-100 text-yellow-800' => $je->status === 'draft', 'bg-green-100 text-green-800' => $je->status === 'posted', 'bg-red-100 text-red-700' => $je->status === 'void'])>{{ ucfirst($je->status) }}</span>
+        :headers="array_values(array_filter([['label'=>'Voucher'],['label'=>'Date'],['label'=>'Reference / description'],$showBranch ? ['label'=>'Branch'] : null,['label'=>'Amount','align'=>'text-right'],['label'=>'Status'],['label'=>'','align'=>'text-right']]))"
+        emptyMessage="No journal entries found." :emptyRoute="route('accounting.journal-entries.create')" emptyLinkText="Create the first one">
+        @foreach ($journalEntries as $je)
+        <tr>
+            <td class="whitespace-nowrap">
+                <a href="{{ route('accounting.journal-entries.show', $je) }}" style="text-decoration:none">
+                @if ($je->voucher_number)<span class="acc-mono" style="font-weight:650;color:var(--acc-accent)">{{ $je->voucher_number }}</span>@else<span class="acc-mono acc-muted">{{ $je->voucherType?->code ?? 'JV' }} draft #{{ $je->id }}</span>@endif
+                </a>
+            </td>
+            <td class="whitespace-nowrap">{{ $je->entry_date->format('d M Y') }}</td>
+            <td style="max-width:26rem">
+                <div style="font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $je->reference ?: Str::limit($je->description, 60) }}</div>
+                <div class="acc-muted" style="font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                    @if ($je->reference && $je->description){{ Str::limit($je->description, 70) }}@endif
+                    @if ($je->source_document_number)<span class="acc-mono">{{ $je->source_document_number }}</span>@endif
+                    · {{ $je->lines_count }} {{ \Illuminate\Support\Str::plural('line', $je->lines_count) }}
+                </div>
+            </td>
+            @if($showBranch)
+            <td>@if($je->branch)<span class="acc-badge acc-badge--accent" title="{{ $je->branch->name }}">{{ $je->branch->code }}</span>@else<span class="acc-muted">—</span>@endif</td>
+            @endif
+            <td class="num" style="text-align:right;white-space:nowrap">{{ number_format((float) $je->total_debit, 2) }} <span class="acc-muted" style="font-size:.74rem">{{ $je->currency?->code }}</span></td>
+            <td class="whitespace-nowrap">
+                <span @class(['acc-badge', 'acc-badge--warn' => $je->status === 'draft', 'acc-badge--ok' => $je->status === 'posted', 'acc-badge--bad' => $je->status === 'void'])>{{ ucfirst($je->status) }}</span>
                 @if ($je->approval_status)
-                    <span @class(['ml-1 px-2 py-0.5 rounded text-xs font-medium', 'bg-indigo-100 text-indigo-800' => $je->approval_status === 'pending', 'bg-emerald-100 text-emerald-800' => $je->approval_status === 'approved', 'bg-rose-100 text-rose-800' => $je->approval_status === 'rejected'])>{{ $je->approval_status === 'pending' ? 'Awaiting approval' : ucfirst($je->approval_status) }}</span>
+                    <span @class(['acc-badge', 'acc-badge--info' => $je->approval_status === 'pending', 'acc-badge--ok' => $je->approval_status === 'approved', 'acc-badge--bad' => $je->approval_status === 'rejected'])>{{ $je->approval_status === 'pending' ? 'Awaiting approval' : ucfirst($je->approval_status) }}</span>
                 @endif
             </td>
-            <td class="py-1 px-2 text-center">{{ $je->lines_count }}</td>
-            <td class="py-1 px-2 text-center">
-                <a href="{{ route('accounting.journal-entries.show', $je) }}" class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:bg-blue-100 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></a>
-            </td>
+            <td style="text-align:right"><a href="{{ route('accounting.journal-entries.show', $je) }}" class="acc-btn acc-btn--sm">Open</a></td>
         </tr>
         @endforeach
     </x-accounting::data-table>

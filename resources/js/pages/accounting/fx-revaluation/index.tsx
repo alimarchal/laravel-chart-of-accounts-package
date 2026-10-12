@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Row = {
     chart_of_account_id: number;
@@ -248,7 +249,7 @@ export default function FxRevaluation({
                                 <form onSubmit={submit} className="grid gap-4 md:grid-cols-4">
                                     <div className="grid gap-2 md:col-span-2">
                                         <Label htmlFor="gain_loss_account_id">Unrealised gain/loss account</Label>
-                                        <select
+                                        <Dropdown
                                             id="gain_loss_account_id"
                                             className={selectClass}
                                             value={post.data.gain_loss_account_id}
@@ -260,7 +261,7 @@ export default function FxRevaluation({
                                                     {account.account_code} - {account.account_name}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </Dropdown>
                                         <InputError message={post.errors.gain_loss_account_id} />
                                     </div>
                                     <div className="grid gap-2 md:col-span-2">
@@ -325,7 +326,7 @@ export default function FxRevaluation({
                             <form onSubmit={saveRate} className="grid gap-4 md:grid-cols-5">
                                 <div className="grid gap-2">
                                     <Label htmlFor="rate_currency">Currency</Label>
-                                    <select
+                                    <Dropdown
                                         id="rate_currency"
                                         className={selectClass}
                                         value={rateForm.data.currency_id}
@@ -336,7 +337,7 @@ export default function FxRevaluation({
                                                 {currency.code}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Dropdown>
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="rate_date">Date</Label>

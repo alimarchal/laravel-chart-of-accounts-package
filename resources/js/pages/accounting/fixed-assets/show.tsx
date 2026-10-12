@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Account = { id: number; account_code: string; account_name: string; type: string };
 type Asset = {
@@ -74,13 +75,13 @@ export default function FixedAssetShow({ asset, history, accounts, today }: Prop
                                 <div className="space-y-1"><Label htmlFor="disposal_date">Date</Label><Input id="disposal_date" type="date" value={form.data.disposal_date} onChange={(event) => form.setData('disposal_date', event.target.value)} /><InputError message={form.errors.disposal_date} /></div>
                                 <div className="space-y-1"><Label htmlFor="proceeds">Proceeds (blank when scrapped)</Label><Input id="proceeds" type="number" step="any" value={form.data.proceeds} onChange={(event) => form.setData('proceeds', event.target.value)} /><InputError message={form.errors.proceeds} /></div>
                                 <div className="space-y-1"><Label htmlFor="proceeds_account_id">Proceeds received in</Label>
-                                    <select id="proceeds_account_id" className={selectClass} value={form.data.proceeds_account_id} onChange={(event) => form.setData('proceeds_account_id', event.target.value)}>
+                                    <Dropdown id="proceeds_account_id" className={selectClass} value={form.data.proceeds_account_id} onChange={(event) => form.setData('proceeds_account_id', event.target.value)}>
                                         <option value="">—</option>{accounts.filter((account) => account.type === 'ASSET').map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}
-                                    </select><InputError message={form.errors.proceeds_account_id} /></div>
+                                    </Dropdown><InputError message={form.errors.proceeds_account_id} /></div>
                                 <div className="space-y-1"><Label htmlFor="gain_loss_account_id">Gain / loss account</Label>
-                                    <select id="gain_loss_account_id" className={selectClass} value={form.data.gain_loss_account_id} onChange={(event) => form.setData('gain_loss_account_id', event.target.value)}>
+                                    <Dropdown id="gain_loss_account_id" className={selectClass} value={form.data.gain_loss_account_id} onChange={(event) => form.setData('gain_loss_account_id', event.target.value)}>
                                         <option value="">Choose…</option>{accounts.filter((account) => ['INCOME', 'EXPENSE'].includes(account.type)).map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}
-                                    </select><InputError message={form.errors.gain_loss_account_id} /></div>
+                                    </Dropdown><InputError message={form.errors.gain_loss_account_id} /></div>
                                 <div className="space-y-1 md:col-span-2"><Label htmlFor="notes">Notes</Label><Input id="notes" value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} /></div>
                                 <div><Button type="submit" variant="destructive" disabled={form.processing}>Dispose</Button></div>
                             </CardContent>

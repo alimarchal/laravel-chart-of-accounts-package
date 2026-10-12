@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Dropdown } from '@/components/accounting/dropdown';
 import { Edit, Eye, Filter, Plus, Trash2, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -10,13 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     playErrorSound,
     playSuccessSound,
@@ -260,7 +254,7 @@ export default function AccountingResourceIndex({
                                                     }
                                                 />
                                             ) : field.type === 'checkbox' ? (
-                                                <Select
+                                                <Dropdown placeholder="All"
                                                     value={
                                                         filterForm.data[
                                                             field.name
@@ -275,21 +269,19 @@ export default function AccountingResourceIndex({
                                                         )
                                                     }
                                                 >
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="All" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="all">
+                                                    
+                                                    
+                                                        <option value="all">
                                                             All
-                                                        </SelectItem>
-                                                        <SelectItem value="1">
+                                                        </option>
+                                                        <option value="1">
                                                             Yes
-                                                        </SelectItem>
-                                                        <SelectItem value="0">
+                                                        </option>
+                                                        <option value="0">
                                                             No
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                        </option>
+                                                    
+                                                </Dropdown>
                                             ) : (
                                                 <Input
                                                     type={

@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { Building2 } from 'lucide-react';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 /**
  * Shows the company the accounting pages work in and, with multi-company enabled and more than one
@@ -27,7 +28,7 @@ export function CompanySwitcher({ className = '' }: { className?: string }) {
         <label className={`flex items-center gap-2 text-sm ${className}`}>
             <Building2 className="size-4 text-muted-foreground" />
             <span className="sr-only">Company</span>
-            <select
+            <Dropdown
                 aria-label="Company"
                 className="h-9 rounded-md border bg-transparent px-2 text-sm font-medium"
                 value={company.current.id}
@@ -42,7 +43,7 @@ export function CompanySwitcher({ className = '' }: { className?: string }) {
                         {item.name} ({item.code})
                     </option>
                 ))}
-            </select>
+            </Dropdown>
         </label>
     );
 }

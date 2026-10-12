@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { GitBranch } from 'lucide-react';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 /**
  * The branch the accounting pages work in. With branches enabled it lets the user pick one branch (new entries are booked to it and lists
@@ -17,7 +18,7 @@ export function BranchSwitcher({ className = '' }: { className?: string }) {
         <label className={`flex items-center gap-2 text-sm ${className}`}>
             <GitBranch className="size-4 text-muted-foreground" />
             <span className="sr-only">Branch</span>
-            <select
+            <Dropdown
                 aria-label="Branch"
                 className="h-9 rounded-md border bg-transparent px-2 text-sm font-medium"
                 value={branch.current?.id ?? ''}
@@ -35,7 +36,7 @@ export function BranchSwitcher({ className = '' }: { className?: string }) {
                         {item.name} ({item.code})
                     </option>
                 ))}
-            </select>
+            </Dropdown>
         </label>
     );
 }

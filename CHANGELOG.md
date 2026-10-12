@@ -2,6 +2,20 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [Unreleased]
+
+A new look for the Blade/Livewire screens, a searchable dropdown everywhere, and a journal entry form that is quick to use.
+
+### Changed
+- **New design for the Blade and Livewire screens** (Livewire starter kits, Jetstream, Breeze): one stylesheet (`components/ui-styles`) for all kits, light and dark, written as plain CSS so the host's Tailwind does not have to compile it. The page header has labelled buttons (*Filters* with the number of active filters, *New entry*), the filter panel stays open while a dropdown is used and shows what is filtered as chips, tables have a quiet header, tabular numbers and status pills, alerts have icons, language/company/branch sit in one context bar. The older screens that still use utility classes get the same look.
+- **Select2 for every dropdown** of the Blade screens (filters, forms, the company/branch/language switchers): search for long lists, clear button, keyboard, styled for the kit; also for selects added later by Livewire or Alpine. Opt out with `class="no-select2"`. An option can carry `data-code` / `data-tag` to be drawn as number + name + type.
+- **Journal entry form** (Livewire/Blade): the lines are edited in the browser without a round trip per keystroke; every account is offered with its number the moment the dropdown opens (type the number or a part of the name), the base currency is chosen for you, a *balance* button puts the missing amount on a line, a new line starts with what is still missing, running totals and an *Out of balance by …* / *Balanced* bar stay in view, Ctrl+S saves, and problems are named line by line before anything is sent. The journal show and index screens were redone (amount, branch and approval columns, facts card, audit trail).
+- **React**: every native `<select>` (80 of them) and every Radix `Select` is now `components/accounting/dropdown.tsx`, a searchable dropdown with the same `<option>` children and `onChange` as a native select. The journal entry form got the same running totals, balance bar, balance button and checks; the index shows amount, branch and status pills.
+
+### Fixed
+- The Livewire journal form asked for an *Accounting period* that was never stored (the period is assigned when the entry is posted from its date); the field is gone and the show page says *Set when posted*.
+- A filter panel closed when a dropdown inside it was clicked, because the dropdown is drawn outside the panel.
+
 ## [2.38.0] - 2026-11-21
 
 Branches: one company, several places of business.

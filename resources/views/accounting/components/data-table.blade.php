@@ -6,46 +6,44 @@
     'emptyLinkText' => 'Add a new record',
 ])
 
-<div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+<div class="acc-wrap" style="margin-top:1rem;padding-bottom:4rem">
     <x-accounting::status-message />
-    <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-
+    <div class="acc-card">
         @if ($items->count() > 0)
-            <div class="relative overflow-x-auto rounded-lg">
-                <table class="min-w-max w-full table-auto text-sm">
+            <div class="acc-table-wrap">
+                <table class="acc-table">
                     <thead>
-                        <tr class="bg-green-800 text-white uppercase text-sm">
+                        <tr>
                             @foreach($headers as $header)
-                                <th class="py-2 px-2 {{ $header['align'] ?? 'text-left' }}">
-                                    {!! $header['label'] !!}
-                                </th>
+                                <th class="{{ $header['align'] ?? 'text-left' }}" style="{{ str_contains($header['align'] ?? '', 'right') ? 'text-align:right' : (str_contains($header['align'] ?? '', 'center') ? 'text-align:center' : 'text-align:left') }}">{!! $header['label'] !!}</th>
                             @endforeach
                         </tr>
                     </thead>
-                    <tbody class="text-black text-md leading-normal font-extrabold">
+                    <tbody>
                         {{ $slot }}
                     </tbody>
                     @if(isset($footer))
-                        <tfoot class="bg-gray-100 font-bold uppercase text-sm">
+                        <tfoot>
                             {{ $footer }}
                         </tfoot>
                     @endif
                 </table>
             </div>
             @if (method_exists($items, 'hasPages') && $items->hasPages())
-                <div class="px-2 py-2">
+                <div class="acc-pager">
                     {{ $items->links() }}
                 </div>
+            @elseif (method_exists($items, 'total'))
+                <div class="acc-pager acc-muted" style="font-size:.78rem">{{ trans_choice(':count record|:count records', $items->total()) }}</div>
             @endif
         @else
-            <p class="text-gray-700 text-center py-4">
-                {{ $emptyMessage }}
+            <div class="acc-empty">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.4"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.63 10.5a2.25 2.25 0 0 1-2.24 2.12H6.62a2.25 2.25 0 0 1-2.24-2.12L3.75 7.5m6 4.13h4.5M3.38 7.5h17.24c.62 0 1.13-.5 1.13-1.13v-1.5c0-.62-.5-1.12-1.13-1.12H3.38c-.62 0-1.13.5-1.13 1.12v1.5c0 .62.5 1.13 1.13 1.13z"/></svg>
+                <div>{{ $emptyMessage }}</div>
                 @if($emptyRoute)
-                    <a href="{{ $emptyRoute }}" class="text-blue-600 hover:underline">
-                        {{ $emptyLinkText }}
-                    </a>.
+                    <div style="margin-top:.4rem"><a href="{{ $emptyRoute }}">{{ $emptyLinkText }} →</a></div>
                 @endif
-            </p>
+            </div>
         @endif
     </div>
 </div>

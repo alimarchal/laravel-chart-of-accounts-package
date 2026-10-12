@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Check = { key: string; env: string; set: boolean; needed: boolean; what: string };
 type Status = { enabled: boolean; mode: string; api_version: string; checks: Check[]; ready: boolean; webhook_url: string | null; default_country_code: string };
@@ -80,9 +81,9 @@ export default function WhatsAppIndex({ messages, whatsapp, templates, filters }
                                 </div>
                                 {kind === 'template' ? (
                                     <>
-                                        <select className={selectClass} value={template} onChange={(event) => { setTemplate(event.target.value); setValues({}); }} aria-label="Template">
+                                        <Dropdown className={selectClass} value={template} onChange={(event) => { setTemplate(event.target.value); setValues({}); }} aria-label="Template">
                                             {templates.map((item) => <option key={item.key} value={item.key}>{item.key} ({item.language})</option>)}
-                                        </select>
+                                        </Dropdown>
                                         {chosen?.example && <p className="rounded-md bg-muted p-2 text-xs text-muted-foreground">{chosen.example}</p>}
                                         {chosen?.parameters.map((name) => (
                                             <label key={name} className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">{name}

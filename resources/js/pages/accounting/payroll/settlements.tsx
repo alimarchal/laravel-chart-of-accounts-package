@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen, confirmIf } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Row = {
     id: number; employee_code: string; employee_name: string; leave_date: string; status: string; service_years: string; basic: string; gratuity: string; leave_days: string; leave_encashment: string;
@@ -43,7 +44,7 @@ export default function PayrollSettlements({ settlements, filters, preview, toda
                     <form onSubmit={submit}><Card>
                         <CardHeader><CardTitle>Work out a settlement</CardTitle></CardHeader>
                         <CardContent className="grid gap-4 md:grid-cols-4">
-                            <div className="space-y-1"><Label>Employee</Label><select className={selectClass} value={form.data.employee_id} onChange={(event) => form.setData('employee_id', event.target.value)}><option value="">Choose…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</select><InputError message={form.errors.employee_id} /></div>
+                            <div className="space-y-1"><Label>Employee</Label><Dropdown className={selectClass} value={form.data.employee_id} onChange={(event) => form.setData('employee_id', event.target.value)}><option value="">Choose…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</Dropdown><InputError message={form.errors.employee_id} /></div>
                             <div className="space-y-1"><Label>Last day</Label><Input type="date" value={form.data.leave_date} onChange={(event) => form.setData('leave_date', event.target.value)} /><InputError message={form.errors.leave_date} /></div>
                             <div className="space-y-1"><Label>Gratuity (blank = by the years served)</Label><Input type="number" step="any" value={form.data.gratuity} onChange={(event) => form.setData('gratuity', event.target.value)} /></div>
                             <div className="space-y-1"><Label>Leave days paid (blank = what is left)</Label><Input type="number" step="0.5" value={form.data.leave_days} onChange={(event) => form.setData('leave_days', event.target.value)} /></div>
@@ -78,7 +79,7 @@ export default function PayrollSettlements({ settlements, filters, preview, toda
                                 <td className="space-x-1 text-right">
                                     {row.status === 'draft' && permissions['payroll.post'] && <Button size="sm" variant="outline" onClick={() => act(row.id, 'post', {}, 'Post this settlement to the books?')}>Post</Button>}
                                     {row.status === 'draft' && permissions['payroll.manage'] && <Button size="sm" variant="ghost" onClick={() => confirmThen('Delete this draft?', () => router.delete(`/accounting/payroll/settlements/${row.id}`, { preserveScroll: true }))}>Delete</Button>}
-                                    {row.status === 'posted' && permissions['payroll.post'] && <><select className="h-8 w-48 rounded-md border border-input bg-background px-2 text-xs" value={account} onChange={(event) => setAccount(event.target.value)}><option value="">Paid from…</option>{accounts.map((a) => (<option key={a.id} value={a.id}>{a.account_code} {a.account_name}</option>))}</select><Button size="sm" disabled={!account} onClick={() => act(row.id, 'pay', { account_id: account })}>Pay</Button></>}
+                                    {row.status === 'posted' && permissions['payroll.post'] && <><Dropdown className="h-8 w-48 rounded-md border border-input bg-background px-2 text-xs" value={account} onChange={(event) => setAccount(event.target.value)}><option value="">Paid from…</option>{accounts.map((a) => (<option key={a.id} value={a.id}>{a.account_code} {a.account_name}</option>))}</Dropdown><Button size="sm" disabled={!account} onClick={() => act(row.id, 'pay', { account_id: account })}>Pay</Button></>}
                                     {['posted', 'paid'].includes(row.status) && permissions['payroll.void'] && <Button size="sm" variant="ghost" onClick={() => act(row.id, 'void', {}, 'Void this settlement? Its entries are reversed and the loans it recovered open again.')}>Void</Button>}
                                 </td>
                             </tr>

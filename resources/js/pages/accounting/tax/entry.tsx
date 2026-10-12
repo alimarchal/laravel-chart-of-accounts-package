@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Props = {
     taxCodes: Array<{ id: number; code: string; name: string; kind: string; rate: string | null }>;
@@ -96,13 +97,13 @@ export default function TaxEntry({ taxCodes, accounts, costCenters, types, today
                     <CardContent className="grid gap-4 md:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="type">Type</Label>
-                            <select id="type" className={selectClass} value={form.data.type} onChange={(event) => form.setData({ ...form.data, type: event.target.value, tax_code_id: '' })}>
+                            <Dropdown id="type" className={selectClass} value={form.data.type} onChange={(event) => form.setData({ ...form.data, type: event.target.value, tax_code_id: '' })}>
                                 {types.map((type) => (
                                     <option key={type.value} value={type.value}>
                                         {type.label}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.type} />
                         </div>
                         <div className="grid gap-2">
@@ -112,14 +113,14 @@ export default function TaxEntry({ taxCodes, accounts, costCenters, types, today
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="tax_code_id">Tax code</Label>
-                            <select id="tax_code_id" className={selectClass} value={form.data.tax_code_id} onChange={(event) => form.setData('tax_code_id', event.target.value)}>
+                            <Dropdown id="tax_code_id" className={selectClass} value={form.data.tax_code_id} onChange={(event) => form.setData('tax_code_id', event.target.value)}>
                                 <option value="">Select a {kindFor[form.data.type]} tax code</option>
                                 {codes.map((item) => (
                                     <option key={item.id} value={item.id}>
                                         {item.code} {item.rate === null ? '(no rate)' : `(${Number(item.rate)}%)`}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.tax_code_id} />
                         </div>
                         <div className="grid gap-2">
@@ -142,38 +143,38 @@ export default function TaxEntry({ taxCodes, accounts, costCenters, types, today
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="account_id">{accountText}</Label>
-                            <select id="account_id" className={selectClass} value={form.data.account_id} onChange={(event) => form.setData('account_id', event.target.value)}>
+                            <Dropdown id="account_id" className={selectClass} value={form.data.account_id} onChange={(event) => form.setData('account_id', event.target.value)}>
                                 <option value="">Select an account</option>
                                 {accounts.map((account) => (
                                     <option key={account.id} value={account.id}>
                                         {account.account_code} - {account.account_name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.account_id} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="counter_account_id">{counterText}</Label>
-                            <select id="counter_account_id" className={selectClass} value={form.data.counter_account_id} onChange={(event) => form.setData('counter_account_id', event.target.value)}>
+                            <Dropdown id="counter_account_id" className={selectClass} value={form.data.counter_account_id} onChange={(event) => form.setData('counter_account_id', event.target.value)}>
                                 <option value="">Select an account</option>
                                 {accounts.map((account) => (
                                     <option key={account.id} value={account.id}>
                                         {account.account_code} - {account.account_name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.counter_account_id} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="cost_center_id">Cost center</Label>
-                            <select id="cost_center_id" className={selectClass} value={form.data.cost_center_id} onChange={(event) => form.setData('cost_center_id', event.target.value)}>
+                            <Dropdown id="cost_center_id" className={selectClass} value={form.data.cost_center_id} onChange={(event) => form.setData('cost_center_id', event.target.value)}>
                                 <option value="">None</option>
                                 {costCenters.map((center) => (
                                     <option key={center.id} value={center.id}>
                                         {center.code} - {center.name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="reference">Document number</Label>

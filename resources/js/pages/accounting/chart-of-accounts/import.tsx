@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Dropdown } from '@/components/accounting/dropdown';
 import { CheckCircle2, Download, FileUp, Upload, XCircle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
@@ -9,13 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useAccounting } from '@/lib/accounting';
 
 type PreviewRow = {
@@ -166,7 +160,7 @@ export default function ChartOfAccountsImport({ preview, columns }: Props) {
                                 <Label htmlFor="mode">
                                     Existing account codes
                                 </Label>
-                                <Select
+                                <Dropdown
                                     value={form.data.mode}
                                     onValueChange={(value) =>
                                         form.setData(
@@ -175,18 +169,16 @@ export default function ChartOfAccountsImport({ preview, columns }: Props) {
                                         )
                                     }
                                 >
-                                    <SelectTrigger id="mode">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="upsert">
+                                    
+                                    
+                                        <option value="upsert">
                                             Update them
-                                        </SelectItem>
-                                        <SelectItem value="create">
+                                        </option>
+                                        <option value="create">
                                             Leave them unchanged
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                        </option>
+                                    
+                                </Dropdown>
                             </div>
                             <Button
                                 type="submit"

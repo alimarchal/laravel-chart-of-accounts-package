@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Dropdown } from '@/components/accounting/dropdown';
 import { Save } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { SearchableSelect } from '@/components/accounting/searchable-select';
@@ -16,13 +17,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 
 type Option = {
     id: number;
@@ -181,24 +175,22 @@ export default function ChartOfAccountForm({
 
                             <div className="flex flex-col gap-2">
                                 <Label>Normal Balance</Label>
-                                <Select
+                                <Dropdown placeholder="Select normal balance"
                                     value={form.data.normal_balance}
                                     onValueChange={(value) =>
                                         form.setData('normal_balance', value)
                                     }
                                 >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select normal balance" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="debit">
+                                    
+                                    
+                                        <option value="debit">
                                             Debit
-                                        </SelectItem>
-                                        <SelectItem value="credit">
+                                        </option>
+                                        <option value="credit">
                                             Credit
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                        </option>
+                                    
+                                </Dropdown>
                                 <InputError
                                     message={form.errors.normal_balance}
                                 />

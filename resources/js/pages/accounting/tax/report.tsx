@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Props = {
     report: {
@@ -79,14 +80,14 @@ export default function TaxReport({ report, detail, filters, taxCodes }: Props) 
                     </div>
                     <div className="grid gap-1">
                         <Label htmlFor="tax_code_id">Tax code</Label>
-                        <select id="tax_code_id" className={selectClass} value={range.tax_code_id} onChange={(event) => setRange({ ...range, tax_code_id: event.target.value })}>
+                        <Dropdown id="tax_code_id" className={selectClass} value={range.tax_code_id} onChange={(event) => setRange({ ...range, tax_code_id: event.target.value })}>
                             <option value="">All</option>
                             {taxCodes.map((code) => (
                                 <option key={code.id} value={code.id}>
                                     {code.code}
                                 </option>
                             ))}
-                        </select>
+                        </Dropdown>
                     </div>
                     <Button type="submit" variant="outline">Apply</Button>
                 </form>

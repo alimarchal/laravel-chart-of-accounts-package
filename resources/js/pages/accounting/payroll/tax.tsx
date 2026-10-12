@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Props = { tax_year: number; label: string; rows: Array<Record<string, string>>; employees: Array<{ id: number; code: string; name: string }> };
 
@@ -26,7 +27,7 @@ export default function PayrollTax({ tax_year, label, rows, employees }: Props) 
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="space-y-1"><Label htmlFor="year">Tax year starting in</Label><Input id="year" type="number" className="w-28" defaultValue={tax_year} onBlur={(event) => event.target.value && Number(event.target.value) !== tax_year && router.get('/accounting/payroll/tax', { year: event.target.value })} /></div>
                     <div className="space-y-1"><Label>Tax certificate of</Label>
-                        <select className={selectClass} value={employee} onChange={(event) => setEmployee(event.target.value)}><option value="">Choose an employee…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</select></div>
+                        <Dropdown className={selectClass} value={employee} onChange={(event) => setEmployee(event.target.value)}><option value="">Choose an employee…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</Dropdown></div>
                     <Button disabled={!employee} onClick={() => router.get(`/accounting/payroll/tax/certificate/${employee}`, { year: tax_year })}>Open certificate</Button>
                 </div>
                 <Card>

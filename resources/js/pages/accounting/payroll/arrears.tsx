@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Month = { month: string; paid: string; due: string; difference: string };
 type Row = { id: number; employee_code: string; employee_name: string; from_month: string; to_month: string; payment_month: string; amount: string; status: string; months: Month[] };
@@ -54,7 +55,7 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
                         <CardContent className="grid gap-4 md:grid-cols-4">
                             <div className="space-y-1"><Label htmlFor="from_month">First month covered</Label><Input id="from_month" type="date" value={form.data.from_month} onChange={(event) => form.setData('from_month', event.target.value)} /><InputError message={form.errors.from_month} /></div>
                             <div className="space-y-1"><Label htmlFor="payment_month">Paid with the payroll of</Label><Input id="payment_month" type="date" value={form.data.payment_month} onChange={(event) => form.setData('payment_month', event.target.value)} /><InputError message={form.errors.payment_month} /></div>
-                            <div className="space-y-1"><Label>Grade (when nobody is picked)</Label><select className={selectClass} value={form.data.salary_grade_id} onChange={(event) => form.setData('salary_grade_id', event.target.value)}><option value="">Every active employee</option>{grades.map((grade) => (<option key={grade.id} value={grade.id}>{grade.code} {grade.name}</option>))}</select></div>
+                            <div className="space-y-1"><Label>Grade (when nobody is picked)</Label><Dropdown className={selectClass} value={form.data.salary_grade_id} onChange={(event) => form.setData('salary_grade_id', event.target.value)}><option value="">Every active employee</option>{grades.map((grade) => (<option key={grade.id} value={grade.id}>{grade.code} {grade.name}</option>))}</Dropdown></div>
                             <div className="space-y-1"><Label htmlFor="notes">Notes</Label><Input id="notes" value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} /></div>
                             <details className="rounded-md border p-3 text-sm md:col-span-4">
                                 <summary className="cursor-pointer">Pick employees ({form.data.employee_ids.length} picked)</summary>

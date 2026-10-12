@@ -1,42 +1,24 @@
-@if (session('success'))
-<div {{ $attributes->merge(['class' => 'bg-green-100 border-l-4 border-green-500 text-green-700 p-4 max-w-7xl mx-auto
-    sm:px-6 lg:px-8 mb-2 shadow-xl']) }}
-    data-status-sound="success"
-    role="alert">
-    <p class="font-bold">Success</p>
-    <p>{{ session('success') }}</p>
-</div>
-@endif
-
-@if (session('error'))
-<div {{ $attributes->merge(['class' => 'max-w-7xl mx-auto sm:px-6 lg:px-8 bg-red-100 border-l-4 border-red-500
-    text-red-700 py-4 mx-6']) }}
-    data-status-sound="error"
-    role="alert">
-    <p class="font-bold">Error</p>
-    @if(is_array(session('error')))
-    <p>{{ session('error.message') }}</p>
-    <p class="text-xs text-gray-500 mt-2">{{ session('error.db') }}</p>
-    @else
-    <p>{{ session('error') }}</p>
+@php
+    $icons = [
+        'ok' => 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+        'bad' => 'M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.01',
+        'warn' => 'M12 9v3.75m-9.3 3.4c-.87 1.5.2 3.35 1.94 3.35h14.72c1.73 0 2.8-1.85 1.94-3.35L13.94 4.5c-.87-1.5-3.01-1.5-3.88 0L2.7 16.15zM12 15.75h.01',
+        'info' => 'M11.25 11.25l.04-.02a.75.75 0 0 1 1.06.85l-.7 2.8a.75.75 0 0 0 1.06.85l.04-.02M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9-3.75h.01',
+    ];
+@endphp
+@foreach ([['success', 'ok', 'Success'], ['error', 'bad', 'Error'], ['warning', 'warn', 'Warning'], ['info', 'info', 'Information']] as [$key, $tone, $heading])
+    @if (session($key))
+        <div {{ $attributes->merge(['class' => 'acc-alert acc-alert--'.$tone]) }} style="margin-bottom:.75rem" data-status-sound="{{ $key }}" role="{{ $key === 'error' ? 'alert' : 'status' }}">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$tone] }}"/></svg>
+            <div>
+                <strong>{{ __($heading) }}</strong>
+                @if($key === 'error' && is_array(session('error')))
+                    <div>{{ session('error.message') }}</div>
+                    <div style="font-size:.74rem;opacity:.8;margin-top:.25rem">{{ session('error.db') }}</div>
+                @else
+                    <div>{{ session($key) }}</div>
+                @endif
+            </div>
+        </div>
     @endif
-</div>
-@endif
-
-@if (session('warning'))
-<div {{ $attributes->merge(['class' => 'bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mx-6']) }}
-    data-status-sound="warning"
-    role="alert">
-    <p class="font-bold">Warning</p>
-    <p>{{ session('warning') }}</p>
-</div>
-@endif
-
-@if (session('info'))
-<div {{ $attributes->merge(['class' => 'bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mx-6']) }}
-    data-status-sound="info"
-    role="alert">
-    <p class="font-bold">Information</p>
-    <p>{{ session('info') }}</p>
-</div>
-@endif
+@endforeach

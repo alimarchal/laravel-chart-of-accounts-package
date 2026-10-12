@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type VoucherType = {
     id: number;
@@ -162,7 +163,7 @@ function VoucherTypeForm({
                 </div>
                 <div className="flex flex-col gap-1">
                     <Label htmlFor="reset">Numbering restarts</Label>
-                    <select
+                    <Dropdown
                         id="reset"
                         disabled={locked}
                         className="h-9 rounded-md border bg-transparent px-3 text-sm"
@@ -176,7 +177,7 @@ function VoucherTypeForm({
                                 {resetLabels[reset] ?? reset}
                             </option>
                         ))}
-                    </select>
+                    </Dropdown>
                     <InputError message={form.errors.reset} />
                 </div>
                 <div className="flex flex-col gap-1 md:col-span-3">

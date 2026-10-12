@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 export type FilterField = {
     name: string;
@@ -50,7 +51,7 @@ export default function FilterBar({ path, fields, values, preserve = {} }: Props
                 <label key={field.name} className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
                     <span>{field.label}</span>
                     {field.type === 'select' ? (
-                        <select
+                        <Dropdown
                             className={selectClass}
                             value={state[field.name]}
                             onChange={(event) => setState({ ...state, [field.name]: event.target.value })}
@@ -62,7 +63,7 @@ export default function FilterBar({ path, fields, values, preserve = {} }: Props
                                     {label}
                                 </option>
                             ))}
-                        </select>
+                        </Dropdown>
                     ) : (
                         <Input
                             className={field.type === 'date' || field.type === 'number' ? 'w-36' : 'w-56'}

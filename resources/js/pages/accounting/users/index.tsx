@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type User = {
     id: number;
@@ -115,7 +116,7 @@ export default function Users({
                             setSearch({ ...search, email: event.target.value })
                         }
                     />
-                    <select
+                    <Dropdown
                         aria-label="Role"
                         className="h-9 rounded-md border bg-transparent px-3 text-sm"
                         value={search.role}
@@ -129,7 +130,7 @@ export default function Users({
                                 {role}
                             </option>
                         ))}
-                    </select>
+                    </Dropdown>
                     <Button type="submit" variant="outline">
                         <Search className="size-4" /> Search
                     </Button>

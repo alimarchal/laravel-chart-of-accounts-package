@@ -28,7 +28,7 @@ class JournalEntryController extends Controller
 {
     public function index(): Response
     {
-        $entries = QueryBuilder::for(CurrentBranch::constrain(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name', 'branch:id,code,name']), 'accounting_journal_entries.branch_id'), request())
+        $entries = QueryBuilder::for(CurrentBranch::constrain(JournalEntry::query()->with(['currency', 'accountingPeriod', 'voucherType:id,code,name', 'branch:id,code,name'])->withCount('lines')->withSum('lines as total_debit', 'debit'), 'accounting_journal_entries.branch_id'), request())
             ->allowedFilters(...[
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('voucher_number'),
@@ -71,8 +71,10 @@ class JournalEntryController extends Controller
             'accounts' => ChartOfAccount::query()
                 ->where('is_group', false)
                 ->where('is_active', true)
+                ->with('accountType:id,name')
                 ->orderBy('account_code')
-                ->get(['id', 'account_code', 'account_name']),
+                ->get(['id', 'account_code', 'account_name', 'account_type_id'])
+                ->map(fn (ChartOfAccount $account): array => ['id' => $account->id, 'account_code' => $account->account_code, 'account_name' => $account->account_name, 'type' => $account->accountType->name]),
             'currencies' => Currency::query()
                 ->where('is_active', true)
                 ->orderByDesc('is_base')
@@ -108,8 +110,10 @@ class JournalEntryController extends Controller
             'accounts' => ChartOfAccount::query()
                 ->where('is_group', false)
                 ->where('is_active', true)
+                ->with('accountType:id,name')
                 ->orderBy('account_code')
-                ->get(['id', 'account_code', 'account_name']),
+                ->get(['id', 'account_code', 'account_name', 'account_type_id'])
+                ->map(fn (ChartOfAccount $account): array => ['id' => $account->id, 'account_code' => $account->account_code, 'account_name' => $account->account_name, 'type' => $account->accountType->name]),
             'currencies' => Currency::query()
                 ->where('is_active', true)
                 ->orderByDesc('is_base')

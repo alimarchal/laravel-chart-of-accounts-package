@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Props = {
     kind: 'receipt' | 'payment';
@@ -80,14 +81,14 @@ export default function PartyPaymentForm({ kind, partyId, parties, bankAccounts,
                     <CardContent className="grid gap-4 md:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="party_id">{receipt ? 'Customer' : 'Supplier'}</Label>
-                            <select id="party_id" className={selectClass} value={form.data.party_id} onChange={(event) => form.setData({ ...form.data, party_id: event.target.value, allocations: {} })}>
+                            <Dropdown id="party_id" className={selectClass} value={form.data.party_id} onChange={(event) => form.setData({ ...form.data, party_id: event.target.value, allocations: {} })}>
                                 <option value="">Select</option>
                                 {parties.map((party) => (
                                     <option key={party.id} value={party.id}>
                                         {party.code} - {party.name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.party_id} />
                         </div>
                         <div className="grid gap-2">
@@ -102,14 +103,14 @@ export default function PartyPaymentForm({ kind, partyId, parties, bankAccounts,
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="account_id">{receipt ? 'Deposited to' : 'Paid from'}</Label>
-                            <select id="account_id" className={selectClass} value={form.data.account_id} onChange={(event) => form.setData('account_id', event.target.value)}>
+                            <Dropdown id="account_id" className={selectClass} value={form.data.account_id} onChange={(event) => form.setData('account_id', event.target.value)}>
                                 <option value="">Select a bank or cash account</option>
                                 {bankAccounts.map((account) => (
                                     <option key={account.id} value={account.id}>
                                         {account.account_code} - {account.account_name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.account_id} />
                         </div>
                         <div className="grid gap-2">

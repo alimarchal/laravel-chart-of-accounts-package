@@ -2,7 +2,6 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Livewire;
 
-use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
@@ -72,6 +71,8 @@ class JournalEntryForm extends Component
             $this->entry_date = now()->format('Y-m-d');
             $this->branch_id = CurrentBranch::defaultId();
             $this->voucher_type_id = VoucherType::query()->where('code', VoucherType::DEFAULT_CODE)->value('id');
+            // The base currency is what nearly every entry uses: start with it chosen. (The period is not asked for: posting files the entry under the period of its date.)
+            $this->currency_id = Currency::query()->where('is_active', true)->where('is_base', true)->value('id');
             $this->addLine();
             $this->addLine();
         }
@@ -105,15 +106,28 @@ class JournalEntryForm extends Component
         return collect($this->lines)->sum(fn ($l) => (float) ($l['credit'] ?? 0));
     }
 
-    public function save(JournalEntryService $service): void
+    /**
+     * @param  array<int, array<string, mixed>>|null  $lines  The lines as the browser holds them (the grid is edited without a round trip per keystroke); the component's own lines when not given.
+     */
+    public function save(JournalEntryService $service, ?array $lines = null): void
     {
         abort_unless(auth()->user()?->can($this->entryId ? 'journal-entries.update' : 'journal-entries.create'), 403);
+
+        if ($lines !== null) {
+            $this->lines = collect($lines)->map(fn ($line) => [
+                'chart_of_account_id' => ($line['chart_of_account_id'] ?? '') === '' ? null : (int) $line['chart_of_account_id'],
+                'cost_center_id' => ($line['cost_center_id'] ?? '') === '' ? null : (int) $line['cost_center_id'],
+                'debit' => (string) (($line['debit'] ?? '') === '' ? '0' : $line['debit']),
+                'credit' => (string) (($line['credit'] ?? '') === '' ? '0' : $line['credit']),
+                'description' => (string) ($line['description'] ?? ''),
+            ])->values()->all();
+        }
 
         $this->validate([
             'voucher_type_id' => ['nullable', CompanyRule::exists('accounting_voucher_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'entry_date' => ['required', 'date'],
             ...SourceDocuments::rules(),
-            'accounting_period_id' => ['required', CompanyRule::exists('accounting_periods', 'id')],
+            'accounting_period_id' => ['nullable', CompanyRule::exists('accounting_periods', 'id')],
             'currency_id' => ['required', 'exists:accounting_currencies,id'],
             'fx_rate_to_base' => ['required', 'numeric', 'min:0'],
             'lines' => ['required', 'array', 'min:2'],
@@ -164,10 +178,9 @@ class JournalEntryForm extends Component
     public function render(): View
     {
         return view('accounting::livewire.journal-entry-form', [
-            'periods' => AccountingPeriod::orderBy('start_date', 'desc')->get(),
             'currencies' => Currency::where('is_active', true)->orderBy('code')->get(),
-            'accounts' => ChartOfAccount::where('is_active', true)->where('is_group', false)->orderBy('account_code')->get(),
-            'costCenters' => CostCenter::where('is_active', true)->orderBy('name')->get(),
+            'accounts' => ChartOfAccount::where('is_active', true)->where('is_group', false)->with('accountType:id,name')->orderBy('account_code')->get(['id', 'account_code', 'account_name', 'account_type_id']),
+            'costCenters' => CostCenter::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'documentTypes' => SourceDocuments::types(),
             'branches' => CurrentBranch::options(),
             'voucherTypes' => VoucherType::query()->where('is_active', true)->orderByDesc('is_system')->orderBy('code')->get(['id', 'code', 'name']),

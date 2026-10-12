@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Account = { id: number; account_code: string; account_name: string; type: string };
 type Asset = {
@@ -42,10 +43,10 @@ export default function FixedAssetForm({ asset, accounts, methods, today }: Prop
     const accountSelect = (name: 'asset_account_id' | 'accumulated_account_id' | 'expense_account_id' | 'offset_account_id', label: string, types: string[] | null, disabled = false) => (
         <div className="space-y-1">
             <Label htmlFor={name}>{label}</Label>
-            <select id={name} className={selectClass} value={form.data[name]} disabled={disabled} onChange={(event) => form.setData(name, event.target.value)}>
+            <Dropdown id={name} className={selectClass} value={form.data[name]} disabled={disabled} onChange={(event) => form.setData(name, event.target.value)}>
                 <option value="">{name === 'offset_account_id' ? 'Do not book the purchase' : 'Choose…'}</option>
                 {accounts.filter((account) => types === null || types.includes(account.type)).map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}
-            </select>
+            </Dropdown>
             <InputError message={form.errors[name]} />
         </div>
     );
@@ -63,9 +64,9 @@ export default function FixedAssetForm({ asset, accounts, methods, today }: Prop
                         {field('cost', 'Cost', 'number', locked)}{field('salvage_value', 'Salvage value', 'number', locked)}{field('useful_life_months', 'Useful life (months)', 'number', locked)}
                         <div className="space-y-1">
                             <Label htmlFor="method">Method</Label>
-                            <select id="method" className={selectClass} value={form.data.method} disabled={locked} onChange={(event) => form.setData('method', event.target.value)}>
+                            <Dropdown id="method" className={selectClass} value={form.data.method} disabled={locked} onChange={(event) => form.setData('method', event.target.value)}>
                                 {Object.entries(methods).map(([key, label]) => (<option key={key} value={key}>{label}</option>))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.method} />
                         </div>
                         {form.data.method === 'declining_balance' && field('declining_rate', 'Annual rate % (blank = double the straight-line rate)', 'number', locked)}
