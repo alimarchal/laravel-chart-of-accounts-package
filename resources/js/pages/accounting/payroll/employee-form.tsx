@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Component = { id: number; code: string; name: string; kind: string; method: string; value: string; rate: string; unit: string | null };
 type Props = {
@@ -55,13 +56,13 @@ export default function PayrollEmployeeForm({ employee, components, schemes, gra
                         {field('code', 'Code')}{field('name', 'Name')}{field('national_id', 'National ID')}{field('email', 'E-mail (payslips are sent here)', 'email')}{field('designation', 'Designation')}{field('join_date', 'Joined', 'date')}{field('leave_date', 'Left (if so)', 'date')}
                         {field('base_salary', 'Monthly basic salary', 'number')}{field('bank_name', 'Bank')}{field('bank_account', 'Bank account')}
                         <div className="space-y-1"><Label htmlFor="cost_center_id">Cost center</Label>
-                            <select id="cost_center_id" className={selectClass} value={form.data.cost_center_id} onChange={(event) => form.setData('cost_center_id', event.target.value)}>
+                            <Dropdown id="cost_center_id" className={selectClass} value={form.data.cost_center_id} onChange={(event) => form.setData('cost_center_id', event.target.value)}>
                                 <option value="">None</option>{costCenters.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}
-                            </select></div>
+                            </Dropdown></div>
                         <div className="space-y-1"><Label htmlFor="salary_grade_id">Salary grade</Label>
-                            <select id="salary_grade_id" className={selectClass} value={form.data.salary_grade_id} onChange={(event) => form.setData('salary_grade_id', event.target.value)}>
+                            <Dropdown id="salary_grade_id" className={selectClass} value={form.data.salary_grade_id} onChange={(event) => form.setData('salary_grade_id', event.target.value)}>
                                 <option value="">None</option>{grades.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}
-                            </select><InputError message={form.errors.salary_grade_id} /></div>
+                            </Dropdown><InputError message={form.errors.salary_grade_id} /></div>
                         {employee && Number(form.data.base_salary) !== Number(employee.base_salary) && <>
                             <div className="space-y-1"><Label htmlFor="effective_from">New salary applies from</Label><Input id="effective_from" type="date" value={form.data.effective_from} onChange={(event) => form.setData('effective_from', event.target.value)} /><p className="text-xs text-muted-foreground">A past date is paid with arrears.</p></div>
                             <div className="space-y-1"><Label htmlFor="reason">Reason</Label><Input id="reason" value={form.data.reason} onChange={(event) => form.setData('reason', event.target.value)} /></div>

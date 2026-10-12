@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Line = {
     chart_of_account_id: string;
@@ -148,22 +149,22 @@ export default function BudgetForm({ budget, accounts, costCenters, today }: Pro
                         {form.data.lines.map((line, index) => (
                             <div key={index} className="grid gap-2 rounded-md border p-3">
                                 <div className="grid gap-2 md:grid-cols-[2fr_1.2fr_1fr_auto_auto] md:items-center">
-                                    <select className={selectClass} value={line.chart_of_account_id} onChange={(event) => setLine(index, { chart_of_account_id: event.target.value })} aria-label="Account">
+                                    <Dropdown className={selectClass} value={line.chart_of_account_id} onChange={(event) => setLine(index, { chart_of_account_id: event.target.value })} aria-label="Account">
                                         <option value="">Select an account</option>
                                         {accounts.map((account) => (
                                             <option key={account.id} value={account.id}>
                                                 {account.account_code} - {account.account_name} ({account.type.toLowerCase()})
                                             </option>
                                         ))}
-                                    </select>
-                                    <select className={selectClass} value={line.cost_center_id} onChange={(event) => setLine(index, { cost_center_id: event.target.value })} aria-label="Cost center">
+                                    </Dropdown>
+                                    <Dropdown className={selectClass} value={line.cost_center_id} onChange={(event) => setLine(index, { cost_center_id: event.target.value })} aria-label="Cost center">
                                         <option value="">No cost center</option>
                                         {costCenters.map((center) => (
                                             <option key={center.id} value={center.id}>
                                                 {center.code} - {center.name}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Dropdown>
                                     <Input
                                         type="number"
                                         step="0.01"

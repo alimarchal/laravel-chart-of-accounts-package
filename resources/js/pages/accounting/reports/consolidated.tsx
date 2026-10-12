@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Row = {
     account_code: string;
@@ -97,7 +98,7 @@ export default function ConsolidatedReport({
                 <div className="flex flex-wrap items-end gap-3 rounded-lg border p-4">
                     <div className="flex flex-col gap-1">
                         <Label htmlFor="report">Report</Label>
-                        <select
+                        <Dropdown
                             id="report"
                             className="h-9 rounded-md border bg-transparent px-3 text-sm"
                             value={form.report}
@@ -110,7 +111,7 @@ export default function ConsolidatedReport({
                                     {report.label}
                                 </option>
                             ))}
-                        </select>
+                        </Dropdown>
                     </div>
                     {form.report === 'balance-sheet' ? (
                         <div className="flex flex-col gap-1">

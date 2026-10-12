@@ -6,41 +6,6 @@
 @else
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @endif
-<style>
-    .select2 {
-        width: auto !important;
-        display: block;
-    }
-    .select2-container .select2-selection--single {
-        height: auto;
-        padding: 0.63rem 1rem;
-        margin-top: 0.25rem;
-        line-height: 1.25;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
-    .select2-container .select2-selection--single .select2-selection__rendered {
-        line-height: 1.25;
-        padding-left: 0;
-        padding-right: 0;
-    }
-    .select2-container .select2-selection--single {
-        height: auto;
-        right: 0.5rem;
-    }
-    .select2-selection__arrow { top: 8px !important; right: 10px !important; }
-    .select2-container .select2-selection--single .select2-selection__clear {
-        color: #dc2626 !important;
-        font-size: 1.25rem !important;
-        font-weight: 700 !important;
-        line-height: 1 !important;
-        height: auto !important;
-        margin-top: 0 !important;
-        padding: 0 !important;
-    }
-    .select2-container .select2-selection--single .select2-selection__clear:hover { color: #991b1b !important; }
-</style>
 @endpush
 
 @push('scripts')
@@ -51,20 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 @endif
-<script>
-$(document).ready(function() {
-    $('.select2').select2({ placeholder: 'Select an option', allowClear: true, width: '100%' });
-    $('label').on('click', function(e) {
-        var forId = $(this).attr('for');
-        if (forId) {
-            var $el = $('#' + forId);
-            if ($el.hasClass('select2') || $el.hasClass('select2-hidden-accessible')) {
-                e.preventDefault(); $el.select2('open');
-            }
-        }
-    });
-});
-</script>
+<x-accounting::select2-init />
 @endpush
 
 @php
@@ -83,11 +35,12 @@ $(document).ready(function() {
             @endif
         @endif
         <x-accounting::kit-theme :kit="$kit" />
+        <x-accounting::ui-styles />
         <x-accounting::feedback />
         <div class="acc-kit acc-kit-{{ $kit }}">
             @if($hostLayout !== 'app-layout' && isset($header))
                 {{-- The layout of a starter kit has no header slot: the page title and its buttons go above the content. --}}
-                <div class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">{{ $header }}</div>
+                <div class="acc-wrap" style="padding-top:1rem">{{ $header }}</div>
             @endif
             <x-accounting::company-bar />
             {{ $slot }}
@@ -116,47 +69,11 @@ $(document).ready(function() {
         @else
             <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         @endif
-        <style>
-            .select2 {
-                width: auto !important;
-                display: block;
-            }
-            .select2-container .select2-selection--single {
-                height: auto;
-                padding: 0.63rem 1rem;
-                margin-top: 0.25rem;
-                line-height: 1.25;
-                border: 1px solid #d1d5db;
-                border-radius: 0.375rem;
-                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            }
-            .select2-container .select2-selection--single .select2-selection__rendered {
-                line-height: 1.25;
-                padding-left: 0;
-                padding-right: 0;
-            }
-            .select2-container .select2-selection--single {
-                height: auto;
-                right: 0.5rem;
-            }
-            .select2-selection__arrow { top: 8px !important; right: 10px !important; }
-            .select2-container .select2-selection--single .select2-selection__clear {
-                color: #dc2626 !important;
-                font-size: 1.25rem !important;
-                font-weight: 700 !important;
-                line-height: 1 !important;
-                height: auto !important;
-                margin-top: 0 !important;
-                padding: 0 !important;
-            }
-            .select2-container .select2-selection--single .select2-selection__clear:hover { color: #991b1b !important; }
-        </style>
+        <x-accounting::ui-styles />
     </head>
-    <body class="font-sans antialiased bg-gray-100">
+    <body class="font-sans antialiased acc-kit acc-kit-plain" style="background:#f1f5f9;margin:0">
         @if(isset($header))
-        <header class="bg-white shadow mb-6">
-            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">{{ $header }}</div>
-        </header>
+        <header class="acc-wrap" style="padding-top:1.25rem;padding-bottom:.25rem">{{ $header }}</header>
         @endif
         <x-accounting::feedback />
         <main><x-accounting::company-bar />{{ $slot }}</main>
@@ -171,20 +88,7 @@ $(document).ready(function() {
             <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         @endif
-        <script>
-        $(document).ready(function() {
-            $('.select2').select2({ placeholder: 'Select an option', allowClear: true, width: '100%' });
-            $('label').on('click', function(e) {
-                var forId = $(this).attr('for');
-                if (forId) {
-                    var $el = $('#' + forId);
-                    if ($el.hasClass('select2') || $el.hasClass('select2-hidden-accessible')) {
-                        e.preventDefault(); $el.select2('open');
-                    }
-                }
-            });
-        });
-        </script>
+        <x-accounting::select2-init />
     </body>
     </html>
 @endif

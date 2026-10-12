@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Scheme = {
     id: number; code: string; name: string; base: string; employee_rate: string; employer_rate: string; employee_fixed: string; employer_fixed: string; ceiling: string | null;
@@ -35,7 +36,7 @@ export default function PayrollSchemes({ schemes, filters, editing, employees, a
     );
     const account = (key: 'employee_account_id' | 'employer_expense_account_id' | 'employer_liability_account_id', label: string, type: string) => (
         <div className="space-y-1"><Label htmlFor={key}>{label}</Label>
-            <select id={key} className={selectClass} value={form.data[key]} onChange={(event) => form.setData(key, event.target.value)}><option value="">Choose…</option>{accounts.filter((row) => row.type === type).map((row) => (<option key={row.id} value={row.id}>{row.account_code} {row.account_name}</option>))}</select>
+            <Dropdown id={key} className={selectClass} value={form.data[key]} onChange={(event) => form.setData(key, event.target.value)}><option value="">Choose…</option>{accounts.filter((row) => row.type === type).map((row) => (<option key={row.id} value={row.id}>{row.account_code} {row.account_name}</option>))}</Dropdown>
             <InputError message={form.errors[key]} /></div>
     );
     const rate = (scheme: Scheme, side: 'employee' | 'employer') => (scheme.base === 'fixed' ? Number(scheme[`${side}_fixed`]).toLocaleString() : `${Number(scheme[`${side}_rate`])}%`);
@@ -77,7 +78,7 @@ export default function PayrollSchemes({ schemes, filters, editing, employees, a
                         <CardHeader><CardTitle>{editing ? `Edit ${editing.code}` : 'Add a scheme'}</CardTitle></CardHeader>
                         <CardContent className="grid gap-4 md:grid-cols-4">
                             {field('code', 'Code')}{field('name', 'Name')}
-                            <div className="space-y-1"><Label htmlFor="base">Calculated on</Label><select id="base" className={selectClass} value={form.data.base} onChange={(event) => form.setData('base', event.target.value)}><option value="basic">Percent of basic</option><option value="gross">Percent of gross</option><option value="fixed">Fixed amount a month</option></select></div>
+                            <div className="space-y-1"><Label htmlFor="base">Calculated on</Label><Dropdown id="base" className={selectClass} value={form.data.base} onChange={(event) => form.setData('base', event.target.value)}><option value="basic">Percent of basic</option><option value="gross">Percent of gross</option><option value="fixed">Fixed amount a month</option></Dropdown></div>
                             {fixed ? <>{field('employee_fixed', 'Employee pays', 'number')}{field('employer_fixed', 'Employer pays', 'number')}</> : <>{field('employee_rate', 'Employee %', 'number')}{field('employer_rate', 'Employer %', 'number')}{field('ceiling', 'Ceiling (most of the base that counts)', 'number')}</>}
                             {account('employee_account_id', "Owed to (employees' share)", 'LIABILITY')}{account('employer_expense_account_id', "Employer's cost (expense)", 'EXPENSE')}{account('employer_liability_account_id', "Owed to (employer's share)", 'LIABILITY')}
                             <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.applies_to_all} onChange={(event) => form.setData('applies_to_all', event.target.checked)} /> Applies to every employee</label>
@@ -92,8 +93,8 @@ export default function PayrollSchemes({ schemes, filters, editing, employees, a
                         <CardHeader><CardTitle>Give a scheme to employees</CardTitle></CardHeader>
                         <CardContent className="space-y-3 text-sm">
                             <div className="flex flex-wrap items-end gap-3">
-                                <div className="w-64 space-y-1"><Label>Scheme</Label><select className={selectClass} value={assign.data.scheme} onChange={(event) => assign.setData('scheme', event.target.value)}><option value="">Choose…</option>{schemes.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</select></div>
-                                <div className="w-40 space-y-1"><Label>Action</Label><select className={selectClass} value={assign.data.mode} onChange={(event) => assign.setData('mode', event.target.value)}><option value="assign">Give it</option><option value="remove">Take it away</option></select></div>
+                                <div className="w-64 space-y-1"><Label>Scheme</Label><Dropdown className={selectClass} value={assign.data.scheme} onChange={(event) => assign.setData('scheme', event.target.value)}><option value="">Choose…</option>{schemes.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</Dropdown></div>
+                                <div className="w-40 space-y-1"><Label>Action</Label><Dropdown className={selectClass} value={assign.data.mode} onChange={(event) => assign.setData('mode', event.target.value)}><option value="assign">Give it</option><option value="remove">Take it away</option></Dropdown></div>
                                 <Button disabled={!assign.data.scheme} onClick={() => router.post(`/accounting/payroll/schemes/${assign.data.scheme}/assign`, { mode: assign.data.mode, employee_ids: assign.data.employee_ids }, { preserveScroll: true })}>Apply ({assign.data.employee_ids.length || 'every active employee'})</Button>
                             </div>
                             <details className="rounded-md border p-3"><summary className="cursor-pointer">Pick employees</summary>

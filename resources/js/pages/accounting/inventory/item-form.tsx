@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Props = {
     item: { id: number; sku: string; name: string; unit: string; category: string | null; reorder_level: string; inventory_account_id: number; cogs_account_id: number; is_active: boolean } | null;
@@ -32,9 +33,9 @@ export default function InventoryItemForm({ item, accounts, locked }: Props) {
     );
     const account = (name: 'inventory_account_id' | 'cogs_account_id', label: string, types: string[]) => (
         <div className="space-y-1"><Label htmlFor={name}>{label}</Label>
-            <select id={name} className={selectClass} disabled={locked} value={form.data[name]} onChange={(event) => form.setData(name, event.target.value)}>
+            <Dropdown id={name} className={selectClass} disabled={locked} value={form.data[name]} onChange={(event) => form.setData(name, event.target.value)}>
                 <option value="">Choose…</option>{accounts.filter((row) => types.includes(row.type)).map((row) => (<option key={row.id} value={row.id}>{row.account_code} {row.account_name}</option>))}
-            </select><InputError message={form.errors[name]} /></div>
+            </Dropdown><InputError message={form.errors[name]} /></div>
     );
 
     return (

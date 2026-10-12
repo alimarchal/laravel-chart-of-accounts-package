@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmIf } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Loan = {
     id: number; employee_code: string; employee_name: string; kind: string; principal: string; installments: number; start_month: string; issued_on: string | null; status: string; outstanding: string; notes: string | null;
@@ -28,7 +29,7 @@ export default function PayrollLoans({ loans, status, filters, employees, accoun
     const submit = (event: FormEvent) => { event.preventDefault(); form.post('/accounting/payroll/loans', { onSuccess: () => form.reset('principal', 'notes') }); };
     const act = (id: number, action: string, body: Record<string, string> = {}, confirmText?: string) => confirmIf(confirmText, () => router.post(`/accounting/payroll/loans/${id}/${action}`, body, { preserveScroll: true }));
     const bankSelect = (
-        <select className={`${selectClass} w-64`} value={account} onChange={(event) => setAccount(event.target.value)}><option value="">Bank or cash account…</option>{accounts.map((row) => (<option key={row.id} value={row.id}>{row.account_code} {row.account_name}</option>))}</select>
+        <Dropdown className={`${selectClass} w-64`} value={account} onChange={(event) => setAccount(event.target.value)}><option value="">Bank or cash account…</option>{accounts.map((row) => (<option key={row.id} value={row.id}>{row.account_code} {row.account_name}</option>))}</Dropdown>
     );
 
     return (
@@ -48,8 +49,8 @@ export default function PayrollLoans({ loans, status, filters, employees, accoun
                     <form onSubmit={submit}><Card>
                         <CardHeader><CardTitle>New loan or advance</CardTitle></CardHeader>
                         <CardContent className="grid gap-4 md:grid-cols-4">
-                            <div className="space-y-1"><Label>Employee</Label><select className={selectClass} value={form.data.employee_id} onChange={(event) => form.setData('employee_id', event.target.value)}><option value="">Choose…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</select><InputError message={form.errors.employee_id} /></div>
-                            <div className="space-y-1"><Label>Kind</Label><select className={selectClass} value={form.data.kind} onChange={(event) => form.setData('kind', event.target.value)}><option value="loan">Loan</option><option value="advance">Salary advance</option></select></div>
+                            <div className="space-y-1"><Label>Employee</Label><Dropdown className={selectClass} value={form.data.employee_id} onChange={(event) => form.setData('employee_id', event.target.value)}><option value="">Choose…</option>{employees.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</Dropdown><InputError message={form.errors.employee_id} /></div>
+                            <div className="space-y-1"><Label>Kind</Label><Dropdown className={selectClass} value={form.data.kind} onChange={(event) => form.setData('kind', event.target.value)}><option value="loan">Loan</option><option value="advance">Salary advance</option></Dropdown></div>
                             <div className="space-y-1"><Label>Amount</Label><Input type="number" step="any" value={form.data.principal} onChange={(event) => form.setData('principal', event.target.value)} /><InputError message={form.errors.principal} /></div>
                             <div className="space-y-1"><Label>Instalments</Label><Input type="number" min="1" value={form.data.installments} onChange={(event) => form.setData('installments', event.target.value)} /><InputError message={form.errors.installments} /></div>
                             <div className="space-y-1"><Label>First salary it comes out of</Label><Input type="date" value={form.data.start_month} onChange={(event) => form.setData('start_month', event.target.value)} /></div>

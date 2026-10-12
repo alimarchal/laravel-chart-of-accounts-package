@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Row = {
     account_id: number;
@@ -130,14 +131,14 @@ export default function BudgetShow({ budget, report, filters, costCenters }: Pro
                     </div>
                     <div className="grid gap-1">
                         <Label htmlFor="cost_center_id">Cost center</Label>
-                        <select id="cost_center_id" className={selectClass} value={range.cost_center_id} onChange={(event) => setRange({ ...range, cost_center_id: event.target.value })}>
+                        <Dropdown id="cost_center_id" className={selectClass} value={range.cost_center_id} onChange={(event) => setRange({ ...range, cost_center_id: event.target.value })}>
                             <option value="">All</option>
                             {costCenters.map((center) => (
                                 <option key={center.id} value={center.id}>
                                     {center.code} - {center.name}
                                 </option>
                             ))}
-                        </select>
+                        </Dropdown>
                     </div>
                     <Button type="submit" variant="outline">Apply</Button>
                 </form>

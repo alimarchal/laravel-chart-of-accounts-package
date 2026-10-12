@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Account = { id: number; account_code: string; account_name: string };
 type Props = {
@@ -86,11 +87,11 @@ export default function PartyForm({ party, receivableAccounts, payableAccounts }
                     <CardContent className="grid gap-4 md:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="type">Type</Label>
-                            <select id="type" className={selectClass} value={form.data.type} onChange={(event) => form.setData('type', event.target.value)}>
+                            <Dropdown id="type" className={selectClass} value={form.data.type} onChange={(event) => form.setData('type', event.target.value)}>
                                 <option value="customer">Customer</option>
                                 <option value="supplier">Supplier</option>
                                 <option value="both">Both</option>
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.type} />
                         </div>
                         {field('code', 'Code')}
@@ -106,26 +107,26 @@ export default function PartyForm({ party, receivableAccounts, payableAccounts }
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="receivable_account_id">Receivable account (optional)</Label>
-                            <select id="receivable_account_id" className={selectClass} value={form.data.receivable_account_id} onChange={(event) => form.setData('receivable_account_id', event.target.value)}>
+                            <Dropdown id="receivable_account_id" className={selectClass} value={form.data.receivable_account_id} onChange={(event) => form.setData('receivable_account_id', event.target.value)}>
                                 <option value="">Control account</option>
                                 {receivableAccounts.map((account) => (
                                     <option key={account.id} value={account.id}>
                                         {account.account_code} - {account.account_name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.receivable_account_id} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="payable_account_id">Payable account (optional)</Label>
-                            <select id="payable_account_id" className={selectClass} value={form.data.payable_account_id} onChange={(event) => form.setData('payable_account_id', event.target.value)}>
+                            <Dropdown id="payable_account_id" className={selectClass} value={form.data.payable_account_id} onChange={(event) => form.setData('payable_account_id', event.target.value)}>
                                 <option value="">Control account</option>
                                 {payableAccounts.map((account) => (
                                     <option key={account.id} value={account.id}>
                                         {account.account_code} - {account.account_name}
                                     </option>
                                 ))}
-                            </select>
+                            </Dropdown>
                             <InputError message={form.errors.payable_account_id} />
                         </div>
                         <label className="flex items-center gap-2 pt-7 text-sm">

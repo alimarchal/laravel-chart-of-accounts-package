@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Line = {
     id: number;
@@ -253,14 +254,14 @@ export default function BankStatementShow({ statement, lines, accounts }: Props)
                                                             Or book it to an account
                                                         </div>
                                                         <div className="flex gap-2">
-                                                            <select className={`${selectClass} flex-1`} value={account} onChange={(event) => setAccount(event.target.value)}>
+                                                            <Dropdown className={`${selectClass} flex-1`} value={account} onChange={(event) => setAccount(event.target.value)}>
                                                                 <option value="">Select an account</option>
                                                                 {accounts.map((item) => (
                                                                     <option key={item.id} value={item.id}>
                                                                         {item.account_code} - {item.account_name}
                                                                     </option>
                                                                 ))}
-                                                            </select>
+                                                            </Dropdown>
                                                             <Button
                                                                 disabled={account === ''}
                                                                 onClick={() => post(`/accounting/bank-statement-lines/${line.id}/create-entry`, { chart_of_account_id: account })}

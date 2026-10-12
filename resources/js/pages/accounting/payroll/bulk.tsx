@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Employee = { id: number; code: string; name: string; salary_grade_id: number | null; base_salary: string; is_active: boolean };
 type Props = {
@@ -30,7 +31,7 @@ function Who({ employees, grades, data, set, errors }: { employees: Employee[]; 
         <div className="space-y-2 md:col-span-4">
             <div className="grid gap-4 md:grid-cols-4">
                 <div className="space-y-1"><Label>Grade (when nobody is picked below)</Label>
-                    <select className={selectClass} value={data.salary_grade_id} onChange={(event) => set('salary_grade_id', event.target.value)}><option value="">Every active employee</option>{grades.map((grade) => (<option key={grade.id} value={grade.id}>{grade.code} {grade.name}</option>))}</select>
+                    <Dropdown className={selectClass} value={data.salary_grade_id} onChange={(event) => set('salary_grade_id', event.target.value)}><option value="">Every active employee</option>{grades.map((grade) => (<option key={grade.id} value={grade.id}>{grade.code} {grade.name}</option>))}</Dropdown>
                     <InputError message={errors.salary_grade_id} /></div>
             </div>
             <details className="rounded-md border p-3 text-sm">
@@ -68,8 +69,8 @@ export default function PayrollBulk({ employees, components, grades, preview, to
                         <form onSubmit={submitComponent}><Card>
                             <CardHeader><CardTitle>Give an allowance or deduction to many</CardTitle></CardHeader>
                             <CardContent className="grid gap-4 md:grid-cols-4">
-                                <div className="space-y-1"><Label>Component</Label><select className={selectClass} value={component.data.pay_component_id} onChange={(event) => component.setData('pay_component_id', event.target.value)}><option value="">Choose…</option>{components.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</select><InputError message={component.errors.pay_component_id} /></div>
-                                <div className="space-y-1"><Label>Action</Label><select className={selectClass} value={component.data.mode} onChange={(event) => component.setData('mode', event.target.value)}><option value="assign">Give it</option><option value="remove">Take it away</option></select></div>
+                                <div className="space-y-1"><Label>Component</Label><Dropdown className={selectClass} value={component.data.pay_component_id} onChange={(event) => component.setData('pay_component_id', event.target.value)}><option value="">Choose…</option>{components.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}</Dropdown><InputError message={component.errors.pay_component_id} /></div>
+                                <div className="space-y-1"><Label>Action</Label><Dropdown className={selectClass} value={component.data.mode} onChange={(event) => component.setData('mode', event.target.value)}><option value="assign">Give it</option><option value="remove">Take it away</option></Dropdown></div>
                                 <div className="space-y-1"><Label>Their own value (blank = the component's)</Label><Input type="number" step="any" value={component.data.value} onChange={(event) => component.setData('value', event.target.value)} /></div>
                                 <Who employees={employees} grades={grades} data={component.data} set={(key, value) => component.setData(key as 'salary_grade_id', value as never)} errors={component.errors} />
                                 <div><Button type="submit" disabled={component.processing}>Apply</Button></div>
@@ -78,7 +79,7 @@ export default function PayrollBulk({ employees, components, grades, preview, to
                         <form onSubmit={submitGrade}><Card>
                             <CardHeader><CardTitle>Put employees on a grade</CardTitle></CardHeader>
                             <CardContent className="grid gap-4 md:grid-cols-4">
-                                <div className="space-y-1"><Label>Grade</Label><select className={selectClass} value={grade.data.grade_id} onChange={(event) => grade.setData('grade_id', event.target.value)}><option value="">Choose…</option>{grades.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name} ({money(row.base_salary)})</option>))}</select></div>
+                                <div className="space-y-1"><Label>Grade</Label><Dropdown className={selectClass} value={grade.data.grade_id} onChange={(event) => grade.setData('grade_id', event.target.value)}><option value="">Choose…</option>{grades.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name} ({money(row.base_salary)})</option>))}</Dropdown></div>
                                 <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={grade.data.apply_salary} onChange={(event) => grade.setData('apply_salary', event.target.checked)} /> Also move their salary to the grade's</label>
                                 <div className="space-y-1"><Label>Salary applies from</Label><Input type="date" value={grade.data.effective_from} onChange={(event) => grade.setData('effective_from', event.target.value)} /></div>
                                 <Who employees={employees} grades={grades} data={grade.data} set={(key, value) => grade.setData(key as 'salary_grade_id', value as never)} errors={grade.errors} />
@@ -88,7 +89,7 @@ export default function PayrollBulk({ employees, components, grades, preview, to
                         <Card>
                             <CardHeader><CardTitle>Raise salaries</CardTitle></CardHeader>
                             <CardContent className="grid gap-4 md:grid-cols-4">
-                                <div className="space-y-1"><Label>How</Label><select className={selectClass} value={raise.data.mode} onChange={(event) => raise.setData('mode', event.target.value)}><option value="percent">Raise by a percent</option><option value="increase">Add an amount</option><option value="set">Set everybody to an amount</option></select></div>
+                                <div className="space-y-1"><Label>How</Label><Dropdown className={selectClass} value={raise.data.mode} onChange={(event) => raise.setData('mode', event.target.value)}><option value="percent">Raise by a percent</option><option value="increase">Add an amount</option><option value="set">Set everybody to an amount</option></Dropdown></div>
                                 <div className="space-y-1"><Label>{raise.data.mode === 'percent' ? 'Percent' : 'Amount'}</Label><Input type="number" step="any" value={raise.data.value} onChange={(event) => raise.setData('value', event.target.value)} /><InputError message={raise.errors.value} /></div>
                                 <div className="space-y-1"><Label>Applies from</Label><Input type="date" value={raise.data.effective_from} onChange={(event) => raise.setData('effective_from', event.target.value)} /><InputError message={raise.errors.effective_from} /></div>
                                 <div className="space-y-1"><Label>Round to the nearest</Label><Input type="number" min="1" value={raise.data.round_to} onChange={(event) => raise.setData('round_to', event.target.value)} /></div>

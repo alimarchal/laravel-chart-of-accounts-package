@@ -23,6 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Account = {
     id: number;
@@ -288,7 +289,7 @@ export default function JournalEntryForm({
                                 {branches.length > 0 ? (
                                     <div className="flex flex-col gap-2">
                                         <Label htmlFor="branch_id">Branch</Label>
-                                        <select
+                                        <Dropdown
                                             id="branch_id"
                                             className="h-9 rounded-md border bg-transparent px-3 text-sm"
                                             value={form.data.branch_id}
@@ -302,7 +303,7 @@ export default function JournalEntryForm({
                                                     {branch.code} - {branch.name}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </Dropdown>
                                         <InputError message={form.errors.branch_id} />
                                     </div>
                                 ) : null}

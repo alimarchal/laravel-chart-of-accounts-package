@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Props = {
     items: Array<{ id: number; sku: string; name: string; is_active: boolean }>;
@@ -33,7 +34,7 @@ export default function InventoryMovementForm({ items, warehouses, accounts, tod
     );
     const select = (name: 'item_id' | 'warehouse_id' | 'to_warehouse_id' | 'offset_account_id', label: string, options: Array<[number, string]>) => (
         <div className="space-y-1"><Label htmlFor={name}>{label}</Label>
-            <select id={name} className={selectClass} value={form.data[name]} onChange={(event) => form.setData(name, event.target.value)}><option value="">Choose…</option>{options.map(([id, text]) => (<option key={id} value={id}>{text}</option>))}</select>
+            <Dropdown id={name} className={selectClass} value={form.data[name]} onChange={(event) => form.setData(name, event.target.value)}><option value="">Choose…</option>{options.map(([id, text]) => (<option key={id} value={id}>{text}</option>))}</Dropdown>
             <InputError message={form.errors[name]} /></div>
     );
     const offsetLabel = form.data.type === 'receipt' ? 'Paid from / owed to' : form.data.type === 'issue' ? 'Cost account (default: the item\'s)' : 'Gain / loss account';
@@ -47,7 +48,7 @@ export default function InventoryMovementForm({ items, warehouses, accounts, tod
                     <CardHeader><CardTitle>Movement</CardTitle></CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-1"><Label htmlFor="type">What happened</Label>
-                            <select id="type" className={selectClass} value={form.data.type} onChange={(event) => form.setData('type', event.target.value)}>{Object.entries(TYPES).map(([key, label]) => (<option key={key} value={key}>{label}</option>))}</select></div>
+                            <Dropdown id="type" className={selectClass} value={form.data.type} onChange={(event) => form.setData('type', event.target.value)}>{Object.entries(TYPES).map(([key, label]) => (<option key={key} value={key}>{label}</option>))}</Dropdown></div>
                         {select('item_id', 'Item', items.filter((row) => row.is_active).map((row) => [row.id, `${row.sku} ${row.name}`]))}
                         {select('warehouse_id', form.data.type === 'transfer' ? 'From warehouse' : 'Warehouse', warehouses.map((row) => [row.id, row.name]))}
                         {form.data.type === 'transfer' && select('to_warehouse_id', 'To warehouse', warehouses.map((row) => [row.id, row.name]))}

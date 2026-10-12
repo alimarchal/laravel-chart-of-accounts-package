@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Member = {
     id: number;
@@ -127,7 +128,7 @@ function CompanyForm({
                 <Label htmlFor="fiscal_year_start_month">
                     Fiscal year starts in
                 </Label>
-                <select
+                <Dropdown
                     id="fiscal_year_start_month"
                     className="h-9 rounded-md border bg-transparent px-3 text-sm"
                     value={initial.fiscal_year_start_month}
@@ -143,7 +144,7 @@ function CompanyForm({
                             {month}
                         </option>
                     ))}
-                </select>
+                </Dropdown>
                 <InputError message={errors.fiscal_year_start_month} />
             </div>
             <div className="md:col-span-3">

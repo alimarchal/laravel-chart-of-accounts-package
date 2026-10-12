@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Statement = 'balance_sheet' | 'income_statement';
 
@@ -286,7 +287,7 @@ export default function ReportMapping({
                                             ) : null}
                                         </td>
                                         <td className="px-3 py-1.5">
-                                            <select
+                                            <Dropdown
                                                 className={selectClass}
                                                 value={
                                                     account.report_line_id ?? ''
@@ -315,11 +316,11 @@ export default function ReportMapping({
                                                         {line.name}
                                                     </option>
                                                 ))}
-                                            </select>
+                                            </Dropdown>
                                         </td>
                                         {statement === 'balance_sheet' ? (
                                             <td className="px-3 py-1.5">
-                                                <select
+                                                <Dropdown
                                                     className={selectClass}
                                                     value={
                                                         account.cash_flow_category ??
@@ -354,7 +355,7 @@ export default function ReportMapping({
                                                             {label}
                                                         </option>
                                                     ))}
-                                                </select>
+                                                </Dropdown>
                                             </td>
                                         ) : null}
                                     </tr>
@@ -467,7 +468,7 @@ export default function ReportMapping({
                                         <Label htmlFor="line_section">
                                             Section
                                         </Label>
-                                        <select
+                                        <Dropdown
                                             id="line_section"
                                             className={selectClass}
                                             value={newLine.section}
@@ -489,7 +490,7 @@ export default function ReportMapping({
                                                     {label}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </Dropdown>
                                     </div>
                                 </div>
                                 <div className="grid gap-1">
@@ -510,7 +511,7 @@ export default function ReportMapping({
                                         <Label htmlFor="line_cash_flow">
                                             Cash flow
                                         </Label>
-                                        <select
+                                        <Dropdown
                                             id="line_cash_flow"
                                             className={selectClass}
                                             value={newLine.cash_flow_category}
@@ -535,7 +536,7 @@ export default function ReportMapping({
                                                     {label}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </Dropdown>
                                     </div>
                                 ) : null}
                                 <Button

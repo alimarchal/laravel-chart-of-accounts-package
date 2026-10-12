@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Props = {
     filters: Record<string, string | null>;
@@ -65,17 +66,17 @@ export default function PayrollComponents({ components, accounts, filters }: Pro
                             <CardContent className="grid gap-4 md:grid-cols-4">
                                 <div className="space-y-1"><Label htmlFor="code">Code</Label><Input id="code" value={form.data.code} onChange={(event) => form.setData('code', event.target.value)} /><InputError message={form.errors.code} /></div>
                                 <div className="space-y-1"><Label htmlFor="name">Name</Label><Input id="name" value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} /><InputError message={form.errors.name} /></div>
-                                <div className="space-y-1"><Label htmlFor="kind">Kind</Label><select id="kind" className={selectClass} value={form.data.kind} onChange={(event) => form.setData('kind', event.target.value)}><option value="earning">Earning (allowance)</option><option value="deduction">Deduction</option></select></div>
-                                <div className="space-y-1"><Label htmlFor="method">Method</Label><select id="method" className={selectClass} value={form.data.method} onChange={(event) => form.setData('method', event.target.value)}><option value="fixed">Fixed amount per month</option><option value="percent_of_basic">Percent of basic</option><option value="quantity_rate">Quantity x rate (fuel litres at today's price)</option></select></div>
+                                <div className="space-y-1"><Label htmlFor="kind">Kind</Label><Dropdown id="kind" className={selectClass} value={form.data.kind} onChange={(event) => form.setData('kind', event.target.value)}><option value="earning">Earning (allowance)</option><option value="deduction">Deduction</option></Dropdown></div>
+                                <div className="space-y-1"><Label htmlFor="method">Method</Label><Dropdown id="method" className={selectClass} value={form.data.method} onChange={(event) => form.setData('method', event.target.value)}><option value="fixed">Fixed amount per month</option><option value="percent_of_basic">Percent of basic</option><option value="quantity_rate">Quantity x rate (fuel litres at today's price)</option></Dropdown></div>
                                 <div className="space-y-1"><Label htmlFor="value">{form.data.method === 'quantity_rate' ? 'Default quantity' : 'Default value'}</Label><Input id="value" type="number" step="any" value={form.data.value} onChange={(event) => form.setData('value', event.target.value)} /><InputError message={form.errors.value} /></div>
                                 {form.data.method === 'quantity_rate' && <>
                                     <div className="space-y-1"><Label htmlFor="rate">Rate per unit</Label><Input id="rate" type="number" step="any" value={form.data.rate} onChange={(event) => form.setData('rate', event.target.value)} /><InputError message={form.errors.rate} /></div>
                                     <div className="space-y-1"><Label htmlFor="unit">Unit</Label><Input id="unit" placeholder="litre" value={form.data.unit} onChange={(event) => form.setData('unit', event.target.value)} /></div>
                                 </>}
                                 <div className="space-y-1"><Label htmlFor="account_id">{form.data.kind === 'deduction' ? 'Liability account' : 'Expense account'}</Label>
-                                    <select id="account_id" className={selectClass} value={form.data.account_id} onChange={(event) => form.setData('account_id', event.target.value)}>
+                                    <Dropdown id="account_id" className={selectClass} value={form.data.account_id} onChange={(event) => form.setData('account_id', event.target.value)}>
                                         <option value="">Choose…</option>{accounts.filter((account) => account.type === (form.data.kind === 'deduction' ? 'LIABILITY' : 'EXPENSE')).map((account) => (<option key={account.id} value={account.id}>{account.account_code} {account.account_name}</option>))}
-                                    </select><InputError message={form.errors.account_id} /></div>
+                                    </Dropdown><InputError message={form.errors.account_id} /></div>
                                 {form.data.kind === 'earning' && <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.taxable} onChange={(event) => form.setData('taxable', event.target.checked)} /> Counts for income tax</label>}
                                 <div className="pt-6"><Button type="submit" disabled={form.processing}>Add</Button></div>
                             </CardContent>

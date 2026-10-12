@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Line = {
     line: number;
@@ -98,7 +99,7 @@ export default function BankStatementImport({ banks, preview }: Props) {
                         <form onSubmit={submit} className="grid gap-4 md:grid-cols-3">
                             <div className="grid gap-2">
                                 <Label htmlFor="bank_account_id">Bank account</Label>
-                                <select
+                                <Dropdown
                                     id="bank_account_id"
                                     className={selectClass}
                                     value={upload.data.bank_account_id}
@@ -109,7 +110,7 @@ export default function BankStatementImport({ banks, preview }: Props) {
                                             {bank.name}
                                         </option>
                                     ))}
-                                </select>
+                                </Dropdown>
                                 <InputError message={upload.errors.bank_account_id} />
                             </div>
                             <div className="grid gap-2">

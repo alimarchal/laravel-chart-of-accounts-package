@@ -83,7 +83,7 @@ it('prints the stacks a host layout leaves out, so the filter button and the sel
 
     $html = $this->get('/accounting/chart-of-accounts')->assertOk()->getContent();
 
-    expect($html)->toContain('getElementById("filters")')               // the 'modals' stack: the filter toggle
+    expect($html)->toContain("getElementById('filters')")               // the 'modals' stack: the filter toggle
         ->and($html)->toContain('select2')                                 // the 'scripts' stack
         ->and($html)->toContain('acc-kit-plain');                          // no Flux in the test application
 })->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
@@ -94,7 +94,7 @@ it('does not print a stack twice when the host layout prints it already', functi
 
     $html = $this->get('/accounting/chart-of-accounts')->assertOk()->getContent();
 
-    expect(substr_count($html, 'getElementById("filters")'))->toBe(1)
+    expect(substr_count($html, "getElementById('filters')"))->toBe(1)
         ->and(substr_count($html, 'jquery@3.7.1'))->toBe(1);
 })->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
 

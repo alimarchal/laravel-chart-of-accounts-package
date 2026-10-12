@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountingI18n } from '@/lib/i18n';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Line = {
     chart_of_account_id: string;
@@ -187,7 +188,7 @@ export default function RecurringEntryForm({
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="frequency">Repeats</Label>
-                                    <select
+                                    <Dropdown
                                         id="frequency"
                                         className={selectClass}
                                         value={form.data.frequency}
@@ -208,7 +209,7 @@ export default function RecurringEntryForm({
                                                 </option>
                                             ),
                                         )}
-                                    </select>
+                                    </Dropdown>
                                     <InputError
                                         message={form.errors.frequency}
                                     />
@@ -320,7 +321,7 @@ export default function RecurringEntryForm({
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="mode">Each entry is</Label>
-                                    <select
+                                    <Dropdown
                                         id="mode"
                                         className={selectClass}
                                         value={form.data.mode}
@@ -339,7 +340,7 @@ export default function RecurringEntryForm({
                                         <option value="post">
                                             Posted automatically
                                         </option>
-                                    </select>
+                                    </Dropdown>
                                     {form.data.mode === 'post' ? (
                                         <p className="text-xs text-muted-foreground">
                                             Posted as you, if you may post;
@@ -353,7 +354,7 @@ export default function RecurringEntryForm({
                                     <Label htmlFor="voucher_type_id">
                                         Voucher type
                                     </Label>
-                                    <select
+                                    <Dropdown
                                         id="voucher_type_id"
                                         className={selectClass}
                                         value={form.data.voucher_type_id}
@@ -375,7 +376,7 @@ export default function RecurringEntryForm({
                                                 {type.code} - {type.name}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Dropdown>
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="reference">Reference</Label>

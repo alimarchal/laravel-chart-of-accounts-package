@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccounting } from '@/lib/accounting';
 import { confirmThen } from '@/lib/confirm';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Code = {
     id: number;
@@ -166,13 +167,13 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                         <form onSubmit={calculate} className="flex flex-wrap items-end gap-3">
                             <div className="grid gap-1">
                                 <Label htmlFor="calc_code">Tax code</Label>
-                                <select id="calc_code" className={selectClass} value={calc.tax_code_id} onChange={(event) => setCalc({ ...calc, tax_code_id: event.target.value })}>
+                                <Dropdown id="calc_code" className={selectClass} value={calc.tax_code_id} onChange={(event) => setCalc({ ...calc, tax_code_id: event.target.value })}>
                                     {taxCodes.map((code) => (
                                         <option key={code.id} value={code.id}>
                                             {code.code} ({code.kind})
                                         </option>
                                     ))}
-                                </select>
+                                </Dropdown>
                             </div>
                             <div className="grid gap-1">
                                 <Label htmlFor="calc_amount">Amount</Label>
@@ -224,14 +225,14 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                                 </div>
                                 <div className="grid gap-1 md:col-span-2">
                                     <Label htmlFor="payable_account_id">Payable (or refundable) account</Label>
-                                    <select id="payable_account_id" className={selectClass} value={filing.data.payable_account_id} onChange={(event) => filing.setData('payable_account_id', event.target.value)}>
+                                    <Dropdown id="payable_account_id" className={selectClass} value={filing.data.payable_account_id} onChange={(event) => filing.setData('payable_account_id', event.target.value)}>
                                         <option value="">Select an account</option>
                                         {accounts.map((account) => (
                                             <option key={account.id} value={account.id}>
                                                 {account.account_code} - {account.account_name}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Dropdown>
                                     <InputError message={filing.errors.payable_account_id} />
                                 </div>
                                 <div className="grid gap-1">

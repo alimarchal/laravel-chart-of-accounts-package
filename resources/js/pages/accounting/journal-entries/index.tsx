@@ -22,6 +22,7 @@ import {
     playErrorSound,
     playSuccessSound,
 } from '@/lib/accounting';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Entry = {
     id: number;
@@ -208,7 +209,7 @@ export default function JournalEntriesIndex({
                                     {branches.length > 0 ? (
                                         <div className="grid gap-2">
                                             <Label htmlFor="filter_branch_id">Branch</Label>
-                                            <select
+                                            <Dropdown
                                                 id="filter_branch_id"
                                                 className="h-9 rounded-md border bg-transparent px-3 text-sm"
                                                 value={filterForm.data.branch_id}
@@ -222,7 +223,7 @@ export default function JournalEntriesIndex({
                                                         {branch.code} - {branch.name}
                                                     </option>
                                                 ))}
-                                            </select>
+                                            </Dropdown>
                                         </div>
                                     ) : null}
                                     <div className="grid gap-2">

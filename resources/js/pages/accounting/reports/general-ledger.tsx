@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BreadcrumbItem } from '@/types';
 import { useAccountingI18n } from '@/lib/i18n';
+import { Dropdown } from '@/components/accounting/dropdown';
 
 type Filters = {
     date_from?: string;
@@ -131,7 +132,7 @@ export default function GeneralLedger({
                     </div>
                     <div className="flex flex-col gap-1">
                         <Label htmlFor="status">Status</Label>
-                        <select
+                        <Dropdown
                             id="status"
                             className="h-9 rounded-md border bg-transparent px-3 text-sm"
                             value={form.status}
@@ -144,7 +145,7 @@ export default function GeneralLedger({
                                     {status.label}
                                 </option>
                             ))}
-                        </select>
+                        </Dropdown>
                     </div>
                     <div className="flex gap-2">
                         <Button onClick={apply} variant="secondary">
