@@ -2,7 +2,7 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
-## [Unreleased]
+## [2.39.0] - 2026-10-12
 
 A new look for the Blade/Livewire screens, a searchable dropdown everywhere, and a journal entry form that is quick to use.
 
