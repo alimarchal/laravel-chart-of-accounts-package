@@ -1,7 +1,11 @@
 <x-accounting::app-layout title="Inventory">
-    <x-slot name="header"><x-accounting::page-header title="Inventory" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions"><a href="{{ route('accounting.inventory.movements.index') }}" class="acc-btn">Movements</a>
-                <a href="{{ route('accounting.inventory.warehouses.index') }}" class="acc-btn">Warehouses</a>
-                <a href="{{ route('accounting.inventory.export', ['format' => 'xlsx', 'as_of' => $valuation['as_of']]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Export</a>
+    <x-slot name="header"><x-accounting::page-header title="Inventory" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions">
+                <x-accounting::more-menu>
+                    <a href="{{ route('accounting.inventory.movements.index') }}">Stock movements</a>
+                    <a href="{{ route('accounting.inventory.warehouses.index') }}">Warehouses</a>
+                    <hr>
+                    <a href="{{ route('accounting.inventory.export', ['format' => 'xlsx', 'as_of' => $valuation['as_of']]) }}">Export valuation</a>
+                </x-accounting::more-menu>
                 @can('inventory.move')<a href="{{ route('accounting.inventory.movements.create') }}" class="acc-btn">Move stock</a>@endcan
                 @can('inventory.manage')<a href="{{ route('accounting.inventory.items.create') }}" class="acc-btn acc-btn--primary">New item</a>@endcan</x-slot></x-accounting::page-header></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))

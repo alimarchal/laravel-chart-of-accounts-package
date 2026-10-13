@@ -9,7 +9,12 @@
         <form method="POST" action="{{ $employee ? route('accounting.payroll.employees.update', $employee['id']) : route('accounting.payroll.employees.store') }}" class="space-y-4">
             @csrf @if($employee) @method('PUT') @endif
             <div class="bg-white shadow rounded-lg p-5 grid gap-4 md:grid-cols-3">
-                @foreach ([['code', 'Code', 'text'], ['name', 'Name', 'text'], ['national_id', 'National ID', 'text'], ['email', 'E-mail (payslips are sent here)', 'email'], ['designation', 'Designation', 'text'], ['join_date', 'Joined', 'date'], ['leave_date', 'Left (if so)', 'date'], ['base_salary', 'Monthly basic salary', 'number'], ['bank_name', 'Bank', 'text'], ['bank_account', 'Bank account', 'text']] as [$name, $label, $type])
+                <h3 class="md:col-span-3 border-b pb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Who</h3>
+                @foreach (array_slice([['code', 'Code', 'text'], ['name', 'Name', 'text'], ['national_id', 'National ID', 'text'], ['email', 'E-mail (payslips are sent here)', 'email'], ['designation', 'Designation', 'text'], ['join_date', 'Joined', 'date'], ['leave_date', 'Left (if so)', 'date'], ['base_salary', 'Monthly basic salary', 'number'], ['bank_name', 'Bank', 'text'], ['bank_account', 'Bank account', 'text']], 0, 5) as [$name, $label, $type])
+                    <label class="text-sm"><span class="text-gray-700">{{ $label }}</span><input type="{{ $type }}" step="any" name="{{ $name }}" value="{{ $v($name, $name === 'join_date' ? $today : '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"></label>
+                @endforeach
+                <h3 class="md:col-span-3 border-b pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Employment and pay</h3>
+                @foreach (array_slice([['code', 'Code', 'text'], ['name', 'Name', 'text'], ['national_id', 'National ID', 'text'], ['email', 'E-mail (payslips are sent here)', 'email'], ['designation', 'Designation', 'text'], ['join_date', 'Joined', 'date'], ['leave_date', 'Left (if so)', 'date'], ['base_salary', 'Monthly basic salary', 'number'], ['bank_name', 'Bank', 'text'], ['bank_account', 'Bank account', 'text']], 5, 3) as [$name, $label, $type])
                     <label class="text-sm"><span class="text-gray-700">{{ $label }}</span><input type="{{ $type }}" step="any" name="{{ $name }}" value="{{ $v($name, $name === 'join_date' ? $today : '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"></label>
                 @endforeach
                 <label class="text-sm"><span class="text-gray-700">Cost center</span><select name="cost_center_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"><option value="">None</option>@foreach ($costCenters as $center)<option value="{{ $center->id }}" @selected((string) $v('cost_center_id') === (string) $center->id)>{{ $center->code }} {{ $center->name }}</option>@endforeach</select></label>
@@ -18,9 +23,14 @@
                     <label class="text-sm"><span class="text-gray-700">New salary applies from</span><input type="date" name="effective_from" value="{{ old('effective_from', $today) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"><span class="text-xs text-gray-500">Used only when the salary above changes; a past date is paid with arrears.</span></label>
                     <label class="text-sm"><span class="text-gray-700">Reason for the change</span><input name="reason" value="{{ old('reason') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"></label>
                 @endif
-                <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="withhold_tax" value="0"><input type="checkbox" name="withhold_tax" value="1" @checked($v('withhold_tax', false))> Withhold income tax</label>
-                <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="overtime_eligible" value="0"><input type="checkbox" name="overtime_eligible" value="1" @checked($v('overtime_eligible', false))> Paid overtime</label>
-                <label class="flex items-center gap-2 pt-6 text-sm"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($v('is_active', true))> Active</label>
+                                <h3 class="md:col-span-3 border-b pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Bank</h3>
+                @foreach (array_slice([['code', 'Code', 'text'], ['name', 'Name', 'text'], ['national_id', 'National ID', 'text'], ['email', 'E-mail (payslips are sent here)', 'email'], ['designation', 'Designation', 'text'], ['join_date', 'Joined', 'date'], ['leave_date', 'Left (if so)', 'date'], ['base_salary', 'Monthly basic salary', 'number'], ['bank_name', 'Bank', 'text'], ['bank_account', 'Bank account', 'text']], 8) as [$name, $label, $type])
+                    <label class="text-sm"><span class="text-gray-700">{{ $label }}</span><input type="{{ $type }}" step="any" name="{{ $name }}" value="{{ $v($name, $name === 'join_date' ? $today : '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"></label>
+                @endforeach
+                <h3 class="md:col-span-3 border-b pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Options</h3>
+<label class="flex items-center gap-2 text-sm"><input type="hidden" name="withhold_tax" value="0"><input type="checkbox" name="withhold_tax" value="1" @checked($v('withhold_tax', false))> Withhold income tax</label>
+                <label class="flex items-center gap-2 text-sm"><input type="hidden" name="overtime_eligible" value="0"><input type="checkbox" name="overtime_eligible" value="1" @checked($v('overtime_eligible', false))> Paid overtime</label>
+                <label class="flex items-center gap-2 text-sm"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($v('is_active', true))> Active</label>
             </div>
             <div class="bg-white shadow rounded-lg p-5 space-y-2 text-sm"><h3 class="font-semibold text-gray-800">Allowances and deductions</h3>
                 <input type="hidden" name="components" value="">

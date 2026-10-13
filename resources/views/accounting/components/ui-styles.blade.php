@@ -173,7 +173,10 @@
 .acc-kit input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]):not([type=submit]):not([type=button]):not(.select2-search__field),.acc-kit select:not(.select2-hidden-accessible),.acc-kit textarea{border-color:var(--acc-border-strong);border-radius:.6rem}
 .acc-kit input:focus,.acc-kit select:focus,.acc-kit textarea:focus{border-color:var(--acc-accent)!important;box-shadow:0 0 0 3px var(--acc-ring)!important;outline:none}
 .acc-kit :is(a,button,input[type=submit]).uppercase.tracking-widest{text-transform:none!important;letter-spacing:0!important;font-size:.82rem!important;font-weight:600!important;border-radius:.6rem!important}
-.acc-kit :is(a,button).bg-green-600,.acc-kit :is(a,button).bg-green-700,.acc-kit :is(a,button).bg-green-800{background:var(--acc-ok)!important;border-color:var(--acc-ok)!important;color:#fff!important}
+.acc-kit :is(a,button).bg-green-600,.acc-kit :is(a,button).bg-green-700,.acc-kit :is(a,button).bg-green-800{background:var(--acc-accent)!important;border-color:var(--acc-accent)!important;color:var(--acc-accent-ink)!important}
+.acc-kit :is(a,button).bg-green-600:hover,.acc-kit :is(a,button).bg-green-700:hover,.acc-kit :is(a,button).bg-green-800:hover{background:var(--acc-accent-hover)!important}
+/* a field the browser will not let you leave empty gets a red star on its label */
+.acc-kit div:has(>:is(input,select,textarea)[required])>label::after,.acc-kit .acc-field:has(:is(input,select,textarea)[required])>label::after{content:" *";color:var(--acc-bad);font-weight:700}
 .acc-kit :is(a,button).bg-red-600,.acc-kit :is(a,button).bg-red-700{background:var(--acc-bad)!important;border-color:var(--acc-bad)!important;color:#fff!important}
 .acc-kit :is(a,button).bg-orange-600,.acc-kit :is(a,button).bg-orange-500{background:var(--acc-warn)!important;border-color:var(--acc-warn)!important;color:#fff!important}
 .acc-kit :is(a,button).bg-purple-600,.acc-kit :is(a,button).bg-purple-700{background:var(--acc-accent)!important;border-color:var(--acc-accent)!important;color:var(--acc-accent-ink)!important}
@@ -233,6 +236,18 @@
 .acc-kit .acc-prose th,.acc-kit .acc-prose td{padding:.4rem .6rem;border-bottom:1px solid var(--acc-border);text-align:left}
 .acc-kit .acc-prose kbd{padding:.05rem .4rem;border:1px solid var(--acc-border-strong);border-radius:.3rem;background:var(--acc-surface-2);font-size:.8em}
 
+/* ---- the "More" menu of a screen's header ---- */
+.acc-kit .acc-more{position:relative}
+.acc-kit .acc-more>summary{list-style:none;cursor:pointer}
+.acc-kit .acc-more>summary::-webkit-details-marker{display:none}
+.acc-kit .acc-more>summary svg{width:.85rem;height:.85rem;transition:transform .15s}
+.acc-kit .acc-more[open]>summary svg{transform:rotate(180deg)}
+.acc-kit .acc-more-panel{position:absolute;right:0;top:calc(100% + .35rem);z-index:40;min-width:13rem;padding:.35rem;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:.7rem;box-shadow:0 14px 36px rgba(15,23,42,.18)}
+.acc-kit .acc-more-panel a,.acc-kit .acc-more-panel button{display:block;width:100%;padding:.5rem .7rem;border:0;border-radius:.45rem;background:transparent;text-align:left;font-size:.85rem;font-weight:500;color:var(--acc-text);text-decoration:none;cursor:pointer}
+.acc-kit .acc-more-panel a:hover,.acc-kit .acc-more-panel button:hover{background:var(--acc-hover)}
+.acc-kit .acc-more-panel hr{margin:.3rem 0;border:0;border-top:1px solid var(--acc-border)}
+.acc-kit .acc-more-panel .is-danger{color:var(--acc-bad)}
+
 /* ---- module cards (dashboard, settings): groups flow into columns, no empty gaps ---- */
 .acc-kit .acc-masonry{columns:2 22rem;column-gap:1.5rem}
 .acc-kit .acc-masonry>div{break-inside:avoid;margin-bottom:1.5rem}
@@ -241,6 +256,13 @@
 .acc-kit .acc-lf{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.75rem;padding:.85rem 1rem;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:var(--acc-radius);box-shadow:var(--acc-shadow)}
 .acc-kit .acc-lf .acc-field{flex:1 1 9.5rem;max-width:16rem}
 .acc-kit .acc-lf .acc-field--wide{flex-basis:14rem;max-width:22rem}
+.acc-kit .acc-lf-more{flex:1 1 100%;order:3}
+.acc-kit .acc-lf-more summary{display:inline-flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.8rem;font-weight:600;color:var(--acc-accent);list-style:none}
+.acc-kit .acc-lf-more summary::-webkit-details-marker{display:none}
+.acc-kit .acc-lf-more summary::before{content:"+";font-weight:700}
+.acc-kit .acc-lf-more[open] summary::before{content:"–"}
+.acc-kit .acc-lf-moregrid{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.7rem;padding-top:.7rem;border-top:1px dashed var(--acc-border)}
+.acc-kit .acc-lf-moregrid .acc-field{flex:1 1 9.5rem;max-width:16rem}
 .acc-kit .acc-lf-actions{display:flex;gap:.4rem;align-items:center;margin-left:auto}
 
 /* ---- payroll navigation ---- */
@@ -248,8 +270,12 @@
 .acc-kit .acc-subnav a{padding:.38rem .8rem;border-radius:.6rem;font-size:.82rem;font-weight:600;color:var(--acc-muted);text-decoration:none;white-space:nowrap}
 .acc-kit .acc-subnav a:hover{color:var(--acc-text);background:var(--acc-surface-2)}
 .acc-kit .acc-subnav a[aria-current]{background:var(--acc-surface);color:var(--acc-accent);box-shadow:var(--acc-shadow)}
+.acc-kit .acc-subnav2{display:flex;flex-wrap:wrap;gap:.25rem;margin:.35rem 0 .2rem;padding:0 .25rem;border-bottom:1px solid var(--acc-border)}
+.acc-kit .acc-subnav2 a{margin-bottom:-1px;padding:.45rem .8rem;border-bottom:2px solid transparent;font-size:.84rem;font-weight:600;color:var(--acc-muted);text-decoration:none}
+.acc-kit .acc-subnav2 a:hover{color:var(--acc-text)}
+.acc-kit .acc-subnav2 a[aria-current]{color:var(--acc-accent);border-bottom-color:var(--acc-accent)}
 .acc-kit .acc-subnav-sep{width:1px;background:var(--acc-border-strong);margin:.3rem .15rem;align-self:stretch}
-@media print{.acc-kit .acc-no-print,.acc-kit .acc-head-r,.acc-kit .acc-context,.acc-kit .acc-tabs,.acc-kit .acc-filters,.acc-kit .acc-lf,.acc-kit .acc-subnav,.acc-kit .acc-help-nav{display:none!important}.acc-kit .acc-card{box-shadow:none}}
+@media print{.acc-kit .acc-no-print,.acc-kit .acc-head-r,.acc-kit .acc-context,.acc-kit .acc-tabs,.acc-kit .acc-filters,.acc-kit .acc-lf,.acc-kit .acc-subnav,.acc-kit .acc-subnav2,.acc-kit .acc-help-nav{display:none!important}.acc-kit .acc-card{box-shadow:none}}
 @media (prefers-reduced-motion:reduce){.acc-kit *{animation:none!important;transition:none!important}}
 </style>
 @endonce

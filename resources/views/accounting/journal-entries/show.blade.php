@@ -11,8 +11,6 @@
     <x-slot name="header">
         <x-accounting::page-header :title="$title . ($journalEntry->reference ? ' — '.$journalEntry->reference : '')" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.journal-entries.index">
             <x-slot name="actions">
-                <a href="{{ route('accounting.journal-entries.print', $journalEntry) }}" target="_blank" class="acc-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $printIcon }}"/></svg>Print</a>
-                <a href="{{ route('accounting.journal-entries.pdf', $journalEntry) }}" target="_blank" class="acc-btn">PDF</a>
                 @if ($journalEntry->status === 'draft')
                     @can('journal-entries.update')
                     <button type="button" class="acc-btn" onclick="var p = document.getElementById('je-edit'); p.toggleAttribute('hidden'); if (!p.hasAttribute('hidden')) p.scrollIntoView({ behavior: 'smooth', block: 'start' })">Edit draft</button>
@@ -40,16 +38,22 @@
                     <form method="POST" action="{{ route('accounting.journal-entries.post', $journalEntry) }}" data-confirm="Post this entry? A posted entry can no longer be edited.">@csrf<button type="submit" class="acc-btn acc-btn--success">Post</button></form>
                     @endcan
                 @endif
-                @if ($journalEntry->status === 'posted')
-                    @can('journal-entries.reverse')
-                    <form method="POST" action="{{ route('accounting.journal-entries.reverse', $journalEntry) }}" data-confirm="Reverse this entry? A new entry with swapped debits and credits is created.">@csrf<button type="submit" class="acc-btn">Reverse</button></form>
-                    @endcan
-                @endif
-                @if ($journalEntry->status === 'draft')
-                    @can('journal-entries.void')
-                    <form method="POST" action="{{ route('accounting.journal-entries.void', $journalEntry) }}" data-confirm="Void this entry?">@csrf<button type="submit" class="acc-btn acc-btn--danger">Void</button></form>
-                    @endcan
-                @endif
+                <x-accounting::more-menu>
+                    <a href="{{ route('accounting.journal-entries.print', $journalEntry) }}" target="_blank" >Print voucher</a>
+                    <a href="{{ route('accounting.journal-entries.pdf', $journalEntry) }}" target="_blank" >Download PDF</a>
+                    @if ($journalEntry->status === 'posted')
+                        @can('journal-entries.reverse')
+                        <hr>
+                        <form method="POST" action="{{ route('accounting.journal-entries.reverse', $journalEntry) }}" data-confirm="Reverse this entry? A new entry with swapped debits and credits is created.">@csrf<button type="submit" class="is-danger">Reverse</button></form>
+                        @endcan
+                    @endif
+                    @if ($journalEntry->status === 'draft')
+                        @can('journal-entries.void')
+                        <hr>
+                        <form method="POST" action="{{ route('accounting.journal-entries.void', $journalEntry) }}" data-confirm="Void this entry?">@csrf<button type="submit" class="is-danger">Void</button></form>
+                        @endcan
+                    @endif
+                </x-accounting::more-menu>
             </x-slot>
         </x-accounting::page-header>
     </x-slot>

@@ -45,45 +45,59 @@ export default function FilterBar({ path, fields, values, preserve = {} }: Props
         router.get(path, kept, { preserveScroll: true });
     };
 
+    // Up to four fields are always shown; a longer list shows the first three and keeps the rest under "More filters",
+    // which opens by itself when one of them is in use.
+    const primary = fields.length > 4 ? fields.slice(0, 3) : fields;
+    const more = fields.length > 4 ? fields.slice(3) : [];
+    const moreActive = more.filter((field) => !field.quiet && String(values[field.name] ?? '') !== '').length;
+    const [showMore, setShowMore] = useState(moreActive > 0);
+
+    const control = (field: FilterField) => (
+        <label key={field.name} className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            <span>{field.label}</span>
+            {field.type === 'select' ? (
+                <Dropdown className={selectClass} value={state[field.name]} onChange={(event) => setState({ ...state, [field.name]: event.target.value })} aria-label={field.label}>
+                    <option value="">All</option>
+                    {Object.entries(field.options ?? {}).map(([value, label]) => (
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
+                    ))}
+                </Dropdown>
+            ) : (
+                <Input
+                    className={field.type === 'date' || field.type === 'number' ? 'w-36' : 'w-56'}
+                    type={field.type === 'date' ? 'date' : field.type === 'number' ? 'number' : 'search'}
+                    step={field.type === 'number' ? 'any' : undefined}
+                    placeholder={field.placeholder}
+                    value={state[field.name]}
+                    onChange={(event) => setState({ ...state, [field.name]: event.target.value })}
+                    aria-label={field.label}
+                />
+            )}
+        </label>
+    );
+
     return (
-        <form onSubmit={apply} className="flex flex-wrap items-end gap-3 rounded-xl border bg-card px-4 py-3 shadow-xs" role="search">
-            {fields.map((field) => (
-                <label key={field.name} className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-                    <span>{field.label}</span>
-                    {field.type === 'select' ? (
-                        <Dropdown
-                            className={selectClass}
-                            value={state[field.name]}
-                            onChange={(event) => setState({ ...state, [field.name]: event.target.value })}
-                            aria-label={field.label}
-                        >
-                            <option value="">All</option>
-                            {Object.entries(field.options ?? {}).map(([value, label]) => (
-                                <option key={value} value={value}>
-                                    {label}
-                                </option>
-                            ))}
-                        </Dropdown>
-                    ) : (
-                        <Input
-                            className={field.type === 'date' || field.type === 'number' ? 'w-36' : 'w-56'}
-                            type={field.type === 'date' ? 'date' : field.type === 'number' ? 'number' : 'search'}
-                            step={field.type === 'number' ? 'any' : undefined}
-                            placeholder={field.placeholder}
-                            value={state[field.name]}
-                            onChange={(event) => setState({ ...state, [field.name]: event.target.value })}
-                            aria-label={field.label}
-                        />
-                    )}
-                </label>
-            ))}
-            <Button type="submit" variant="outline">
-                Filter
-            </Button>
-            {active > 0 ? (
-                <Button type="button" variant="ghost" onClick={reset}>
-                    Reset ({active})
+        <form onSubmit={apply} className="space-y-3 rounded-xl border bg-card px-4 py-3 shadow-xs" role="search">
+            <div className="flex flex-wrap items-end gap-3">
+                {primary.map(control)}
+                <Button type="submit" variant="outline">
+                    Filter
                 </Button>
+                {active > 0 ? (
+                    <Button type="button" variant="ghost" onClick={reset}>
+                        Reset ({active})
+                    </Button>
+                ) : null}
+            </div>
+            {more.length > 0 ? (
+                <>
+                    <button type="button" onClick={() => setShowMore(!showMore)} aria-expanded={showMore} className="text-xs font-semibold text-primary hover:underline">
+                        {showMore ? '– ' : '+ '}More filters{moreActive > 0 ? ` (${moreActive})` : ''}
+                    </button>
+                    {showMore ? <div className="flex flex-wrap items-end gap-3 border-t border-dashed pt-3">{more.map(control)}</div> : null}
+                </>
             ) : null}
         </form>
     );

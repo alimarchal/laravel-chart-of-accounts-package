@@ -53,8 +53,10 @@ export default function PayrollEmployeeForm({ employee, components, schemes, gra
                 <Card>
                     <CardHeader><CardTitle>Employee</CardTitle></CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-3">
-                        {field('code', 'Code')}{field('name', 'Name')}{field('national_id', 'National ID')}{field('email', 'E-mail (payslips are sent here)', 'email')}{field('designation', 'Designation')}{field('join_date', 'Joined', 'date')}{field('leave_date', 'Left (if so)', 'date')}
-                        {field('base_salary', 'Monthly basic salary', 'number')}{field('bank_name', 'Bank')}{field('bank_account', 'Bank account')}
+                        <h3 className="border-b pb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase md:col-span-3">Who</h3>
+                        {field('code', 'Code')}{field('name', 'Name')}{field('national_id', 'National ID')}{field('email', 'E-mail (payslips are sent here)', 'email')}{field('designation', 'Designation')}
+                        <h3 className="border-b pb-1 pt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase md:col-span-3">Employment and pay</h3>
+                        {field('join_date', 'Joined', 'date')}{field('leave_date', 'Left (if so)', 'date')}{field('base_salary', 'Monthly basic salary', 'number')}
                         <div className="space-y-1"><Label htmlFor="cost_center_id">Cost center</Label>
                             <Dropdown id="cost_center_id" className={selectClass} value={form.data.cost_center_id} onChange={(event) => form.setData('cost_center_id', event.target.value)}>
                                 <option value="">None</option>{costCenters.map((row) => (<option key={row.id} value={row.id}>{row.code} {row.name}</option>))}
@@ -67,9 +69,12 @@ export default function PayrollEmployeeForm({ employee, components, schemes, gra
                             <div className="space-y-1"><Label htmlFor="effective_from">New salary applies from</Label><Input id="effective_from" type="date" value={form.data.effective_from} onChange={(event) => form.setData('effective_from', event.target.value)} /><p className="text-xs text-muted-foreground">A past date is paid with arrears.</p></div>
                             <div className="space-y-1"><Label htmlFor="reason">Reason</Label><Input id="reason" value={form.data.reason} onChange={(event) => form.setData('reason', event.target.value)} /></div>
                         </>}
-                        <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.withhold_tax} onChange={(event) => form.setData('withhold_tax', event.target.checked)} /> Withhold income tax</label>
-                        <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.overtime_eligible} onChange={(event) => form.setData('overtime_eligible', event.target.checked)} /> Paid overtime</label>
-                        <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> Active</label>
+                                                <h3 className="border-b pb-1 pt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase md:col-span-3">Bank</h3>
+                        {field('bank_name', 'Bank')}{field('bank_account', 'Bank account')}
+                        <h3 className="border-b pb-1 pt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase md:col-span-3">Options</h3>
+<label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.data.withhold_tax} onChange={(event) => form.setData('withhold_tax', event.target.checked)} /> Withhold income tax</label>
+                        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.data.overtime_eligible} onChange={(event) => form.setData('overtime_eligible', event.target.checked)} /> Paid overtime</label>
+                        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> Active</label>
                     </CardContent>
                 </Card>
                 <Card>

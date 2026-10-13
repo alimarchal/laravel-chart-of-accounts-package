@@ -51,7 +51,8 @@ it('manages grades, bulk changes, raises and arrears in Blade', function (): voi
     $this->post("/accounting/payroll/arrears/{$arrear->id}/approve")->assertForbidden();
     $this->actingAs($approver)->post("/accounting/payroll/arrears/{$arrear->id}/approve")->assertRedirect()->assertSessionHas('success');
     $this->get('/accounting/payroll/arrears')->assertSee('approved');
-    $this->get('/accounting/payroll')->assertSee('Arrears')->assertSee('Grades');
+    $this->get('/accounting/payroll/loans')->assertSee('Arrears');
+    $this->get('/accounting/payroll/employees')->assertSee('Grades');
 
     $this->actingAs($accountant)->post('/accounting/payroll/runs', ['period_month' => $month->copy()->addMonth()->toDateString()])->assertRedirect();
     $next = PayrollRun::query()->orderByDesc('id')->firstOrFail();

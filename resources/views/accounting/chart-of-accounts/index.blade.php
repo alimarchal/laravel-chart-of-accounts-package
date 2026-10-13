@@ -1,15 +1,15 @@
 <x-accounting::app-layout>
-    <x-slot name="header"><x-accounting::page-header title="Chart of Accounts" :showRefresh="false" :showPrint="false" :backRoute="route('accounting.dashboard')"><x-slot name="actions"><a href="{{ route('accounting.chart-of-accounts.tree') }}" class="acc-btn acc-btn--dark">Tree View</a>
-                <a href="{{ route('accounting.chart-of-accounts.export', 'xlsx') }}" class="acc-btn">Export Excel</a>
-                <a href="{{ route('accounting.chart-of-accounts.export', 'csv') }}" class="acc-btn">CSV</a>
-                @can('chart-templates.apply')
-                <a href="{{ route('accounting.chart-templates.index') }}" class="acc-btn">Templates</a>
-                @endcan
-                @can('chart-of-accounts.import')
-                <a href="{{ route('accounting.chart-of-accounts.import') }}" class="acc-btn">Import</a>
-                @endcan
+    <x-slot name="header"><x-accounting::page-header title="Chart of Accounts" :showRefresh="false" :showPrint="false" :backRoute="route('accounting.dashboard')"><x-slot name="actions">
+                <x-accounting::more-menu label="Import / export">
+                    <a href="{{ route('accounting.chart-of-accounts.tree') }}">Tree view</a>
+                    @can('chart-templates.apply')<a href="{{ route('accounting.chart-templates.index') }}">Industry templates</a>@endcan
+                    @can('chart-of-accounts.import')<a href="{{ route('accounting.chart-of-accounts.import') }}">Import from Excel / CSV</a>@endcan
+                    <hr>
+                    <a href="{{ route('accounting.chart-of-accounts.export', 'xlsx') }}">Export to Excel</a>
+                    <a href="{{ route('accounting.chart-of-accounts.export', 'csv') }}">Export to CSV</a>
+                </x-accounting::more-menu>
                 @can('chart-of-accounts.create')
-                <a href="{{ route('accounting.chart-of-accounts.create') }}" class="acc-btn acc-btn--primary">Add Account</a>
+                <a href="{{ route('accounting.chart-of-accounts.create') }}" class="acc-btn acc-btn--primary">Add account</a>
                 @endcan</x-slot></x-accounting::page-header></x-slot>
     <x-accounting::filter-section :action="route('accounting.chart-of-accounts.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
