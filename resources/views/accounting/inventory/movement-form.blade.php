@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Move stock">
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Move stock</h2></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Move stock" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"></x-accounting::page-header></x-slot>
     @php($types = ['receipt' => 'Receive stock', 'issue' => 'Issue stock (cost of goods sold)', 'adjustment' => 'Adjust (count difference)', 'transfer' => 'Transfer between warehouses'])
     <div class="py-6"><div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif

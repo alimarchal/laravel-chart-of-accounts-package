@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Bonuses and one-off pay">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Bonuses and one-off pay</h2><a href="{{ route('accounting.payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Payroll</a></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Bonuses and one-off pay" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.index" /><x-accounting::payroll-nav /></x-slot>
     @php($money = fn ($v) => number_format((float) $v, 2))
     @php($input = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm')
     <div class="py-6"><div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-4">
@@ -48,7 +48,7 @@
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Employee</th><th class="py-2 px-3 text-left font-medium text-gray-600">Month</th><th class="py-2 px-3 text-left font-medium text-gray-600">What for</th><th class="py-2 px-3 text-left font-medium text-gray-600">Kind</th><th class="py-2 px-3 text-right font-medium text-gray-600">Amount</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th><th></th></tr></thead>
             <tbody>
             @forelse ($adjustments as $row)
-                <tr class="border-t"><td class="py-2 px-3">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td class="py-2 px-3">{{ $row['month'] }}</td><td class="py-2 px-3">{{ $row['description'] }}@if(! $row['taxable'] && $row['kind'] === 'earning') <span class="text-xs text-gray-500">(not taxed)</span>@endif</td><td class="py-2 px-3">{{ $row['kind'] }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['amount']) }}</td><td class="py-2 px-3">{{ $row['status'] }}</td>
+                <tr class="border-t"><td class="py-2 px-3">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td class="py-2 px-3">{{ $row['month'] }}</td><td class="py-2 px-3">{{ $row['description'] }}@if(! $row['taxable'] && $row['kind'] === 'earning') <span class="text-xs text-gray-500">(not taxed)</span>@endif</td><td class="py-2 px-3">{{ $row['kind'] }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['amount']) }}</td><td class="py-2 px-3"><x-accounting::status-pill :status="$row['status']" /></td>
                     <td class="py-2 px-3 text-right">@if($row['status'] === 'open')@can('payroll.manage')<form method="POST" action="{{ route('accounting.payroll.adjustments.cancel', $row['id']) }}" onsubmit="return confirm('Cancel this?')">@csrf<button class="text-red-700 hover:underline">Cancel</button></form>@endcan @endif</td></tr>
             @empty
                 <tr><td colspan="7" class="py-8 text-center text-gray-500">Nothing for {{ $month }}.</td></tr>

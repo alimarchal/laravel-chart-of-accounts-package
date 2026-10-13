@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="WhatsApp">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">WhatsApp</h2><a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">All modules</a></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="WhatsApp" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"></x-accounting::page-header></x-slot>
     @php($tone = ['queued' => 'bg-gray-100 text-gray-700', 'sent' => 'bg-sky-100 text-sky-800', 'delivered' => 'bg-emerald-100 text-emerald-800', 'read' => 'bg-emerald-200 text-emerald-900', 'failed' => 'bg-red-100 text-red-700', 'received' => 'bg-violet-100 text-violet-800'])
     @php($canSend = $whatsapp['enabled'] && auth()->user()?->can('whatsapp.send'))
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
@@ -14,7 +14,7 @@
                 <h3 class="font-semibold text-gray-800">Set-up · {{ $whatsapp['mode'] }} · Graph API {{ $whatsapp['api_version'] }}</h3>
                 @foreach($whatsapp['checks'] as $check)
                     <div class="flex items-start justify-between gap-3 border-t pt-2"><div><p class="font-mono text-xs">{{ $check['env'] }}</p><p class="text-xs text-gray-500">{{ $check['what'] }}</p></div>
-                        <span class="rounded-full px-2 py-0.5 text-xs {{ $check['set'] ? 'bg-emerald-100 text-emerald-800' : ($check['needed'] ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600') }}">{{ $check['set'] ? 'set' : ($check['needed'] ? 'missing' : 'optional') }}</span></div>
+                        <x-accounting::status-pill :status="$check['set'] ? 'set' : ($check['needed'] ? 'missing' : 'optional')" /></div>
                 @endforeach
                 @if($whatsapp['webhook_url'])<p class="border-t pt-2 text-xs text-gray-500">Webhook URL for Meta: <span class="font-mono text-gray-800">{{ $whatsapp['webhook_url'] }}</span></p>@endif
                 <p class="text-xs font-medium {{ $whatsapp['ready'] ? 'text-emerald-700' : 'text-amber-700' }}">{{ $whatsapp['ready'] ? 'Ready.' : 'Not ready: fill in the missing settings.' }}</p>
@@ -94,7 +94,7 @@
                 <tr class="border-t align-top"><td class="py-2 px-3 text-xs">{{ str_replace('T', ' ', substr($message['created_at'] ?? '', 0, 16)) }}</td>
                     <td class="py-2 px-3 font-mono text-xs">{{ $message['direction'] === 'in' ? '←' : '→' }} {{ $message['to'] }}</td>
                     <td class="py-2 px-3">@if($message['template'])<span class="font-medium">{{ $message['template'] }}</span> @endif<span class="text-xs text-gray-500">{{ $message['body'] }}</span>@if($message['error'])<p class="mt-1 max-w-md text-xs text-red-700">{{ $message['error'] }}</p>@endif @if($message['wamid'])<p class="font-mono text-[10px] text-gray-400">{{ $message['wamid'] }}</p>@endif</td>
-                    <td class="py-2 px-3"><span class="rounded-full px-2 py-0.5 text-xs {{ $tone[$message['status']] ?? $tone['queued'] }}">{{ $message['status'] }}</span></td>
+                    <td class="py-2 px-3"><x-accounting::status-pill :status="$message['status']" /></td>
                     <td class="py-2 px-3 text-right space-x-1">
                         @if($canSend && $message['status'] === 'failed')<form method="POST" action="{{ route('accounting.whatsapp.retry', $message['id']) }}" class="inline">@csrf<button class="px-3 py-1.5 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Retry</button></form>@endif
                         @if($canSend && $whatsapp['mode'] === 'fake' && $message['direction'] === 'out' && in_array($message['status'], ['sent', 'delivered'], true))<form method="POST" action="{{ route('accounting.whatsapp.simulate', $message['id']) }}" class="inline">@csrf<input type="hidden" name="status" value="{{ $message['status'] === 'sent' ? 'delivered' : 'read' }}"><button class="px-3 py-1.5 text-xs text-gray-600 hover:underline">Mark {{ $message['status'] === 'sent' ? 'delivered' : 'read' }}</button></form>@endif

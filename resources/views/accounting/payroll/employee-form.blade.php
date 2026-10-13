@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Employee">
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $employee ? 'Edit '.$employee['code'] : 'New employee' }}</h2></x-slot>
+    <x-slot name="header"><x-accounting::page-header :title="$employee ? 'Edit '.$employee['code'] : 'New employee'" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.employees.index" /><x-accounting::payroll-nav /></x-slot>
     @php($v = fn ($name, $default = '') => old($name, $employee[$name] ?? $default))
     @php($linked = collect($employee['components'] ?? [])->keyBy('pay_component_id'))
     <div class="py-6"><div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-4">

@@ -148,7 +148,7 @@
             <div class="bg-white shadow rounded-lg p-5"><h3 class="font-semibold text-gray-800 mb-2">Recent journal entries</h3>
                 <table class="w-full text-sm"><tbody>
                     @foreach ($overview['recent_entries'] as $entry)
-                        <tr class="border-t first:border-0"><td class="py-2"><a href="{{ route('accounting.journal-entries.show', $entry['id']) }}" class="hover:underline">{{ $entry['voucher_number'] ?? '#'.$entry['id'] }}</a></td><td class="py-2 text-gray-500">{{ $entry['entry_date'] }}</td><td class="py-2">{{ $entry['description'] }}</td><td class="py-2"><span class="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-700">{{ $entry['status'] }}</span></td><td class="py-2 text-right tabular-nums">{{ $fmt($entry['amount']) }}</td></tr>
+                        <tr class="border-t first:border-0"><td class="py-2"><a href="{{ route('accounting.journal-entries.show', $entry['id']) }}" class="hover:underline">{{ $entry['voucher_number'] ?? '#'.$entry['id'] }}</a></td><td class="py-2 text-gray-500">{{ $entry['entry_date'] }}</td><td class="py-2">{{ $entry['description'] }}</td><td class="py-2"><x-accounting::status-pill :status="$entry['status']" /></td><td class="py-2 text-right tabular-nums">{{ $fmt($entry['amount']) }}</td></tr>
                     @endforeach
                 </tbody></table>
             </div>

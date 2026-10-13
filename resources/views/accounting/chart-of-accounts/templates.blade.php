@@ -47,7 +47,7 @@
                                     <td class="py-1.5 px-3 font-mono text-gray-500">{{ $row['parent_code'] ?? '—' }}</td>
                                     <td class="py-1.5 px-3">{{ $row['type'] }}</td>
                                     <td class="py-1.5 px-3 text-gray-500">{{ $row['line'] ?? '—' }}</td>
-                                    <td class="py-1.5 px-3"><span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $styles[$row['status']] }}">{{ $row['status'] }}</span></td>
+                                    <td class="py-1.5 px-3"><x-accounting::status-pill :status="$row['status']" /></td>
                                 </tr>
                             @endforeach
                         </tbody>

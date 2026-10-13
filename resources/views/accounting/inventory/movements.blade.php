@@ -1,8 +1,5 @@
 <x-accounting::app-layout title="Stock movements">
-    <x-slot name="header">
-        <div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Stock movements</h2>
-            <div class="flex gap-2">@can('inventory.move')<a href="{{ route('accounting.inventory.movements.create') }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">Move stock</a>@endcan<a href="{{ route('accounting.inventory.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Inventory</a></div></div>
-    </x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Stock movements" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions">@can('inventory.move')<a href="{{ route('accounting.inventory.movements.create') }}" class="acc-btn acc-btn--primary">Move stock</a>@endcan<a href="{{ route('accounting.inventory.index') }}" class="acc-btn acc-btn--dark">Inventory</a></x-slot></x-accounting::page-header></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     @php($q = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.'))
     @php($itemName = collect($items)->pluck('sku', 'id'))

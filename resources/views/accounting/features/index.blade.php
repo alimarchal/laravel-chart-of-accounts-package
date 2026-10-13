@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Features">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Features</h2><a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Accounting</a></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Features" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions"><a href="{{ route('accounting.dashboard') }}" class="acc-btn acc-btn--dark">Accounting</a></x-slot></x-accounting::page-header></x-slot>
     <div class="py-6"><div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif
         <x-accounting::validation-errors />

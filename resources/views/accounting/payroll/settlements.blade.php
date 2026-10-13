@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Final settlements">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Final settlements</h2><a href="{{ route('accounting.payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Payroll</a></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Final settlements" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.index" /><x-accounting::payroll-nav /></x-slot>
     @php($money = fn ($v) => number_format((float) $v, 2))
     <div class="py-6"><div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif
@@ -39,7 +39,7 @@
             <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Employee</th><th class="py-2 px-3 text-left font-medium text-gray-600">Last day</th><th class="py-2 px-3 text-right font-medium text-gray-600">Gratuity</th><th class="py-2 px-3 text-right font-medium text-gray-600">Leave pay</th><th class="py-2 px-3 text-right font-medium text-gray-600">Loans</th><th class="py-2 px-3 text-right font-medium text-gray-600">Net</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th><th></th></tr></thead>
             <tbody>
             @forelse ($settlements as $row)
-                <tr class="border-t"><td class="py-2 px-3">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td class="py-2 px-3">{{ $row['leave_date'] }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['gratuity']) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['leave_encashment']) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['loan_recovery']) }}</td><td class="py-2 px-3 text-right font-medium tabular-nums">{{ $money($row['net']) }}</td><td class="py-2 px-3">{{ $row['status'] }}</td>
+                <tr class="border-t"><td class="py-2 px-3">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td class="py-2 px-3">{{ $row['leave_date'] }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['gratuity']) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['leave_encashment']) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['loan_recovery']) }}</td><td class="py-2 px-3 text-right font-medium tabular-nums">{{ $money($row['net']) }}</td><td class="py-2 px-3"><x-accounting::status-pill :status="$row['status']" /></td>
                     <td class="py-2 px-3 text-right">
                         <div class="flex flex-wrap items-center justify-end gap-2">
                         @if($row['status'] === 'draft')

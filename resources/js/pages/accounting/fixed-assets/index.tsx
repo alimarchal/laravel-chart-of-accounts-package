@@ -1,7 +1,7 @@
+import { StatusPill } from '@/components/accounting/status-pill';
 import { Head, Link } from '@inertiajs/react';
 import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounting } from '@/lib/accounting';
@@ -59,14 +59,14 @@ export default function FixedAssetsIndex({ register, reconcile, filters, categor
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                             <thead><tr className="text-left text-muted-foreground"><th className="py-2">Code</th><th>Name</th><th>Category</th><th>Acquired</th><th>Status</th><th className="text-right">Cost</th><th className="text-right">Accumulated</th><th className="text-right">Book value</th></tr></thead>
                             <tbody>
                                 {register.rows.map((row) => (
                                     <tr key={row.id} className="border-t">
                                         <td className="py-2"><Link href={`/accounting/fixed-assets/${row.id}`} className="font-medium hover:underline">{row.code}</Link></td>
                                         <td>{row.name}</td><td>{row.category}</td><td>{row.acquisition_date}</td>
-                                        <td><Badge variant="outline">{row.status}</Badge></td>
+                                        <td><StatusPill status={row.status} /></td>
                                         <td className="text-right tabular-nums">{money(row.cost)}</td><td className="text-right tabular-nums">{money(row.accumulated)}</td><td className="text-right tabular-nums">{money(row.book_value)}</td>
                                     </tr>
                                 ))}

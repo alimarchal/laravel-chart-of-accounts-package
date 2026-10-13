@@ -2,6 +2,19 @@
 
 All notable changes to `laravel-chart-of-accounts` will be documented in this file.
 
+## [Unreleased]
+
+Every screen now looks like the journal screens: payroll included, in Blade (Livewire, Jetstream, Breeze) and in React.
+
+### Changed
+- **Payroll** (Blade and React): one navigation strip (*Runs · Employees · Grades · Pay items · Contributions · Bulk changes · Attendance · Leave · Loans · Arrears · Bonuses · Settlements · Reports · Tax*, hiding what a switched-off feature or a missing permission removes) at the top of every payroll screen instead of a row of 14 buttons; the run screen shows its status as a pill next to the actions.
+- **Headers of all other Blade screens** (chart of accounts, inventory, fixed assets, parties, tax, periods, budgets, bank statements, settings pages …): the same header as the journal screens, with a back link and one primary action, instead of rows of differently coloured buttons.
+- **List filters** (`list-filters`, 25 screens) are a compact card with the new fields and a *Filter* / *Reset* pair; the React `FilterBar` is a card too.
+- **Status words** (draft, posted, paid, active, void, matched …) are coloured pills everywhere (`<x-accounting::status-pill>`, `components/accounting/status-pill.tsx`).
+- **Tables**: older screens get cell padding and a quiet header even without Tailwind classes (Blade), and every React table has cell padding (no more "Monthly salaryTax"); the ledger-style reports (general ledger, cash/bank book, account balances) use the light table, and the general ledger shows the description, the voucher, the reference and the cost center on two quiet lines.
+- The dashboard and settings hubs flow their groups into balanced columns.
+- **React journal entry page**: status and approval pills, a facts card (date, voucher type, reference, branch, currency, posted at), a *Balanced* check on the totals row and a timeline audit trail.
+
 ## [2.39.0] - 2026-10-12
 
 A new look for the Blade/Livewire screens, a searchable dropdown everywhere, and a journal entry form that is quick to use.

@@ -69,7 +69,7 @@
                                 <tr class="border-t align-top">
                                     <td class="py-2 px-3 text-gray-500">{{ $row['line'] }}</td>
                                     <td class="py-2 px-3"><span class="font-mono">{{ $row['account_code'] ?: '—' }}</span> {{ $row['account_name'] }}</td>
-                                    <td class="py-2 px-3"><span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $styles[$row['action']] }}">{{ $row['action'] }}</span></td>
+                                    <td class="py-2 px-3"><x-accounting::status-pill :status="$row['action']" /></td>
                                     <td class="py-2 px-3">
                                         @if ($row['errors'])
                                             <ul class="text-red-700 space-y-1">@foreach ($row['errors'] as $error)<li>{{ $error }}</li>@endforeach</ul>

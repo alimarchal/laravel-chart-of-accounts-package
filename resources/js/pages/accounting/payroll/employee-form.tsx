@@ -1,6 +1,6 @@
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +49,7 @@ export default function PayrollEmployeeForm({ employee, components, schemes, gra
         <>
             <Head title={employee ? 'Edit employee' : 'New employee'} />
             <form onSubmit={submit} className="space-y-4 p-4">
-                <Heading title={employee ? `Edit ${employee.code}` : 'New employee'} description="Pay is worked out from the monthly salary and the allowances and deductions chosen here" />
+                <PayrollHeader title={employee ? `Edit ${employee.code}` : 'New employee'} description="Pay is worked out from the monthly salary and the allowances and deductions chosen here" />
                 <Card>
                     <CardHeader><CardTitle>Employee</CardTitle></CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-3">
@@ -103,7 +103,7 @@ export default function PayrollEmployeeForm({ employee, components, schemes, gra
                 {history.length > 0 && (
                     <Card>
                         <CardHeader><CardTitle>Salary history</CardTitle></CardHeader>
-                        <CardContent className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">From</th><th className="text-right">Was</th><th className="text-right">Now</th><th>Reason</th></tr></thead><tbody>
+                        <CardContent className="overflow-x-auto"><table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">From</th><th className="text-right">Was</th><th className="text-right">Now</th><th>Reason</th></tr></thead><tbody>
                             {history.map((row) => (<tr key={row.id} className="border-t"><td className="py-1">{row.effective_from}</td><td className="text-right tabular-nums">{Number(row.old_salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td className="text-right tabular-nums">{Number(row.new_salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td>{row.reason}</td></tr>))}
                         </tbody></table></CardContent>
                     </Card>

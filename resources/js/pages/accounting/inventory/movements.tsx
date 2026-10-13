@@ -43,7 +43,7 @@ export default function InventoryMovements({ movements, items, warehouses, filte
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Type</th><th>Item</th><th>Warehouse</th><th className="text-right">Quantity</th><th className="text-right">Unit cost</th><th className="text-right">Value</th><th>Reference</th><th className="text-right">Entry</th></tr></thead>
                         <tbody>
                             {movements.map((row) => (

@@ -12,7 +12,7 @@
                         <a href="{{ route('accounting.overview') }}" class="mb-4 flex items-center justify-between rounded-2xl bg-white px-5 py-3 shadow hover:shadow-md transition"><span class="font-medium text-gray-800">Overview — cash, receivables, payables, income vs expense and what needs attention</span><span class="text-sm text-indigo-700">Open &rarr;</span></a>
             @endcan
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="acc-masonry">
 
                 {{-- ─── Journal & Ledger ─── --}}
                 @canany(['journal-entries.view','chart-of-accounts.view','account-types.view','account-balance-snapshots.view'])

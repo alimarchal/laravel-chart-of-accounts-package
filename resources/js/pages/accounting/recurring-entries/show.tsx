@@ -1,3 +1,4 @@
+import { StatusPill } from '@/components/accounting/status-pill';
 import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Trash2, Zap } from 'lucide-react';
 import Heading from '@/components/heading';
@@ -133,7 +134,7 @@ export default function ShowRecurringEntry({ entry, runs, upcoming }: Props) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <thead className="text-left text-muted-foreground">
                                     <tr>
                                         <th className="py-1 font-medium">
@@ -185,7 +186,7 @@ export default function ShowRecurringEntry({ entry, runs, upcoming }: Props) {
                         <CardHeader>
                             <CardTitle className="flex items-center justify-between text-base">
                                 Schedule{' '}
-                                <Badge variant="outline">{entry.status}</Badge>
+                                <StatusPill status={entry.status} />
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
@@ -225,7 +226,7 @@ export default function ShowRecurringEntry({ entry, runs, upcoming }: Props) {
                                 Nothing generated yet.
                             </p>
                         ) : (
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <thead className="text-left text-muted-foreground">
                                     <tr>
                                         <th className="py-1 font-medium">

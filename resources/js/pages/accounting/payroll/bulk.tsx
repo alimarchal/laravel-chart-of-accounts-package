@@ -1,7 +1,6 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { FeatureLink } from '@/components/accounting/feature-link';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,10 +57,7 @@ export default function PayrollBulk({ employees, components, grades, preview, to
         <>
             <Head title="Bulk changes" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Bulk changes" description="Set pay up for many employees at once: allowances, grades and raises" />
-                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/arrears">Arrears</FeatureLink><FeatureLink href="/accounting/payroll/grades">Grades</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
-                </div>
+                <PayrollHeader title="Bulk changes" description="Set pay up for many employees at once: allowances, grades and raises" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 {canManage && (
@@ -101,7 +97,7 @@ export default function PayrollBulk({ employees, components, grades, preview, to
                                 </div>
                                 {preview && (
                                     <div className="overflow-x-auto md:col-span-4">
-                                        <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th className="text-right">Now</th><th className="text-right">New</th><th className="text-right">Difference</th></tr></thead><tbody>
+                                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th className="text-right">Now</th><th className="text-right">New</th><th className="text-right">Difference</th></tr></thead><tbody>
                                             {preview.map((row) => (<tr key={row.employee_id} className="border-t"><td className="py-1">{row.code} {row.name}</td><td className="text-right tabular-nums">{money(row.old_salary)}</td><td className="text-right tabular-nums">{money(row.new_salary)}</td><td className="text-right tabular-nums">{money(row.difference)}</td></tr>))}
                                             {preview.length === 0 && <tr><td colSpan={4} className="py-3 text-center text-muted-foreground">Nobody matches.</td></tr>}
                                         </tbody></table>

@@ -1,16 +1,8 @@
 <x-accounting::app-layout title="Customers & Suppliers">
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Customers &amp; Suppliers</h2>
-            <div class="flex flex-wrap gap-2">
-                @can('parties.create')<a href="{{ route('accounting.parties.create') }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">New customer or supplier</a>@endcan
-                <a href="{{ route('accounting.party-documents.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Invoices &amp; bills</a>
-                <a href="{{ route('accounting.party-payments.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Receipts &amp; payments</a>
-                <a href="{{ route('accounting.receivables.aging', ['side' => 'receivable']) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Ageing</a>
-                <a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Customers & Suppliers" :showSearch="false" :showRefresh="false" :showPrint="false" :backRoute="route('accounting.dashboard')"><x-slot name="actions">@can('parties.create')<a href="{{ route('accounting.parties.create') }}" class="acc-btn acc-btn--primary">New customer or supplier</a>@endcan
+                <a href="{{ route('accounting.party-documents.index') }}" class="acc-btn">Invoices &amp; bills</a>
+                <a href="{{ route('accounting.party-payments.index') }}" class="acc-btn">Receipts &amp; payments</a>
+                <a href="{{ route('accounting.receivables.aging', ['side' => 'receivable']) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Ageing</a></x-slot></x-accounting::page-header></x-slot>
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif

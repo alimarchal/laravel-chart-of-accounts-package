@@ -1,14 +1,6 @@
 <x-accounting::app-layout title="Tax">
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Tax</h2>
-            <div class="flex gap-2">
-                @can('tax-entries.create')<a href="{{ route('accounting.tax.entries.create') }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">New taxed document</a>@endcan
-                <a href="{{ route('accounting.tax.returns.report', ['date_from' => $monthStart, 'date_to' => $monthEnd]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Tax report</a>
-                <a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Tax" :showSearch="false" :showRefresh="false" :showPrint="false" :backRoute="route('accounting.dashboard')"><x-slot name="actions">@can('tax-entries.create')<a href="{{ route('accounting.tax.entries.create') }}" class="acc-btn acc-btn--primary">New taxed document</a>@endcan
+                <a href="{{ route('accounting.tax.returns.report', ['date_from' => $monthStart, 'date_to' => $monthEnd]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Tax report</a></x-slot></x-accounting::page-header></x-slot>
     @php($input = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm')
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif

@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Arrears">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Arrears</h2><div class="flex gap-2">@can('payroll.manage')<a href="{{ route('accounting.payroll.bulk') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Bulk changes</a>@endcan<a href="{{ route('accounting.payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Payroll</a></div></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Arrears" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.index" /><x-accounting::payroll-nav /></x-slot>
     @php($money = fn ($v) => number_format((float) $v, 2))
     @php($cents = fn ($v) => number_format($v / 100, 2))
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
@@ -48,7 +48,7 @@
                 <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Employee</th><th class="py-2 px-3 text-left font-medium text-gray-600">Covers</th><th class="py-2 px-3 text-left font-medium text-gray-600">Paid with</th><th class="py-2 px-3 text-left font-medium text-gray-600">Status</th><th class="py-2 px-3 text-right font-medium text-gray-600">Amount</th><th></th></tr></thead>
                 <tbody>
                 @forelse ($rows as $row)
-                    <tr class="border-t"><td class="py-2 px-3">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td class="py-2 px-3">{{ $row['from_month'] }}{{ $row['to_month'] !== $row['from_month'] ? ' – '.$row['to_month'] : '' }}</td><td class="py-2 px-3">{{ $row['payment_month'] }}</td><td class="py-2 px-3">{{ $row['status'] }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['amount']) }}</td>
+                    <tr class="border-t"><td class="py-2 px-3">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td class="py-2 px-3">{{ $row['from_month'] }}{{ $row['to_month'] !== $row['from_month'] ? ' – '.$row['to_month'] : '' }}</td><td class="py-2 px-3">{{ $row['payment_month'] }}</td><td class="py-2 px-3"><x-accounting::status-pill :status="$row['status']" /></td><td class="py-2 px-3 text-right tabular-nums">{{ $money($row['amount']) }}</td>
                         <td class="py-2 px-3 text-right">@can('payroll.post')
                             @if($row['status'] === 'draft')<form method="POST" action="{{ route('accounting.payroll.arrears.approve', $row['id']) }}" class="inline">@csrf<button class="text-indigo-700 hover:underline">Approve</button></form>@endif
                             @if(in_array($row['status'], ['draft', 'approved'], true))<form method="POST" action="{{ route('accounting.payroll.arrears.cancel', $row['id']) }}" class="inline" onsubmit="return confirm('Cancel these arrears?')">@csrf<button class="ml-2 text-red-700 hover:underline">Cancel</button></form>@endif

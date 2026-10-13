@@ -1,10 +1,9 @@
+import { StatusPill } from '@/components/accounting/status-pill';
 import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { FeatureLink } from '@/components/accounting/feature-link';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,10 +34,7 @@ export default function PayrollAdjustments({ adjustments, month, status, filters
         <>
             <Head title="Bonuses and one-off pay" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Bonuses and one-off pay" description="A bonus, an extra allowance or a fine for one month, for one employee or for many; the month's payroll run takes it up" />
-                    <FeatureLink href="/accounting/payroll">Payroll</FeatureLink>
-                </div>
+                <PayrollHeader title="Bonuses and one-off pay" description="A bonus, an extra allowance or a fine for one month, for one employee or for many; the month's payroll run takes it up" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 <div className="flex flex-wrap items-end gap-3">
@@ -88,9 +84,9 @@ export default function PayrollAdjustments({ adjustments, month, status, filters
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Month</th><th>What for</th><th>Kind</th><th className="text-right">Amount</th><th>Status</th><th /></tr></thead><tbody>
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Month</th><th>What for</th><th>Kind</th><th className="text-right">Amount</th><th>Status</th><th /></tr></thead><tbody>
                         {adjustments.map((row) => (
-                            <tr key={row.id} className="border-t"><td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.month}</td><td>{row.description}{!row.taxable && row.kind === 'earning' && <span className="ml-1 text-xs text-muted-foreground">(not taxed)</span>}</td><td>{row.kind}</td><td className="text-right tabular-nums">{money(row.amount)}</td><td><Badge variant="outline">{row.status}</Badge></td>
+                            <tr key={row.id} className="border-t"><td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.month}</td><td>{row.description}{!row.taxable && row.kind === 'earning' && <span className="ml-1 text-xs text-muted-foreground">(not taxed)</span>}</td><td>{row.kind}</td><td className="text-right tabular-nums">{money(row.amount)}</td><td><StatusPill status={row.status} /></td>
                                 <td className="text-right">{row.status === 'open' && permissions['payroll.manage'] && <Button size="sm" variant="ghost" onClick={() => confirmThen('Cancel this?', () => router.post(`/accounting/payroll/adjustments/${row.id}/cancel`, {}, { preserveScroll: true }))}>Cancel</Button>}</td></tr>
                         ))}
                         {adjustments.length === 0 && <tr><td colSpan={7} className="py-4 text-center text-muted-foreground">Nothing for {month}.</td></tr>}

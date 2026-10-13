@@ -9,7 +9,7 @@
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
         <x-accounting::validation-errors />
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="text-sm text-gray-600">{{ $budget['start_date'] }} → {{ $budget['end_date'] }} · <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ ['draft' => 'bg-amber-100 text-amber-800', 'approved' => 'bg-emerald-100 text-emerald-800', 'closed' => 'bg-gray-100 text-gray-600'][$budget['status']] }}">{{ $budget['status'] }}</span> {{ $budget['notes'] }}</p>
+            <p class="text-sm text-gray-600">{{ $budget['start_date'] }} → {{ $budget['end_date'] }} · <x-accounting::status-pill :status="$budget['status']" /> {{ $budget['notes'] }}</p>
             <div class="flex flex-wrap items-center gap-2">
                 @if ($budget['status'] === 'draft')@can('budgets.update')<a href="{{ route('accounting.budgets.edit', $budget['id']) }}" class="px-3 py-1.5 border border-gray-300 rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-50">Edit</a>@endcan @endif
                 @if ($budget['status'] === 'draft')@can('budgets.approve')<form method="POST" action="{{ route('accounting.budgets.approve', $budget['id']) }}">@csrf<button class="px-3 py-1.5 bg-blue-950 rounded-md text-xs font-semibold text-white uppercase tracking-widest">Approve</button></form>@endcan @endif
@@ -39,7 +39,7 @@
                     <td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row['budget'], 2) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row['actual'], 2) }}</td>
                     <td class="py-2 px-3 text-right tabular-nums {{ (float) $row['variance'] < 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ number_format((float) $row['variance'], 2) }}</td>
                     <td class="py-2 px-3 text-right tabular-nums">{{ $row['used_percent'] === null ? '—' : $row['used_percent'].'%' }}</td>
-                    <td class="py-2 px-3"><span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $styles[$row['status']] }}">{{ $row['status'] }}</span></td>
+                    <td class="py-2 px-3"><x-accounting::status-pill :status="$row['status']" /></td>
                 </tr>
                 <tr class="border-t bg-gray-50" x-show="open === {{ $row['account_id'] }}" x-cloak><td colspan="6" class="px-3 py-2"><div class="flex flex-wrap gap-4 text-xs tabular-nums">@foreach ($row['monthly'] as $month)<div><div class="font-medium">{{ $month['month'] }}</div><div>B {{ number_format((float) $month['budget'], 2) }}</div><div>A {{ number_format((float) $month['actual'], 2) }}</div></div>@endforeach</div></td></tr>
             @empty

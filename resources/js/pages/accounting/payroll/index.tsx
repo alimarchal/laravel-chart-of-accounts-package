@@ -1,10 +1,9 @@
+import { StatusPill } from '@/components/accounting/status-pill';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { FeatureLink } from '@/components/accounting/feature-link';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,24 +28,7 @@ export default function PayrollIndex({ runs, summary, year, defaultMonth, filter
         <>
             <Head title="Payroll" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Payroll" description="Monthly salary runs, from calculation to payment" />
-                    <div className="flex gap-2">
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/employees">Employees</Link></Button>
-                        <Button asChild variant="outline"><Link href="/accounting/payroll/components">Allowances &amp; deductions</Link></Button>
-                        <FeatureLink href="/accounting/payroll/grades">Grades</FeatureLink>
-                        {permissions['payroll.manage'] && <FeatureLink href="/accounting/payroll/bulk">Bulk changes</FeatureLink>}
-                        <FeatureLink href="/accounting/payroll/arrears">Arrears</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/attendance">Attendance</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/leaves">Leave</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/loans">Loans</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/schemes">Contributions</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/adjustments">Bonuses</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/settlements">Settlements</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/reports">Reports</FeatureLink>
-                        <FeatureLink href="/accounting/payroll/tax">Tax</FeatureLink>
-                    </div>
-                </div>
+                <PayrollHeader title="Payroll" description="Monthly salary runs, from calculation to payment" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -66,8 +48,7 @@ export default function PayrollIndex({ runs, summary, year, defaultMonth, filter
                         </Card>
                     </form>
                 )}
-                <Card>
-                    <FilterBar
+                <FilterBar
                     path="/accounting/payroll"
                     values={filters}
                     fields={[
@@ -77,15 +58,16 @@ export default function PayrollIndex({ runs, summary, year, defaultMonth, filter
                         { name: 'period_to', label: 'Month to', type: 'date' },
                     ]}
                 />
+                <Card>
                 <CardHeader><CardTitle>Runs</CardTitle></CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                             <thead><tr className="text-left text-muted-foreground"><th className="py-1">Month</th><th>Status</th><th className="text-right">Employees</th><th className="text-right">Gross</th><th className="text-right">Deductions</th><th className="text-right">Tax</th><th className="text-right">Net</th></tr></thead>
                             <tbody>
                                 {runs.map((run) => (
                                     <tr key={run.id} className="cursor-pointer border-t" onClick={() => router.visit(`/accounting/payroll/runs/${run.id}`)}>
                                         <td className="py-2"><Link href={`/accounting/payroll/runs/${run.id}`} className="font-medium hover:underline">{run.period_month}</Link></td>
-                                        <td><Badge variant="outline">{run.status}</Badge></td><td className="text-right">{run.employees}</td>
+                                        <td><StatusPill status={run.status} /></td><td className="text-right">{run.employees}</td>
                                         <td className="text-right tabular-nums">{money(run.gross)}</td><td className="text-right tabular-nums">{money(run.deductions)}</td><td className="text-right tabular-nums">{money(run.tax)}</td><td className="text-right tabular-nums">{money(run.net)}</td>
                                     </tr>
                                 ))}

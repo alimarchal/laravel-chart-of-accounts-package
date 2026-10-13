@@ -108,7 +108,7 @@ export default function TaxReport({ report, detail, filters, taxCodes }: Props) 
                 </div>
 
                 <div className="overflow-x-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 <th className="px-3 py-2 font-medium">Tax code</th>
@@ -143,7 +143,7 @@ export default function TaxReport({ report, detail, filters, taxCodes }: Props) 
 
                 <h3 className="text-sm font-medium">Documents</h3>
                 <div className="max-h-[28rem] overflow-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="sticky top-0 bg-muted text-left">
                             <tr>
                                 <th className="px-3 py-2 font-medium">Date</th>

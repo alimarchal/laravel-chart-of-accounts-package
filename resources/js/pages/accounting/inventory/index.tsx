@@ -57,7 +57,7 @@ export default function InventoryIndex({ valuation, warehouses, filters, categor
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                             <thead><tr className="text-left text-muted-foreground"><th className="py-2">SKU</th><th>Item</th><th className="text-right">Quantity</th><th className="text-right">Average cost</th><th className="text-right">Value</th><th className="pl-6">Where</th></tr></thead>
                             <tbody>
                                 {valuation.rows.map((row) => (
