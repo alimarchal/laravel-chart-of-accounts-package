@@ -202,9 +202,9 @@ it('filters users and roles with the shared filters', function (): void {
     $names = fn (string $query) => collect($this->getJson("/api/v1/accounting/users?{$query}")->assertOk()->json('data'))->pluck('name')->all();
 
     expect($names('filter[search]=booker'))->toBe(['Bob Booker'])
-        ->and($names('search=ann@'))->toBe(['Ann Auditor'])
+        ->and($names('search=ann@example.test'))->toBe(['Ann Auditor'])
         ->and($names('filter[name]=auditor'))->toBe(['Ann Auditor'])
-        ->and($names('filter[email]=bob@'))->toBe(['Bob Booker'])
+        ->and($names('filter[email]=bob@example.test'))->toBe(['Bob Booker'])
         ->and($names('filter[role]=viewer'))->toBe(['Ann Auditor'])
         ->and($names('filter[role]=viewer,accountant&sort=name'))->toBe(['Ann Auditor', 'Bob Booker'])
         ->and($names('filter[search]=zzz'))->toBe([]);
