@@ -43,6 +43,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\ResponseFactory;
 use Livewire\Livewire;
 
 class LaravelChartOfAccountsServiceProvider extends ServiceProvider
@@ -129,6 +131,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../routes/accounting-blade.php');
         } elseif ($driver === 'inertia') {
             $this->loadRoutesFrom(__DIR__.'/../routes/accounting.php');
+            $this->shareMenuWithInertia();
         }
 
         if (config('accounting.api_enabled', true)) {
@@ -180,6 +183,23 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
     /**
      * "accounting-api": per authenticated user (or IP) per minute; ACCOUNTING_API_RATE_LIMIT=0 disables it.
      */
+    /**
+     * The accounting menu (and the help article of the screen) sits in the host's own sidebar, so every Inertia page of the application
+     * needs it, not only the accounting ones. Shared here, not by a middleware, because the application builds its middleware groups
+     * after the providers have booted. The closures run only when a page is rendered, and only for a signed-in person.
+     */
+    private function shareMenuWithInertia(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(ResponseFactory::class, function (ResponseFactory $inertia): void {
+            $inertia->share('accountingMenu', fn (): array => request()->user() === null ? [] : Support\AccountingMenu::for(request()->user(), request()->path()));
+            $inertia->share('accountingHelp', fn (): ?array => request()->user() === null ? null : app(Support\Help::class)->forPath(request()->path()));
+        });
+    }
+
     private function registerRateLimiter(): void
     {
         RateLimiter::for('accounting-api', function (Request $request) {

@@ -153,7 +153,7 @@ or the ones above; `.env` keys that are not asked keep their documented defaults
 
 Your answers are written to `.env`. Then the installer publishes the config and migrations, migrates, seeds the chart of accounts,
 currencies, the current fiscal year, roles and tax codes, creates the database views and triggers, and verifies everything. It adds
-the **Accounting** and **Accounting settings** links next to **Dashboard** in the menu of your starter kit (Livewire/Flux: `resources/views/layouts/app/sidebar.blade.php`;
+the **Accounting** menu (one entry that opens into sections, settings and help included) next to **Dashboard** in the menu of your starter kit (Livewire/Flux: `resources/views/layouts/app/sidebar.blade.php`;
 Jetstream: `resources/views/navigation-menu.blade.php`; Breeze: `resources/views/layouts/navigation.blade.php`; React: `resources/js/components/app-sidebar.tsx`
 and `app-header.tsx`) and, for Blade, adds the package's screens to the Tailwind sources (`resources/css/app.css` for Tailwind 4, `tailwind.config.js`
 for Tailwind 3 as in Jetstream and Breeze; run `npm run build` once). It is safe to re-run.
@@ -594,19 +594,62 @@ in Blade, a small selector in the corner in React); the choice is kept for the s
   menus. The Urdu terms were written without review by an accountant: have yours check them and override what they would say
   differently.
 
+## The Accounting menu, the two parts of the area, and the help centre
+
+**One entry in your starter kit's menu.** Instead of two loose links, the installer adds a single **Accounting** menu next to *Dashboard*. It opens into sections, in the same
+order in every kit, and shows each person only what their role may open (a module you switched off disappears too):
+
+| Section | Items |
+|---|---|
+| **Overview** | Overview (the dashboard), All modules |
+| **Journal & ledger** | Journal entries, Recurring entries, Chart of accounts, Account types, Currency revaluation, Balance snapshots |
+| **Sales & purchases** | Customers & suppliers, Invoices & bills, Receipts & payments, Aged receivables, Aged payables, Tax returns, FBR invoices, WhatsApp |
+| **Banking** | Bank accounts, Bank statements, Reconciliations, Bank book, Cash book |
+| **Payroll** | Payroll runs, Employees, Attendance & leave, Loans & advances, Payroll reports & tax |
+| **Assets & stock** | Fixed assets, Inventory |
+| **Reports** | Trial balance, General ledger, Balance sheet, Income statement, Cash flow, Financial statements, Account balances, Budgets, Report mapping |
+| **Settings: Users & access** | Users, Roles, Permissions, Audit log |
+| **Settings: Set-up** | Accounting periods, Currencies, Cost centers, Branches, Voucher types, Tax codes, Tax rates, Control accounts, Account roles, Modules on / off |
+| **Help** | Help centre |
+
+| Livewire / Flux sidebar | React sidebar |
+|---|---|
+| ![Flux sidebar: the Accounting menu with Payroll open](docs/images/menu-flux-sidebar.jpg) | ![React sidebar: the same menu](docs/images/menu-react-sidebar.jpg) |
+| **Jetstream / Breeze top navigation** | **Flux header layout** |
+| ![Jetstream: Accounting dropdown with the sections side by side](docs/images/menu-jetstream-dropdown.jpg) | ![Flux header: the same dropdown](docs/images/menu-flux-header.jpg) |
+
+- The list lives in one place, `Support/AccountingMenu`: a new screen is added there once, never in your host files. The host file holds one line:
+  Flux sidebar `<x-accounting::menu.sidebar />` (`variant="sidebar"` for Flux 2), top navigation `<x-accounting::menu.dropdown />` with its mobile twin
+  `<x-accounting::menu.responsive />`, React sidebar `<AccountingNav />` below `<NavMain />` (header layout: `<AccountingHeaderMenu />`), all from
+  `@/components/accounting/accounting-nav`. The React menu is shared with every page of the application (it sits in your own sidebar), so it also shows on the
+  starter kit's Dashboard.
+- **An installation with the two old links** (*Accounting* and *Accounting settings*) is moved to the new menu by `php artisan accounting:install` (or `--setup-only`); nothing else needs doing.
+- The *All modules* page (`/accounting`) and its **Settings** tab remain, as cards grouped like the menu, each with a one-line description.
+
+## Help on every screen
+
+The **Help centre** (`/accounting/help`, a *Help centre* entry in the menu) has a short article for every item of the menu, written in plain English: *what it is, when to use it,
+how to, good to know, related screens*. There is also *Getting started*, a *Glossary* of accounting words and *Shortcuts*. Every screen has a **?** button (a *Help* button at the bottom
+right of the React screens) that opens the article of the screen you are on. The index shows the sections of the menu the person can see and has a search box.
+
+| Blade (Livewire, Jetstream, Breeze) | React |
+|---|---|
+| ![A help article in Blade](docs/images/help-blade-article.jpg) | ![A help article in React](docs/images/help-react-article.jpg) |
+
+The articles are markdown files in `resources/help/en/{topic}.md` (a `title:` and a `summary:` front matter, then text; `[[topic]]` links to another article). To change or add one,
+put a file of the same name in `resources/views/vendor/accounting/help/en/`; it wins over the package's.
+
 ## Accounting and Settings (the two parts of the area)
 
-The accounting area has two parts, with tabs at the top of each and **one link each in your starter kit's menu** (*Accounting* and *Accounting settings*; the
-installer adds both, and `accounting:install` adds the missing one to an installation that has only *Accounting*):
+The accounting area still has two parts, with tabs at the top of the *All modules* pages:
 
 | Part | URL / route | What is in it |
 |---|---|---|
 | **Accounting** | `/accounting` · `accounting.dashboard` | the daily work: journal entries, chart of accounts, recurring entries, reports (overview, ledger, trial balance, balance sheet, income statement, cash flow, statements, ageing), customers and suppliers, invoices/bills, receipts/payments, tax, banking, payroll, inventory, fixed assets, budgets, FBR, WhatsApp |
 | **Settings** | `/accounting/settings` · `accounting.settings` | **Users & access** (users with their roles, direct permissions and branches; roles and what each may do; permissions; features; account roles; branches; companies), **Setup** (currencies, periods, account types, cost centers, tax codes and rates, voucher types, control accounts, report mapping) and **Audit** |
 
-Only the cards and links the signed-in person's permissions allow are shown, and a route without the permission answers 403; the Settings tab appears only for
-people who may open something in it. Roles are created and changed in **Settings → Users & access → Roles** (React `/accounting/roles`, Blade `/settings/roles`):
-tick the permissions a role has; give a user extra permissions on the user's own screen; remove them the same way.
+Only the cards and links the signed-in person's permissions allow are shown, and a route without the permission answers 403. Roles are created and changed in **Settings → Users & access → Roles**
+(React `/accounting/roles`, Blade `/settings/roles`): tick the permissions a role has; give a user extra permissions on the user's own screen; remove them the same way.
 
 | Accounting | Settings |
 |---|---|

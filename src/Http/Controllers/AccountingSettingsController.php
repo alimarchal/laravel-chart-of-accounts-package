@@ -2,6 +2,8 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
+use Alimarchal\LaravelChartOfAccounts\Support\AccountingMenu;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,8 +14,12 @@ use Inertia\Response;
  */
 class AccountingSettingsController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
-        return Inertia::render('accounting/dashboard', ['section' => 'settings', 'summary' => []]);
+        return Inertia::render('accounting/dashboard', [
+            'section' => 'settings',
+            'summary' => [],
+            'hub' => array_values(array_filter(AccountingMenu::for($request->user(), '', true), fn (array $section): bool => $section['area'] === 'settings')),
+        ]);
     }
 }

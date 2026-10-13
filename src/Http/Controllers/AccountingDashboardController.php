@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Support\AccountingMenu;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -22,6 +23,7 @@ class AccountingDashboardController extends Controller
         // A card only for what the user may open; the journal count follows the working branch.
         return Inertia::render('accounting/dashboard', [
             'section' => 'accounting',
+            'hub' => array_values(array_filter(AccountingMenu::for($user, '', true), fn (array $section): bool => $section['area'] === 'accounting' && $section['key'] !== 'overview')),
             'summary' => array_filter([
                 'accountTypes' => $can('account-types.view') ? AccountType::query()->count() : null,
                 'currencies' => $can('currencies.view') ? Currency::query()->count() : null,

@@ -198,6 +198,41 @@
 .acc-kit .report-table tfoot td{background:var(--acc-surface-2);color:var(--acc-text);border-top:1px solid var(--acc-border-strong);font-weight:650}
 }
 
+/* ---- help centre ---- */
+.acc-kit .acc-help-search{position:relative;max-width:34rem;margin-bottom:1.25rem}
+.acc-kit .acc-help-search svg{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);color:var(--acc-faint)}
+.acc-kit .acc-help-search .acc-input{padding-left:2.5rem}
+.acc-kit .acc-help-h{margin:1.4rem 0 .6rem;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc-muted)}
+.acc-kit .acc-help-grid{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))}
+.acc-kit .acc-help-card{display:flex;flex-direction:column;gap:.25rem;padding:.9rem 1rem;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:var(--acc-radius);box-shadow:var(--acc-shadow);text-decoration:none;color:var(--acc-text);transition:border-color .12s,transform .12s}
+.acc-kit .acc-help-card:hover{border-color:var(--acc-accent);transform:translateY(-1px)}
+.acc-kit .acc-help-card strong{font-size:.92rem}
+.acc-kit .acc-help-card span{font-size:.8rem;color:var(--acc-muted);line-height:1.35}
+.acc-kit .acc-help-layout{display:grid;gap:1.25rem;grid-template-columns:15rem minmax(0,1fr);align-items:start;margin-top:1rem}
+@media (max-width:860px){.acc-kit .acc-help-layout{grid-template-columns:1fr}}
+.acc-kit .acc-help-nav{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto;font-size:.84rem}
+.acc-kit .acc-help-nav summary{cursor:pointer;padding:.45rem .5rem;font-weight:650;color:var(--acc-text);list-style:none}
+.acc-kit .acc-help-nav summary::-webkit-details-marker{display:none}
+.acc-kit .acc-help-nav a{display:block;padding:.3rem .5rem .3rem 1rem;border-radius:.45rem;color:var(--acc-muted);text-decoration:none}
+.acc-kit .acc-help-nav a:hover{background:var(--acc-hover);color:var(--acc-text)}
+.acc-kit .acc-help-nav a[aria-current]{background:var(--acc-accent-soft);color:var(--acc-accent);font-weight:650}
+.acc-kit .acc-prose{max-width:46rem;font-size:.93rem;line-height:1.65;color:var(--acc-text)}
+.acc-kit .acc-prose h2{margin:1.6rem 0 .5rem;font-size:1.05rem;font-weight:700}
+.acc-kit .acc-prose h2:first-child{margin-top:0}
+.acc-kit .acc-prose h3{margin:1.1rem 0 .35rem;font-size:.95rem;font-weight:650}
+.acc-kit .acc-prose p{margin:.5rem 0}
+.acc-kit .acc-prose ul{margin:.5rem 0;padding-left:1.25rem;list-style:disc}
+.acc-kit .acc-prose ol{margin:.5rem 0;padding-left:1.35rem;list-style:decimal}
+.acc-kit .acc-prose li{margin:.25rem 0}
+.acc-kit .acc-prose a{color:var(--acc-accent);font-weight:600;text-decoration:none}
+.acc-kit .acc-prose a:hover{text-decoration:underline}
+.acc-kit .acc-prose code{padding:.1rem .35rem;border-radius:.35rem;background:var(--acc-hover);font-size:.85em}
+.acc-kit .acc-prose blockquote{margin:.8rem 0;padding:.6rem .9rem;border-left:3px solid var(--acc-accent);background:var(--acc-accent-soft);border-radius:0 .5rem .5rem 0}
+.acc-kit .acc-prose blockquote p{margin:.2rem 0}
+.acc-kit .acc-prose table{width:100%;margin:.8rem 0;font-size:.86rem;border-collapse:collapse}
+.acc-kit .acc-prose th,.acc-kit .acc-prose td{padding:.4rem .6rem;border-bottom:1px solid var(--acc-border);text-align:left}
+.acc-kit .acc-prose kbd{padding:.05rem .4rem;border:1px solid var(--acc-border-strong);border-radius:.3rem;background:var(--acc-surface-2);font-size:.8em}
+
 /* ---- module cards (dashboard, settings): groups flow into columns, no empty gaps ---- */
 .acc-kit .acc-masonry{columns:2 22rem;column-gap:1.5rem}
 .acc-kit .acc-masonry>div{break-inside:avoid;margin-bottom:1.5rem}
@@ -214,7 +249,7 @@
 .acc-kit .acc-subnav a:hover{color:var(--acc-text);background:var(--acc-surface-2)}
 .acc-kit .acc-subnav a[aria-current]{background:var(--acc-surface);color:var(--acc-accent);box-shadow:var(--acc-shadow)}
 .acc-kit .acc-subnav-sep{width:1px;background:var(--acc-border-strong);margin:.3rem .15rem;align-self:stretch}
-@media print{.acc-kit .acc-no-print,.acc-kit .acc-head-r,.acc-kit .acc-context,.acc-kit .acc-tabs,.acc-kit .acc-filters,.acc-kit .acc-lf,.acc-kit .acc-subnav{display:none!important}.acc-kit .acc-card{box-shadow:none}}
+@media print{.acc-kit .acc-no-print,.acc-kit .acc-head-r,.acc-kit .acc-context,.acc-kit .acc-tabs,.acc-kit .acc-filters,.acc-kit .acc-lf,.acc-kit .acc-subnav,.acc-kit .acc-help-nav{display:none!important}.acc-kit .acc-card{box-shadow:none}}
 @media (prefers-reduced-motion:reduce){.acc-kit *{animation:none!important;transition:none!important}}
 </style>
 @endonce

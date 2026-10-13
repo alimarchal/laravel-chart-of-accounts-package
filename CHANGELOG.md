@@ -4,9 +4,14 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
-Every screen now looks like the journal screens: payroll included, in Blade (Livewire, Jetstream, Breeze) and in React.
+Every screen now looks like the journal screens (payroll included), the menu of the starter kits is one organised Accounting menu, and every screen has a help article.
+
+### Added
+- **One organised Accounting menu in every starter kit** (Livewire/Flux sidebar and header, Jetstream, Breeze, React sidebar and header). The two loose links *Accounting* and *Accounting settings* are replaced by a single **Accounting** entry that opens into sections (Overview, Journal & ledger, Sales & purchases, Banking, Payroll, Assets & stock, Reports, then the Settings sections Users & access and Set-up, and the Help centre), showing each person only what their role may open and leaving out switched-off modules. The list lives in `Support/AccountingMenu`; the host files hold a single line (`<x-accounting::menu.sidebar />`, `<x-accounting::menu.dropdown />`, `<x-accounting::menu.responsive />`, `<AccountingNav />`, `<AccountingHeaderMenu />`), and `accounting:install` moves an installation with the two old links to the new menu. The React menu is shared with every page of the application, so it shows on the kit's own Dashboard too.
+- **Help centre**, in English: a short article for every menu item (what it is, when to use it, how to, good to know, related), plus *Getting started*, a *Glossary* and *Shortcuts*; `/accounting/help` with a search box and sections like the menu, and a **?** button (React: a *Help* pill) on every screen that opens the article of that screen. Articles are markdown in `resources/help/en/`, overridable in `resources/views/vendor/accounting/help/en/`.
 
 ### Changed
+- **React hub pages** (*All modules* and *Settings*) are drawn from the same list as the menu: sections with an icon, every card with the one-line summary of its help article, and proper labels on the numbers at the top.
 - **Payroll** (Blade and React): one navigation strip (*Runs · Employees · Grades · Pay items · Contributions · Bulk changes · Attendance · Leave · Loans · Arrears · Bonuses · Settlements · Reports · Tax*, hiding what a switched-off feature or a missing permission removes) at the top of every payroll screen instead of a row of 14 buttons; the run screen shows its status as a pill next to the actions.
 - **Headers of all other Blade screens** (chart of accounts, inventory, fixed assets, parties, tax, periods, budgets, bank statements, settings pages …): the same header as the journal screens, with a back link and one primary action, instead of rows of differently coloured buttons.
 - **List filters** (`list-filters`, 25 screens) are a compact card with the new fields and a *Filter* / *Reset* pair; the React `FilterBar` is a card too.
