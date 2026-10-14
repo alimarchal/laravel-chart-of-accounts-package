@@ -58,12 +58,20 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+export function AppSidebar() {
+    return (
+        <SidebarContent>
+            <NavMain items={mainNavItems} />
+        </SidebarContent>
+    );
+}
+
 const footerNavItems: NavItem[] = [
     { title: 'Repository', href: 'https://github.com/laravel/react-starter-kit', icon: Folder },
 ];
 TSX;
 
-it('adds the Accounting link next to Dashboard in the Livewire starter kit sidebar, once', function (string $source): void {
+it('adds the Accounting menu next to Dashboard in the Livewire starter kit sidebar, once', function (string $source, string $component): void {
     writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', $source);
     $menu = new StarterKitMenu;
 
@@ -72,14 +80,14 @@ it('adds the Accounting link next to Dashboard in the Livewire starter kit sideb
     $result = file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php');
 
     expect($first[0]['status'])->toBe('added')->and($second[0]['status'])->toBe('present')
-        ->and(substr_count($result, "route('accounting.dashboard')"))->toBe(1)
-        ->and($result)->toContain('{{-- accounting:menu --}}')->toContain('icon="calculator"')->toContain("__('Accounting')")
-        ->toContain("routeIs('accounting.*')")->toContain("route('dashboard')")                   // the Dashboard item itself is untouched
-        ->and(substr_count($result, 'wire:navigate'))->toBe(1)                                    // the new item is an ordinary link
-        ->and(strpos($result, "route('dashboard')"))->toBeLessThan(strpos($result, "route('accounting.dashboard')"));
+        ->and(substr_count($result, '<x-accounting::menu.'))->toBe(1)->and($result)->toContain($component)
+        ->and($result)->toContain("route('dashboard')")                                           // the Dashboard item itself is untouched
+        ->and($result)->not->toContain('calculator')                                              // no loose Accounting links any more
+        ->and(strpos($result, "route('dashboard')"))->toBeLessThan(strpos($result, '<x-accounting::menu.'))
+        ->and(strpos($result, '<x-accounting::menu.'))->toBeGreaterThan(strpos($result, '</flux:'.(str_contains($source, 'sidebar.group') ? 'sidebar' : 'navlist').'.group>'));   // after the group that holds Dashboard
 })->with([
-    'Flux 2 (sidebar.item)' => [FLUX2_SIDEBAR],
-    'Flux 1 (navlist.item)' => [FLUX1_SIDEBAR],
+    'Flux 2 (sidebar.item)' => [FLUX2_SIDEBAR, '<x-accounting::menu.sidebar variant="sidebar" />'],
+    'Flux 1 (navlist.item)' => [FLUX1_SIDEBAR, '<x-accounting::menu.sidebar />'],
 ]);
 
 it('says so when the sidebar has no Dashboard item to copy', function (): void {
@@ -91,7 +99,7 @@ it('says so when the sidebar has no Dashboard item to copy', function (): void {
         ->and(file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php'))->toBe('<div>my own menu</div>');
 });
 
-it('adds the Accounting link to mainNavItems of the React starter kit, with its icon import', function (): void {
+it('adds the Accounting menu to the sidebar of the React starter kit, with its import, once', function (): void {
     writeFile($this->project.'/resources/js/components/app-sidebar.tsx', REACT_SIDEBAR);
     $menu = new StarterKitMenu;
 
@@ -100,12 +108,10 @@ it('adds the Accounting link to mainNavItems of the React starter kit, with its 
     $result = file_get_contents($this->project.'/resources/js/components/app-sidebar.tsx');
 
     expect($first[0]['status'])->toBe('added')->and($second[0]['status'])->toBe('present')
-        ->and($result)->toContain("{ title: 'Accounting', href: '/settings-config', icon: Calculator }")
-        ->toContain("import { BookOpen, Calculator, Folder, LayoutGrid, Settings2 } from 'lucide-react';")
-        ->toContain("{ title: 'Accounting settings', href: '/settings-config/settings', icon: Settings2 }")
-        ->and(substr_count($result, 'Calculator'))->toBe(2)
-        ->and(strpos($result, 'icon: LayoutGrid'))->toBeLessThan(strpos($result, "title: 'Accounting'"))
-        ->and(strpos($result, "title: 'Accounting'"))->toBeLessThan(strpos($result, 'const footerNavItems'));
+        ->and($result)->toContain("import { AccountingNav } from '@/components/accounting/accounting-nav';")
+        ->and(substr_count($result, '<AccountingNav />'))->toBe(1)
+        ->and($result)->not->toContain("title: 'Accounting'")                                      // the menu is drawn from the package, not listed here
+        ->and(strpos($result, '<NavMain'))->toBeLessThan(strpos($result, '<AccountingNav />'));
 });
 
 it('leaves the other driver\'s files alone', function (): void {
@@ -366,11 +372,11 @@ it('patches the real files of the official Laravel starter kits (Livewire sideba
     $header = (string) file_get_contents($this->project.'/resources/views/layouts/app/header.blade.php');
 
     expect(array_column($blade, 'status'))->toBe(['added', 'added'])->and(array_column($react, 'status'))->toBe(['added'])
-        ->and($sidebar)->toContain('<flux:sidebar.item icon="calculator" :href="route(\'accounting.dashboard\')"')
-        ->and($header)->toContain('<flux:navbar.item icon="calculator" :href="route(\'accounting.dashboard\')"')
-        ->and(substr_count($header, "route('accounting.dashboard')"))->toBe(2)                    // the top bar and the mobile menu each have a Dashboard item
-        ->and(substr_count($sidebar, "route('accounting.dashboard')"))->toBe(1)
-        ->and(file_get_contents($this->project.'/resources/js/components/app-sidebar.tsx'))->toContain('icon: Calculator }, // accounting:menu');
+        ->and($sidebar)->toContain('<x-accounting::menu.sidebar variant="sidebar" />')->and(substr_count($sidebar, '<x-accounting::menu.'))->toBe(1)
+        ->and($header)->toContain('<x-accounting::menu.dropdown kit="flux" />')                    // the top bar
+        ->and($header)->toContain('<x-accounting::menu.sidebar variant="sidebar" />')              // the mobile menu
+        ->and(substr_count($header, '<x-accounting::menu.'))->toBe(2)
+        ->and(file_get_contents($this->project.'/resources/js/components/app-sidebar.tsx'))->toContain('<AccountingNav />');
 });
 
 it('patches the real navigation of Jetstream and Breeze: the top bar and the mobile menu, once', function (string $fixture, string $file): void {
@@ -383,8 +389,8 @@ it('patches the real navigation of Jetstream and Breeze: the top bar and the mob
     $result = (string) file_get_contents($this->project.'/'.$file);
 
     expect($first[0]['status'])->toBe('added')->and($second[0]['status'])->toBe('present')
-        ->and(substr_count($result, "route('accounting.dashboard')"))->toBe(2)                       // x-nav-link and x-responsive-nav-link
-        ->and($result)->toContain("routeIs('accounting.*')")->toContain("__('Accounting')")->toContain('{{-- accounting:menu --}}')
+        ->and($result)->toContain('<x-accounting::menu.dropdown kit="jetstream" />')->toContain('<x-accounting::menu.responsive />')   // the top bar and the mobile menu
+        ->and(substr_count($result, '<x-accounting::menu.'))->toBe(2)
         ->and(substr_count($result, "route('dashboard')"))->toBe(substr_count($original, "route('dashboard')"));   // the Dashboard items are untouched
 })->with([
     'Jetstream (Livewire)' => ['jetstream-navigation-menu.blade.php', 'resources/views/navigation-menu.blade.php'],
@@ -421,32 +427,39 @@ it('writes no kit for React', function (): void {
     expect((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_UI_DRIVER'))->toBe('inertia')->and((new EnvFile($this->project.'/.env'))->get('ACCOUNTING_BLADE_KIT'))->toBeNull();
 });
 
-it('adds an Accounting settings link next to Accounting, and to an installation that only has Accounting', function (): void {
-    $kits = __DIR__.'/../../Fixtures/starter-kits';
-    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', (string) file_get_contents($kits.'/livewire-sidebar.blade.php'));
-    writeFile($this->project.'/resources/views/navigation-menu.blade.php', (string) file_get_contents($kits.'/jetstream-navigation-menu.blade.php'));
-    writeFile($this->project.'/resources/js/components/app-sidebar.tsx', (string) file_get_contents($kits.'/react-app-sidebar.tsx'));
+it('moves an installation that has the two separate links (Accounting and Accounting settings) to the Accounting menu', function (): void {
+    $old = <<<'BLADE'
+<flux:navlist variant="outline">
+    <flux:navlist.group :heading="__('Platform')" class="grid">
+        <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')">{{ __('Dashboard') }}</flux:navlist.item>
+        {{-- accounting:menu --}}
+        @if (\Illuminate\Support\Facades\Route::has('accounting.dashboard'))
+            <flux:navlist.item icon="calculator" :href="route('accounting.dashboard')" :current="request()->routeIs('accounting.*') && ! request()->routeIs('accounting.settings')">{{ __('Accounting') }}</flux:navlist.item>
+        @endif
+        {{-- accounting:menu-settings --}}
+        @if (\Illuminate\Support\Facades\Route::has('accounting.settings'))
+            <flux:navlist.item icon="cog-6-tooth" :href="route('accounting.settings')" :current="request()->routeIs('accounting.settings')">{{ __('Accounting settings') }}</flux:navlist.item>
+        @endif
+    </flux:navlist.group>
+</flux:navlist>
+BLADE;
+    $reactOld = str_replace("    },\n];", "    },\n    { title: 'Accounting', href: '/accounting', icon: Calculator }, // accounting:menu\n    { title: 'Accounting settings', href: '/accounting/settings', icon: Settings2 }, // accounting:menu-settings\n];", REACT_SIDEBAR);
+    $reactOld = str_replace("import { BookOpen, Folder, LayoutGrid } from 'lucide-react';", "import { BookOpen, Calculator, Folder, LayoutGrid, Settings2 } from 'lucide-react';", $reactOld);
+    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', $old);
+    writeFile($this->project.'/resources/js/components/app-sidebar.tsx', $reactOld);
     $menu = new StarterKitMenu;
 
-    $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
-    $menu->apply('inertia', $this->project, '/accounting', 'accounting.dashboard');
-    $again = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $blade = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
+    $react = $menu->apply('inertia', $this->project, '/accounting', 'accounting.dashboard');
     $sidebar = (string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php');
-    $jetstream = (string) file_get_contents($this->project.'/resources/views/navigation-menu.blade.php');
+    $tsx = (string) file_get_contents($this->project.'/resources/js/components/app-sidebar.tsx');
 
-    expect(array_column($again, 'status'))->each->toBe('present')
-        ->and(substr_count($sidebar, "route('accounting.settings')"))->toBe(1)->and($sidebar)->toContain('icon="cog-6-tooth"')->toContain("__('Accounting settings')")
-        ->and($sidebar)->toContain("routeIs('accounting.*') && ! request()->routeIs('accounting.settings')")
-        ->and(substr_count($jetstream, "route('accounting.settings')"))->toBe(2)                    // top bar and mobile menu
-        ->and($jetstream)->toContain("routeIs('accounting.settings')");
-
-    // An installation from before the Settings part: the Accounting block is there, the settings one is not.
-    $old = str_replace(" && ! request()->routeIs('accounting.settings')", '', (string) preg_replace('/\n[ \t]*\{\{-- accounting:menu-settings --\}\}.*?@endif/s', '', $sidebar));
-    expect($old)->not->toContain('accounting.settings');
-    writeFile($this->project.'/resources/views/layouts/app/sidebar.blade.php', $old);
-    $upgrade = $menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard');
-
-    expect($upgrade[0]['status'])->toBe('added')
-        ->and(substr_count((string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php'), "route('accounting.settings')"))->toBe(1)
-        ->and((string) file_get_contents($this->project.'/resources/views/layouts/app/sidebar.blade.php'))->toContain("routeIs('accounting.*') && ! request()->routeIs('accounting.settings')");
+    expect($blade[0]['status'])->toBe('added')->and($blade[0]['message'])->toContain('replaced')
+        ->and($sidebar)->not->toContain('accounting:menu')->not->toContain("route('accounting.")->not->toContain('calculator')
+        ->and(substr_count($sidebar, '<x-accounting::menu.sidebar />'))->toBe(1)
+        ->and($react[0]['status'])->toBe('added')
+        ->and($tsx)->not->toContain('accounting:menu')->not->toContain('Calculator')->not->toContain('Settings2')
+        ->and($tsx)->toContain("import { BookOpen, Folder, LayoutGrid } from 'lucide-react';")->toContain('<AccountingNav />')
+        ->and($menu->apply('blade', $this->project, '/accounting', 'accounting.dashboard')[0]['status'])->toBe('present')
+        ->and($menu->apply('inertia', $this->project, '/accounting', 'accounting.dashboard')[0]['status'])->toBe('present');
 });

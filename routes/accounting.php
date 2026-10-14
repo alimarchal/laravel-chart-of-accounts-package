@@ -28,6 +28,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FeatureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FxRevaluationController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\HelpController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\InventoryController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\JournalEntryController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\LocaleController;
@@ -111,6 +112,13 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
             ->middleware('can:accounting.view');
         Route::get('settings', AccountingSettingsController::class)
             ->name('settings')
+            ->middleware('can:accounting.view');
+        Route::get('help', [HelpController::class, 'index'])
+            ->name('help.index')
+            ->middleware('can:accounting.view');
+        Route::get('help/{topic}', [HelpController::class, 'show'])
+            ->name('help.show')
+            ->where('topic', '[a-z0-9-]+')
             ->middleware('can:accounting.view');
         Route::get('overview', AccountingOverviewController::class)
             ->name('overview')

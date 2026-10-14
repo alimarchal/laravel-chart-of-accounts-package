@@ -3,12 +3,15 @@
 namespace Alimarchal\LaravelChartOfAccounts\Support\Install;
 
 /**
- * Adds the "Accounting" entry to the navigation of Laravel's starter kits, next to Dashboard: the Livewire kit (Flux sidebar or header,
- * Blade) and the React kit (app-sidebar.tsx / app-header.tsx, Inertia). Each file is changed once (a marker keeps it idempotent); a file
- * that does not look like the kit's is left alone and reported, so the installer can print the lines to add by hand.
+ * Adds the accounting menu to the navigation of Laravel's starter kits, next to Dashboard: the Livewire kit (Flux sidebar or header,
+ * Blade), Jetstream and Breeze (top navigation) and the React kit (app-sidebar.tsx / app-header.tsx, Inertia). It is ONE entry that opens
+ * into sections (see AccountingMenu), drawn by a component of the package, so the host file holds a single line and new screens never
+ * need the host file to change. Each file is changed once; an older install that has the two separate links ("Accounting" and
+ * "Accounting settings") is moved to the new menu. A file that does not look like the kit's is left alone and reported.
  */
 final class StarterKitMenu
 {
+    /** The comment lines of the earlier two-link install. */
     public const MARKER = 'accounting:menu';
 
     public const SETTINGS_MARKER = 'accounting:menu-settings';
@@ -31,7 +34,7 @@ final class StarterKitMenu
         if ($driver === 'inertia') {
             foreach (['resources/js/components/app-sidebar.tsx', 'resources/js/components/app-header.tsx'] as $file) {
                 if (is_file($basePath.'/'.$file)) {
-                    $results[] = $this->react($basePath, $file, $url);
+                    $results[] = $this->react($basePath, $file);
                 }
             }
         }
@@ -116,21 +119,16 @@ final class StarterKitMenu
         $path = $basePath.'/'.$file;
         $source = (string) file_get_contents($path);
 
-        if (str_contains($source, self::MARKER)) {
-            // An earlier install added Accounting only: add the Settings link next to it.
-            $with = $this->withSettings($source, $routeName);
-
-            if ($with === $source) {
-                return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting links'];
-            }
-
-            file_put_contents($path, $with);
-
-            return ['file' => $file, 'status' => 'added', 'message' => 'Accounting settings link added next to Accounting'];
+        if (str_contains($source, 'accounting::menu.')) {
+            return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting menu'];
         }
 
-        if (str_contains($source, $routeName)) {
-            return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting link'];
+        $migrated = false;
+        $cleaned = (string) preg_replace('/^([ \t]*)\{\{-- accounting:menu(?:-settings)? --\}\}\R(?:.*?\R)?\1@endif\R?/ms', '', $source, -1, $removed);
+
+        if ($removed > 0) {
+            $source = $cleaned;
+            $migrated = true;
         }
 
         // Every Dashboard item of the kit (the header layout has one in the top bar and one in the mobile menu; Jetstream and Breeze one in the
@@ -139,7 +137,7 @@ final class StarterKitMenu
         $pattern = '/^([ \t]*)(<(flux:sidebar\.item|flux:navlist\.item|flux:navbar\.item|x-nav-link|x-responsive-nav-link)\b(?:(?!<\/\3>).)*?route\(\s*[\'"]dashboard[\'"]\s*\)(?:(?!<\/\3>).)*?<\/\3>)/ms';
 
         if (preg_match_all($pattern, $source, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE) < 1) {
-            return ['file' => $file, 'status' => 'manual', 'message' => 'no Dashboard item found to copy'];
+            return ['file' => $file, 'status' => 'manual', 'message' => 'no Dashboard item found to put the menu next to'];
         }
 
         $updated = $source;
@@ -147,105 +145,143 @@ final class StarterKitMenu
         foreach (array_reverse($matches) as $match) {
             [$whole, $at] = $match[0];
             $indent = $match[1][0];
-            $item = $match[2][0];
-            $item = (string) preg_replace('/\s+wire:navigate(?:\.hover)?\b/', '', $item);                   // the accounting pages are ordinary pages
-            $item = str_replace(["route('dashboard')", 'route("dashboard")'], "route('{$routeName}')", $item);
-            $item = (string) preg_replace('/routeIs\(\s*[\'"]dashboard[\'"]\s*\)/', "routeIs('".preg_replace('/\.dashboard$/', '.*', $routeName)."') && ! request()->routeIs('".preg_replace('/\.dashboard$/', '.settings', $routeName)."')", $item);
-            $item = (string) preg_replace('/\bicon="[^"]*"/', 'icon="calculator"', $item);
-            $item = (string) preg_replace('/__\(\s*[\'"]Dashboard[\'"]\s*\)/', "__('Accounting')", $item);
-            $item = (string) preg_replace('/>\s*Dashboard\s*</', '>Accounting<', $item);
+            $tag = $match[3][0];
+            $component = match ($tag) {
+                'flux:navbar.item' => '<x-accounting::menu.dropdown kit="flux" />',
+                'x-nav-link' => '<x-accounting::menu.dropdown kit="jetstream" />',
+                'x-responsive-nav-link' => '<x-accounting::menu.responsive />',
+                'flux:sidebar.item' => '<x-accounting::menu.sidebar variant="sidebar" />',
+                default => '<x-accounting::menu.sidebar />',
+            };
+            $end = $at + strlen($whole);
 
-            $lines = explode("\n", $item);
-            $nested = array_map(fn (string $line, int $index): string => $index === 0 ? $line : ($line === '' ? $line : '    '.$line), $lines, array_keys($lines));
+            // In a sidebar the menu goes after the group that holds Dashboard (groups cannot be nested), when the group closes right after it.
+            if (str_starts_with($component, '<x-accounting::menu.sidebar') && preg_match('/\G(?:(?!<flux:(?:navlist|sidebar)\.group\b).)*?(?:^|\n)([ \t]*)<\/flux:(?:navlist|sidebar)\.group>/s', $updated, $close, 0, $end) === 1) {
+                $end += strlen($close[0]);
+                $indent = $close[1];
+            }
 
-            $block = $indent.'{{-- '.self::MARKER.' --}}'."\n".$indent.'@if (\Illuminate\Support\Facades\Route::has(\''.$routeName.'\'))'."\n"
-                .$indent.'    '.ltrim(implode("\n", $nested))."\n".$indent.'@endif';
-
-            $updated = substr_replace($updated, $whole."\n".$block, $at, strlen($whole));
+            $block = $indent.'@if (\Illuminate\Support\Facades\Route::has(\''.$routeName.'\'))'."\n".$indent.'    '.$component."\n".$indent.'@endif';
+            $updated = substr($updated, 0, $end)."\n".$block.substr($updated, $end);
         }
 
-        file_put_contents($path, $this->withSettings($updated, $routeName));
+        file_put_contents($path, $updated);
 
-        return ['file' => $file, 'status' => 'added', 'message' => 'Accounting and Accounting settings links added next to Dashboard'];
-    }
-
-    /**
-     * Next to every Accounting link (the block after the marker comment) a copy for the Settings part of the accounting area: users, roles,
-     * permissions and the set-up of the books.
-     */
-    private function withSettings(string $source, string $routeName): string
-    {
-        if (str_contains($source, self::SETTINGS_MARKER)) {
-            return $source;
-        }
-
-        $settingsRoute = (string) preg_replace('/\.dashboard$/', '.settings', $routeName);
-
-        return (string) preg_replace_callback('/^([ \t]*)\{\{-- '.preg_quote(self::MARKER, '/').' --\}\}\n(.*?)\n\1@endif/ms', function (array $match) use ($routeName, $settingsRoute): string {
-            $copy = str_replace([self::MARKER, "'{$routeName}'", "__('Accounting')", 'icon="calculator"', '>Accounting<'], [self::SETTINGS_MARKER, "'{$settingsRoute}'", "__('Accounting settings')", 'icon="cog-6-tooth"', '>Accounting settings<'], $match[0]);
-            $copy = (string) preg_replace("/routeIs\\('[^']*'\\)[^\"]*\"/", "routeIs('{$settingsRoute}')\"", $copy);
-
-            $all = (string) preg_replace('/\.dashboard$/', '.*', $routeName);
-            $main = str_contains($match[0], $settingsRoute) ? $match[0] : str_replace("routeIs('{$all}')", "routeIs('{$all}') && ! request()->routeIs('{$settingsRoute}')", $match[0]);
-
-            return $main."\n".$copy;
-        }, $source);
+        return ['file' => $file, 'status' => 'added', 'message' => $migrated ? 'the two Accounting links were replaced by the Accounting menu' : 'Accounting menu added next to Dashboard'];
     }
 
     /**
      * @return array{file: string, status: 'added'|'present'|'manual', message: string}
      */
-    private function react(string $basePath, string $file, string $url): array
+    private function react(string $basePath, string $file): array
     {
         $path = $basePath.'/'.$file;
         $source = (string) file_get_contents($path);
 
-        if (str_contains($source, self::MARKER) || preg_match('/title:\s*[\'"]Accounting[\'"]/', $source) === 1) {
-            if (str_contains($source, self::SETTINGS_MARKER) || preg_match('/\n([ \t]*)\{[^\n]*title:\s*[\'"]Accounting[\'"][^\n]*\},?[^\n]*\n/', $source, $line) !== 1) {
-                return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting links'];
+        if (str_contains($source, 'AccountingNav') || str_contains($source, 'AccountingHeaderMenu')) {
+            return ['file' => $file, 'status' => 'present', 'message' => 'already has the Accounting menu'];
+        }
+
+        $migrated = false;
+        $without = (string) preg_replace('/^[ \t]*\{[^\n]*title:\s*[\'"]Accounting(?: settings)?[\'"][^\n]*\},?[ \t]*\/\/ accounting:menu(?:-settings)?[ \t]*\R/m', '', $source, -1, $removed);
+
+        if ($removed > 0) {
+            $source = $without;
+            $migrated = true;
+
+            foreach (['Calculator', 'Settings2'] as $icon) {
+                if (preg_match_all('/\b'.$icon.'\b/', $source) === 1) {
+                    $source = $this->withoutLucideIcon($source, $icon);
+                }
+            }
+        }
+
+        $import = "import { %s } from '@/components/accounting/accounting-nav';\n";
+
+        if (str_contains($file, 'app-sidebar') && preg_match('/^([ \t]*)<NavMain\b[^>]*\/>/m', $source, $nav) === 1) {
+            $source = str_replace($nav[0], $nav[0]."\n".$nav[1].'<AccountingNav />', $source);
+            $source = $this->withImport($source, sprintf($import, 'AccountingNav'));
+        } elseif (str_contains($file, 'app-header')) {
+            $names = [];
+            $offset = 0;
+            $found = [];
+
+            while (($at = strpos($source, '{mainNavItems.map(', $offset)) !== false) {
+                $end = $this->closingBrace($source, $at);
+
+                if ($end === null) {
+                    break;
+                }
+
+                $found[] = [$at, $end];
+                $offset = $end + 1;
             }
 
-            // An earlier install added Accounting only: add Accounting settings after it.
-            $updated = str_replace($line[0], $line[0].$line[1]."{ title: 'Accounting settings', href: '".$url."/settings', icon: Settings2 }, // ".self::SETTINGS_MARKER."\n", $source);
-            file_put_contents($path, $this->lucideIcon($updated, 'Settings2'));
+            // The first list is the mobile sheet, the second the desktop navigation (a kit with one list gets the desktop menu).
+            foreach (array_reverse($found, true) as $index => [$at, $end]) {
+                $lineStart = (int) strrpos(substr($source, 0, $at), "\n") + 1;
+                $indent = substr($source, $lineStart, $at - $lineStart);
+                $isDesktop = $index === count($found) - 1;
+                $tag = $isDesktop ? '<AccountingHeaderMenu />' : '<AccountingMobileMenu />';
+                $wrapped = $isDesktop ? "\n".$indent.'<NavigationMenuItem className="relative flex h-full items-center">'.$tag.'</NavigationMenuItem>' : "\n".$indent.$tag;
+                $source = substr($source, 0, $end + 1).$wrapped.substr($source, $end + 1);
+                $names[$isDesktop ? 'AccountingHeaderMenu' : 'AccountingMobileMenu'] = true;
+            }
 
-            return ['file' => $file, 'status' => 'added', 'message' => 'Accounting settings link added to mainNavItems'];
+            if ($names === []) {
+                return ['file' => $file, 'status' => 'manual', 'message' => 'no mainNavItems list found'];
+            }
+
+            $source = $this->withImport($source, sprintf($import, implode(', ', array_keys($names))));
+        } else {
+            return ['file' => $file, 'status' => 'manual', 'message' => 'no NavMain found in the sidebar'];
         }
-
-        if (preg_match('/(const\s+mainNavItems(?:\s*:\s*NavItem\[\])?\s*=\s*\[)(.*?)(\n[ \t]*\];)/s', $source, $array) !== 1
-            || preg_match('/import\s*\{([^}]*)\}\s*from\s*[\'"]lucide-react[\'"];?/s', $source, $icons) !== 1) {
-            return ['file' => $file, 'status' => 'manual', 'message' => 'no mainNavItems list or lucide-react import found'];
-        }
-
-        $indent = preg_match('/\n([ \t]+)\{/', $array[2], $found) === 1 ? $found[1] : '    ';
-        $body = rtrim($array[2]);
-        $body .= ($body !== '' && ! str_ends_with($body, ',') && ! str_ends_with($body, '[') ? ',' : '')."\n".$indent."{ title: 'Accounting', href: '".$url."', icon: Calculator }, // ".self::MARKER
-            ."\n".$indent."{ title: 'Accounting settings', href: '".$url."/settings', icon: Settings2 }, // ".self::SETTINGS_MARKER;
-
-        $source = str_replace($array[0], $array[1].$body.$array[3], $source);
-
-        $source = $this->lucideIcon($this->lucideIcon($source, 'Calculator'), 'Settings2');
 
         file_put_contents($path, $source);
 
-        return ['file' => $file, 'status' => 'added', 'message' => 'Accounting and Accounting settings links added to mainNavItems'];
+        return ['file' => $file, 'status' => 'added', 'message' => $migrated ? 'the two Accounting links were replaced by the Accounting menu' : 'Accounting menu added'];
     }
 
-    /** Add an icon to the lucide-react import of a React file (once). */
-    private function lucideIcon(string $source, string $icon): string
+    /** The position of the "}" that closes the JSX expression opened by the "{" at $open. */
+    private function closingBrace(string $source, int $open): ?int
+    {
+        $depth = 0;
+        $length = strlen($source);
+
+        for ($i = $open; $i < $length; $i++) {
+            if ($source[$i] === '{') {
+                $depth++;
+            } elseif ($source[$i] === '}') {
+                $depth--;
+
+                if ($depth === 0) {
+                    return $i;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** Add an import line after the last import of a file. */
+    private function withImport(string $source, string $line): string
+    {
+        if (preg_match_all('/^import [^;]*;\R/ms', $source, $imports, PREG_OFFSET_CAPTURE) < 1) {
+            return $line.$source;
+        }
+
+        [$last, $at] = end($imports[0]);
+
+        return substr($source, 0, $at + strlen($last)).$line.substr($source, $at + strlen($last));
+    }
+
+    private function withoutLucideIcon(string $source, string $icon): string
     {
         if (preg_match('/import\s*\{([^}]*)\}\s*from\s*[\'"]lucide-react[\'"];?/s', $source, $icons) !== 1) {
             return $source;
         }
 
-        $members = array_values(array_filter(array_map('trim', explode(',', $icons[1])), fn (string $name) => $name !== ''));
-
-        if (in_array($icon, $members, true)) {
-            return $source;
-        }
-
-        $members[] = $icon;
-        sort($members);
+        $members = array_values(array_filter(array_map('trim', explode(',', $icons[1])), fn (string $name) => $name !== '' && $name !== $icon));
         $list = str_contains($icons[1], "\n") ? "\n    ".implode(",\n    ", $members).",\n" : ' '.implode(', ', $members).' ';
 
         return str_replace($icons[0], 'import {'.$list.'} from \'lucide-react\';', $source);

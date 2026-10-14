@@ -16,6 +16,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ChartOfAccountBlade
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\ControlAccountBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CostCenterBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\CurrencyBladeController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\HelpBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\JournalEntryBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\PeriodCloseBladeController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade\PermissionBladeController;
@@ -110,6 +111,13 @@ Route::middleware(['web', 'auth', 'verified', EnsureAccountingCompanyAccess::cla
             ->middleware('can:accounting.view');
         Route::get('settings', AccountingSettingsBladeController::class)
             ->name('settings')
+            ->middleware('can:accounting.view');
+        Route::get('help', [HelpBladeController::class, 'index'])
+            ->name('help.index')
+            ->middleware('can:accounting.view');
+        Route::get('help/{topic}', [HelpBladeController::class, 'show'])
+            ->name('help.show')
+            ->where('topic', '[a-z0-9-]+')
             ->middleware('can:accounting.view');
         Route::get('overview', AccountingOverviewBladeController::class)
             ->name('overview')

@@ -616,7 +616,7 @@ class AccountingInstallCommand extends Command
     }
 
     /**
-     * The Accounting link in the navigation of the starter kit (Livewire: Blade sidebar, React: app-sidebar.tsx) and the Tailwind source that
+     * The Accounting menu in the navigation of the starter kit (Livewire: Blade sidebar, Jetstream/Breeze: top navigation, React: app-sidebar.tsx) and the Tailwind source that
      * compiles the classes of the package's Blade screens.
      */
     private function addNavigation(string $driver): void
@@ -640,11 +640,11 @@ class AccountingInstallCommand extends Command
         } elseif ($results === []) {
             $this->line($driver === 'blade'
                 ? '   No starter kit menu found (Flux sidebar, Jetstream or Breeze navigation): link to route(\''.$routeName.'\') from your own menu.'
-                : '   No React starter kit sidebar found: add { title: \'Accounting\', href: \''.$url.'\', icon: Calculator } to mainNavItems.');
+                : '   No React starter kit sidebar found: add <AccountingNav /> (from @/components/accounting/accounting-nav) below <NavMain /> in your sidebar.');
         } elseif (in_array('manual', array_column($results, 'status'), true)) {
             $this->line($driver === 'blade'
-                ? '   Add to your menu:  Flux  <flux:sidebar.item icon="calculator" :href="route(\''.$routeName.'\')">{{ __(\'Accounting\') }}</flux:sidebar.item>   |   Jetstream / Breeze  <x-nav-link :href="route(\''.$routeName.'\')">{{ __(\'Accounting\') }}</x-nav-link>'
-                : '   Add to mainNavItems:  { title: \'Accounting\', href: \''.$url.'\', icon: Calculator }');
+                ? '   Add to your menu:  Flux sidebar  <x-accounting::menu.sidebar />   |   Flux header, Jetstream, Breeze  <x-accounting::menu.dropdown />   |   their mobile menu  <x-accounting::menu.responsive />'
+                : '   Add <AccountingNav /> below <NavMain /> in your sidebar (header layout: <AccountingHeaderMenu />), from @/components/accounting/accounting-nav.');
         }
 
         if ($driver === 'blade' && $menu->tailwindSource(base_path()) === 'added') {
