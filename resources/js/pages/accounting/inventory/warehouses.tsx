@@ -37,7 +37,7 @@ export default function InventoryWarehouses({ warehouses, filters }: Props) {
                 />
                 <Card>
                     <CardContent className="pt-6">
-                        <table className="w-full text-sm"><tbody>
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><tbody>
                             {warehouses.map((row) => (
                                 <tr key={row.id} className="border-t first:border-0">
                                     <td className="py-2 font-medium">{row.code}</td><td>{row.name}</td><td className="text-muted-foreground">{row.address}</td><td>{row.is_active ? '' : 'inactive'}</td>

@@ -43,7 +43,7 @@ export default function SimpleAccountingIndex({ records }: Props) {
                     description="Review accounting data in a compact operational table."
                 />
                 <div className="overflow-hidden rounded-lg border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 {columns.map((column) => (

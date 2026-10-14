@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Salary grades">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Salary grades</h2><div class="flex gap-2">@can('payroll.manage')<a href="{{ route('accounting.payroll.bulk') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Bulk changes</a>@endcan<a href="{{ route('accounting.payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Payroll</a></div></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Salary grades" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.index" /><x-accounting::payroll-nav /></x-slot>
     @php($linked = collect($editing['components'] ?? [])->keyBy('pay_component_id'))
     @php($money = fn ($v) => number_format((float) $v, 2))
     <div class="py-6"><div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-4">

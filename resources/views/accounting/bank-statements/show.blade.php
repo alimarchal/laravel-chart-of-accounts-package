@@ -29,7 +29,7 @@
                     <tr class="border-t">
                         <td class="py-2 px-3">{{ $line['txn_date'] }}</td><td class="py-2 px-3">{{ $line['description'] }}</td><td class="py-2 px-3">{{ $line['reference'] }}</td>
                         <td class="py-2 px-3 text-right tabular-nums">{{ (float) $line['withdrawal'] ? number_format((float) $line['withdrawal'], 2) : '' }}</td><td class="py-2 px-3 text-right tabular-nums">{{ (float) $line['deposit'] ? number_format((float) $line['deposit'], 2) : '' }}</td>
-                        <td class="py-2 px-3"><span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $styles[$line['status']] }}">{{ $line['status'] }}</span> @if($line['journal_entry_id'])<a class="ml-2 text-xs text-indigo-700 hover:underline" href="{{ route('accounting.journal-entries.show', $line['journal_entry_id']) }}">{{ $line['voucher_number'] ?? 'entry #'.$line['journal_entry_id'] }}{{ $line['journal_status'] === 'draft' ? ' (draft)' : '' }}</a>@endif</td>
+                        <td class="py-2 px-3"><x-accounting::status-pill :status="$line['status']" /> @if($line['journal_entry_id'])<a class="ml-2 text-xs text-indigo-700 hover:underline" href="{{ route('accounting.journal-entries.show', $line['journal_entry_id']) }}">{{ $line['voucher_number'] ?? 'entry #'.$line['journal_entry_id'] }}{{ $line['journal_status'] === 'draft' ? ' (draft)' : '' }}</a>@endif</td>
                         <td class="py-2 px-3 text-right whitespace-nowrap">
                             @can('bank-statements.match') @if($canMatch)
                                 @if ($line['status'] === 'unmatched')

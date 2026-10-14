@@ -1,24 +1,16 @@
 <x-accounting::app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Chart of Accounts</h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.chart-of-accounts.tree') }}" class="inline-flex items-center px-4 py-2 bg-indigo-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-600 transition">Tree View</a>
-                <a href="{{ route('accounting.chart-of-accounts.export', 'xlsx') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Export Excel</a>
-                <a href="{{ route('accounting.chart-of-accounts.export', 'csv') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">CSV</a>
+    <x-slot name="header"><x-accounting::page-header title="Chart of Accounts" :showRefresh="false" :showPrint="false" :backRoute="route('accounting.dashboard')"><x-slot name="actions"><a href="{{ route('accounting.chart-of-accounts.tree') }}" class="acc-btn acc-btn--dark">Tree View</a>
+                <a href="{{ route('accounting.chart-of-accounts.export', 'xlsx') }}" class="acc-btn">Export Excel</a>
+                <a href="{{ route('accounting.chart-of-accounts.export', 'csv') }}" class="acc-btn">CSV</a>
                 @can('chart-templates.apply')
-                <a href="{{ route('accounting.chart-templates.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Templates</a>
+                <a href="{{ route('accounting.chart-templates.index') }}" class="acc-btn">Templates</a>
                 @endcan
                 @can('chart-of-accounts.import')
-                <a href="{{ route('accounting.chart-of-accounts.import') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">Import</a>
+                <a href="{{ route('accounting.chart-of-accounts.import') }}" class="acc-btn">Import</a>
                 @endcan
                 @can('chart-of-accounts.create')
-                <a href="{{ route('accounting.chart-of-accounts.create') }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">Add Account</a>
-                @endcan
-                <a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
-            </div>
-        </div>
-    </x-slot>
+                <a href="{{ route('accounting.chart-of-accounts.create') }}" class="acc-btn acc-btn--primary">Add Account</a>
+                @endcan</x-slot></x-accounting::page-header></x-slot>
     <x-accounting::filter-section :action="route('accounting.chart-of-accounts.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_account_code" value="Account Code" /><x-accounting::input id="filter_account_code" name="filter[account_code]" type="text" class="mt-1 block w-full" :value="request('filter.account_code')" /></div>

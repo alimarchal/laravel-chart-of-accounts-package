@@ -167,7 +167,7 @@ export default function ChartTemplates({
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="max-h-[28rem] overflow-y-auto rounded-md border">
-                                <table className="w-full text-sm">
+                                <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                     <thead className="sticky top-0 bg-muted/60 text-left">
                                         <tr>
                                             <th className="px-3 py-2 font-medium">

@@ -62,7 +62,7 @@ export default function ReconciliationMatch({
                     className="flex flex-col gap-4"
                 >
                     <div className="overflow-hidden rounded-lg border">
-                        <table className="w-full min-w-[860px] text-sm">
+                        <table className="w-full min-w-[860px] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                             <thead className="bg-muted/50 text-left">
                                 <tr>
                                     <th className="w-12 p-3"></th>

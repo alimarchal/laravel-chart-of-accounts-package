@@ -1,7 +1,7 @@
+import { StatusPill } from '@/components/accounting/status-pill';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -90,7 +90,7 @@ function TrendChart({ trend }: { trend: Array<{ month: string; income: string; e
                 <Button variant="ghost" size="sm" onClick={() => setTable(!table)}>{table ? 'Show chart' : 'Show table'}</Button>
             </div>
             {table ? (
-                <table className="w-full text-sm">
+                <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                     <thead><tr className="text-left text-muted-foreground"><th className="py-1">Month</th><th className="py-1 text-right">Income</th><th className="py-1 text-right">Expense</th></tr></thead>
                     <tbody>{trend.map((row) => (<tr key={row.month} className="border-t"><td className="py-1">{row.month}</td><td className="py-1 text-right tabular-nums">{money(row.income)}</td><td className="py-1 text-right tabular-nums">{money(row.expense)}</td></tr>))}</tbody>
                 </table>
@@ -233,14 +233,14 @@ export default function AccountingOverview({ overview }: { overview: Overview })
                     <Card>
                         <CardHeader><CardTitle>Recent journal entries</CardTitle></CardHeader>
                         <CardContent>
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <tbody>
                                     {recent.map((entry) => (
                                         <tr key={entry.id} className="border-t first:border-0">
                                             <td className="py-2"><Link href={`/accounting/journal-entries/${entry.id}`} className="hover:underline">{entry.voucher_number ?? `#${entry.id}`}</Link></td>
                                             <td className="py-2 text-muted-foreground">{entry.entry_date}</td>
                                             <td className="py-2">{entry.description}</td>
-                                            <td className="py-2"><Badge variant="outline">{entry.status}</Badge></td>
+                                            <td className="py-2"><StatusPill status={entry.status} /></td>
                                             <td className="py-2 text-right tabular-nums">{money(entry.amount)}</td>
                                         </tr>
                                     ))}

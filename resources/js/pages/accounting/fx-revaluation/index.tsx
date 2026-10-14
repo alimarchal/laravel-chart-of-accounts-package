@@ -204,7 +204,7 @@ export default function FxRevaluation({
                         </CardHeader>
                         <CardContent className="grid gap-4">
                             <div className="overflow-x-auto rounded-md border">
-                                <table className="w-full text-sm">
+                                <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                     <thead className="bg-muted/50 text-left">
                                         <tr>
                                             <th className="px-3 py-2 font-medium">Account</th>
@@ -303,8 +303,7 @@ export default function FxRevaluation({
                     </Card>
                 ) : null}
 
-                <Card>
-                    <FilterBar
+                <FilterBar
                     path="/accounting/fx-revaluation"
                     values={filters}
                     preserve={{ reval_search: filters.reval_search, reval_from: filters.reval_from, reval_to: filters.reval_to }}
@@ -315,6 +314,7 @@ export default function FxRevaluation({
                         { name: 'rate_to', label: 'Rates to', type: 'date' },
                     ]}
                 />
+                <Card>
                 <CardHeader>
                         <CardTitle>Exchange rates</CardTitle>
                         <CardDescription>
@@ -375,7 +375,7 @@ export default function FxRevaluation({
                             </form>
                         ) : null}
                         <div className="overflow-x-auto rounded-md border">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <thead className="bg-muted/50 text-left">
                                     <tr>
                                         <th className="px-3 py-2 font-medium">Date</th>
@@ -421,8 +421,7 @@ export default function FxRevaluation({
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <FilterBar
+                <FilterBar
                     path="/accounting/fx-revaluation"
                     values={filters}
                     preserve={{ currency_id: filters.currency_id, source: filters.source, rate_from: filters.rate_from, rate_to: filters.rate_to }}
@@ -432,12 +431,13 @@ export default function FxRevaluation({
                         { name: 'reval_to', label: 'As of to', type: 'date' },
                     ]}
                 />
+                <Card>
                 <CardHeader>
                         <CardTitle>History</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto rounded-md border">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <thead className="bg-muted/50 text-left">
                                     <tr>
                                         <th className="px-3 py-2 font-medium">As of</th>

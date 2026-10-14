@@ -148,7 +148,7 @@ export default function BankStatementImport({ banks, preview }: Props) {
                         </CardHeader>
                         <CardContent className="grid gap-4">
                             <div className="max-h-[28rem] overflow-auto rounded-md border">
-                                <table className="w-full text-sm">
+                                <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                     <thead className="sticky top-0 bg-muted text-left">
                                         <tr>
                                             <th className="px-3 py-2 font-medium">Row</th>

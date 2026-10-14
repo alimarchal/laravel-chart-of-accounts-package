@@ -1,7 +1,6 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { FeatureLink } from '@/components/accounting/feature-link';
+import { Head, router, useForm } from '@inertiajs/react';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,10 +38,7 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
         <>
             <Head title="Arrears" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Arrears" description="Back pay of a raise: worked out from the payslips already posted, approved, and paid with a payroll run" />
-                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/bulk">Bulk changes</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
-                </div>
+                <PayrollHeader title="Arrears" description="Back pay of a raise: worked out from the payslips already posted, approved, and paid with a payroll run" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -68,7 +64,7 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
                             </div>
                             {preview && (
                                 <div className="overflow-x-auto md:col-span-4">
-                                    <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>From</th><th>To</th><th>Months</th><th className="text-right">Arrears</th></tr></thead><tbody>
+                                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>From</th><th>To</th><th>Months</th><th className="text-right">Arrears</th></tr></thead><tbody>
                                         {preview.map((row) => (
                                             <tr key={row.employee_id} className="border-t align-top"><td className="py-1">{row.code} {row.name}</td><td>{row.from_month}</td><td>{row.to_month}</td>
                                                 <td className="text-xs text-muted-foreground">{row.months.map((month) => `${month.month}: ${cents(month.paid)} → ${cents(month.due)}`).join(' · ')}</td><td className="text-right tabular-nums">{money(row.amount)}</td></tr>
@@ -81,8 +77,7 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
                         </CardContent>
                     </Card>
                 )}
-                <Card>
-                    <FilterBar
+                <FilterBar
                     path="/accounting/payroll/arrears"
                     values={filters}
                     fields={[
@@ -92,10 +87,11 @@ export default function PayrollArrears({ rows, totals, filters, employees, grade
                         { name: 'payment_month', label: 'Paid in month of', type: 'date' },
                     ]}
                 />
+                <Card>
                 <CardHeader className="flex-row items-center justify-between"><CardTitle>Register</CardTitle>
                         {permissions['payroll.post'] && <Button variant="outline" size="sm" onClick={() => confirmThen('Approve every draft?', () => router.post('/accounting/payroll/arrears/approve-all'))}>Approve all drafts</Button>}</CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Covers</th><th>Paid with</th><th>Status</th><th className="text-right">Amount</th><th /></tr></thead><tbody>
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Covers</th><th>Paid with</th><th>Status</th><th className="text-right">Amount</th><th /></tr></thead><tbody>
                             {rows.map((row) => (
                                 <tr key={row.id} className="border-t">
                                     <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.from_month}{row.to_month !== row.from_month ? ` – ${row.to_month}` : ''}</td><td>{row.payment_month}</td><td>{badge(row.status)}</td><td className="text-right tabular-nums">{money(row.amount)}</td>

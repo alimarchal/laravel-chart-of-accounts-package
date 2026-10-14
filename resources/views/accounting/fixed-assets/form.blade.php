@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Asset">
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $asset ? 'Edit '.$asset['code'] : 'New asset' }}</h2></x-slot>
+    <x-slot name="header"><x-accounting::page-header :title="($asset ? 'Edit '.$asset['code'] : 'New asset')" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"></x-accounting::page-header></x-slot>
     @php($locked = $asset['locked'] ?? false)
     @php($v = fn ($name, $default = '') => old($name, $asset[$name] ?? $default))
     <div class="py-6"><div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-4">

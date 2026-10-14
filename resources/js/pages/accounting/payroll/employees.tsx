@@ -1,6 +1,6 @@
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import { Head, Link, router } from '@inertiajs/react';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,10 +18,7 @@ export default function PayrollEmployees({ employees, filters, costCenters }: Pr
         <>
             <Head title="Employees" />
             <div className="space-y-6 p-4">
-                <div className="flex items-end justify-between">
-                    <Heading title="Employees" description="Who is paid, and how much" />
-                    <div className="flex gap-2"><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button>{permissions['payroll.manage'] && <Button asChild><Link href="/accounting/payroll/employees/create">New employee</Link></Button>}</div>
-                </div>
+                <PayrollHeader title="Employees" description="Who is paid, and how much" actions={permissions['payroll.manage'] && <Button asChild><Link href="/accounting/payroll/employees/create">New employee</Link></Button>} />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 <FilterBar
@@ -39,7 +36,7 @@ export default function PayrollEmployees({ employees, filters, costCenters }: Pr
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Designation</th><th>Joined</th><th>Left</th><th className="text-right">Monthly salary</th><th>Tax</th><th /></tr></thead>
                         <tbody>
                             {employees.map((row) => (

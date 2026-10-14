@@ -246,12 +246,10 @@
                                 <td class="text-left font-mono whitespace-nowrap text-xs">{{ $entry->account_code }}</td>
                                 <td class="text-left whitespace-nowrap text-xs">{{ $entry->account_name }}</td>
                                 <td class="text-left text-xs">
-                                    {{ $entry->journal_description ?? '-' }} ::
-                                    {{ $entry->line_description ?? '-' }} **
-                                    @if ($entry->voucher_number)<span class="font-mono">{{ $entry->voucher_number }}</span> - @endif
-                                    Ref: {{ $entry->reference ?? '-' }} -
-                                    @if ($entry->source_document_number)Doc: {{ $entry->source_document_number }} - @endif
-                                    CC: {{ $entry->cost_center_code ?? '-' }}
+                                    <div>{{ $entry->journal_description ?: '-' }}@if ($entry->line_description) <span class="acc-muted">— {{ $entry->line_description }}</span>@endif</div>
+                                    <div class="acc-muted" style="font-size:.72rem">
+                                        {{ collect([$entry->voucher_number, $entry->reference ? 'Ref: '.$entry->reference : null, $entry->source_document_number ? 'Doc: '.$entry->source_document_number : null, $entry->cost_center_code ? 'CC: '.$entry->cost_center_code : null])->filter()->implode(' · ') }}
+                                    </div>
                                 </td>
                                 <td class="text-right font-mono whitespace-nowrap text-xs">
                                     {{ (float) $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
@@ -260,7 +258,7 @@
                                     {{ (float) $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
                                 </td>
                                 <td class="text-center whitespace-nowrap text-xs">
-                                    {{ ucfirst($entry->status ?? 'draft') }}
+                                    <x-accounting::status-pill :status="$entry->status ?? 'draft'" />
                                 </td>
                             </tr>
                         @empty

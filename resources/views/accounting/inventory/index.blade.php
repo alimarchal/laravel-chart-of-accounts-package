@@ -1,17 +1,9 @@
 <x-accounting::app-layout title="Inventory">
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Inventory</h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.inventory.movements.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Movements</a>
-                <a href="{{ route('accounting.inventory.warehouses.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Warehouses</a>
+    <x-slot name="header"><x-accounting::page-header title="Inventory" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions"><a href="{{ route('accounting.inventory.movements.index') }}" class="acc-btn">Movements</a>
+                <a href="{{ route('accounting.inventory.warehouses.index') }}" class="acc-btn">Warehouses</a>
                 <a href="{{ route('accounting.inventory.export', ['format' => 'xlsx', 'as_of' => $valuation['as_of']]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Export</a>
-                @can('inventory.move')<a href="{{ route('accounting.inventory.movements.create') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Move stock</a>@endcan
-                @can('inventory.manage')<a href="{{ route('accounting.inventory.items.create') }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">New item</a>@endcan
-                <a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">All modules</a>
-            </div>
-        </div>
-    </x-slot>
+                @can('inventory.move')<a href="{{ route('accounting.inventory.movements.create') }}" class="acc-btn">Move stock</a>@endcan
+                @can('inventory.manage')<a href="{{ route('accounting.inventory.items.create') }}" class="acc-btn acc-btn--primary">New item</a>@endcan</x-slot></x-accounting::page-header></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     @php($q = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.'))
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">

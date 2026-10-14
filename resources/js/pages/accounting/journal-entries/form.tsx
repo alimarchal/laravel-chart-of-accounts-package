@@ -609,7 +609,7 @@ export default function JournalEntryForm({
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto rounded-lg border">
-                                <table className="w-full min-w-[1100px] text-sm">
+                                <table className="w-full min-w-[1100px] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                     <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                                         <tr>
                                             <th className="w-10 p-3">#</th>

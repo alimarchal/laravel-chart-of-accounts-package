@@ -1,9 +1,8 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { StatusPill } from '@/components/accounting/status-pill';
+import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { FeatureLink } from '@/components/accounting/feature-link';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,10 +30,7 @@ export default function PayrollLeaves({ leaves, types, employees, balances, year
         <>
             <Head title="Leave" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Leave" description="Leave taken and yearly balances; unpaid leave comes off the salary by the day" />
-                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/attendance">Attendance</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
-                </div>
+                <PayrollHeader title="Leave" description="Leave taken and yearly balances; unpaid leave comes off the salary by the day" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 {canManage && (
@@ -54,10 +50,10 @@ export default function PayrollLeaves({ leaves, types, employees, balances, year
                 <Card>
                     <CardHeader><CardTitle>Leaves</CardTitle></CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Type</th><th>From</th><th>To</th><th className="text-right">Days</th><th>Status</th><th /></tr></thead><tbody>
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Type</th><th>From</th><th>To</th><th className="text-right">Days</th><th>Status</th><th /></tr></thead><tbody>
                             {leaves.map((row) => (
                                 <tr key={row.id} className="border-t">
-                                    <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.leave_type}{row.is_paid ? '' : ' (unpaid)'}</td><td>{row.from_date}</td><td>{row.to_date}</td><td className="text-right tabular-nums">{Number(row.days)}</td><td><Badge variant="outline">{row.status}</Badge></td>
+                                    <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.leave_type}{row.is_paid ? '' : ' (unpaid)'}</td><td>{row.from_date}</td><td>{row.to_date}</td><td className="text-right tabular-nums">{Number(row.days)}</td><td><StatusPill status={row.status} /></td>
                                     <td className="text-right">{canManage && row.status === 'approved' && <Button variant="ghost" size="sm" onClick={() => confirmThen('Cancel this leave?', () => router.post(`/accounting/payroll/leaves/${row.id}/cancel`))}>Cancel</Button>}</td>
                                 </tr>
                             ))}
@@ -69,7 +65,7 @@ export default function PayrollLeaves({ leaves, types, employees, balances, year
                     <CardHeader className="flex-row items-center justify-between"><CardTitle>Balances {year}</CardTitle>
                         <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => router.get('/accounting/payroll/leaves', { year: year - 1 })}>{year - 1}</Button><Button variant="outline" size="sm" onClick={() => router.get('/accounting/payroll/leaves', { year: year + 1 })}>{year + 1}</Button></div></CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Type</th><th className="text-right">Entitled</th><th className="text-right">Taken</th><th className="text-right">Balance</th></tr></thead><tbody>
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Type</th><th className="text-right">Entitled</th><th className="text-right">Taken</th><th className="text-right">Balance</th></tr></thead><tbody>
                             {balances.filter((row) => row.entitlement > 0 || row.taken > 0).map((row) => (<tr key={`${row.employee_id}-${row.leave_type_id}`} className="border-t"><td className="py-1">{row.employee_code} {row.employee_name}</td><td>{row.leave_type}</td><td className="text-right tabular-nums">{row.entitlement || '—'}</td><td className="text-right tabular-nums">{row.taken}</td><td className="text-right tabular-nums">{row.entitlement ? row.balance : '—'}</td></tr>))}
                         </tbody></table>
                     </CardContent>
@@ -77,7 +73,7 @@ export default function PayrollLeaves({ leaves, types, employees, balances, year
                 <Card>
                     <CardHeader><CardTitle>Leave types</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
-                        <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Paid</th><th className="text-right">Days a year</th><th /></tr></thead><tbody>
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Paid</th><th className="text-right">Days a year</th><th /></tr></thead><tbody>
                             {types.map((row) => (<tr key={row.id} className="border-t"><td className="py-1 font-medium">{row.code}</td><td>{row.name}</td><td>{row.is_paid ? 'yes' : 'no'}</td><td className="text-right tabular-nums">{Number(row.annual_days) || '—'}</td>
                                 <td className="text-right">{canManage && <Button variant="ghost" size="sm" onClick={() => confirmThen('Delete this leave type?', () => router.delete(`/accounting/payroll/leave-types/${row.id}`))}>Delete</Button>}</td></tr>))}
                         </tbody></table>

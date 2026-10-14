@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Leave">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Leave</h2><a href="{{ route('accounting.payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Payroll</a></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Leave" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.index" /><x-accounting::payroll-nav /></x-slot>
     <div class="py-6"><div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif
         @if(session("error"))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session("error") }}</div>@endif
@@ -19,7 +19,7 @@
         @endcan
         <div class="bg-white shadow rounded-lg p-5 overflow-x-auto"><h3 class="font-semibold text-gray-800 mb-2">Leaves</h3><table class="w-full text-sm"><thead><tr class="text-left text-gray-500"><th class="py-1">Employee</th><th>Type</th><th>From</th><th>To</th><th class="text-right">Days</th><th>Status</th><th></th></tr></thead><tbody>
             @forelse ($leaves as $row)
-                <tr class="border-t"><td class="py-2">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td>{{ $row['leave_type'] }}{{ $row['is_paid'] ? '' : ' (unpaid)' }}</td><td>{{ $row['from_date'] }}</td><td>{{ $row['to_date'] }}</td><td class="text-right tabular-nums">{{ (float) $row['days'] }}</td><td>{{ $row['status'] }}</td>
+                <tr class="border-t"><td class="py-2">{{ $row['employee_code'] }} {{ $row['employee_name'] }}</td><td>{{ $row['leave_type'] }}{{ $row['is_paid'] ? '' : ' (unpaid)' }}</td><td>{{ $row['from_date'] }}</td><td>{{ $row['to_date'] }}</td><td class="text-right tabular-nums">{{ (float) $row['days'] }}</td><td><x-accounting::status-pill :status="$row['status']" /></td>
                     <td class="text-right">@can('payroll.manage')@if($row['status'] === 'approved')<form method="POST" action="{{ route('accounting.payroll.leaves.cancel', $row['id']) }}" class="inline" onsubmit="return confirm('Cancel this leave?')">@csrf<button class="text-red-700 hover:underline">Cancel</button></form>@endif @endcan</td></tr>
             @empty
                 <tr><td colspan="7" class="py-4 text-center text-gray-500">No leave recorded yet.</td></tr>

@@ -130,7 +130,7 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                 />
 
                 <div className="overflow-x-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 <th className="px-3 py-2 font-medium">Code</th>
@@ -249,8 +249,7 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                     </Card>
                 ) : null}
 
-                <Card>
-                    <FilterBar
+                <FilterBar
                     path="/accounting/tax"
                     values={filters}
                     preserve={{ search: filters.search, kind: filters.kind, is_active: filters.is_active }}
@@ -260,12 +259,13 @@ export default function TaxIndex({ taxCodes, returns, accounts, today, monthStar
                         { name: 'return_to', label: 'Period to', type: 'date' },
                     ]}
                 />
+                <Card>
                 <CardHeader>
                         <CardTitle>Filed returns</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto rounded-md border">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <thead className="bg-muted/50 text-left">
                                     <tr>
                                         <th className="px-3 py-2 font-medium">Period</th>

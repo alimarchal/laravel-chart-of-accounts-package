@@ -10,6 +10,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useEffect } from 'react';
+import { StatusPill } from '@/components/accounting/status-pill';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -150,6 +151,7 @@ export default function JournalEntryShow({
             />
             <div className="space-y-6 p-4">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                    <div className="flex flex-wrap items-center gap-3">
                     <Heading
                         title={
                             entry.voucher_number
@@ -158,6 +160,9 @@ export default function JournalEntryShow({
                         }
                         description={`${entry.entry_date.slice(0, 10)} · ${entry.reference ?? 'No reference'} · ${entry.currency?.code ?? 'Base currency'}${entry.branch ? ` · ${entry.branch.name}` : ''}`}
                     />
+                        <StatusPill status={entry.status} />
+                        {entry.approval_status ? <StatusPill status={entry.approval_status} label={entry.approval_status === 'pending' ? 'Awaiting approval' : undefined} /> : null}
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         <Button asChild variant="outline">
                             <Link href="/accounting/journal-entries">Back</Link>
@@ -297,36 +302,31 @@ export default function JournalEntryShow({
                     </Alert>
                 ) : null}
 
-                <div className="grid gap-3 md:grid-cols-4">
-                    <div className="rounded-lg border p-3">
-                        <div className="text-sm text-muted-foreground">
-                            Status
+                <div className="rounded-xl border bg-card p-4 shadow-xs">
+                    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {[
+                            ['Date', entry.entry_date.slice(0, 10)],
+                            ['Voucher type', entry.voucher_type ? `${entry.voucher_type.code} · ${entry.voucher_type.name}` : '—'],
+                            ['Reference', entry.reference ?? '—'],
+                            ['Branch', entry.branch ? `${entry.branch.code} · ${entry.branch.name}` : '—'],
+                            ['Currency', entry.currency?.code ?? 'Base currency'],
+                            ['Posted at', entry.status === 'posted' ? dateTime(entry.posted_at) : 'Set when posted'],
+                        ].map(([label, value]) => (
+                            <div key={label}>
+                                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+                                <dd className="mt-1 text-sm font-medium">{value}</dd>
+                            </div>
+                        ))}
+                        <div className="sm:col-span-2">
+                            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</dt>
+                            <dd className="mt-1 text-sm font-medium">{entry.description ?? '—'}</dd>
                         </div>
-                        <div className="mt-1 font-semibold capitalize">
-                            {entry.status}
-                        </div>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                        <div className="text-sm text-muted-foreground">
-                            Posted At
-                        </div>
-                        <div className="mt-1 font-semibold">
-                            {dateTime(entry.posted_at)}
-                        </div>
-                    </div>
-                    <div className="rounded-lg border p-3 md:col-span-2">
-                        <div className="text-sm text-muted-foreground">
-                            Description
-                        </div>
-                        <div className="mt-1 font-semibold">
-                            {entry.description ?? '-'}
-                        </div>
-                    </div>
+                    </dl>
                 </div>
 
-                <div className="overflow-hidden rounded-lg border">
-                    <table className="w-full min-w-[860px] text-sm">
-                        <thead className="bg-muted/50 text-left">
+                <div className="overflow-x-auto rounded-xl border bg-card shadow-xs">
+                    <table className="w-full min-w-[860px] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
+                        <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                             <tr>
                                 <th className="p-3">#</th>
                                 <th className="p-3">Account</th>
@@ -368,7 +368,12 @@ export default function JournalEntryShow({
                         <tfoot>
                             <tr className="border-t bg-muted/30 font-semibold">
                                 <td className="p-3" colSpan={3}>
-                                    Total
+                                    Total{' '}
+                                    {Math.abs(entry.lines.reduce((sum, line) => sum + Number(line.debit), 0) - entry.lines.reduce((sum, line) => sum + Number(line.credit), 0)) < 0.005 ? (
+                                        <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">✓ Balanced</span>
+                                    ) : (
+                                        <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">Out of balance</span>
+                                    )}
                                 </td>
                                 <td className="p-3 text-right tabular-nums">
                                     {money(
@@ -411,20 +416,14 @@ export default function JournalEntryShow({
                 ) : null}
 
                 {trail.length ? (
-                    <div className="rounded-lg border p-4">
-                        <div className="mb-3 text-sm font-medium">
-                            Audit trail
-                        </div>
-                        <ol className="space-y-2 text-sm">
+                    <div className="rounded-xl border bg-card p-4 shadow-xs">
+                        <div className="mb-3 text-sm font-semibold">Audit trail</div>
+                        <ol className="relative space-y-3 border-l pl-5 text-sm">
                             {trail.map((step, index) => (
-                                <li
-                                    key={index}
-                                    className="flex flex-wrap items-baseline gap-x-2"
-                                >
-                                    <span className="font-medium">
-                                        {step.step}
-                                    </span>
-                                    <span className="text-muted-foreground">
+                                <li key={index} className="relative">
+                                    <span className="absolute -left-[1.6rem] top-1.5 size-2.5 rounded-full bg-primary ring-4 ring-background" />
+                                    <span className="font-medium">{step.step}</span>
+                                    <span className="ml-2 text-muted-foreground">
                                         {step.by ? `by ${step.by} · ` : ''}
                                         {dateTime(step.at)}
                                     </span>

@@ -2,7 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FeatureLink } from '@/components/accounting/feature-link';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,10 +38,7 @@ export default function PayrollGrades({ grades, filters, editing, components }: 
         <>
             <Head title="Salary grades" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Salary grades" description="A basic salary with its allowances: change a grade and everybody on it follows in the next payroll calculation" />
-                    <div className="flex gap-2"><FeatureLink href="/accounting/payroll/bulk">Bulk changes</FeatureLink><Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button></div>
-                </div>
+                <PayrollHeader title="Salary grades" description="A basic salary with its allowances: change a grade and everybody on it follows in the next payroll calculation" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 <FilterBar
@@ -55,7 +52,7 @@ export default function PayrollGrades({ grades, filters, editing, components }: 
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th className="text-right">Basic salary</th><th className="text-right">Employees</th><th>Allowances</th><th /></tr></thead><tbody>
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th className="text-right">Basic salary</th><th className="text-right">Employees</th><th>Allowances</th><th /></tr></thead><tbody>
                         {grades.map((row) => (
                             <tr key={row.id} className="border-t">
                                 <td className="py-2 font-medium">{row.code}</td><td>{row.name} {!row.is_active && <Badge variant="outline">inactive</Badge>}</td><td className="text-right tabular-nums">{money(row.base_salary)}</td><td className="text-right">{row.employees}</td>

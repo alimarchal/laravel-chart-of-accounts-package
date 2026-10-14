@@ -41,7 +41,7 @@ export default function FbrIndex({ documents, enabled, mode, filters }: Props) {
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead><tr className="text-left text-muted-foreground"><th className="py-1">Document</th><th>Date</th><th>Customer</th><th className="text-right">Total</th><th>FBR</th><th>FBR invoice number</th><th /></tr></thead>
                         <tbody>
                             {documents.map((row) => (

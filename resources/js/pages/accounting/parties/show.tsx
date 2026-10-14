@@ -87,7 +87,7 @@ export default function PartyShow({ party, side, openItems, statement, range }: 
 
                 <h3 className="text-sm font-medium">Open items</h3>
                 <div className="overflow-x-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 <th className="px-3 py-2 font-medium">Document</th>
@@ -147,7 +147,7 @@ export default function PartyShow({ party, side, openItems, statement, range }: 
                     <Button type="submit" variant="outline">Apply</Button>
                 </form>
                 <div className="overflow-x-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 <th className="px-3 py-2 font-medium">Date</th>

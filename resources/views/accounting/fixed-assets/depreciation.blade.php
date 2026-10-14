@@ -1,10 +1,5 @@
 <x-accounting::app-layout title="Depreciation">
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Depreciation</h2>
-            <a href="{{ route('accounting.fixed-assets.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Register</a>
-        </div>
-    </x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Depreciation" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions"><a href="{{ route('accounting.fixed-assets.index') }}" class="acc-btn acc-btn--dark">Register</a></x-slot></x-accounting::page-header></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     <div class="py-6"><div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif

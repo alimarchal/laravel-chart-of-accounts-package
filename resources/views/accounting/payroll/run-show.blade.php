@@ -1,7 +1,6 @@
 <x-accounting::app-layout title="Payroll run">
-    <x-slot name="header">
-        <div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Payroll {{ $run['period_month'] }} <span class="ml-2 rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-700">{{ $run['status'] }}</span></h2>
-            <div class="flex gap-2">
+    <x-slot name="header"><x-accounting::page-header :title="'Payroll '.$run['period_month']" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.index">
+<x-slot name="actions"><span @class(['acc-badge', 'acc-badge--ok' => in_array($run['status'], ['posted', 'paid', 'approved'], true), 'acc-badge--warn' => in_array($run['status'], ['draft', 'submitted'], true), 'acc-badge--bad' => $run['status'] === 'void'])>{{ ucfirst($run['status']) }}</span>
                 @if($run['status'] === 'draft')
                     @can('payroll.run')<form method="POST" action="{{ route('accounting.payroll.runs.recalculate', $run['id']) }}">@csrf<button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Recalculate</button></form>@endcan
                     @if($run['approval_required'])@can('payroll.run')<form method="POST" action="{{ route('accounting.payroll.runs.submit', $run['id']) }}" onsubmit="return confirm('Submit this payroll to finance for approval? It is locked until they answer.')">@csrf<button class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Submit for approval</button></form>@endcan
@@ -18,9 +17,7 @@
                 @if(in_array($run['status'], ['submitted', 'approved'], true))@can('payroll.run')<form method="POST" action="{{ route('accounting.payroll.runs.withdraw', $run['id']) }}" onsubmit="return confirm('Take this payroll back to draft?')">@csrf<button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Withdraw</button></form>@endcan @endif
                 @if(in_array($run['status'], ['posted', 'paid'], true))@accountingFeature('payroll_payslip_mail')@can('payroll.manage')<form method="POST" action="{{ route('accounting.payroll.runs.email', $run['id']) }}" onsubmit="return confirm('E-mail every payslip to its employee?')">@csrf<button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">E-mail payslips</button></form>@endcan @endaccountingFeature @endif
                 @if(in_array($run['status'], ['posted', 'paid'], true))@can('payroll.void')<form method="POST" action="{{ route('accounting.payroll.runs.void', $run['id']) }}" onsubmit="return confirm('Void this payroll? Its entries will be reversed.')">@csrf<button class="px-3 py-2 text-red-700 text-xs font-semibold uppercase tracking-widest hover:underline">Void</button></form>@endcan @endif
-                <a href="{{ route('accounting.payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Payroll</a>
-            </div></div>
-    </x-slot>
+                </x-slot></x-accounting::page-header><x-accounting::payroll-nav /></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif

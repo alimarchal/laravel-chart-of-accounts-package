@@ -107,7 +107,7 @@ export default function PartyDocumentShow({ document, allocations, openInvoices 
                 ) : null}
 
                 <div className="overflow-x-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 <th className="px-3 py-2 font-medium">Account</th>
@@ -148,7 +148,7 @@ export default function PartyDocumentShow({ document, allocations, openInvoices 
                     <>
                         <h3 className="text-sm font-medium">Settled with</h3>
                         <div className="overflow-x-auto rounded-md border">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <tbody>
                                     {allocations.map((allocation) => (
                                         <tr key={allocation.id} className="border-t first:border-t-0">
@@ -175,7 +175,7 @@ export default function PartyDocumentShow({ document, allocations, openInvoices 
                     <>
                         <h3 className="text-sm font-medium">Apply this {document.kind.replace('_', ' ')} to</h3>
                         <div className="overflow-x-auto rounded-md border">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <tbody>
                                     {openInvoices.map((open) => (
                                         <tr key={open.id} className="border-t first:border-t-0">

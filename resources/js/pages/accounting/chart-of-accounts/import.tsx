@@ -251,7 +251,7 @@ export default function ChartOfAccountsImport({ preview, columns }: Props) {
                             ) : null}
 
                             <div className="overflow-x-auto rounded-md border">
-                                <table className="w-full text-sm">
+                                <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                     <thead className="bg-muted/50 text-left">
                                         <tr>
                                             <th className="px-3 py-2 font-medium">

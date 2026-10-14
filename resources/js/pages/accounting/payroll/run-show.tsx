@@ -1,6 +1,6 @@
+import { StatusPill } from '@/components/accounting/status-pill';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,10 +31,8 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
         <>
             <Head title={`Payroll ${run.period_month}`} />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title={`Payroll ${run.period_month}`} description={run.notes ?? undefined} />
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline">{run.status}</Badge>
+                <PayrollHeader title={`Payroll ${run.period_month}`} description={run.notes ?? undefined} actions={<>
+                        <StatusPill status={run.status} />
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="outline" onClick={() => act('recalculate')}>Recalculate</Button>}
                         {run.status === 'draft' && run.approval_required && permissions['payroll.run'] && <Button onClick={() => act('submit', 'Submit this payroll to finance for approval? It is locked until they answer.')}>Submit for approval</Button>}
                         {run.status === 'submitted' && permissions['payroll.approve'] && <Button onClick={() => act('approve', 'Approve this payroll?')}>Approve</Button>}
@@ -44,8 +42,7 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                         {run.status === 'draft' && permissions['payroll.run'] && <Button variant="ghost" onClick={() => confirmThen('Delete this draft run?', () => router.delete(base))}>Delete</Button>}
                         {['posted', 'paid'].includes(run.status) && permissions['payroll.manage'] && features.payroll_payslip_mail !== false && <Button variant="outline" onClick={() => confirmThen('E-mail every payslip to its employee?', () => act('email-payslips'))}>E-mail payslips</Button>}
                         {['posted', 'paid'].includes(run.status) && permissions['payroll.void'] && <Button variant="ghost" onClick={() => act('void', 'Void this payroll? Its entries will be reversed.')}>Void</Button>}
-                    </div>
-                </div>
+                    </>} />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 {run.status === 'draft' && run.rejection_reason && <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Sent back by finance: {run.rejection_reason}</p>}
@@ -92,7 +89,7 @@ export default function PayrollRunShow({ run, payslips, accounts, today, bank }:
                 <Card>
                     <CardHeader><CardTitle>Payslips</CardTitle></CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                             <thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th className="text-right">Days</th><th className="text-right">Basic</th><th className="text-right">Gross</th><th className="text-right">Deductions</th><th className="text-right">Tax</th><th className="text-right">Net</th></tr></thead>
                             <tbody>
                                 {payslips.map((slip) => (

@@ -64,6 +64,7 @@
 .acc-kit .acc-span{grid-column:1/-1}
 .acc-kit .acc-field{display:flex;flex-direction:column;gap:.3rem;min-width:0}
 .acc-kit .acc-label{font-size:.75rem;font-weight:600;color:var(--acc-muted);letter-spacing:.01em}
+.acc-kit .acc-field>label{font-size:.75rem;font-weight:600;color:var(--acc-muted);letter-spacing:.01em}
 .acc-kit .acc-label .req{color:var(--acc-bad);margin-left:.15rem}
 .acc-kit .acc-hint{font-size:.74rem;color:var(--acc-faint)}
 .acc-kit .acc-err{font-size:.76rem;color:var(--acc-bad)}
@@ -176,7 +177,44 @@
 .acc-kit :is(a,button).bg-red-600,.acc-kit :is(a,button).bg-red-700{background:var(--acc-bad)!important;border-color:var(--acc-bad)!important;color:#fff!important}
 .acc-kit :is(a,button).bg-orange-600,.acc-kit :is(a,button).bg-orange-500{background:var(--acc-warn)!important;border-color:var(--acc-warn)!important;color:#fff!important}
 .acc-kit :is(a,button).bg-purple-600,.acc-kit :is(a,button).bg-purple-700{background:var(--acc-accent)!important;border-color:var(--acc-accent)!important;color:var(--acc-accent-ink)!important}
-@media print{.acc-kit .acc-no-print,.acc-kit .acc-head-r,.acc-kit .acc-context,.acc-kit .acc-tabs,.acc-kit .acc-filters{display:none!important}.acc-kit .acc-card{box-shadow:none}}
+/* ---- legacy tables: spacing and header look at zero specificity, so any utility class on a cell still wins ---- */
+:where(.acc-kit) table:where(:not(.acc-table)) th,:where(.acc-kit) table:where(:not(.acc-table)) td{padding:.6rem .9rem;vertical-align:middle}
+:where(.acc-kit) table:where(:not(.acc-table)) th{text-align:left;font-weight:650}
+:where(.acc-kit) table:where(:not(.acc-table)) thead th{font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;color:var(--acc-muted);background:var(--acc-surface-2);border-bottom:1px solid var(--acc-border);white-space:nowrap}
+:where(.acc-kit) table:where(:not(.acc-table)) tbody tr:hover td{background:var(--acc-hover)}
+:where(.acc-kit) table:where(:not(.acc-table)) tbody tr+tr td{border-top:1px solid var(--acc-border)}
+.acc-kit table th.text-right,.acc-kit table td.text-right{text-align:right}
+
+/* labels of the older forms read like the new ones */
+.acc-kit label>span.text-gray-700:first-child,.acc-kit label>span.text-gray-600:first-child{font-size:.75rem;font-weight:600;color:var(--acc-muted);letter-spacing:.01em}
+
+/* ---- the ledger-style reports (general ledger, books, account balances) ---- */
+@media screen{
+.acc-kit .report-table{border:0;border-collapse:separate;border-spacing:0;font-size:.84rem}
+.acc-kit .report-table th,.acc-kit .report-table td{border:0;border-bottom:1px solid var(--acc-border);padding:.6rem .8rem}
+.acc-kit .report-table th{background:var(--acc-surface-2);color:var(--acc-muted);font-size:.7rem;letter-spacing:.05em}
+.acc-kit .report-table tbody tr:nth-child(even){background:transparent}
+.acc-kit .report-table tbody tr:hover{background:var(--acc-hover)}
+.acc-kit .report-table tfoot td{background:var(--acc-surface-2);color:var(--acc-text);border-top:1px solid var(--acc-border-strong);font-weight:650}
+}
+
+/* ---- module cards (dashboard, settings): groups flow into columns, no empty gaps ---- */
+.acc-kit .acc-masonry{columns:2 22rem;column-gap:1.5rem}
+.acc-kit .acc-masonry>div{break-inside:avoid;margin-bottom:1.5rem}
+
+/* ---- list filters (the bar above every list) ---- */
+.acc-kit .acc-lf{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.75rem;padding:.85rem 1rem;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:var(--acc-radius);box-shadow:var(--acc-shadow)}
+.acc-kit .acc-lf .acc-field{flex:1 1 9.5rem;max-width:16rem}
+.acc-kit .acc-lf .acc-field--wide{flex-basis:14rem;max-width:22rem}
+.acc-kit .acc-lf-actions{display:flex;gap:.4rem;align-items:center;margin-left:auto}
+
+/* ---- payroll navigation ---- */
+.acc-kit .acc-subnav{display:flex;flex-wrap:wrap;gap:.35rem;margin:.9rem 0 .25rem;padding:.3rem;background:var(--acc-hover);border-radius:.85rem}
+.acc-kit .acc-subnav a{padding:.38rem .8rem;border-radius:.6rem;font-size:.82rem;font-weight:600;color:var(--acc-muted);text-decoration:none;white-space:nowrap}
+.acc-kit .acc-subnav a:hover{color:var(--acc-text);background:var(--acc-surface-2)}
+.acc-kit .acc-subnav a[aria-current]{background:var(--acc-surface);color:var(--acc-accent);box-shadow:var(--acc-shadow)}
+.acc-kit .acc-subnav-sep{width:1px;background:var(--acc-border-strong);margin:.3rem .15rem;align-self:stretch}
+@media print{.acc-kit .acc-no-print,.acc-kit .acc-head-r,.acc-kit .acc-context,.acc-kit .acc-tabs,.acc-kit .acc-filters,.acc-kit .acc-lf,.acc-kit .acc-subnav{display:none!important}.acc-kit .acc-card{box-shadow:none}}
 @media (prefers-reduced-motion:reduce){.acc-kit *{animation:none!important;transition:none!important}}
 </style>
 @endonce

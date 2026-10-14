@@ -1,13 +1,10 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Plus, Users } from 'lucide-react';
-import { useState } from 'react';
-import type { FormEvent } from 'react';
 import FilterBar from '@/components/accounting/filter-bar';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAccounting } from '@/lib/accounting';
 
 type Party = {
@@ -80,7 +77,7 @@ export default function Parties({ parties, filters }: Props) {
                 />
 
                 <div className="overflow-x-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 <th className="px-3 py-2 font-medium">Code</th>

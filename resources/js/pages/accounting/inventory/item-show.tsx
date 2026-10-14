@@ -42,7 +42,7 @@ export default function InventoryItemShow({ item, card, warehouses, locked }: Pr
                 <Card>
                     <CardHeader><CardTitle>Stock card</CardTitle></CardHeader>
                     <CardContent className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                             <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Type</th><th>Warehouse</th><th className="text-right">Quantity</th><th className="text-right">Unit cost</th><th className="text-right">Value</th><th className="text-right">Balance</th><th className="text-right">Entry</th></tr></thead>
                             <tbody>
                                 {card.map((row) => (

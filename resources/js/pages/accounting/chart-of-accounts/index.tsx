@@ -383,7 +383,7 @@ export default function ChartOfAccountsIndex({
                     </Card>
                 ) : null}
                 <div className="overflow-hidden rounded-lg border">
-                    <table className="w-full min-w-[760px] text-sm">
+                    <table className="w-full min-w-[760px] text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead className="bg-muted/50 text-left">
                             <tr>
                                 <th className="p-3">Code</th>

@@ -1,10 +1,5 @@
 <x-accounting::app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Account Balance Snapshots</h2>
-            <a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
-        </div>
-    </x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Account Balance Snapshots" :showRefresh="false" :showPrint="false" :backRoute="route('accounting.dashboard')"></x-accounting::page-header></x-slot>
     <x-accounting::filter-section :action="route('accounting.account-balance-snapshots.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><x-accounting::label for="filter_period_id" value="Period" />

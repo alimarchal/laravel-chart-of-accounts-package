@@ -2,7 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { FeatureLink } from '@/components/accounting/feature-link';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,10 +45,7 @@ export default function PayrollSchemes({ schemes, filters, editing, employees, a
         <>
             <Head title="Contributions" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Contributions" description="EOBI, PESSI/SESSI, provident fund: the employee's share comes out of pay, the employer's share is a cost owed to the fund" />
-                    <Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button>
-                </div>
+                <PayrollHeader title="Contributions" description="EOBI, PESSI/SESSI, provident fund: the employee's share comes out of pay, the employer's share is a cost owed to the fund" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 <FilterBar
@@ -62,7 +59,7 @@ export default function PayrollSchemes({ schemes, filters, editing, employees, a
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Base</th><th className="text-right">Employee</th><th className="text-right">Employer</th><th className="text-right">Ceiling</th><th>Who</th><th /></tr></thead><tbody>
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Code</th><th>Name</th><th>Base</th><th className="text-right">Employee</th><th className="text-right">Employer</th><th className="text-right">Ceiling</th><th>Who</th><th /></tr></thead><tbody>
                         {schemes.map((row) => (
                             <tr key={row.id} className="border-t">
                                 <td className="py-2 font-medium">{row.code}</td><td>{row.name} {!row.is_active && <Badge variant="outline">inactive</Badge>}</td><td>{row.base}</td><td className="text-right tabular-nums">{rate(row, 'employee')}</td><td className="text-right tabular-nums">{rate(row, 'employer')}</td>

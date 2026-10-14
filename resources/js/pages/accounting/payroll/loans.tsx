@@ -1,9 +1,9 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { StatusPill } from '@/components/accounting/status-pill';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
+import { Head, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,13 +36,7 @@ export default function PayrollLoans({ loans, status, filters, employees, accoun
         <>
             <Head title="Loans and advances" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Loans and advances" description="Paid out to employees and recovered by instalments from their salary" />
-                    <div className="flex gap-2">
-                        {['', 'draft', 'active', 'closed'].map((value) => (<Button key={value} variant={(status ?? '') === value ? 'default' : 'outline'} size="sm" onClick={() => router.get('/accounting/payroll/loans', value ? { status: value } : {})}>{value || 'all'}</Button>))}
-                        <Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button>
-                    </div>
-                </div>
+                <PayrollHeader title="Loans and advances" description="Paid out to employees and recovered by instalments from their salary" actions={<>{['', 'draft', 'active', 'closed'].map((value) => (<Button key={value} variant={(status ?? '') === value ? 'default' : 'outline'} size="sm" onClick={() => router.get('/accounting/payroll/loans', value ? { status: value } : {})}>{value || 'all'}</Button>))}</>} />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 {permissions['payroll.manage'] && (
@@ -74,11 +68,11 @@ export default function PayrollLoans({ loans, status, filters, employees, accoun
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Kind</th><th className="text-right">Amount</th><th className="text-right">Left to recover</th><th>From</th><th>Status</th><th /></tr></thead><tbody>
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Kind</th><th className="text-right">Amount</th><th className="text-right">Left to recover</th><th>From</th><th>Status</th><th /></tr></thead><tbody>
                         {loans.map((loan) => (
                             <>
                                 <tr key={loan.id} className="border-t">
-                                    <td className="py-2">{loan.employee_code} {loan.employee_name}</td><td>{loan.kind}</td><td className="text-right tabular-nums">{money(loan.principal)}</td><td className="text-right tabular-nums">{money(loan.outstanding)}</td><td>{loan.start_month} · {loan.installments}x</td><td><Badge variant="outline">{loan.status}</Badge></td>
+                                    <td className="py-2">{loan.employee_code} {loan.employee_name}</td><td>{loan.kind}</td><td className="text-right tabular-nums">{money(loan.principal)}</td><td className="text-right tabular-nums">{money(loan.outstanding)}</td><td>{loan.start_month} · {loan.installments}x</td><td><StatusPill status={loan.status} /></td>
                                     <td className="space-x-1 text-right"><Button variant="ghost" size="sm" onClick={() => setOpen(open === loan.id ? null : loan.id)}>Schedule</Button>
                                         {loan.status === 'active' && permissions['payroll.manage'] && <Button variant="ghost" size="sm" onClick={() => act(loan.id, 'skip', {}, 'Move the next instalment to the end?')}>Skip next</Button>}
                                         {loan.status === 'draft' && permissions['payroll.manage'] && <Button variant="ghost" size="sm" onClick={() => act(loan.id, 'cancel', {}, 'Cancel this loan?')}>Cancel</Button>}</td>

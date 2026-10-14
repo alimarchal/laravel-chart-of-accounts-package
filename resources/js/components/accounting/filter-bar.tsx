@@ -46,7 +46,7 @@ export default function FilterBar({ path, fields, values, preserve = {} }: Props
     };
 
     return (
-        <form onSubmit={apply} className="flex flex-wrap items-end gap-3" role="search">
+        <form onSubmit={apply} className="flex flex-wrap items-end gap-3 rounded-xl border bg-card px-4 py-3 shadow-xs" role="search">
             {fields.map((field) => (
                 <label key={field.name} className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
                     <span>{field.label}</span>

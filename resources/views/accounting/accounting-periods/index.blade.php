@@ -64,14 +64,7 @@
                 <td class="py-1 px-2 text-center">{{ $period->start_date->format('d-m-Y') }}</td>
                 <td class="py-1 px-2 text-center">{{ $period->end_date->format('d-m-Y') }}</td>
                 <td class="py-1 px-2 text-center">
-                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full
-                        @class([
-                            'bg-emerald-100 text-emerald-700' => $period->status === 'open',
-                            'bg-blue-100 text-blue-700' => $period->status === 'closed',
-                            'bg-gray-100 text-gray-600' => $period->status === 'archived',
-                        ])">
-                        {{ $statusOptions[$period->status] ?? ucfirst($period->status) }}
-                    </span>
+                    <x-accounting::status-pill :status="$period->status" :label="$statusOptions[$period->status] ?? ucfirst($period->status)" />
                 </td>
                 <td class="py-1 px-2 text-center">
                     <div class="flex justify-center space-x-2">

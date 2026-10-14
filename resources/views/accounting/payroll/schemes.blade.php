@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Contributions">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Contributions</h2><a href="{{ route('accounting.payroll.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Payroll</a></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="Contributions" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.payroll.index" /><x-accounting::payroll-nav /></x-slot>
     @php($e = $editing)
     @php($v = fn ($name, $default = '') => old($name, $e[$name] ?? $default))
     @php($rate = fn ($s, $side) => $s['base'] === 'fixed' ? number_format((float) $s[$side.'_fixed'], 2) : (float) $s[$side.'_rate'].'%')

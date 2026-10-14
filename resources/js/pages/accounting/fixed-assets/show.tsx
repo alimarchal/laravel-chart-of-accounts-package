@@ -1,8 +1,8 @@
+import { StatusPill } from '@/components/accounting/status-pill';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -41,7 +41,7 @@ export default function FixedAssetShow({ asset, history, accounts, today }: Prop
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <Heading title={`${asset.code} · ${asset.name}`} description={asset.category ?? undefined} />
                     <div className="flex items-center gap-2">
-                        <Badge variant="outline">{asset.status}</Badge>
+                        <StatusPill status={asset.status} />
                         {asset.status === 'active' && permissions['fixed-assets.update'] && <Button asChild variant="outline"><Link href={`/accounting/fixed-assets/${asset.id}/edit`}>Edit</Link></Button>}
                         {permissions['fixed-assets.delete'] && asset.status === 'active' && !asset.acquisition_entry_id && history.length === 0 && (
                             <Button variant="ghost" onClick={() => confirmThen('Delete this asset?', () => router.delete(`/accounting/fixed-assets/${asset.id}`))}>Delete</Button>
@@ -59,7 +59,7 @@ export default function FixedAssetShow({ asset, history, accounts, today }: Prop
                 <Card>
                     <CardHeader><CardTitle>Depreciation booked</CardTitle></CardHeader>
                     <CardContent>
-                        <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Month</th><th className="text-right">Amount</th><th className="text-right">Entry</th></tr></thead>
+                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Month</th><th className="text-right">Amount</th><th className="text-right">Entry</th></tr></thead>
                             <tbody>
                                 {history.map((row) => (<tr key={row.month} className="border-t"><td className="py-1">{row.month}</td><td className="text-right tabular-nums">{money(row.amount)}</td><td className="text-right"><Link href={`/accounting/journal-entries/${row.journal_entry_id}`} className="hover:underline">#{row.journal_entry_id}</Link></td></tr>))}
                                 {history.length === 0 && <tr><td colSpan={3} className="py-4 text-center text-muted-foreground">Nothing booked yet.</td></tr>}

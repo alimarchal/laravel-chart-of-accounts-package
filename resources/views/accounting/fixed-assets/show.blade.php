@@ -1,14 +1,7 @@
 <x-accounting::app-layout title="Asset">
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $asset['code'] }} · {{ $asset['name'] }} <span class="ml-2 rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-700">{{ $asset['status'] }}</span></h2>
-            <div class="flex gap-2">
-                @if($asset['status'] === 'active')@can('fixed-assets.update')<a href="{{ route('accounting.fixed-assets.edit', $asset['id']) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Edit</a>@endcan @endif
+    <x-slot name="header"><x-accounting::page-header :title="($asset['code']).' · '.($asset['name'])" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions">@if($asset['status'] === 'active')@can('fixed-assets.update')<a href="{{ route('accounting.fixed-assets.edit', $asset['id']) }}" class="acc-btn">Edit</a>@endcan @endif
                 @if($asset['status'] === 'active' && ! $asset['locked'])@can('fixed-assets.delete')<form method="POST" action="{{ route('accounting.fixed-assets.destroy', $asset['id']) }}" onsubmit="return confirm('Delete this asset?')">@csrf @method('DELETE')<button class="px-3 py-2 text-red-700 text-xs font-semibold uppercase tracking-widest hover:underline">Delete</button></form>@endcan @endif
-                <a href="{{ route('accounting.fixed-assets.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Register</a>
-            </div>
-        </div>
-    </x-slot>
+                <a href="{{ route('accounting.fixed-assets.index') }}" class="acc-btn acc-btn--dark">Register</a></x-slot></x-accounting::page-header></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     <div class="py-6"><div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif

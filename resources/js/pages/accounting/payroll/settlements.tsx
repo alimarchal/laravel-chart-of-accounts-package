@@ -1,9 +1,9 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { StatusPill } from '@/components/accounting/status-pill';
+import { Head, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 import FilterBar from '@/components/accounting/filter-bar';
-import Heading from '@/components/heading';
+import { PayrollHeader } from '@/components/accounting/payroll-nav';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -34,10 +34,7 @@ export default function PayrollSettlements({ settlements, filters, preview, toda
         <>
             <Head title="Final settlements" />
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <Heading title="Final settlements" description="Gratuity, unused leave and loans owed when an employee leaves, paid as one net amount" />
-                    <Button asChild variant="outline"><Link href="/accounting/payroll">Payroll</Link></Button>
-                </div>
+                <PayrollHeader title="Final settlements" description="Gratuity, unused leave and loans owed when an employee leaves, paid as one net amount" />
                 {flash?.success && <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{flash.success}</p>}
                 {flash?.error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{flash.error}</p>}
                 {permissions['payroll.manage'] && (
@@ -52,7 +49,7 @@ export default function PayrollSettlements({ settlements, filters, preview, toda
                             <div className="space-y-1 md:col-span-2"><Label>Notes</Label><Input value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} /></div>
                             <div className="flex gap-2 pt-6"><Button type="button" variant="outline" disabled={form.processing} onClick={() => form.post('/accounting/payroll/settlements/preview', { preserveScroll: true })}>Preview</Button><Button type="submit" disabled={form.processing || !preview}>Save draft</Button></div>
                             {preview && (
-                                <div className="md:col-span-4"><table className="w-full max-w-md text-sm"><tbody>{lines.map(([label, value]) => (<tr key={label} className="border-t"><td className="py-1">{label}</td><td className="text-right tabular-nums">{value}</td></tr>))}</tbody></table>
+                                <div className="md:col-span-4"><table className="w-full max-w-md text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><tbody>{lines.map(([label, value]) => (<tr key={label} className="border-t"><td className="py-1">{label}</td><td className="text-right tabular-nums">{value}</td></tr>))}</tbody></table>
                                     {preview.loans.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Open loans recovered: {preview.loans.map((loan) => `${loan.kind} ${money(loan.outstanding)}`).join(', ')}</p>}</div>
                             )}
                         </CardContent>
@@ -72,10 +69,10 @@ export default function PayrollSettlements({ settlements, filters, preview, toda
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Last day</th><th className="text-right">Gratuity</th><th className="text-right">Leave pay</th><th className="text-right">Loans</th><th className="text-right">Net</th><th>Status</th><th /></tr></thead><tbody>
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2"><thead><tr className="text-left text-muted-foreground"><th className="py-1">Employee</th><th>Last day</th><th className="text-right">Gratuity</th><th className="text-right">Leave pay</th><th className="text-right">Loans</th><th className="text-right">Net</th><th>Status</th><th /></tr></thead><tbody>
                         {settlements.map((row) => (
                             <tr key={row.id} className="border-t">
-                                <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.leave_date}</td><td className="text-right tabular-nums">{money(row.gratuity)}</td><td className="text-right tabular-nums">{money(row.leave_encashment)}</td><td className="text-right tabular-nums">{money(row.loan_recovery)}</td><td className="text-right font-medium tabular-nums">{money(row.net)}</td><td><Badge variant="outline">{row.status}</Badge></td>
+                                <td className="py-2">{row.employee_code} {row.employee_name}</td><td>{row.leave_date}</td><td className="text-right tabular-nums">{money(row.gratuity)}</td><td className="text-right tabular-nums">{money(row.leave_encashment)}</td><td className="text-right tabular-nums">{money(row.loan_recovery)}</td><td className="text-right font-medium tabular-nums">{money(row.net)}</td><td><StatusPill status={row.status} /></td>
                                 <td className="space-x-1 text-right">
                                     {row.status === 'draft' && permissions['payroll.post'] && <Button size="sm" variant="outline" onClick={() => act(row.id, 'post', {}, 'Post this settlement to the books?')}>Post</Button>}
                                     {row.status === 'draft' && permissions['payroll.manage'] && <Button size="sm" variant="ghost" onClick={() => confirmThen('Delete this draft?', () => router.delete(`/accounting/payroll/settlements/${row.id}`, { preserveScroll: true }))}>Delete</Button>}

@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="FBR invoices">
-    <x-slot name="header"><div class="flex items-center justify-between"><h2 class="font-semibold text-xl text-gray-800 leading-tight">FBR invoices</h2><a href="{{ route('accounting.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">All modules</a></div></x-slot>
+    <x-slot name="header"><x-accounting::page-header title="FBR invoices" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"></x-accounting::page-header></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('success'))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
@@ -20,7 +20,7 @@
             <tbody>
             @forelse ($documents as $row)
                 <tr class="border-t align-top"><td class="py-2 px-3 font-medium">{{ $row['number'] }} <span class="text-xs font-normal text-gray-500">{{ str_replace('_', ' ', $row['kind']) }}</span></td><td class="py-2 px-3">{{ $row['issue_date'] }}</td><td class="py-2 px-3">{{ $row['customer'] }}</td><td class="py-2 px-3 text-right tabular-nums">{{ $fmt($row['total']) }}</td>
-                    <td class="py-2 px-3"><span class="rounded-full px-2 py-0.5 text-xs {{ $row['status'] === 'failed' ? 'bg-red-100 text-red-700' : ($row['status'] === 'accepted' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700') }}">{{ $row['status'] === 'none' ? 'not sent' : $row['status'] }}</span>@if($row['error'])<p class="mt-1 max-w-xs text-xs text-red-700">{{ $row['error'] }}</p>@endif</td>
+                    <td class="py-2 px-3"><x-accounting::status-pill :status="$row['status'] === 'none' ? 'not sent' : $row['status']" />@if($row['error'])<p class="mt-1 max-w-xs text-xs text-red-700">{{ $row['error'] }}</p>@endif</td>
                     <td class="py-2 px-3 font-mono text-xs">{{ $row['fbr_invoice_number'] }}</td>
                     <td class="py-2 px-3 text-right">@if($enabled && $row['status'] !== 'accepted')@can('fbr.submit')<form method="POST" action="{{ route('accounting.fbr.submit', $row['document_id']) }}">@csrf<button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">{{ $row['status'] === 'failed' ? 'Retry' : 'Send' }}</button></form>@endcan @endif</td></tr>
             @empty

@@ -121,7 +121,7 @@ export default function WhatsAppIndex({ messages, whatsapp, templates, filters }
                     ]}
                 />
                 <Card><CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <thead><tr className="text-left text-muted-foreground"><th className="py-1">When</th><th>To / from</th><th>Message</th><th>Status</th><th /></tr></thead>
                         <tbody>
                             {messages.map((message) => (

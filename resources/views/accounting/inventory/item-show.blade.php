@@ -1,15 +1,8 @@
 <x-accounting::app-layout title="Item">
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $item['sku'] }} · {{ $item['name'] }}</h2>
-            <div class="flex gap-2">
-                @can('inventory.move')<a href="{{ route('accounting.inventory.movements.create', ['item_id' => $item['id']]) }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">Move stock</a>@endcan
-                @can('inventory.manage')<a href="{{ route('accounting.inventory.items.edit', $item['id']) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-50">Edit</a>@endcan
+    <x-slot name="header"><x-accounting::page-header :title="($item['sku']).' · '.($item['name'])" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"><x-slot name="actions">@can('inventory.move')<a href="{{ route('accounting.inventory.movements.create', ['item_id' => $item['id']]) }}" class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-600 transition">Move stock</a>@endcan
+                @can('inventory.manage')<a href="{{ route('accounting.inventory.items.edit', $item['id']) }}" class="acc-btn">Edit</a>@endcan
                 @if(! $locked)@can('inventory.manage')<form method="POST" action="{{ route('accounting.inventory.items.destroy', $item['id']) }}" onsubmit="return confirm('Delete this item?')">@csrf @method('DELETE')<button class="px-3 py-2 text-red-700 text-xs font-semibold uppercase tracking-widest hover:underline">Delete</button></form>@endcan @endif
-                <a href="{{ route('accounting.inventory.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest">Inventory</a>
-            </div>
-        </div>
-    </x-slot>
+                <a href="{{ route('accounting.inventory.index') }}" class="acc-btn acc-btn--dark">Inventory</a></x-slot></x-accounting::page-header></x-slot>
     @php($fmt = fn ($v) => number_format((float) $v, 2))
     @php($q = fn ($v) => rtrim(rtrim(number_format((float) $v, 4), '0'), '.'))
     @php($where = collect($warehouses)->pluck('name', 'id'))

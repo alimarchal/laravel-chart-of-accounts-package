@@ -1,13 +1,5 @@
 <x-accounting::app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Account Type: {{ $accountType->name }}</h2>
-            <div class="flex gap-2">
-                @can('account-types.update')<a href="{{ route('accounting.account-types.edit', $accountType) }}" class="inline-flex items-center px-4 py-2 bg-blue-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">Edit</a>@endcan
-                <a href="{{ route('accounting.account-types.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header"><x-accounting::page-header :title="'Account Type: '.($accountType->name)" :showSearch="false" :showRefresh="false" :showPrint="false" :backRoute="route('accounting.account-types.index')"><x-slot name="actions">@can('account-types.update')<a href="{{ route('accounting.account-types.edit', $accountType) }}" class="acc-btn acc-btn--dark">Edit</a>@endcan</x-slot></x-accounting::page-header></x-slot>
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

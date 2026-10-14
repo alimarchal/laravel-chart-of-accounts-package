@@ -136,7 +136,7 @@ export default function PartyPaymentForm({ kind, partyId, parties, bankAccounts,
                             <div className="text-sm text-muted-foreground">{form.data.party_id === '' ? 'Choose a party first.' : 'Nothing open for this party.'}</div>
                         ) : (
                             <div className="overflow-x-auto rounded-md border">
-                                <table className="w-full text-sm">
+                                <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                     <tbody>
                                         {documents.map((document) => (
                                             <tr key={document.id} className="border-t first:border-t-0">

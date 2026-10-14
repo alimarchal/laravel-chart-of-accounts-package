@@ -174,7 +174,7 @@ export default function Restructure({
                             {renumberRows.length > 0 ? (
                                 <>
                                     <div className="max-h-72 overflow-y-auto rounded-md border">
-                                        <table className="w-full text-sm">
+                                        <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                             <tbody>
                                                 {renumberRows.map(
                                                     ([from, to]) => (

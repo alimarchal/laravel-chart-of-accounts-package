@@ -1,5 +1,5 @@
 <x-accounting::app-layout title="Item">
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $item ? 'Edit '.$item['sku'] : 'New item' }}</h2></x-slot>
+    <x-slot name="header"><x-accounting::page-header :title="($item ? 'Edit '.$item['sku'] : 'New item')" :showSearch="false" :showRefresh="false" :showPrint="false" backRoute="accounting.dashboard"></x-accounting::page-header></x-slot>
     @php($v = fn ($name, $default = '') => old($name, $item[$name] ?? $default))
     <div class="py-6"><div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session("success"))<div class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">{{ session("success") }}</div>@endif

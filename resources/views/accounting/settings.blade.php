@@ -9,7 +9,7 @@
             <x-accounting::section-tabs active="settings" />
 
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="acc-masonry">
 
                 {{-- ─── Users & access ─── --}}
                 @canany(['user.view','accounting.manage-settings'])

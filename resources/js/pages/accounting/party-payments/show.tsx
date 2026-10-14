@@ -91,7 +91,7 @@ export default function PartyPaymentShow({ payment, openDocuments }: Props) {
 
                 <h3 className="text-sm font-medium">Settled documents</h3>
                 <div className="overflow-x-auto rounded-md border">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                         <tbody>
                             {payment.allocations.length === 0 ? (
                                 <tr>
@@ -124,7 +124,7 @@ export default function PartyPaymentShow({ payment, openDocuments }: Props) {
                     <>
                         <h3 className="text-sm font-medium">Apply the rest to</h3>
                         <div className="overflow-x-auto rounded-md border">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
                                 <tbody>
                                     {openDocuments.map((document) => (
                                         <tr key={document.id} className="border-t first:border-t-0">

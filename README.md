@@ -632,6 +632,16 @@ All three front ends (React/Inertia, Blade with Livewire, the REST API) share th
 |---|---|
 | ![Journal entries](docs/images/ui-lwflux-journal-index.jpg) | ![Account dropdown](docs/images/ui-lwflux-journal-form-accounts.jpg) |
 
+- **Payroll** has one navigation strip on every payroll screen (hidden entries follow the feature switches and permissions); status words are coloured pills in every list.
+
+| Payroll (Livewire / Flux) | Payroll, dark mode |
+|---|---|
+| ![Payroll](docs/images/ui-lwflux-payroll.jpg) | ![Payroll dark](docs/images/ui-lwflux-payroll-dark.jpg) |
+| **Payroll, Jetstream** | **Payroll, React** |
+| ![Payroll Jetstream](docs/images/ui-jetstream-payroll.jpg) | ![Payroll React](docs/images/ui-react-payroll.jpg) |
+| **General ledger** | **Journal entry, React** |
+| ![General ledger](docs/images/ui-lwflux-general-ledger.jpg) | ![Journal entry React](docs/images/ui-react-journal-show.jpg) |
+
 The look lives in one file, `resources/views/accounting/components/ui-styles.blade.php` (CSS variables such as `--acc-accent`, scoped to `.acc-kit`); publish the views (`php artisan vendor:publish --tag=accounting-views`) and change the variables to match your brand.
 
 ## Dashboard
