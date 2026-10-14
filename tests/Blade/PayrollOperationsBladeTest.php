@@ -23,7 +23,11 @@ it('runs attendance, leave, loans, contributions and the bank file in Blade', fu
     expect($employee->overtime_eligible)->toBeTrue();
     $this->get("/accounting/payroll/employees/{$employee->id}/edit")->assertOk()->assertSee('Paid overtime');
 
-    $this->get('/accounting/payroll')->assertSee('Attendance')->assertSee('Loans')->assertSee('Contributions');
+    // The tabs of the payroll area: the choices inside a tab show once you are in it.
+    $this->get('/accounting/payroll')->assertSee('Attendance &amp; leave', false)->assertSee('Loans &amp; extras', false);
+    $this->get('/accounting/payroll/attendance')->assertSee('Attendance')->assertSee('Leave');
+    $this->get('/accounting/payroll/loans')->assertSee('Loans')->assertSee('Arrears');
+    $this->get('/accounting/payroll/employees')->assertSee('Contributions');
     $this->post('/accounting/payroll/leave-types', ['code' => 'ANN', 'name' => 'Annual leave', 'is_paid' => 1, 'annual_days' => 20])->assertRedirect()->assertSessionHas('success');
     $this->get('/accounting/payroll/leaves')->assertOk()->assertSee('Annual leave')->assertSee('Record leave');
     $this->post('/accounting/payroll/leaves', ['employee_id' => $employee->id, 'leave_type_id' => 1, 'from_date' => $month->toDateString(), 'to_date' => $month->copy()->addDays(2)->toDateString()])->assertRedirect()->assertSessionHas('success');

@@ -21,7 +21,9 @@ it('prints payslips, settles an employee, and shows the reports and tax screens 
     $employee = Employee::query()->firstOrFail();
     expect($employee->email)->toBe('amina@example.com');
     $this->get("/accounting/payroll/employees/{$employee->id}/edit")->assertOk()->assertSee('amina@example.com')->assertSee('payslips are sent here');
-    $this->get('/accounting/payroll')->assertSee('Settlements')->assertSee('Reports')->assertSee('Tax');
+    $this->get('/accounting/payroll')->assertSee('Reports &amp; tax', false);
+    $this->get('/accounting/payroll/loans')->assertSee('Settlements');
+    $this->get('/accounting/payroll/reports')->assertSee('Reports')->assertSee('Tax');
 
     $this->post('/accounting/payroll/runs', ['period_month' => $month->toDateString()])->assertRedirect();
     $run = PayrollRun::query()->firstOrFail();

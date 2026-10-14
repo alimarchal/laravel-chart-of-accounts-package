@@ -675,7 +675,7 @@ All three front ends (React/Inertia, Blade with Livewire, the REST API) share th
 |---|---|
 | ![Journal entries](docs/images/ui-lwflux-journal-index.jpg) | ![Account dropdown](docs/images/ui-lwflux-journal-form-accounts.jpg) |
 
-- **Payroll** has one navigation strip on every payroll screen (hidden entries follow the feature switches and permissions); status words are coloured pills in every list.
+- **Payroll** is five tabs on every payroll screen (*Runs, People & pay, Attendance & leave, Loans & extras, Reports & tax*); the choices inside a tab show once you are in it, and hidden entries follow the feature switches and permissions. Long filter lists keep the rarer fields under *More filters*, and a screen with many actions keeps the less common ones under *More*. Status words are coloured pills in every list.
 
 | Payroll (Livewire / Flux) | Payroll, dark mode |
 |---|---|
