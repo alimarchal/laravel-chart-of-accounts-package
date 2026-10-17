@@ -107,6 +107,10 @@ it('refuses a second run for a month, a negative net salary and a closed period'
     ($this->service)()->deleteRun(PayrollRun::query()->firstOrFail());
     ($this->employee)(['code' => 'E9', 'name' => 'Overdrawn', 'components' => [['pay_component_id' => $loan->id]]]);
     expect(fn () => ($this->service)()->createRun($this->month->toDateString()))->toThrow(AccountingException::class, 'negative');
+
+    ($this->employee)(['code' => 'E10', 'name' => 'Also overdrawn', 'components' => [['pay_component_id' => $loan->id]]]);
+    expect(fn () => ($this->service)()->createRun($this->month->toDateString()))->toThrow(AccountingException::class, 'Overdrawn (')
+        ->and(PayrollRun::query()->count())->toBe(0);               // the whole list in one message, nothing half-saved
 });
 
 it('stops posting in a closed period and leaves the run a draft', function (): void {

@@ -41,8 +41,10 @@ class WhatsAppWebhookController extends Controller
 
         $secret = (string) config('accounting.whatsapp.app_secret');
 
-        // With the live gateway a signature is mandatory; the local sandbox accepts unsigned calls only when no secret is set.
-        if ($secret !== '' || $this->whatsapp->mode() === 'live') {
+        // A signature is mandatory, except for the local sandbox: no app secret, not the live gateway and a local/testing application.
+        $unsignedAllowed = $secret === '' && $this->whatsapp->mode() !== 'live' && app()->environment(['local', 'testing']);
+
+        if (! $unsignedAllowed) {
             $given = (string) $request->header('X-Hub-Signature-256');
 
             if ($secret === '' || ! str_starts_with($given, 'sha256=') || ! hash_equals('sha256='.hash_hmac('sha256', $request->getContent(), $secret), $given)) {

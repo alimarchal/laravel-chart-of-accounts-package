@@ -14,6 +14,8 @@ return [
     // Blade driver: which shell the screens should look native in: auto | flux (Livewire starter kit) | jetstream | breeze | plain.
     'blade_kit' => env('ACCOUNTING_BLADE_KIT', 'auto'),
     // Table referenced by created_by / updated_by / posted_by foreign keys in the package migrations.
+    // Largest amount one field may hold (journal lines, simple entries). Keeps sums inside DECIMAL(18,2) and integer cents.
+    'max_amount' => (float) env('ACCOUNTING_MAX_AMOUNT', 999999999999.99),
     'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
 

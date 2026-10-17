@@ -2,6 +2,8 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Support;
 
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
+
 /**
  * Exact money arithmetic in integer minor units (cents).
  *
@@ -10,6 +12,12 @@ namespace Alimarchal\LaravelChartOfAccounts\Support;
  */
 final class Money
 {
+    /** The largest whole amount that still fits integer cents (PHP_INT_MAX / 100). */
+    private const MAX_WHOLE = 92233720368547758;
+
+    /**
+     * @throws AccountingException when the value is not a plain decimal number ("1,000.50", "1e3", "12abc") or is too large for integer cents
+     */
     public static function toCents(int|float|string|null $amount): int
     {
         if ($amount === null || $amount === '') {
@@ -17,23 +25,38 @@ final class Money
         }
 
         if (is_int($amount)) {
+            if (abs($amount) > self::MAX_WHOLE) {
+                throw new AccountingException("The amount [{$amount}] is too large.");
+            }
+
             return $amount * 100;
         }
 
         if (is_float($amount)) {
+            if (! is_finite($amount) || abs($amount) >= self::MAX_WHOLE) {
+                throw new AccountingException("The amount [{$amount}] is not a valid number.");
+            }
+
             return (int) round($amount * 100);
         }
 
         $amount = trim($amount);
-        $negative = str_starts_with($amount, '-');
-        $amount = ltrim($amount, '+-');
 
-        if (! preg_match('/^(\d*)(?:\.(\d*))?$/', $amount, $matches)) {
-            return (int) round(((float) $amount) * 100) * ($negative ? -1 : 1);
+        if (! preg_match('/^([+-]?)(\d*)(?:\.(\d*))?$/', $amount, $matches) || ($matches[2] === '' && ($matches[3] ?? '') === '')) {
+            throw new AccountingException("The amount [{$amount}] is not a valid number: use digits with an optional decimal point, without thousands separators.");
         }
 
-        $whole = (int) ($matches[1] === '' ? '0' : $matches[1]);
-        $fraction = $matches[2] ?? '';
+        $negative = $matches[1] === '-';
+        $digits = ltrim($matches[2], '0');
+
+        $limit = (string) self::MAX_WHOLE;
+
+        if (strlen($digits) > strlen($limit) || (strlen($digits) === strlen($limit) && strcmp($digits, $limit) > 0)) {
+            throw new AccountingException("The amount [{$amount}] is too large.");
+        }
+
+        $whole = $digits === '' ? 0 : (int) $digits;
+        $fraction = $matches[3] ?? '';
         $cents = (int) str_pad(substr($fraction, 0, 2), 2, '0');
 
         // Round half up on the third decimal, if any.

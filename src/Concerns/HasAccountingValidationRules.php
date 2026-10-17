@@ -6,16 +6,21 @@ use Illuminate\Validation\Rule;
 
 trait HasAccountingValidationRules
 {
+    protected function maxAmount(): string
+    {
+        return number_format((float) config('accounting.max_amount', 999999999999.99), 2, '.', '');
+    }
+
     /** @return array<int, string> */
     protected function moneyRules(): array
     {
-        return ['numeric', 'min:0', 'decimal:0,2'];
+        return ['numeric', 'min:0', 'max:'.$this->maxAmount(), 'decimal:0,2'];
     }
 
     /** @return array<int, string> */
     protected function positiveMoneyRules(): array
     {
-        return ['required', 'numeric', 'gt:0', 'decimal:0,2'];
+        return ['required', 'numeric', 'gt:0', 'max:'.$this->maxAmount(), 'decimal:0,2'];
     }
 
     /** @return array<int, mixed> */

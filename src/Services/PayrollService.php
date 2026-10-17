@@ -285,6 +285,7 @@ class PayrollService
         $lineRows = [];
         $included = [];
         $installments = [];
+        $overdrawn = [];
         $stamp = now();
 
         foreach (Employee::query()->where('is_active', true)->whereDate('join_date', '<=', $end->toDateString())
@@ -386,7 +387,9 @@ class PayrollService
             $net = $gross - $deductions - $tax - $arrearsTax;
 
             if ($net < 0) {
-                throw new AccountingException("{$employee->name} would be paid a negative net salary ({$this->fmt($net)}): reduce the deductions.");
+                $overdrawn[] = "{$employee->name} ({$this->fmt($net)})";
+
+                continue;                                       // keep checking, so the whole list is reported at once
             }
 
             if ($tax > 0) {
@@ -413,6 +416,12 @@ class PayrollService
             $totals['tax'] += $tax + $arrearsTax;
             $totals['net'] += $net;
             $totals['employer'] += $employer;
+        }
+
+        if ($overdrawn !== []) {
+            throw new AccountingException(count($overdrawn) === 1
+                ? "{$overdrawn[0]} would be paid a negative net salary: reduce the deductions."
+                : 'These employees would be paid a negative net salary, reduce their deductions: '.implode(', ', $overdrawn).'.');
         }
 
         foreach (array_chunk($lineRows, 500) as $chunk) {
