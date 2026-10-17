@@ -159,3 +159,31 @@ it('converts money strings to cents exactly', function (): void {
         ->and(Money::toCents(0.29))->toBe(29)
         ->and(Money::fromCents(-123456))->toBe('-1234.56');
 });
+
+it('refuses malformed and oversized money instead of misreading it', function (): void {
+    expect(Money::toCents('1000.50'))->toBe(100050)
+        ->and(Money::toCents('-5'))->toBe(-500)
+        ->and(Money::toCents('.5'))->toBe(50)
+        ->and(Money::toCents('0.005'))->toBe(1);
+
+    foreach (['1,000.50', '1e3', 'abc', '12abc', '.', '-', '99999999999999999999'] as $bad) {
+        expect(fn () => Money::toCents($bad))->toThrow(AccountingException::class);
+    }
+
+    expect(fn () => Money::toCents(PHP_INT_MAX))->toThrow(AccountingException::class)
+        ->and(fn () => Money::toCents(1.0E+30))->toThrow(AccountingException::class);
+});
+
+it('answers 422, not 500, for an amount above the allowed maximum', function (): void {
+    Sanctum::actingAs(User::factory()->create()->givePermissionTo(['journal-entries.create', 'journal-entries.view']));
+    $lines = fn ($amount) => [
+        ['chart_of_account_id' => account('5104')->id, 'debit' => $amount, 'credit' => 0],
+        ['chart_of_account_id' => account('1101')->id, 'debit' => 0, 'credit' => $amount],
+    ];
+    $post = fn ($amount) => $this->postJson('/api/v1/accounting/journal-entries', ['entry_date' => now()->toDateString(), 'lines' => $lines($amount)]);
+
+    $post('99999999999999999999')->assertUnprocessable()->assertJsonValidationErrors(['lines.0.debit', 'lines.1.credit']);
+    $post('1000000000000.00')->assertUnprocessable();               // one cent over the limit of 999,999,999,999.99
+    $post('999999999999.99')->assertCreated();                      // the limit itself is fine
+    $this->postJson('/api/v1/accounting/journal-entries/simple', ['debit_account_code' => '5104', 'credit_account_code' => '1101', 'amount' => '99999999999999999999', 'post' => false])->assertUnprocessable()->assertJsonValidationErrors(['amount']);
+});

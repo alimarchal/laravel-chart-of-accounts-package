@@ -483,3 +483,14 @@ it('renders the Blade screen and sends from its form', function (): void {
 
     expect(WhatsAppMessage::query()->count())->toBe(2);
 })->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
+
+it('refuses unsigned webhook calls outside a local sandbox, even in fake mode', function (): void {
+    config(['accounting.whatsapp.mode' => 'fake', 'accounting.whatsapp.app_secret' => '']);
+    $raw = json_encode(['object' => 'whatsapp_business_account', 'entry' => []]);
+    $post = fn () => $this->call('POST', '/api/v1/accounting/whatsapp/webhook', [], [], [], ['CONTENT_TYPE' => 'application/json'], $raw);
+
+    $post()->assertOk();                                            // the testing application is a local sandbox
+
+    app()['env'] = 'production';
+    $post()->assertForbidden();                                     // a production application never takes an unsigned call
+});
