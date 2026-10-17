@@ -491,6 +491,12 @@ it('refuses unsigned webhook calls outside a local sandbox, even in fake mode', 
 
     $post()->assertOk();                                            // the testing application is a local sandbox
 
+    $environment = app()['env'];
     app()['env'] = 'production';
-    $post()->assertForbidden();                                     // a production application never takes an unsigned call
+
+    try {
+        $post()->assertForbidden();                                 // a production application never takes an unsigned call
+    } finally {
+        app()['env'] = $environment;                                // the database teardown must not think it runs in production
+    }
 });
