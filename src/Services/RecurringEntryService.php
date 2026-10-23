@@ -282,12 +282,17 @@ class RecurringEntryService
     /**
      * Generate the next occurrence now, even if it is not due yet (the "Run now" button).
      */
-    public function runNow(RecurringEntry $entry): RecurringEntryRun
+    public function runNow(RecurringEntry $entry, bool $force = false): RecurringEntryRun
     {
         $entry->refresh();
 
         if ($entry->next_run_date === null) {
             throw new AccountingException('This template has finished: it has no occurrences left.');
+        }
+
+        // A double click or a retried request must not post next month's entry early: generating ahead of the schedule is explicit.
+        if (! $force && $entry->next_run_date->gt(now()->startOfDay())) {
+            throw new AccountingException("The next occurrence is on {$entry->next_run_date->toDateString()}, not due yet: confirm to generate it early.");
         }
 
         return $this->runNext($entry, $entry->next_run_date->copy(), force: true)

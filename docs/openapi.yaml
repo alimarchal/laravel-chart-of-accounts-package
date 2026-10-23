@@ -16,7 +16,8 @@ info:
 
     * **Errors:** 422 with `message` (accounting rules) and `errors` (validation).
 
-    * **Money:** amounts are returned as decimal strings with two decimals.
+    * **Money:** amounts are returned as decimal strings with two decimals. A transaction amount may not exceed `accounting.max_amount`
+    (`ACCOUNTING_MAX_AMOUNT`, default 999,999,999,999.99): larger values answer 422.
 
     * **Retries:** send `Idempotency-Key` when creating journal entries.
 
@@ -1627,11 +1628,14 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - reason
               properties:
                 reason:
                   type: string
+                  minLength: 5
                   maxLength: 500
-                  description: Kept in the audit trail.
+                  description: Required; kept in the audit trail.
       parameters:
       - $ref: '#/components/parameters/Company'
   /periods/{id}/close-checklist:
@@ -6728,8 +6732,9 @@ paths:
       - Recurring entries
       summary: Generate the next entry now
       operationId: run_recurring_entry
-      description: 'Generates the next scheduled occurrence immediately, even if it is not due yet (dated on its scheduled
-        day). 422 when the entry could not be created.
+      description: 'Generates the next scheduled occurrence immediately (dated on its scheduled day). An occurrence that is
+        not due yet is refused with 422 unless `force` is true, so a double click cannot post the next period. 422 also when
+        the entry could not be created.
 
 
         Permission: `recurring-entries.run`.'
@@ -6781,6 +6786,18 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                force:
+                  type: boolean
+                  default: false
+                  description: Required to generate an occurrence that is not due yet; without it a future occurrence answers
+                    422.
       parameters:
       - $ref: '#/components/parameters/Company'
   /fx-revaluation:

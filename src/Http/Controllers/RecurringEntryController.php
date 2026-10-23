@@ -123,7 +123,7 @@ class RecurringEntryController extends Controller
     public function run(Request $request, RecurringEntry $recurringEntry): RedirectResponse|JsonResponse
     {
         return $this->guard($request, function () use ($request, $recurringEntry) {
-            $run = $this->recurring->runNow($recurringEntry);
+            $run = $this->recurring->runNow($recurringEntry, $request->boolean('force'));
             $message = match ($run->status) {
                 'posted' => 'Entry generated and posted.',
                 'submitted' => 'Entry generated and submitted for approval.',

@@ -8,7 +8,6 @@ use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,8 +34,9 @@ class ReconciliationController extends SimpleAccountingResourceController
             ['name' => 'bank_account_id', 'label' => 'Bank Account ID', 'type' => 'number', 'table' => true],
             ['name' => 'statement_date', 'label' => 'Statement Date', 'type' => 'date', 'table' => true],
             ['name' => 'statement_balance', 'label' => 'Statement Balance', 'type' => 'number', 'step' => '0.01', 'table' => true],
-            ['name' => 'book_balance', 'label' => 'Book Balance', 'type' => 'number', 'step' => '0.01', 'table' => true],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'completed' => 'Completed', 'void' => 'Void'], 'table' => true],
+            // Shown in the list, never typed in: the matched lines decide the book balance and the status.
+            ['name' => 'book_balance', 'label' => 'Book Balance', 'type' => 'number', 'step' => '0.01', 'table' => true, 'form' => false],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft' => 'Draft', 'completed' => 'Completed', 'void' => 'Void'], 'table' => true, 'form' => false],
         ];
     }
 
@@ -46,8 +46,6 @@ class ReconciliationController extends SimpleAccountingResourceController
             'bank_account_id' => ['required', CompanyRule::exists('accounting_bank_accounts', 'id')],
             'statement_date' => ['required', 'date'],
             'statement_balance' => ['required', 'numeric'],
-            'book_balance' => ['required', 'numeric'],
-            'status' => ['required', Rule::in(['draft', 'completed', 'void'])],
         ];
     }
 
