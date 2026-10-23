@@ -294,7 +294,15 @@ class PayrollLoanService
      */
     public function release(PayrollRun $run): void
     {
+        $loanIds = LoanInstallment::query()->where('payroll_run_id', $run->id)->pluck('loan_id')->unique();
         LoanInstallment::query()->where('payroll_run_id', $run->id)->update(['status' => 'scheduled', 'payroll_run_id' => null]);
+
+        // Voiding the run that recovered the last instalment must not strand the loan: it is owed again, so it is active again.
+        foreach (Loan::query()->whereIn('id', $loanIds)->where('status', 'closed')->get() as $loan) {
+            if (Money::toCents($this->outstanding($loan)) > 0) {
+                $loan->forceFill(['status' => 'active'])->save();
+            }
+        }
     }
 
     /**
