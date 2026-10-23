@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class JournalEntryService
@@ -102,6 +103,7 @@ class JournalEntryService
                 ...$this->sourceDocument($data, $journalEntry),
                 'description' => $data['description'] ?? null,
             ]);
+            $journalEntry->forceFill(['edited_by' => Auth::id()])->save();
 
             $this->linkSource($journalEntry, $data['source'] ?? null);
 
