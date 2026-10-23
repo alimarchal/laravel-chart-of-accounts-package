@@ -61,3 +61,45 @@ it('shows the amount of each entry in the journal list and the filters as chips'
     $this->get('/accounting/journal-entries')->assertOk()->assertSee('1,234.50')->assertSee('Open');
     $this->get('/accounting/journal-entries?filter[status]=posted')->assertOk()->assertSee('Filtered by')->assertSee('Clear all');
 });
+
+it('refuses an exchange rate of 0 in the journal form', function (): void {
+    Livewire::test(JournalEntryForm::class)
+        ->set('fx_rate_to_base', 0)
+        ->call('save', [
+            ['chart_of_account_id' => (string) account('5104')->id, 'cost_center_id' => '', 'debit' => '600', 'credit' => '0', 'description' => ''],
+            ['chart_of_account_id' => (string) account('1101')->id, 'cost_center_id' => '', 'debit' => '0', 'credit' => '600', 'description' => ''],
+        ])
+        ->assertHasErrors('fx_rate_to_base');
+
+    expect(JournalEntry::query()->count())->toBe(0);
+});
+
+it('books a base-currency entry from the form at rate 1 whatever the rate field holds', function (): void {
+    Livewire::test(JournalEntryForm::class)
+        ->set('fx_rate_to_base', 280)
+        ->call('save', [
+            ['chart_of_account_id' => (string) account('5104')->id, 'cost_center_id' => '', 'debit' => '600', 'credit' => '0', 'description' => ''],
+            ['chart_of_account_id' => (string) account('1101')->id, 'cost_center_id' => '', 'debit' => '0', 'credit' => '600', 'description' => ''],
+        ])
+        ->assertHasNoErrors();
+
+    expect((float) JournalEntry::query()->latest('id')->firstOrFail()->fx_rate_to_base)->toBe(1.0);
+});
+
+it('applies the API money rules in the journal form (two decimals, maximum)', function (): void {
+    Livewire::test(JournalEntryForm::class)
+        ->call('save', [
+            ['chart_of_account_id' => (string) account('5104')->id, 'cost_center_id' => '', 'debit' => '33.335', 'credit' => '0', 'description' => ''],
+            ['chart_of_account_id' => (string) account('1101')->id, 'cost_center_id' => '', 'debit' => '0', 'credit' => '33.335', 'description' => ''],
+        ])
+        ->assertHasErrors('lines.0.debit');
+
+    Livewire::test(JournalEntryForm::class)
+        ->call('save', [
+            ['chart_of_account_id' => (string) account('5104')->id, 'cost_center_id' => '', 'debit' => '99999999999999999999', 'credit' => '0', 'description' => ''],
+            ['chart_of_account_id' => (string) account('1101')->id, 'cost_center_id' => '', 'debit' => '0', 'credit' => '99999999999999999999', 'description' => ''],
+        ])
+        ->assertHasErrors('lines.0.debit');
+
+    expect(JournalEntry::query()->count())->toBe(0);
+});

@@ -528,7 +528,8 @@ paths["/recurring-entries/{id}/resume"] = {"parameters": [ID], "post": op("Recur
     body={"type": "object", "properties": {"skip_missed": {"type": "boolean", "default": True, "description": "Skip the occurrences missed while paused (default) or generate them"}}}, opid="resume_recurring_entry")}
 paths["/recurring-entries/{id}/run"] = {"parameters": [ID], "post": op("Recurring entries", "Generate the next entry now", "recurring-entries.run",
     {"201": resp("Generated", data({"type": "object", "properties": {"run": {"type": "object", "properties": {"id": {"type": "integer"}, "run_date": {"type": "string", "format": "date"}, "status": {"type": "string", "enum": ["posted", "submitted", "draft", "failed"]}, "journal_entry_id": {"type": ["integer", "null"]}, "error": {"type": ["string", "null"]}}}, "entry": ref("RecurringEntry")}})), **E404_422},
-    desc="Generates the next scheduled occurrence immediately, even if it is not due yet (dated on its scheduled day). 422 when the entry could not be created.", opid="run_recurring_entry")}
+    body={"type": "object", "properties": {"force": {"type": "boolean", "default": False, "description": "Required to generate an occurrence that is not due yet; without it a future occurrence answers 422."}}},
+    desc="Generates the next scheduled occurrence immediately (dated on its scheduled day). An occurrence that is not due yet is refused with 422 unless `force` is true, so a double click cannot post the next period. 422 also when the entry could not be created.", opid="run_recurring_entry")}
 
 # Foreign-currency revaluation.
 schemas["FxRevaluationRow"] = {"type": "object", "properties": {
@@ -1026,7 +1027,7 @@ spec = {
    "* **Rate limit:** `ACCOUNTING_API_RATE_LIMIT` requests/minute per user (default 120) → 429.\n"
    "* **Pagination:** `?page=` and `?per_page=` (max `ACCOUNTING_API_MAX_PER_PAGE`, default 100).\n"
    "* **Errors:** 422 with `message` (accounting rules) and `errors` (validation).\n"
-   "* **Money:** amounts are returned as decimal strings with two decimals.\n"
+   "* **Money:** amounts are returned as decimal strings with two decimals. A transaction amount may not exceed `accounting.max_amount` (`ACCOUNTING_MAX_AMOUNT`, default 999,999,999,999.99): larger values answer 422.\n"
    "* **Retries:** send `Idempotency-Key` when creating journal entries.\n"
    "* **Branches:** with ACCOUNTING_BRANCHES=true, send `X-Branch: <code or id>` to work in one branch; a user limited to branches only sees theirs.\n"
    "* **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible (404).\n"
