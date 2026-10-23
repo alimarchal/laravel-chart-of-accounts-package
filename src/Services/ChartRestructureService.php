@@ -13,6 +13,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -206,7 +207,16 @@ class ChartRestructureService
                 throw new AccountingException($plan['problems'][0]);
             }
 
-            $entry = $this->postTransfer($source, $target, $date ?? now()->toDateString(), $description);
+            $transferDate = $date ?? now()->toDateString();
+
+            // The transfer moves the whole balance, so it cannot be dated before activity it would carry into the past.
+            $lastPosting = JournalEntry::query()->where('status', 'posted')->whereHas('lines', fn ($lines) => $lines->where('chart_of_account_id', $source->id))->max('entry_date');
+
+            if ($lastPosting !== null && Carbon::parse($transferDate)->startOfDay()->lt(Carbon::parse($lastPosting)->startOfDay())) {
+                throw new AccountingException("The merge date cannot be earlier than the last posting on {$source->account_code} (".Carbon::parse($lastPosting)->toDateString().').');
+            }
+
+            $entry = $this->postTransfer($source, $target, $transferDate, $description);
 
             // Drafts are still editable: point their lines at the target.
             $draftLines = JournalEntryLine::query()->where('chart_of_account_id', $source->id)
