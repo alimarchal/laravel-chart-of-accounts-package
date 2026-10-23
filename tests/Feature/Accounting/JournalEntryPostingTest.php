@@ -95,3 +95,14 @@ it('blocks posting into a closed period', function (): void {
         ],
     ]);
 })->throws(InvalidArgumentException::class, 'No open accounting period exists for this entry date.');
+
+it('records an entry through JournalEntry::record() on the last day of the period, after midnight', function (): void {
+    $period = AccountingPeriod::query()->where('status', 'open')->firstOrFail();
+
+    $this->travelTo($period->end_date->copy()->setTime(15, 30));
+
+    $entry = JournalEntry::record('Sale', '1101', '4101', 500, post: true);
+
+    expect($entry->status)->toBe('posted')
+        ->and($entry->accounting_period_id)->toBe($period->id);
+});
