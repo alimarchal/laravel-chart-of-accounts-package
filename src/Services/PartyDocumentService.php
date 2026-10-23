@@ -138,6 +138,10 @@ class PartyDocumentService
             throw new AccountingException('The document total must be greater than zero.');
         }
 
+        if ($subtotal + $taxTotal > $this->maxCents()) {
+            throw new AccountingException('The document total is above the maximum amount ('.number_format($this->maxCents() / 100, 2).').');
+        }
+
         return ['lines' => $lines, 'subtotal' => $subtotal, 'tax_total' => $taxTotal, 'total' => $subtotal + $taxTotal];
     }
 
@@ -346,8 +350,17 @@ class PartyDocumentService
 
     private function cents(string $quantity, string $price): int
     {
-        $cents = function_exists('bcmul') ? bcmul(bcmul($quantity, $price, 8), '100', 4) : (string) ((float) $quantity * (float) $price * 100);
+        $cents = Money::productToCents($quantity, $price);
 
-        return (int) round((float) $cents);
+        if ($cents > $this->maxCents()) {
+            throw new AccountingException('A line total is above the maximum amount ('.number_format($this->maxCents() / 100, 2).').');
+        }
+
+        return $cents;
+    }
+
+    private function maxCents(): int
+    {
+        return Money::toCents(number_format((float) config('accounting.max_amount', 999999999999.99), 2, '.', ''));
     }
 }

@@ -30,6 +30,7 @@ class PostJournalEntryAction
      */
     public function execute(JournalEntry $journalEntry, bool $systemGenerated = false): JournalEntry
     {
+        // Three attempts: a deadlock between concurrent postings on MySQL/MariaDB is retried instead of failing the request.
         return DB::transaction(function () use ($journalEntry, $systemGenerated): JournalEntry {
             $entry = JournalEntry::query()->with(['lines.account'])->lockForUpdate()->findOrFail($journalEntry->id);
 
@@ -48,6 +49,8 @@ class PostJournalEntryAction
                 ControlAccounts::assertCanPost($entry);
                 app(AttachmentService::class)->assertEvidence($entry);
                 app(BudgetService::class)->assertWithinBudget($entry);
+            } else {
+                $this->assertModulePostingControls($entry);
             }
 
             $this->writeBaseAmounts($entry);
@@ -82,7 +85,7 @@ class PostJournalEntryAction
             event(new JournalEntryPosted($entry));
 
             return $entry;
-        });
+        }, 3);
     }
 
     /**
@@ -129,6 +132,39 @@ class PostJournalEntryAction
         }
     }
 
+    /**
+     * Postings the modules make (bills, payments, stock, assets, tax returns …) skip the manual-journal checks that make no sense for
+     * them (control accounts, evidence), but not the spending controls: the budget applies to their expense lines, and with maker-checker
+     * on, a posting at or above the threshold from one of accounting.approvals.modules needs someone who may approve.
+     * Reversals and closing entries are exempt; so is a run with nobody signed in (scheduler, queue).
+     */
+    private function assertModulePostingControls(JournalEntry $entry): void
+    {
+        if ($entry->is_closing_entry) {
+            return;
+        }
+
+        // A reversal is a new posting: at or above the threshold only someone who may approve can make it (accounting.approvals.include_reversals).
+        if ($entry->reverses_entry_id !== null) {
+            $user = Auth::user();
+
+            if ($user !== null && config('accounting.approvals.include_reversals', true) && app(JournalApprovalService::class)->requiresApproval($entry) && ! $user->can('journal-entries.approve')) {
+                throw new AccountingException('Reversing an entry at or above the approval threshold needs a user who can approve journal entries.');
+            }
+
+            return;
+        }
+
+        app(BudgetService::class)->assertWithinBudget($entry);
+
+        $modules = (array) config('accounting.approvals.modules', []);
+        $user = Auth::user();
+
+        if ($user !== null && in_array($entry->origin_module, $modules, true) && app(JournalApprovalService::class)->requiresApproval($entry) && ! $user->can('journal-entries.approve')) {
+            throw new AccountingException('This posting is at or above the approval threshold: a user who can approve journal entries has to post it.');
+        }
+    }
+
     private function validateLines(JournalEntry $entry): void
     {
         if ($entry->lines->count() < 2) {
@@ -161,14 +197,17 @@ class PostJournalEntryAction
                 throw new AccountingException('Each line must have either debit or credit.');
             }
 
-            if ($line->account->is_group || ! $line->account->is_active) {
+            // A year-end closing entry must be able to empty an account that was deactivated while it still had a balance, and a
+            // reversal only unwinds history: neither is refused because an account has been deactivated since.
+            if ($line->account->is_group || (! $line->account->is_active && ! $entry->is_closing_entry && $entry->reverses_entry_id === null)) {
                 throw new AccountingException('Journal lines can only post to active posting accounts.');
             }
 
             $accountCurrency = $line->account->currency_id;
 
-            // A revaluation adjusts a foreign-currency account's carrying value with a base-currency entry.
-            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id && $entry->origin_module !== FxRevaluationService::ORIGIN) {
+            // A revaluation adjusts a foreign-currency account's carrying value with a base-currency entry, and so does the year-end close
+            // (it moves the base balance of an income/expense account, whatever its currency, to retained earnings).
+            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id && $entry->origin_module !== FxRevaluationService::ORIGIN && ! $entry->is_closing_entry) {
                 throw new AccountingException(
                     "Account {$line->account->account_code} is denominated in a different currency than this journal entry."
                 );
