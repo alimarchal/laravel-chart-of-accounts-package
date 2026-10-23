@@ -41,6 +41,7 @@ class AccountingPeriodController extends SimpleAccountingResourceController
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'status' => ['sometimes', Rule::in(['open', 'closed', 'archived'])],
+            'reason' => ['nullable', 'string', 'max:500'],   // why a closed period is reopened (required then)
         ];
     }
 
