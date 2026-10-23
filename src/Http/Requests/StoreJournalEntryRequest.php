@@ -25,7 +25,8 @@ class StoreJournalEntryRequest extends FormRequest
         $lines = $this->input('lines');
 
         if (is_array($lines)) {
-            $codes = collect($lines)->pluck('account_code')->filter()->unique()->values();
+            // Codes are stored upper-case; legacy lower-case ones are still found.
+            $codes = collect($lines)->pluck('account_code')->filter()->unique()->flatMap(fn ($code) => [$code, mb_strtoupper(trim((string) $code))])->unique()->values();
             $accounts = $codes->isEmpty() ? collect() : ChartOfAccount::query()->whereIn('account_code', $codes)->pluck('id', 'account_code');
 
             $centerCodes = collect($lines)->pluck('cost_center_code')->filter()->unique()->values();
@@ -36,8 +37,13 @@ class StoreJournalEntryRequest extends FormRequest
                     return $line;
                 }
 
-                if (empty($line['chart_of_account_id']) && ! empty($line['account_code']) && $accounts->has($line['account_code'])) {
-                    $line['chart_of_account_id'] = $accounts->get($line['account_code']);
+                if (empty($line['chart_of_account_id']) && ! empty($line['account_code'])) {
+                    $found = $accounts->get($line['account_code']) ?? $accounts->get(mb_strtoupper(trim((string) $line['account_code'])));
+
+                    if ($found !== null) {
+                        $line['chart_of_account_id'] = $found;
+                        $line['account_code'] = (string) $accounts->search($found);   // the code as stored
+                    }
                 }
 
                 if (empty($line['cost_center_id']) && ! empty($line['cost_center_code']) && $centers->has($line['cost_center_code'])) {
