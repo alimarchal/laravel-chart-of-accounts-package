@@ -289,3 +289,14 @@ it('still deletes a tax code that nothing uses', function (): void {
 
     $this->deleteJson('/api/v1/accounting/tax-codes/'.$this->zero->id)->assertNoContent();
 });
+
+it('keeps the kind and tax account of a tax code that is used on journal lines', function (): void {
+    ($this->sale)('1000');
+    Sanctum::actingAs(tap(User::factory()->create())->assignRole('super-admin'));
+
+    $this->putJson('/api/v1/accounting/tax-codes/'.$this->out->id, ['code' => 'GST17', 'name' => 'GST 17%', 'kind' => 'input', 'tax_account_id' => account('2104')->id])->assertUnprocessable();
+    $this->putJson('/api/v1/accounting/tax-codes/'.$this->out->id, ['code' => 'GST17', 'name' => 'GST 17% renamed', 'kind' => 'output', 'tax_account_id' => account('2105')->id])->assertUnprocessable();
+    $this->putJson('/api/v1/accounting/tax-codes/'.$this->out->id, ['code' => 'GST17', 'name' => 'GST 17% renamed', 'kind' => 'output', 'tax_account_id' => account('2104')->id])->assertOk();
+
+    expect($this->out->refresh()->kind)->toBe('output');
+});
