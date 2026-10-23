@@ -85,3 +85,21 @@ it('books a base-currency entry from the form at rate 1 whatever the rate field 
 
     expect((float) JournalEntry::query()->latest('id')->firstOrFail()->fx_rate_to_base)->toBe(1.0);
 });
+
+it('applies the API money rules in the journal form (two decimals, maximum)', function (): void {
+    Livewire::test(JournalEntryForm::class)
+        ->call('save', [
+            ['chart_of_account_id' => (string) account('5104')->id, 'cost_center_id' => '', 'debit' => '33.335', 'credit' => '0', 'description' => ''],
+            ['chart_of_account_id' => (string) account('1101')->id, 'cost_center_id' => '', 'debit' => '0', 'credit' => '33.335', 'description' => ''],
+        ])
+        ->assertHasErrors('lines.0.debit');
+
+    Livewire::test(JournalEntryForm::class)
+        ->call('save', [
+            ['chart_of_account_id' => (string) account('5104')->id, 'cost_center_id' => '', 'debit' => '99999999999999999999', 'credit' => '0', 'description' => ''],
+            ['chart_of_account_id' => (string) account('1101')->id, 'cost_center_id' => '', 'debit' => '0', 'credit' => '99999999999999999999', 'description' => ''],
+        ])
+        ->assertHasErrors('lines.0.debit');
+
+    expect(JournalEntry::query()->count())->toBe(0);
+});

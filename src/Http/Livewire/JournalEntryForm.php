@@ -10,6 +10,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
+use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\SourceDocuments;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -106,6 +107,11 @@ class JournalEntryForm extends Component
         return collect($this->lines)->sum(fn ($l) => (float) ($l['credit'] ?? 0));
     }
 
+    private function totalCents(string $side): int
+    {
+        return collect($this->lines)->sum(fn ($line) => Money::toCents((string) (($line[$side] ?? '') === '' ? '0' : $line[$side])));
+    }
+
     /**
      * @param  array<int, array<string, mixed>>|null  $lines  The lines as the browser holds them (the grid is edited without a round trip per keystroke); the component's own lines when not given.
      */
@@ -123,6 +129,9 @@ class JournalEntryForm extends Component
             ])->values()->all();
         }
 
+        // The same limits as the API: at most two decimals and accounting.max_amount.
+        $moneyRules = ['required', 'numeric', 'min:0', 'max:'.number_format((float) config('accounting.max_amount', 999999999999.99), 2, '.', ''), 'decimal:0,2'];
+
         $this->validate([
             'voucher_type_id' => ['nullable', CompanyRule::exists('accounting_voucher_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'entry_date' => ['required', 'date'],
@@ -132,17 +141,21 @@ class JournalEntryForm extends Component
             'fx_rate_to_base' => ['required', 'numeric', 'gt:0'],
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.chart_of_account_id' => ['required', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
-            'lines.*.debit' => ['required', 'numeric', 'min:0'],
-            'lines.*.credit' => ['required', 'numeric', 'min:0'],
+            'lines.*.debit' => $moneyRules,
+            'lines.*.credit' => $moneyRules,
         ]);
 
-        if (abs($this->totalDebits() - $this->totalCredits()) >= 0.01) {
-            $this->addError('lines', 'Debits and credits must balance before saving. Current difference: '.number_format(abs($this->totalDebits() - $this->totalCredits()), 2));
+        // Balanced in whole cents, exactly as posting checks it (never in floats).
+        $debitCents = $this->totalCents('debit');
+        $creditCents = $this->totalCents('credit');
+
+        if ($debitCents !== $creditCents) {
+            $this->addError('lines', 'Debits and credits must balance before saving. Current difference: '.number_format(abs($debitCents - $creditCents) / 100, 2));
 
             return;
         }
 
-        if ($this->totalDebits() <= 0) {
+        if ($debitCents <= 0) {
             $this->addError('lines', 'Journal entry must have at least one non-zero debit and credit line.');
 
             return;
