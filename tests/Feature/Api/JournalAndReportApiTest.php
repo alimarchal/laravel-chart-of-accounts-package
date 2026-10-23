@@ -199,3 +199,24 @@ it('closes, reopens and year-end closes periods over the API', function (): void
 it('reports installation health', function (): void {
     $this->getJson(API.'/health')->assertOk()->assertJsonPath('ok', true);
 });
+
+it('refuses inactive cost centres and inactive currencies on journal entries', function (): void {
+    $center = CostCenter::query()->firstOrFail();
+    $center->update(['is_active' => false]);
+    $eur = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'EUR')->firstOrFail();
+    $eur->update(['is_active' => false]);
+
+    $lines = fn (array $first = []) => [
+        ['account_code' => '5102', 'debit' => '100', 'credit' => 0, ...$first],
+        ['account_code' => '1101', 'debit' => 0, 'credit' => '100'],
+    ];
+
+    $this->postJson(API.'/journal-entries', ['entry_date' => now()->toDateString(), 'lines' => $lines(['cost_center_id' => $center->id])])->assertUnprocessable()->assertJsonValidationErrors('lines.0.cost_center_id');
+    $this->postJson(API.'/journal-entries', ['entry_date' => now()->toDateString(), 'currency_id' => $eur->id, 'fx_rate_to_base' => 305, 'lines' => $lines()])->assertUnprocessable()->assertJsonValidationErrors('currency_id');
+
+    // A draft made while they were active cannot be posted afterwards.
+    $center->update(['is_active' => true]);
+    $id = $this->postJson(API.'/journal-entries', ['entry_date' => now()->toDateString(), 'lines' => $lines(['cost_center_id' => $center->id])])->assertCreated()->json('data.id');
+    $center->update(['is_active' => false]);
+    $this->postJson(API."/journal-entries/{$id}/post")->assertUnprocessable();
+});

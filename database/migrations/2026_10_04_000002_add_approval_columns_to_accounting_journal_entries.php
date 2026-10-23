@@ -26,6 +26,8 @@ return new class extends Migration
             $table->timestamp('rejected_at')->nullable()->after('approved_by');
             $table->foreignId('rejected_by')->nullable()->after('rejected_at')->constrained($users, indexName: 'acct_journals_rejected_by_fk')->nullOnDelete();
             $table->text('rejection_reason')->nullable()->after('rejected_by');
+            // The last user who changed the content (header or lines) of the draft: they cannot be its checker either.
+            $table->foreignId('edited_by')->nullable()->after('rejection_reason')->constrained($users, indexName: 'acct_journals_edited_by_fk')->nullOnDelete();
 
             $table->index(['approval_status', 'entry_date'], 'acct_journals_approval_idx');
         });
@@ -42,7 +44,8 @@ return new class extends Migration
             $table->dropForeign('acct_journals_submitted_by_fk');
             $table->dropForeign('acct_journals_approved_by_fk');
             $table->dropForeign('acct_journals_rejected_by_fk');
-            $table->dropColumn(['approval_status', 'submitted_at', 'submitted_by', 'approved_at', 'approved_by', 'rejected_at', 'rejected_by', 'rejection_reason']);
+            $table->dropForeign('acct_journals_edited_by_fk');
+            $table->dropColumn(['approval_status', 'submitted_at', 'submitted_by', 'approved_at', 'approved_by', 'rejected_at', 'rejected_by', 'rejection_reason', 'edited_by']);
         });
         app(AccountingDatabaseObjectSynchronizer::class)->sync();
     }
