@@ -48,6 +48,8 @@ class PostJournalEntryAction
                 ControlAccounts::assertCanPost($entry);
                 app(AttachmentService::class)->assertEvidence($entry);
                 app(BudgetService::class)->assertWithinBudget($entry);
+            } else {
+                $this->assertModulePostingControls($entry);
             }
 
             $this->writeBaseAmounts($entry);
@@ -126,6 +128,28 @@ class PostJournalEntryAction
 
         foreach (BaseAmounts::compute($lines, (string) $entry->getRawOriginal('fx_rate_to_base')) as $lineId => $amounts) {
             JournalEntryLine::query()->whereKey($lineId)->update($amounts);
+        }
+    }
+
+    /**
+     * Postings the modules make (bills, payments, stock, assets, tax returns …) skip the manual-journal checks that make no sense for
+     * them (control accounts, evidence), but not the spending controls: the budget applies to their expense lines, and with maker-checker
+     * on, a posting at or above the threshold from one of accounting.approvals.modules needs someone who may approve.
+     * Reversals and closing entries are exempt; so is a run with nobody signed in (scheduler, queue).
+     */
+    private function assertModulePostingControls(JournalEntry $entry): void
+    {
+        if ($entry->reverses_entry_id !== null || $entry->is_closing_entry) {
+            return;
+        }
+
+        app(BudgetService::class)->assertWithinBudget($entry);
+
+        $modules = (array) config('accounting.approvals.modules', []);
+        $user = Auth::user();
+
+        if ($user !== null && in_array($entry->origin_module, $modules, true) && app(JournalApprovalService::class)->requiresApproval($entry) && ! $user->can('journal-entries.approve')) {
+            throw new AccountingException('This posting is at or above the approval threshold: a user who can approve journal entries has to post it.');
         }
     }
 
