@@ -312,6 +312,22 @@ it('renders the React pages', function (): void {
     expect(PartyPayment::query()->count())->toBe(1);
 });
 
+it('refuses the same receipt submitted twice', function (): void {
+    $input = ['party_id' => $this->customer->id, 'kind' => 'receipt', 'payment_date' => ($this->on)(5), 'amount' => 25000, 'account_id' => account('1101')->id, 'reference' => 'CHQ-0091'];
+    ($this->pay)()->create(($this->pay)()->validate($input));
+
+    expect(fn () => ($this->pay)()->create(($this->pay)()->validate($input)))->toThrow(AccountingException::class, 'submitted twice')
+        ->and(PartyPayment::query()->count())->toBe(1);
+
+    // Another reference or amount is a different receipt.
+    ($this->pay)()->create(($this->pay)()->validate([...$input, 'reference' => 'CHQ-0092']));
+    expect(PartyPayment::query()->count())->toBe(2);
+});
+
+it('ships a submit-once guard in the layout script', function (): void {
+    expect(file_get_contents(__DIR__.'/../../../resources/views/accounting/components/feedback.blade.php'))->toContain('__accSubmitting');
+});
+
 it('posts an invoice that has a free (zero-price) line and leaves it out of the entry', function (): void {
     $invoice = ($this->document)('invoice', $this->customer, [['4101', 1, '1000'], ['4101', 1, '0']]);
 
