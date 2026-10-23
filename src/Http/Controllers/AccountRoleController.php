@@ -73,6 +73,10 @@ class AccountRoleController extends Controller
                 throw ValidationException::withMessages(["roles.{$role}" => in_array($role, AccountRoles::GROUP_ROLES, true) ? 'Choose active accounts of this company.' : 'Choose active posting accounts of this company (a group cannot be posted to).']);
             }
 
+            if ($problem = AccountRoles::typeProblem((string) $role, array_map('intval', $ids))) {
+                throw ValidationException::withMessages(["roles.{$role}" => $problem]);
+            }
+
             $before[$role] = AccountRoles::codes($role);
             $after[$role] = collect($ids)->map(fn (int $id) => $valid[$id])->all();
         }

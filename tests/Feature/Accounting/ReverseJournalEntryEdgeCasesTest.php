@@ -95,3 +95,12 @@ it('cannot reverse an already-reversed journal entry', function (): void {
 
     $action->execute($original);
 })->throws(InvalidArgumentException::class, 'Journal entry has already been reversed.');
+
+it('reverses an entry after one of its accounts was deactivated', function (): void {
+    $original = journal(['5104' => 250, '1101' => -250]);
+    ChartOfAccount::query()->where('account_code', '5104')->update(['is_active' => false]);
+
+    $reversal = app(ReverseJournalEntryAction::class)->execute($original);
+
+    expect($reversal->status)->toBe('posted')->and($reversal->reverses_entry_id)->toBe($original->id);
+});

@@ -9,10 +9,12 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountRole;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -28,6 +30,20 @@ use Illuminate\Support\Facades\DB;
  */
 class ChartRestructureService
 {
+    /**
+     * The settings of other modules that name an account (table => columns). A merge repoints them so the modules keep posting to a live
+     * account. History (journal lines, payslip lines, filed returns, past documents) keeps pointing where it was posted.
+     */
+    private const REFERENCES = [
+        'accounting_recurring_entry_lines' => ['chart_of_account_id'],
+        'accounting_tax_codes' => ['tax_account_id'],
+        'accounting_parties' => ['receivable_account_id', 'payable_account_id'],
+        'accounting_fixed_assets' => ['asset_account_id', 'accumulated_account_id', 'expense_account_id'],
+        'accounting_inventory_items' => ['inventory_account_id', 'cogs_account_id'],
+        'accounting_pay_components' => ['account_id'],
+        'accounting_contribution_schemes' => ['employee_account_id', 'employer_expense_account_id', 'employer_liability_account_id'],
+    ];
+
     /**
      * The codes a renumbering would give: the account, and the sub-accounts whose codes share its prefix.
      *
@@ -118,7 +134,7 @@ class ChartRestructureService
      *
      * Transfers are the source's balance per cost center and its side (a debit balance lands on the target as a debit).
      *
-     * @return array{source: array<string, mixed>, target: array<string, mixed>, transfers: list<array{cost_center: string|null, amount: string, side: string}>, balance: string, draft_lines: int, children: list<string>, bank_accounts: list<string>, problems: list<string>}
+     * @return array{references: list<array{table: string, column: string, count: int}>, source: array<string, mixed>, target: array<string, mixed>, transfers: list<array{cost_center: string|null, amount: string, side: string}>, balance: string, draft_lines: int, children: list<string>, bank_accounts: list<string>, problems: list<string>}
      */
     public function mergePlan(ChartOfAccount $source, ChartOfAccount $target): array
     {
@@ -171,13 +187,31 @@ class ChartRestructureService
         }
 
         $balances = $this->balancesByCostCenter($source);
+
+        // The transfer is a base-currency entry, which the currency rule refuses on a foreign-currency account: say so up front
+        // instead of failing with a generic message half-way. (Moving a foreign balance needs its foreign amount and carrying rate.)
+        if ($balances->isNotEmpty() && (int) $source->currency_id !== (int) Currency::query()->where('is_base', true)->value('id')) {
+            $problems[] = "Account {$source->account_code} is in a foreign currency and has a balance: merging it is not supported yet. Move the balance with a journal entry in that currency, then merge the empty account.";
+        }
+
         $transfers = $balances->map(fn (array $balance) => [
             'cost_center' => $balance['cost_center_id'] ? (string) CostCenter::query()->whereKey($balance['cost_center_id'])->value('code') : null,
             'amount' => Money::fromCents(abs($balance['cents'])),
             'side' => $balance['cents'] > 0 ? 'debit' : 'credit',
         ])->values()->all();
 
+        $references = [];
+
+        foreach (self::REFERENCES as $table => $columns) {
+            foreach ($columns as $column) {
+                if (($count = DB::table($table)->where($column, $source->id)->count()) > 0) {
+                    $references[] = ['table' => $table, 'column' => $column, 'count' => $count];
+                }
+            }
+        }
+
         return [
+            'references' => $references,
             'source' => $this->present($source),
             'target' => $this->present($target),
             'transfers' => $transfers,
@@ -206,7 +240,16 @@ class ChartRestructureService
                 throw new AccountingException($plan['problems'][0]);
             }
 
-            $entry = $this->postTransfer($source, $target, $date ?? now()->toDateString(), $description);
+            $transferDate = $date ?? now()->toDateString();
+
+            // The transfer moves the whole balance, so it cannot be dated before activity it would carry into the past.
+            $lastPosting = JournalEntry::query()->where('status', 'posted')->whereHas('lines', fn ($lines) => $lines->where('chart_of_account_id', $source->id))->max('entry_date');
+
+            if ($lastPosting !== null && Carbon::parse($transferDate)->startOfDay()->lt(Carbon::parse($lastPosting)->startOfDay())) {
+                throw new AccountingException("The merge date cannot be earlier than the last posting on {$source->account_code} (".Carbon::parse($lastPosting)->toDateString().').');
+            }
+
+            $entry = $this->postTransfer($source, $target, $transferDate, $description);
 
             // Drafts are still editable: point their lines at the target.
             $draftLines = JournalEntryLine::query()->where('chart_of_account_id', $source->id)
@@ -226,6 +269,14 @@ class ChartRestructureService
                 : $row->forceFill(['chart_of_account_id' => $target->id])->save());
             AccountRoles::flush();
 
+            $references = 0;
+
+            foreach (self::REFERENCES as $table => $columns) {
+                foreach ($columns as $column) {
+                    $references += DB::table($table)->where($column, $source->id)->update([$column => $target->id]);
+                }
+            }
+
             $metadata = (array) ($source->metadata ?? []);
             $source->forceFill([
                 'is_active' => false,
@@ -238,6 +289,7 @@ class ChartRestructureService
                 'moved_draft_lines' => $draftLines->count(),
                 'moved_children' => $children->count(),
                 'moved_bank_accounts' => $banks->count(),
+                'moved_references' => $references,
                 'moved_roles' => $roles->count(),
             ];
 
