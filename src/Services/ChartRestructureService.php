@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountRole;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
@@ -172,6 +173,13 @@ class ChartRestructureService
         }
 
         $balances = $this->balancesByCostCenter($source);
+
+        // The transfer is a base-currency entry, which the currency rule refuses on a foreign-currency account: say so up front
+        // instead of failing with a generic message half-way. (Moving a foreign balance needs its foreign amount and carrying rate.)
+        if ($balances->isNotEmpty() && (int) $source->currency_id !== (int) Currency::query()->where('is_base', true)->value('id')) {
+            $problems[] = "Account {$source->account_code} is in a foreign currency and has a balance: merging it is not supported yet. Move the balance with a journal entry in that currency, then merge the empty account.";
+        }
+
         $transfers = $balances->map(fn (array $balance) => [
             'cost_center' => $balance['cost_center_id'] ? (string) CostCenter::query()->whereKey($balance['cost_center_id'])->value('code') : null,
             'amount' => Money::fromCents(abs($balance['cents'])),
