@@ -35,7 +35,7 @@ class CloseFiscalYearAction
             $preview = $this->preview($period);
 
             if ($preview['retained_earnings'] === null) {
-                throw new AccountingException('The configured retained earnings account is missing, inactive, or a group account.');
+                throw new AccountingException('The configured retained earnings account is missing, inactive, a group account or not an equity account.');
             }
 
             $closingEntry = null;
@@ -82,6 +82,7 @@ class CloseFiscalYearAction
             ->where('account_code', AccountRoles::code('retained_earnings'))
             ->where('is_group', false)
             ->where('is_active', true)
+            ->whereHas('accountType', fn ($query) => $query->where('code', 'EQUITY'))
             ->first();
 
         $rows = DB::table('accounting_chart_of_accounts as coa')
