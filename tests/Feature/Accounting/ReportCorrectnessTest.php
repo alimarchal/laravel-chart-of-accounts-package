@@ -116,7 +116,7 @@ it('lists the trial balance by closing balance on the debit or credit side', fun
         ->and($rows['3102']->credit_balance)->toBe('100000.00')->and($rows['4101']->credit_balance)->toBe('50000.00');
 
     foreach ([$report->totals(), $report->totals($report->rows())] as $totals) {
-        expect($totals['total_debit_balance'])->toBe(150000.0)->and($totals['total_credit_balance'])->toBe(150000.0)
-            ->and($totals['balance_difference'])->toBe(0.0)->and($totals['total_debit'])->toBe(170000.0);
+        expect($totals['total_debit_balance'])->toEqual(150000.0)->and($totals['total_credit_balance'])->toEqual(150000.0)
+            ->and($totals['balance_difference'])->toEqual(0.0)->and($totals['total_debit'])->toEqual(170000.0);
     }
 });
