@@ -152,6 +152,13 @@ it('serves the pages and the API', function (): void {
     $this->getJson("/api/v1/accounting/inventory/items/{$item->id}")->assertOk()->assertJsonCount(2, 'data.card');
 });
 
+it('refuses a payables control account as the offset of a stock receipt', function (): void {
+    account('2101')->forceFill(['control_type' => 'payables'])->save();
+
+    expect(fn () => ($this->receive)(($this->item)(), ($this->warehouse)(), '10', '100'))->toThrow(ValidationException::class)
+        ->and(StockMovement::query()->count())->toBe(0);
+});
+
 it('values a receipt exactly, rounding half a cent up', function (): void {
     [$move] = ($this->receive)(($this->item)(), ($this->warehouse)(), '1', '1.005');
 

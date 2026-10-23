@@ -152,7 +152,7 @@ class InventoryService
             'movement_date' => ['required', 'date'],
             'quantity' => ['required', 'numeric', $type === 'adjustment' ? 'not_in:0' : 'gt:0', 'max:999999999', 'min:-999999999'],
             'unit_cost' => [$type === 'receipt' ? 'required' : 'nullable', 'numeric', 'min:0', 'max:999999999999'],
-            'offset_account_id' => [in_array($type, ['receipt', 'adjustment'], true) ? 'required' : 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true))],
+            'offset_account_id' => [in_array($type, ['receipt', 'adjustment'], true) ? 'required' : 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true)->whereNull('control_type'))],
             'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:500'],
         ])->validate();
