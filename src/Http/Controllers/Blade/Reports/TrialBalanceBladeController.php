@@ -35,7 +35,9 @@ class TrialBalanceBladeController extends Controller
         $trialBalance = (object) [
             'total_debits' => $summary['total_debit'],
             'total_credits' => $summary['total_credit'],
-            'difference' => $summary['difference'],
+            'total_debit_balances' => $summary['total_debit_balance'],
+            'total_credit_balances' => $summary['total_credit_balance'],
+            'difference' => $summary['balance_difference'],
         ];
 
         $accountingPeriods = AccountingPeriod::orderBy('end_date', 'desc')->get();
