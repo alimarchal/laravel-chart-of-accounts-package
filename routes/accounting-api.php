@@ -59,6 +59,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppWebhookController
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingBranchAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingTokenAbility;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
 use Illuminate\Support\Facades\Route;
 
@@ -95,6 +96,7 @@ if ((int) config('accounting.api_rate_limit', 120) > 0) {
     $apiMiddleware[] = 'throttle:accounting-api';
 }
 
+$apiMiddleware[] = EnsureAccountingTokenAbility::class;
 $apiMiddleware[] = EnsureAccountingCompanyAccess::class;
 $apiMiddleware[] = EnsureAccountingBranchAccess::class;
 $apiMiddleware[] = EnsureAccountingFeatureEnabled::class;

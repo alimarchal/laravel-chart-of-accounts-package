@@ -1630,6 +1630,7 @@ imbalance. Full numbers: [docs/performance.md](docs/performance.md).
 
 Base URL: `/api/v1/accounting` — `ACCOUNTING_API_PREFIX`; middleware `ACCOUNTING_API_MIDDLEWARE` (default `api,auth:sanctum`)
 plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per user). Every endpoint checks a permission.
+Token abilities: with `ACCOUNTING_API_ENFORCE_TOKEN_ABILITIES=true` (`accounting.api_enforce_token_abilities`, off by default) a Sanctum token needs `accounting:read` to read (GET) and `accounting:write` for anything else (`read`/`write` and `*` also work), e.g. `$user->createToken('reporting', ['accounting:read'])`. Permissions are always checked as well.
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->

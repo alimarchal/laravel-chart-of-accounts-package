@@ -1021,7 +1021,7 @@ spec = {
  "openapi": "3.1.0",
  "info": {"title": "Laravel Chart of Accounts API", "version": "2.38.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
-   "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
+   "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`). With `ACCOUNTING_API_ENFORCE_TOKEN_ABILITIES=true` the token needs the `accounting:read` ability to read and `accounting:write` to change data (a `*` token has both).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
    "* **Rate limit:** `ACCOUNTING_API_RATE_LIMIT` requests/minute per user (default 120) → 429.\n"
    "* **Pagination:** `?page=` and `?per_page=` (max `ACCOUNTING_API_MAX_PER_PAGE`, default 100).\n"
