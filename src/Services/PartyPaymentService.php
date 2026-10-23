@@ -192,7 +192,7 @@ class PartyPaymentService
                 }
 
                 $remaining -= $cents;
-                PartyAllocation::query()->create(['party_id' => $payment->party_id, 'document_id' => $document->id, 'payment_id' => $payment->id, 'amount' => Money::fromCents($cents), 'allocated_on' => $payment->payment_date->toDateString()]);
+                PartyAllocation::query()->create(['party_id' => $payment->party_id, 'document_id' => $document->id, 'payment_id' => $payment->id, 'amount' => Money::fromCents($cents), 'allocated_on' => max($payment->payment_date, $document->issue_date)->toDateString()]);
             }
 
             AccountingAuditLog::record($payment, 'PARTY_PAYMENT_ALLOCATED', null, ['allocations' => count($allocations)]);

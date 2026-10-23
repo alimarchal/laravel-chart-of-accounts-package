@@ -72,6 +72,11 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             $voucher .= ' OR NEW.origin_module IS DISTINCT FROM OLD.origin_module';
         }
 
+        // The reporting attributes of a posted entry and its lines never change either.
+        $voucher .= ' OR NEW.reference IS DISTINCT FROM OLD.reference OR NEW.description IS DISTINCT FROM OLD.description OR NEW.accounting_period_id IS DISTINCT FROM OLD.accounting_period_id';
+        $lineColumns = ['cost_center_id', 'description', 'line_no', ...(Schema::hasColumn('accounting_journal_entry_lines', 'tax_code_id') ? ['tax_code_id', 'tax_role', 'tax_rate'] : [])];
+        $lineChanges = collect($lineColumns)->map(fn (string $column) => "OR NEW.{$column} IS DISTINCT FROM OLD.{$column}")->implode("\n                    ");
+
         DB::statement(str_replace('__VOUCHER__', $voucher, <<<'SQL'
             CREATE OR REPLACE FUNCTION accounting_journal_posted_guard()
             RETURNS trigger AS $$
@@ -94,7 +99,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
             $$ LANGUAGE plpgsql;
         SQL));
 
-        DB::statement(<<<'SQL'
+        DB::statement(str_replace('__LINES__', $lineChanges, <<<'SQL'
             CREATE OR REPLACE FUNCTION accounting_line_posted_guard()
             RETURNS trigger AS $$
             DECLARE
@@ -111,6 +116,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                     OR NEW.base_credit IS DISTINCT FROM OLD.base_credit
                     OR NEW.chart_of_account_id IS DISTINCT FROM OLD.chart_of_account_id
                     OR NEW.journal_entry_id IS DISTINCT FROM OLD.journal_entry_id
+                    __LINES__
                 ) THEN
                     RAISE EXCEPTION 'Posted journal entries are immutable; reverse them instead.';
                 END IF;
@@ -118,7 +124,7 @@ class PostgresAccountingDatabaseObjects implements AccountingDatabaseObjects
                 RETURN COALESCE(NEW, OLD);
             END;
             $$ LANGUAGE plpgsql;
-        SQL);
+        SQL));
 
         DB::statement('DROP TRIGGER IF EXISTS acct_journals_posted_guard ON accounting_journal_entries');
         DB::statement('CREATE TRIGGER acct_journals_posted_guard BEFORE UPDATE OR DELETE ON accounting_journal_entries FOR EACH ROW EXECUTE FUNCTION accounting_journal_posted_guard()');

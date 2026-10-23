@@ -197,3 +197,23 @@ it('refuses every amount above the money column limit instead of overflowing or 
         expect(fn () => Money::toCents($bad))->toThrow(AccountingException::class, 'too large');
     }
 });
+
+it('also keeps the reporting columns of posted entries and lines immutable at the database layer', function (): void {
+    $entry = journal(['5104' => 10, '1101' => -10]);
+    $line = $entry->lines->first();
+    $attempt = fn (callable $write) => fn () => DB::transaction($write);
+    $line = fn (array $values) => JournalEntryLine::query()->whereKey($entry->lines->first()->id)->update($values);
+    $header = fn (array $values) => JournalEntry::query()->whereKey($entry->id)->update($values);
+
+    foreach ([['description' => 'Edited'], ['line_no' => 7], ['tax_rate' => '17'], ['tax_role' => 'tax'], ['cost_center_id' => null, 'description' => 'x']] as $values) {
+        expect($attempt(fn () => $line($values)))->toThrow(QueryException::class);
+    }
+
+    foreach ([['reference' => 'CHANGED'], ['description' => 'Edited'], ['accounting_period_id' => null]] as $values) {
+        expect($attempt(fn () => $header($values)))->toThrow(QueryException::class);
+    }
+
+    // Reconciliation bookkeeping still works.
+    $line(['reconciliation_status' => 'cleared']);
+    expect(JournalEntryLine::query()->whereKey($entry->lines->first()->id)->value('reconciliation_status'))->toBe('cleared');
+});
