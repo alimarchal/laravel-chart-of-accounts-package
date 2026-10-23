@@ -101,3 +101,19 @@ it('keeps the income statement of a closed year intact', function (): void {
         ->and((float) $rows->firstWhere('account_code', '5104')->balance)->toBe(300.0)
         ->and(app(BalanceSheetReport::class)->totals(['as_of_date' => $this->period->end_date->toDateString()])['difference'])->toBe(0.0);
 });
+
+it('ages the general ledger by open items: a partial payment shrinks the old invoice', function (): void {
+    $report = app(\Alimarchal\LaravelChartOfAccounts\Reports\AgedReceivablesReport::class);
+    account('1103')->forceFill(['control_type' => null])->save();
+    journal(['1103' => 1000, '4101' => -1000], now()->subDays(130)->toDateString());
+    journal(['1101' => 600, '1103' => -600], now()->toDateString());
+
+    $row = $report->rows()->firstWhere('account_code', '1103');
+
+    expect($row->balance)->toBe('400.00')->and($row->days_over_90)->toBe('400.00')->and($row->current_balance)->toBe('0.00');
+
+    // A credit with nothing to settle stays a negative current amount; oldest invoices are settled first.
+    journal(['1101' => 1000, '1103' => -1000], now()->toDateString());
+    $row = $report->rows()->firstWhere('account_code', '1103');
+    expect($row->balance)->toBe('-600.00')->and($row->current_balance)->toBe('-600.00')->and($row->days_over_90)->toBe('0.00');
+});
