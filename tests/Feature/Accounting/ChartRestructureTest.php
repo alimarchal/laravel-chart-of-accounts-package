@@ -202,3 +202,23 @@ it('refuses a merge date earlier than the last posting of the source account', f
     $this->restructure->merge($source, account('5104'), $start->copy()->addDays(20)->toDateString());
     expect(($this->balance)('5199'))->toEqual(0.0)->and(($this->balance)('5104'))->toEqual(6000.0);
 });
+
+it('explains up front that a foreign-currency account with a balance cannot be merged yet, and merges an empty one', function (): void {
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $source = ($this->duplicate)('5191', 'USD expense A');
+    $target = ($this->duplicate)('5192', 'USD expense B');
+    $source->forceFill(['currency_id' => $usd->id])->save();
+    $target->forceFill(['currency_id' => $usd->id])->save();
+
+    app(\Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService::class)->create([
+        'entry_date' => now()->toDateString(), 'currency_id' => $usd->id, 'fx_rate_to_base' => '280', 'auto_post' => true,
+        'lines' => [['chart_of_account_id' => $source->id, 'debit' => '100.00', 'credit' => 0], ['chart_of_account_id' => account('1101')->id, 'debit' => 0, 'credit' => '100.00']],
+    ]);
+
+    expect($this->restructure->mergePlan($source, $target)['problems'])->toContain('Account 5191 is in a foreign currency and has a balance: merging it is not supported yet. Move the balance with a journal entry in that currency, then merge the empty account.')
+        ->and(fn () => $this->restructure->merge($source, $target))->toThrow(AccountingException::class, 'foreign currency');
+
+    $empty = ($this->duplicate)('5193', 'USD expense C');
+    $empty->forceFill(['currency_id' => $usd->id])->save();
+    expect($this->restructure->merge($empty, $target)['transfer_entry_id'])->toBeNull();
+});
