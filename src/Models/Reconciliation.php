@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\ReconciliationFactory;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,16 @@ class Reconciliation extends AccountingModel
         'created_by',
         'updated_by',
     ];
+
+    protected static function booted(): void
+    {
+        // A completed reconciliation is evidence: its statement cannot be edited afterwards.
+        static::updating(function (Reconciliation $reconciliation): void {
+            if ($reconciliation->getOriginal('status') === 'completed' && $reconciliation->isDirty(['bank_account_id', 'statement_date', 'statement_balance'])) {
+                throw new AccountingException('A completed reconciliation cannot be edited.');
+            }
+        });
+    }
 
     protected function casts(): array
     {
