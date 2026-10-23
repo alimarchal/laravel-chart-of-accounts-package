@@ -242,6 +242,24 @@ it('renders the React pages', function (): void {
     $this->post('/accounting/bank-statements/import/preview', ['file' => ($this->csv)([($this->day)(20).',New,,,10,10']), 'bank_account_id' => $this->bank->id])->assertRedirect();
 });
 
+it('completes consecutive monthly statements, each against the cumulative closing balance', function (): void {
+    journal(['1108' => 5000, '4101' => -5000], ($this->day)(10));
+    journal(['5102' => 1000, '1108' => -1000], ($this->day)(40));
+
+    $october = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,5000.00,5000.00']);
+    ($this->service)()->autoMatch($october);
+    $first = ($this->service)()->reconcile($october->refresh());
+
+    $november = ($this->import)([($this->day)(40).',Office rent,CHQ101,1000.00,,4000.00']);
+    ($this->service)()->autoMatch($november);
+    $second = ($this->service)()->reconcile($november->refresh());
+
+    expect($first->status)->toBe('completed')
+        ->and($second->status)->toBe('completed')
+        ->and($second->book_balance)->toBe('4000.00')
+        ->and($second->completed_at)->not->toBeNull();
+});
+
 it('reads amounts with a currency prefix and full stop', function (): void {
     $service = ($this->service)();
 
