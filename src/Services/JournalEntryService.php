@@ -32,6 +32,8 @@ class JournalEntryService
                 'branch_id' => CurrentBranch::resolve(array_key_exists('branch_id', $data) ? $data['branch_id'] : CurrentBranch::defaultId()),
                 'voucher_type_id' => $data['voucher_type_id'] ?? null,
                 'origin_module' => $data['origin_module'] ?? null,
+                'is_closing_entry' => (bool) ($data['is_closing_entry'] ?? false),
+                'closes_period_id' => $data['closes_period_id'] ?? null,
                 'entry_date' => $data['entry_date'],
                 'currency_id' => $currencyId,
                 'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,

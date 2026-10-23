@@ -161,7 +161,8 @@ class PostJournalEntryAction
                 throw new AccountingException('Each line must have either debit or credit.');
             }
 
-            if ($line->account->is_group || ! $line->account->is_active) {
+            // A year-end closing entry must be able to empty an account that was deactivated while it still had a balance.
+            if ($line->account->is_group || (! $line->account->is_active && ! $entry->is_closing_entry)) {
                 throw new AccountingException('Journal lines can only post to active posting accounts.');
             }
 
