@@ -116,3 +116,38 @@ it('computes symmetric base amounts', function (): void {
     $sum = fn ($set, $side) => array_sum(array_map(fn ($l) => Money::toCents($l[$side]), $set));
     expect($sum($a, 'base_debit'))->toBe($sum($a, 'base_credit'));
 });
+
+it('books a foreign-currency entry at the dated rate when no rate is sent', function (): void {
+    $entry = app(JournalEntryService::class)->create([
+        'entry_date' => now()->toDateString(),
+        'currency_id' => $this->usd->id,
+        'auto_post' => true,
+        'lines' => [
+            ['chart_of_account_id' => account('1103')->id, 'debit' => '100.00', 'credit' => 0],
+            ['chart_of_account_id' => account('4101')->id, 'debit' => 0, 'credit' => '100.00'],
+        ],
+    ]);
+
+    $line = $entry->lines->firstWhere('chart_of_account_id', account('1103')->id);
+
+    expect((float) $entry->fx_rate_to_base)->toBe(280.0)
+        ->and($line->base_debit)->toBe('28000.00');
+});
+
+it('keeps the stored rate of a draft when it is edited without a rate', function (): void {
+    $entry = fxEntry([['1103', '100.00', 0], ['4101', 0, '100.00']], '300', post: false);
+
+    $updated = app(JournalEntryService::class)->updateDraft($entry, [
+        'entry_date' => now()->toDateString(),
+        'currency_id' => $this->usd->id,
+        'description' => 'Fixed typo',
+        'lines' => $entry->lines->map(fn ($line) => [
+            'id' => $line->id,
+            'chart_of_account_id' => $line->chart_of_account_id,
+            'debit' => $line->debit,
+            'credit' => $line->credit,
+        ])->all(),
+    ]);
+
+    expect((float) $updated->fx_rate_to_base)->toBe(300.0);
+});
