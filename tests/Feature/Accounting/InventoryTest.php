@@ -151,3 +151,10 @@ it('serves the pages and the API', function (): void {
     $this->postJson('/api/v1/accounting/inventory/items', ['sku' => 'PEN', 'name' => 'Pen', 'inventory_account_id' => account('1153')->id, 'cogs_account_id' => account('5204')->id])->assertCreated();
     $this->getJson("/api/v1/accounting/inventory/items/{$item->id}")->assertOk()->assertJsonCount(2, 'data.card');
 });
+
+it('refuses a payables control account as the offset of a stock receipt', function (): void {
+    account('2101')->forceFill(['control_type' => 'payables'])->save();
+
+    expect(fn () => ($this->receive)(($this->item)(), ($this->warehouse)(), '10', '100'))->toThrow(ValidationException::class)
+        ->and(StockMovement::query()->count())->toBe(0);
+});
