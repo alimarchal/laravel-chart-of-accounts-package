@@ -43,13 +43,34 @@ class VoucherTypeService
         $input['reset'] = $input['reset'] ?? VoucherType::RESET_YEARLY;
 
         $validator = Validator::make($input, $this->rules($type));
-        $validator->after(function ($validator) use ($input): void {
+        $validator->after(function ($validator) use ($input, $type): void {
             if ($problem = VoucherNumberService::formatProblem($input['format'], (string) $input['reset'])) {
                 $validator->errors()->add('format', $problem);
+
+                return;
+            }
+
+            // Voucher numbers are unique per company: a type whose numbers can repeat another type's could never post.
+            $shape = $this->shape((string) ($input['prefix'] ?? ''), $input['format']);
+            $clash = VoucherType::query()->when($type !== null, fn ($query) => $query->whereKeyNot($type->id))->get()
+                ->first(fn (VoucherType $other) => $this->shape((string) $other->prefix, (string) $other->format) === $shape);
+
+            if ($clash !== null) {
+                $validator->errors()->add('prefix', "Voucher type {$clash->code} already numbers its vouchers like this (prefix {$clash->prefix}, same format): choose a different prefix or format.");
             }
         });
 
         return $validator->validate();
+    }
+
+    /**
+     * What a series' numbers look like apart from the counter: two types with the same shape can produce the same number.
+     */
+    private function shape(string $prefix, string $format): string
+    {
+        $shape = strtr($format !== '' ? $format : VoucherType::DEFAULT_FORMAT, ['{PREFIX}' => $prefix, '{FY}' => '<FY>', '{YYYY}' => '<Y4>', '{YY}' => '<Y2>', '{MM}' => '<M>']);
+
+        return (string) preg_replace('/\{SEQ(?::\d{1,2})?\}/', '<SEQ>', $shape);
     }
 
     /**

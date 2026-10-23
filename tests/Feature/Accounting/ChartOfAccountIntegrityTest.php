@@ -164,3 +164,22 @@ it('builds the account tree with a constant number of queries', function (): voi
         ->and($roots->first()->childrenRecursive->pluck('account_code')->all())->toContain('1100')
         ->and($countNodes($roots))->toBe(ChartOfAccount::query()->count());
 });
+
+it('treats account codes that differ only in case as the same code', function (): void {
+    $user = \Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User::factory()->create();
+    $user->assignRole('super-admin');
+    \Laravel\Sanctum\Sanctum::actingAs($user);
+    $payload = fn (string $code) => [
+        'account_code' => $code, 'account_name' => 'Case test', 'parent_id' => account('1100')->id, 'account_type_id' => account('1101')->account_type_id,
+        'currency_id' => account('1101')->currency_id, 'normal_balance' => 'debit', 'is_group' => false, 'is_active' => true,
+    ];
+
+    $this->postJson('/api/v1/accounting/chart-of-accounts', $payload('qa-11001'))->assertCreated()->assertJsonPath('data.account_code', 'QA-11001');
+    $this->postJson('/api/v1/accounting/chart-of-accounts', $payload('QA-11001'))->assertUnprocessable()->assertJsonValidationErrors('account_code');
+    $this->postJson('/api/v1/accounting/chart-of-accounts', $payload('Qa-11001'))->assertUnprocessable()->assertJsonValidationErrors('account_code');
+
+    // Journal lines find the account whatever case they use.
+    $this->postJson('/api/v1/accounting/journal-entries', ['entry_date' => now()->toDateString(), 'lines' => [
+        ['account_code' => 'qa-11001', 'debit' => '10', 'credit' => 0], ['account_code' => '1101', 'debit' => 0, 'credit' => '10'],
+    ]])->assertCreated();
+});

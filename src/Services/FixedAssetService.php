@@ -57,7 +57,7 @@ class FixedAssetService
             'asset_account_id' => ['required', 'integer', $posting('ASSET')],
             'accumulated_account_id' => ['required', 'integer', $posting('ASSET'), 'different:asset_account_id'],
             'expense_account_id' => ['required', 'integer', $posting('EXPENSE')],
-            'offset_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true))],
+            'offset_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true)->whereNull('control_type'))],
         ]);
         $data = $validator->validate();
         $data['in_service_date'] ??= $data['acquisition_date'];

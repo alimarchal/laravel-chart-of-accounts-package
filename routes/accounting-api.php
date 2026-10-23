@@ -82,7 +82,7 @@ $apiResourceRoutes = function (string $uri, string $controller, string $routeNam
 
 // The address Meta calls: no login (Meta has none), proven by the verify token and the X-Hub-Signature-256 signature instead.
 Route::middleware(['api', 'throttle:120,1'])
-    ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
+    ->prefix(config('accounting.api_prefix', 'api/v1/accounting'))
     ->name('api.accounting.')
     ->group(function (): void {
         Route::get('whatsapp/webhook', [WhatsAppWebhookController::class, 'verify'])->name('whatsapp.webhook.verify');
@@ -100,7 +100,7 @@ $apiMiddleware[] = EnsureAccountingBranchAccess::class;
 $apiMiddleware[] = EnsureAccountingFeatureEnabled::class;
 
 Route::middleware($apiMiddleware)
-    ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
+    ->prefix(config('accounting.api_prefix', 'api/v1/accounting'))
     ->name('api.accounting.')
     ->group(function () use ($apiResourceRoutes): void {
         $apiResourceRoutes('account-types', AccountTypeApiController::class, 'account-types', 'account-types');

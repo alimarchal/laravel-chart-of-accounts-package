@@ -55,6 +55,14 @@ class ChartOfAccount extends AccountingModel
         'updated_by',
     ];
 
+    /**
+     * Account codes are stored trimmed and upper-case, so "qa-11001" and "QA-11001" are the same code on every database engine.
+     */
+    public function setAccountCodeAttribute(?string $value): void
+    {
+        $this->attributes['account_code'] = $value === null ? null : mb_strtoupper(trim($value));
+    }
+
     protected function casts(): array
     {
         return [
