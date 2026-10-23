@@ -40,6 +40,17 @@ class Reconciliation extends AccountingModel
                 throw new AccountingException('A completed reconciliation cannot be edited.');
             }
         });
+
+        // A completed reconciliation is the evidence that its lines were checked against a statement: it stays. A draft one that
+        // is deleted gives its lines back (cleared, as before they were taken into it), so no line points at a missing record.
+        static::deleting(function (Reconciliation $reconciliation): void {
+            if ($reconciliation->status === 'completed') {
+                throw new AccountingException('A completed reconciliation cannot be deleted.');
+            }
+
+            JournalEntryLine::query()->where('reconciliation_id', $reconciliation->id)
+                ->update(['reconciliation_id' => null, 'reconciliation_status' => 'cleared', 'reconciled_at' => null, 'reconciled_by' => null]);
+        });
     }
 
     protected function casts(): array
