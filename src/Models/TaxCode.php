@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -42,6 +43,16 @@ class TaxCode extends AccountingModel
         'created_by',
         'updated_by',
     ];
+
+    protected static function booted(): void
+    {
+        // A code that is on journal lines keeps them (and the tax report) intact: deactivate it instead.
+        static::deleting(function (TaxCode $code): void {
+            if (JournalEntryLine::query()->where('tax_code_id', $code->id)->exists()) {
+                throw new AccountingException("Tax code {$code->code} is used on journal lines and cannot be deleted: deactivate it instead.");
+            }
+        });
+    }
 
     protected function casts(): array
     {
