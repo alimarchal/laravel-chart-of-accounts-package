@@ -316,3 +316,14 @@ it('leaves zero balances out of consolidated reports unless asked', function ():
     expect($codes(''))->toBe(['1101', '4101'])
         ->and(count($codes('?include_zero=1')))->toBeGreaterThan(50);
 });
+
+it('refuses to switch the base currency from a company without entries while another company has posted entries', function (): void {
+    app(CurrentCompany::class)->runAs($this->main, fn () => journal(['5104' => 10, '1101' => -10]));
+
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+
+    expect(fn () => ($this->inSub)(fn () => $usd->update(['is_base' => true])))
+        ->toThrow(AccountingException::class, 'base currency cannot be changed');
+
+    expect(\Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('is_base', true)->value('code'))->toBe('PKR');
+});

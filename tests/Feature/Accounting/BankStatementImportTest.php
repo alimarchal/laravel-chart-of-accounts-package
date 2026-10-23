@@ -259,3 +259,14 @@ it('completes consecutive monthly statements, each against the cumulative closin
         ->and($second->book_balance)->toBe('4000.00')
         ->and($second->completed_at)->not->toBeNull();
 });
+
+it('reads amounts with a currency prefix and full stop', function (): void {
+    $service = ($this->service)();
+
+    expect($service->parseAmount('Rs. 2,500'))->toBe(250000)
+        ->and($service->parseAmount('Rs. 5,000.00'))->toBe(500000)
+        ->and($service->parseAmount('PKR 1,234.50'))->toBe(123450)
+        ->and($service->parseAmount('Rs.2,500'))->toBe(250000)
+        ->and($service->parseAmount('(Rs. 120.00)'))->toBe(-12000)
+        ->and($service->parseAmount('Rs. 500.00 DR'))->toBe(-50000);
+});
