@@ -31,6 +31,20 @@ use Illuminate\Support\Facades\DB;
 class ChartRestructureService
 {
     /**
+     * The settings of other modules that name an account (table => columns). A merge repoints them so the modules keep posting to a live
+     * account. History (journal lines, payslip lines, filed returns, past documents) keeps pointing where it was posted.
+     */
+    private const REFERENCES = [
+        'accounting_recurring_entry_lines' => ['chart_of_account_id'],
+        'accounting_tax_codes' => ['tax_account_id'],
+        'accounting_parties' => ['receivable_account_id', 'payable_account_id'],
+        'accounting_fixed_assets' => ['asset_account_id', 'accumulated_account_id', 'expense_account_id'],
+        'accounting_inventory_items' => ['inventory_account_id', 'cogs_account_id'],
+        'accounting_pay_components' => ['account_id'],
+        'accounting_contribution_schemes' => ['employee_account_id', 'employer_expense_account_id', 'employer_liability_account_id'],
+    ];
+
+    /**
      * The codes a renumbering would give: the account, and the sub-accounts whose codes share its prefix.
      *
      * @return array<string, string> old code → new code
@@ -120,7 +134,7 @@ class ChartRestructureService
      *
      * Transfers are the source's balance per cost center and its side (a debit balance lands on the target as a debit).
      *
-     * @return array{source: array<string, mixed>, target: array<string, mixed>, transfers: list<array{cost_center: string|null, amount: string, side: string}>, balance: string, draft_lines: int, children: list<string>, bank_accounts: list<string>, problems: list<string>}
+     * @return array{references: list<array{table: string, column: string, count: int}>, source: array<string, mixed>, target: array<string, mixed>, transfers: list<array{cost_center: string|null, amount: string, side: string}>, balance: string, draft_lines: int, children: list<string>, bank_accounts: list<string>, problems: list<string>}
      */
     public function mergePlan(ChartOfAccount $source, ChartOfAccount $target): array
     {
@@ -186,7 +200,18 @@ class ChartRestructureService
             'side' => $balance['cents'] > 0 ? 'debit' : 'credit',
         ])->values()->all();
 
+        $references = [];
+
+        foreach (self::REFERENCES as $table => $columns) {
+            foreach ($columns as $column) {
+                if (($count = DB::table($table)->where($column, $source->id)->count()) > 0) {
+                    $references[] = ['table' => $table, 'column' => $column, 'count' => $count];
+                }
+            }
+        }
+
         return [
+            'references' => $references,
             'source' => $this->present($source),
             'target' => $this->present($target),
             'transfers' => $transfers,
@@ -244,6 +269,14 @@ class ChartRestructureService
                 : $row->forceFill(['chart_of_account_id' => $target->id])->save());
             AccountRoles::flush();
 
+            $references = 0;
+
+            foreach (self::REFERENCES as $table => $columns) {
+                foreach ($columns as $column) {
+                    $references += DB::table($table)->where($column, $source->id)->update([$column => $target->id]);
+                }
+            }
+
             $metadata = (array) ($source->metadata ?? []);
             $source->forceFill([
                 'is_active' => false,
@@ -256,6 +289,7 @@ class ChartRestructureService
                 'moved_draft_lines' => $draftLines->count(),
                 'moved_children' => $children->count(),
                 'moved_bank_accounts' => $banks->count(),
+                'moved_references' => $references,
                 'moved_roles' => $roles->count(),
             ];
 
