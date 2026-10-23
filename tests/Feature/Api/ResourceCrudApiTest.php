@@ -133,3 +133,15 @@ it('refuses to delete a completed reconciliation and releases the lines of a dra
     $this->deleteJson("/api/v1/accounting/reconciliations/{$done->id}")->assertUnprocessable();
     expect($line->fresh()->reconciliation_id)->toBe($done->id)->and($done->fresh())->not->toBeNull();
 });
+
+it('does not let an account type in use change its code, normal balance or report group', function (): void {
+    $expense = \Alimarchal\LaravelChartOfAccounts\Models\AccountType::query()->where('code', 'EXPENSE')->firstOrFail();
+    journal(['5102' => 1000, '1101' => -1000]);
+
+    $this->putJson("/api/v1/accounting/account-types/{$expense->id}", ['code' => 'COSTS', 'name' => $expense->name, 'normal_balance' => 'credit', 'report_group' => 'BalanceSheet'])
+        ->assertUnprocessable();
+    $this->putJson("/api/v1/accounting/account-types/{$expense->id}", ['code' => 'EXPENSE', 'name' => 'Operating Expense', 'normal_balance' => $expense->normal_balance, 'report_group' => $expense->report_group, 'description' => 'Costs'])
+        ->assertSuccessful();
+
+    expect($expense->refresh()->code)->toBe('EXPENSE')->and($expense->name)->toBe('Operating Expense');
+});
