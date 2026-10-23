@@ -20,7 +20,7 @@ class SalaryGrade extends AccountingModel
 
     protected $table = 'accounting_salary_grades';
 
-    protected $fillable = ['code', 'name', 'base_salary', 'is_active'];
+    protected $fillable = ['code', 'name', 'base_salary', 'working_hours_per_month', 'is_active'];
 
     protected function casts(): array
     {

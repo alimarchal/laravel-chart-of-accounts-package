@@ -101,6 +101,7 @@ class PayrollService
             'reason' => ['nullable', 'string', 'max:200'],
             'withhold_tax' => ['nullable', 'boolean'],
             'overtime_eligible' => ['nullable', 'boolean'],
+            'working_hours_per_month' => ['nullable', 'numeric', 'gt:0', 'max:744'],
             'bank_name' => ['nullable', 'string', 'max:120'],
             'bank_account' => ['nullable', 'string', 'max:60'],
             'is_active' => ['nullable', 'boolean'],
@@ -119,6 +120,10 @@ class PayrollService
     {
         return DB::transaction(function () use ($data, $employee): Employee {
             $fields = collect($data)->except(['components', 'schemes', 'effective_from', 'reason'])->all();
+
+            if (($fields['working_hours_per_month'] ?? null) === '') {
+                $fields['working_hours_per_month'] = null;
+            }
 
             if (($fields['base_salary'] ?? null) === null || $fields['base_salary'] === '') {
                 $fields['base_salary'] = SalaryGrade::query()->findOrFail($fields['salary_grade_id'])->base_salary;
@@ -327,7 +332,11 @@ class PayrollService
 
             if ($employee->overtime_eligible && $hours !== null && ($hours['overtime'] > 0 || $hours['holiday_overtime'] > 0)) {
                 $monthly = SalaryHistory::salaryOn($employee, $end, $revisions[$employee->id] ?? collect());
-                $hourly = $monthly / max(1.0, (float) ($overtime['hours_per_month'] ?? 208));
+                // The employee's own working hours, else those of the grade, else the company default.
+                $monthHours = $employee->working_hours_per_month
+                    ?? ($employee->salary_grade_id !== null ? SalaryGrade::query()->whereKey($employee->salary_grade_id)->value('working_hours_per_month') : null)
+                    ?? ($overtime['hours_per_month'] ?? 208);
+                $hourly = $monthly / max(1.0, (float) $monthHours);
                 $cents = (int) round($hourly * ($hours['overtime'] * (float) ($overtime['multiplier'] ?? 2) + $hours['holiday_overtime'] * (float) ($overtime['holiday_multiplier'] ?? 2)));
                 $label = rtrim(rtrim(number_format($hours['overtime'], 2, '.', ''), '0'), '.').' h'.($hours['holiday_overtime'] > 0 ? ' + '.rtrim(rtrim(number_format($hours['holiday_overtime'], 2, '.', ''), '0'), '.').' h holiday' : '');
                 $lines[] = ['pay_component_id' => null, 'kind' => 'earning', 'description' => "Overtime ({$label})", 'cents' => $cents, 'account_id' => $overtimeAccount->id, 'taxable' => true];
