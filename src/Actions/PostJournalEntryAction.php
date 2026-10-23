@@ -169,8 +169,9 @@ class PostJournalEntryAction
 
             $accountCurrency = $line->account->currency_id;
 
-            // A revaluation adjusts a foreign-currency account's carrying value with a base-currency entry.
-            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id && $entry->origin_module !== FxRevaluationService::ORIGIN) {
+            // A revaluation adjusts a foreign-currency account's carrying value with a base-currency entry, and so does the year-end close
+            // (it moves the base balance of an income/expense account, whatever its currency, to retained earnings).
+            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id && $entry->origin_module !== FxRevaluationService::ORIGIN && ! $entry->is_closing_entry) {
                 throw new AccountingException(
                     "Account {$line->account->account_code} is denominated in a different currency than this journal entry."
                 );
