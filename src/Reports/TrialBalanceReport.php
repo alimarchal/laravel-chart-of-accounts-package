@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 class TrialBalanceReport
 {
     /**
-     * One row per account with its debits, credits and balance (base currency, posted entries only).
+     * One row per account with its movements (total debits and credits), its signed balance and its closing balance by side
+     * (debit_balance / credit_balance: the net of the two, on the side of its sign), in the base currency, posted entries only.
      *
      * Filters: as_of_date (entries dated up to and including it), date_from (with as_of_date: the movement of that period only),
      * search (account code or name), account_type (name, comma separated), report_group, hide_zero.
@@ -34,7 +35,14 @@ class TrialBalanceReport
         $groups = array_filter(array_map(fn (string $group) => mb_strtolower(trim($group)), explode(',', (string) ($filters['report_group'] ?? ''))));
         $hideZero = filter_var($filters['hide_zero'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-        return $rows->filter(function (object $row) use ($term, $types, $groups, $hideZero): bool {
+        return $rows->map(function (object $row): object {
+            // The closing balance by side: the net of debits and credits, placed on the side of its sign (what a conventional trial balance lists).
+            $net = Money::toCents((string) $row->total_debits) - Money::toCents((string) $row->total_credits);
+            $row->debit_balance = Money::fromCents(max($net, 0));
+            $row->credit_balance = Money::fromCents(max(-$net, 0));
+
+            return $row;
+        })->filter(function (object $row) use ($term, $types, $groups, $hideZero): bool {
             return ($term === '' || str_contains(mb_strtolower($row->account_code.' '.$row->account_name), $term))
                 && ($types === [] || in_array(mb_strtolower((string) $row->account_type), $types, true))
                 && ($groups === [] || in_array(mb_strtolower((string) $row->report_group), $groups, true))
@@ -89,11 +97,16 @@ class TrialBalanceReport
         if ($rows !== null) {
             $debit = $rows->sum(fn (\stdClass $row): int => Money::toCents($row->total_debits));
             $credit = $rows->sum(fn (\stdClass $row): int => Money::toCents($row->total_credits));
+            $closingDebit = $rows->sum(fn (\stdClass $row): int => max(Money::toCents($row->total_debits) - Money::toCents($row->total_credits), 0));
+            $closingCredit = $rows->sum(fn (\stdClass $row): int => max(Money::toCents($row->total_credits) - Money::toCents($row->total_debits), 0));
 
             return [
                 'total_debit' => $debit / 100,
                 'total_credit' => $credit / 100,
                 'difference' => ($debit - $credit) / 100,
+                'total_debit_balance' => $closingDebit / 100,
+                'total_credit_balance' => $closingCredit / 100,
+                'balance_difference' => ($closingDebit - $closingCredit) / 100,
             ];
         }
 
@@ -103,13 +116,18 @@ class TrialBalanceReport
 
         $row = DB::table('vw_accounting_trial_balance')
             ->whereIn('company_id', CurrentCompany::ids())
-            ->selectRaw('COALESCE(SUM(total_debits), 0) as debit, COALESCE(SUM(total_credits), 0) as credit')
+            ->selectRaw('COALESCE(SUM(total_debits), 0) as debit, COALESCE(SUM(total_credits), 0) as credit,
+                COALESCE(SUM(CASE WHEN total_debits > total_credits THEN total_debits - total_credits ELSE 0 END), 0) as closing_debit,
+                COALESCE(SUM(CASE WHEN total_credits > total_debits THEN total_credits - total_debits ELSE 0 END), 0) as closing_credit')
             ->first();
 
         return [
             'total_debit' => (float) $row->debit,
             'total_credit' => (float) $row->credit,
             'difference' => (float) $row->debit - (float) $row->credit,
+            'total_debit_balance' => (float) $row->closing_debit,
+            'total_credit_balance' => (float) $row->closing_credit,
+            'balance_difference' => (float) $row->closing_debit - (float) $row->closing_credit,
         ];
     }
 }

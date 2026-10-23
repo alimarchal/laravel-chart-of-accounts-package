@@ -304,3 +304,19 @@ it('pays overtime by each employee\'s own working hours, falling back to the gra
         ->and($line($own))->toBe(round(60000 / 120 * 10 * 2, 2))
         ->and($line($graded))->toBe(round(60000 / 156 * 10 * 2, 2));
 });
+
+it('re-opens a loan when the run that recovered its last instalment is voided', function (): void {
+    $employee = ($this->employee)();
+    $service = ($this->loans)();
+    $loan = $service->create($service->validate(['employee_id' => $employee->id, 'kind' => 'loan', 'principal' => '10000', 'installments' => 1, 'start_month' => $this->month->toDateString()]));
+    $service->disburse($loan, account('1101')->id, $this->month->toDateString());
+
+    $run = ($this->payroll)()->post(($this->run)());
+    expect($loan->refresh()->status)->toBe('closed');
+
+    ($this->payroll)()->void($run->refresh());
+    expect($loan->refresh()->status)->toBe('active')->and($service->outstanding($loan))->toBe('10000.00');
+
+    $next = ($this->run)(1);
+    expect((float) ($this->slip)($employee, $next)->deductions)->toBe(10000.0);
+});

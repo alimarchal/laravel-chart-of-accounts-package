@@ -126,3 +126,48 @@ it('serves the register, the asset page and the depreciation run over the web an
     $this->postJson("/api/v1/accounting/fixed-assets/{$asset->id}/dispose", ['disposal_date' => $this->start->copy()->addMonths(4)->toDateString(), 'gain_loss_account_id' => account('5102')->id])->assertOk()->assertJsonPath('data.status', 'disposed');
     $this->deleteJson("/api/v1/accounting/fixed-assets/{$asset->id}")->assertStatus(422);
 });
+
+it('depreciates current assets even when another asset came from before the books start', function (): void {
+    $current = ($this->make)(['code' => 'EQ-NEW', 'cost' => '1200', 'useful_life_months' => 12]);
+    $old = ($this->make)([
+        'code' => 'EQ-OLD', 'acquisition_date' => $this->start->copy()->subYears(3)->toDateString(), 'cost' => '36000', 'useful_life_months' => 60,
+        'opening_accumulated_depreciation' => '21600', 'depreciate_from' => $this->start->toDateString(),
+    ]);
+
+    expect($old->accumulated_depreciation)->toBe('21600.00');
+
+    $result = ($this->service)()->run(($this->monthEnd)(1));
+
+    // 2 months of each: 100 × 2 for the new one, 600 × 2 for the migrated one (36,000 / 60).
+    expect($result['skipped'])->toBe([])->and($result['total'])->toBe('1400.00')
+        ->and($old->refresh()->accumulated_depreciation)->toBe('22800.00')->and($current->refresh()->accumulated_depreciation)->toBe('200.00');
+});
+
+it('skips and reports months without an open period instead of stopping the run', function (): void {
+    $old = ($this->make)(['code' => 'EQ-OLD', 'acquisition_date' => $this->start->copy()->subMonths(2)->toDateString(), 'cost' => '1200', 'useful_life_months' => 12]);
+    $current = ($this->make)(['code' => 'EQ-NEW', 'cost' => '1200', 'useful_life_months' => 12]);
+
+    $result = ($this->service)()->run(($this->monthEnd)(0));
+
+    expect($result['skipped'])->toHaveCount(2)->and($result['months'])->toBe(1)
+        ->and($current->refresh()->accumulated_depreciation)->toBe('100.00')->and($old->refresh()->accumulated_depreciation)->toBe('100.00');
+});
+
+it('refuses a disposal dated before depreciation that is already booked', function (): void {
+    $asset = ($this->make)();
+    ($this->service)()->run(($this->monthEnd)(9));   // ten months booked
+
+    expect(fn () => ($this->service)()->dispose($asset, ['disposal_date' => $this->start->copy()->addMonths(4)->addDays(14)->toDateString(), 'gain_loss_account_id' => account('5102')->id]))
+        ->toThrow(AccountingException::class, 'already been booked');
+    expect($asset->refresh()->status)->toBe('active')->and($asset->accumulated_depreciation)->toBe('10000.00');
+
+    $disposed = ($this->service)()->dispose($asset, ['disposal_date' => $this->start->copy()->addMonths(10)->addDays(3)->toDateString(), 'gain_loss_account_id' => account('5102')->id]);
+    expect($disposed->disposal_gain_loss)->toBe('-2000.00');
+});
+
+it('refuses a receivables or payables control account as the purchase offset', function (): void {
+    account('2101')->forceFill(['control_type' => 'payables'])->save();
+
+    expect(fn () => ($this->make)(['offset_account_id' => account('2101')->id]))->toThrow(Illuminate\Validation\ValidationException::class)
+        ->and(FixedAsset::query()->count())->toBe(0);
+});

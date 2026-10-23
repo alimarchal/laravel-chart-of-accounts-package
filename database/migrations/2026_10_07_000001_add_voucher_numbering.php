@@ -67,7 +67,7 @@ return new class extends Migration
 
         Schema::table('accounting_journal_entries', function (Blueprint $table): void {
             $table->dropUnique('acct_journals_company_voucher_unique');
-            $table->dropForeign('acct_journals_voucher_type_fk');
+            $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['voucher_type_id'] : 'acct_journals_voucher_type_fk');
             $table->dropColumn(['voucher_type_id', 'voucher_number']);
         });
 

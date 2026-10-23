@@ -9,7 +9,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -88,8 +87,6 @@ class ReconciliationBladeController extends Controller
             'bank_account_id' => ['required', CompanyRule::exists('accounting_bank_accounts', 'id')],
             'statement_date' => ['required', 'date'],
             'statement_balance' => ['required', 'numeric'],
-            'book_balance' => ['required', 'numeric'],
-            'status' => ['required', Rule::in(['pending', 'in_progress', 'completed'])],
         ];
     }
 }

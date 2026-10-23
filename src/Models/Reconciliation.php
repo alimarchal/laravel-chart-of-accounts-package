@@ -4,6 +4,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\ReconciliationFactory;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,27 @@ class Reconciliation extends AccountingModel
         'created_by',
         'updated_by',
     ];
+
+    protected static function booted(): void
+    {
+        // A completed reconciliation is evidence: its statement cannot be edited afterwards.
+        static::updating(function (Reconciliation $reconciliation): void {
+            if ($reconciliation->getOriginal('status') === 'completed' && $reconciliation->isDirty(['bank_account_id', 'statement_date', 'statement_balance'])) {
+                throw new AccountingException('A completed reconciliation cannot be edited.');
+            }
+        });
+
+        // A completed reconciliation is the evidence that its lines were checked against a statement: it stays. A draft one that
+        // is deleted gives its lines back (cleared, as before they were taken into it), so no line points at a missing record.
+        static::deleting(function (Reconciliation $reconciliation): void {
+            if ($reconciliation->status === 'completed') {
+                throw new AccountingException('A completed reconciliation cannot be deleted.');
+            }
+
+            JournalEntryLine::query()->where('reconciliation_id', $reconciliation->id)
+                ->update(['reconciliation_id' => null, 'reconciliation_status' => 'cleared', 'reconciled_at' => null, 'reconciled_by' => null]);
+        });
+    }
 
     protected function casts(): array
     {
