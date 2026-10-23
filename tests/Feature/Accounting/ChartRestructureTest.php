@@ -189,3 +189,56 @@ it('keeps sub-account codes the same length when a group is renumbered', functio
         ->and($this->restructure->renumberPlan(account('5100'), '5710', withChildren: false))->toBe(['5100' => '5710'])
         ->and($this->restructure->renumberPlan(account('5100'), '6100')['5110'])->toBe('6110');
 });
+
+it('refuses a merge date earlier than the last posting of the source account', function (): void {
+    $source = ($this->duplicate)();
+    $start = \Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
+    journal(['5199' => 1000, '1101' => -1000], $start->copy()->addDays(2)->toDateString());
+    journal(['5199' => 5000, '1101' => -5000], $start->copy()->addDays(20)->toDateString());
+
+    expect(fn () => $this->restructure->merge($source, account('5104'), $start->copy()->addDays(10)->toDateString()))->toThrow(AccountingException::class, 'earlier than the last posting')
+        ->and(($this->balance)('5199'))->toEqual(6000.0);
+
+    $this->restructure->merge($source, account('5104'), $start->copy()->addDays(20)->toDateString());
+    expect(($this->balance)('5199'))->toEqual(0.0)->and(($this->balance)('5104'))->toEqual(6000.0);
+});
+
+it('explains up front that a foreign-currency account with a balance cannot be merged yet, and merges an empty one', function (): void {
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $source = ($this->duplicate)('5191', 'USD expense A');
+    $target = ($this->duplicate)('5192', 'USD expense B');
+    $source->forceFill(['currency_id' => $usd->id])->save();
+    $target->forceFill(['currency_id' => $usd->id])->save();
+
+    app(\Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService::class)->create([
+        'entry_date' => now()->toDateString(), 'currency_id' => $usd->id, 'fx_rate_to_base' => '280', 'auto_post' => true,
+        'lines' => [['chart_of_account_id' => $source->id, 'debit' => '100.00', 'credit' => 0], ['chart_of_account_id' => account('1101')->id, 'debit' => 0, 'credit' => '100.00']],
+    ]);
+
+    expect($this->restructure->mergePlan($source, $target)['problems'])->toContain('Account 5191 is in a foreign currency and has a balance: merging it is not supported yet. Move the balance with a journal entry in that currency, then merge the empty account.')
+        ->and(fn () => $this->restructure->merge($source, $target))->toThrow(AccountingException::class, 'foreign currency');
+
+    $empty = ($this->duplicate)('5193', 'USD expense C');
+    $empty->forceFill(['currency_id' => $usd->id])->save();
+    expect($this->restructure->merge($empty, $target)['transfer_entry_id'])->toBeNull();
+});
+
+it('moves the settings of other modules to the account that keeps the balance, and lists them in the preview', function (): void {
+    $source = ($this->duplicate)('5191', 'Duplicate expense');
+    $target = ($this->duplicate)('5192', 'Kept expense');
+    $code = \Alimarchal\LaravelChartOfAccounts\Models\TaxCode::query()->create(['code' => 'GSTX', 'name' => 'GST X', 'kind' => 'input', 'tax_account_id' => $source->id]);
+    $assets = app(\Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService::class);
+    $asset = $assets->create($assets->validate([
+        'code' => 'EQ-9', 'name' => 'Laptop', 'acquisition_date' => now()->toDateString(), 'cost' => '1200', 'salvage_value' => '0', 'useful_life_months' => 12, 'method' => 'straight_line',
+        'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => $source->id,
+    ]));
+
+    $plan = $this->restructure->mergePlan($source, $target);
+    expect(collect($plan['references'])->map(fn ($row) => "{$row['table']}.{$row['column']}")->all())->toBe(['accounting_tax_codes.tax_account_id', 'accounting_fixed_assets.expense_account_id']);
+
+    $result = $this->restructure->merge($source, $target);
+
+    expect($result['moved_references'])->toBe(2)
+        ->and($code->refresh()->tax_account_id)->toBe($target->id)
+        ->and($asset->refresh()->expense_account_id)->toBe($target->id);
+});
