@@ -311,3 +311,16 @@ it('renders the React pages', function (): void {
     $this->get('/accounting/receivables/aging?side=payable')->assertInertia(fn (AssertableInertia $page) => $page->where('report.side', 'payable')->has('report.rows', 0));
     expect(PartyPayment::query()->count())->toBe(1);
 });
+
+it('migrates an open invoice with its original dates: booked on the go-live date, aged by its due date', function (): void {
+    $issue = $this->start->copy()->subMonths(4)->toDateString();
+    $due = $this->start->copy()->subMonths(3)->toDateString();
+    $invoice = ($this->document)('invoice', $this->customer, [['3102', 1, '50000']], 1, ['issue_date' => $issue, 'due_date' => $due, 'opening_date' => ($this->on)(1)]);
+
+    expect($invoice->status)->toBe('posted')
+        ->and(JournalEntry::query()->findOrFail($invoice->journal_entry_id)->entry_date->toDateString())->toBe(($this->on)(1));
+
+    $row = ($this->ledger)()->aging('receivable', ($this->on)(5))['rows'][0];
+    expect($row['over_90'])->toBe('50000.00')
+        ->and(($this->ledger)()->reconcile('receivable', ($this->on)(5))['difference'])->toBe('0.00');
+});
