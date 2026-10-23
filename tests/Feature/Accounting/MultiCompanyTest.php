@@ -316,3 +316,15 @@ it('leaves zero balances out of consolidated reports unless asked', function ():
     expect($codes(''))->toBe(['1101', '4101'])
         ->and(count($codes('?include_zero=1')))->toBeGreaterThan(50);
 });
+
+it('keeps exchange rates per company', function (): void {
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $date = now()->toDateString();
+    $fx = app(\Alimarchal\LaravelChartOfAccounts\Services\FxRevaluationService::class);
+
+    Sanctum::actingAs($this->subUser);
+    $this->withHeader('X-Company', 'SUB')->postJson('/api/v1/accounting/fx-revaluation/rates', ['currency_id' => $usd->id, 'rate_date' => $date, 'rate' => 999])->assertCreated();
+
+    expect(($this->inSub)(fn () => (float) $fx->rateOn($usd, $date)))->toBe(999.0)
+        ->and(app(CurrentCompany::class)->runAs($this->main, fn () => (float) $fx->rateOn($usd, $date)))->toBe(280.0);
+});
