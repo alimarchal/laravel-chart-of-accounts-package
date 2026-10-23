@@ -1026,7 +1026,7 @@ spec = {
    "* **Rate limit:** `ACCOUNTING_API_RATE_LIMIT` requests/minute per user (default 120) → 429.\n"
    "* **Pagination:** `?page=` and `?per_page=` (max `ACCOUNTING_API_MAX_PER_PAGE`, default 100).\n"
    "* **Errors:** 422 with `message` (accounting rules) and `errors` (validation).\n"
-   "* **Money:** amounts are returned as decimal strings with two decimals.\n"
+   "* **Money:** amounts are returned as decimal strings with two decimals. A transaction amount may not exceed `accounting.max_amount` (`ACCOUNTING_MAX_AMOUNT`, default 999,999,999,999.99): larger values answer 422.\n"
    "* **Retries:** send `Idempotency-Key` when creating journal entries.\n"
    "* **Branches:** with ACCOUNTING_BRANCHES=true, send `X-Branch: <code or id>` to work in one branch; a user limited to branches only sees theirs.\n"
    "* **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible (404).\n"
