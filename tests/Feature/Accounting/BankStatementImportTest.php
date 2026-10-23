@@ -255,3 +255,32 @@ it('books a statement line of a foreign-currency bank account in its own currenc
         ->and($line->reconciliation_status)->toBe('cleared')
         ->and(($this->service)()->reconcile($statement->refresh())->status)->toBe('completed');
 });
+
+it('completes consecutive monthly statements, each against the cumulative closing balance', function (): void {
+    journal(['1108' => 5000, '4101' => -5000], ($this->day)(10));
+    journal(['5102' => 1000, '1108' => -1000], ($this->day)(40));
+
+    $october = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,5000.00,5000.00']);
+    ($this->service)()->autoMatch($october);
+    $first = ($this->service)()->reconcile($october->refresh());
+
+    $november = ($this->import)([($this->day)(40).',Office rent,CHQ101,1000.00,,4000.00']);
+    ($this->service)()->autoMatch($november);
+    $second = ($this->service)()->reconcile($november->refresh());
+
+    expect($first->status)->toBe('completed')
+        ->and($second->status)->toBe('completed')
+        ->and($second->book_balance)->toBe('4000.00')
+        ->and($second->completed_at)->not->toBeNull();
+});
+
+it('reads amounts with a currency prefix and full stop', function (): void {
+    $service = ($this->service)();
+
+    expect($service->parseAmount('Rs. 2,500'))->toBe(250000)
+        ->and($service->parseAmount('Rs. 5,000.00'))->toBe(500000)
+        ->and($service->parseAmount('PKR 1,234.50'))->toBe(123450)
+        ->and($service->parseAmount('Rs.2,500'))->toBe(250000)
+        ->and($service->parseAmount('(Rs. 120.00)'))->toBe(-12000)
+        ->and($service->parseAmount('Rs. 500.00 DR'))->toBe(-50000);
+});

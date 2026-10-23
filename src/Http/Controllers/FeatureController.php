@@ -2,7 +2,9 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers;
 
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
+use Alimarchal\LaravelChartOfAccounts\Support\PrivilegeGuard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -34,6 +36,9 @@ class FeatureController extends Controller
 
     public function update(Request $request): RedirectResponse|JsonResponse
     {
+        // The switches are installation-wide: with several companies, only a super-admin may change them for everybody.
+        abort_if(CurrentCompany::enabled() && ! app(PrivilegeGuard::class)->isSuperAdmin($request->user()), 403, 'The feature switches apply to every company: only a super-admin can change them.');
+
         $data = $request->validate(['features' => ['required', 'array', 'min:1']]);
 
         foreach ($data['features'] as $key => $value) {

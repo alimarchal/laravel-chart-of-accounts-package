@@ -624,6 +624,8 @@ class BankStatementService
             $text = substr($text, 1, -1);
         }
 
+        // "Rs. 2,500" / "PKR 1,234.50": drop the currency word with its full stop before only digits and separators are kept.
+        $text = (string) preg_replace('/\b(?:rs|pkr|usd|eur|gbp|aed|sar|inr)\b\.?/iu', '', $text);
         $text = (string) preg_replace('/[^\d.,\-+]/u', '', $text);
 
         if (str_starts_with($text, '-')) {
