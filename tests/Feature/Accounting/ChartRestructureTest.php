@@ -189,3 +189,16 @@ it('keeps sub-account codes the same length when a group is renumbered', functio
         ->and($this->restructure->renumberPlan(account('5100'), '5710', withChildren: false))->toBe(['5100' => '5710'])
         ->and($this->restructure->renumberPlan(account('5100'), '6100')['5110'])->toBe('6110');
 });
+
+it('refuses a merge date earlier than the last posting of the source account', function (): void {
+    $source = ($this->duplicate)();
+    $start = \Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
+    journal(['5199' => 1000, '1101' => -1000], $start->copy()->addDays(2)->toDateString());
+    journal(['5199' => 5000, '1101' => -5000], $start->copy()->addDays(20)->toDateString());
+
+    expect(fn () => $this->restructure->merge($source, account('5104'), $start->copy()->addDays(10)->toDateString()))->toThrow(AccountingException::class, 'earlier than the last posting')
+        ->and(($this->balance)('5199'))->toEqual(6000.0);
+
+    $this->restructure->merge($source, account('5104'), $start->copy()->addDays(20)->toDateString());
+    expect(($this->balance)('5199'))->toEqual(0.0)->and(($this->balance)('5104'))->toEqual(6000.0);
+});
