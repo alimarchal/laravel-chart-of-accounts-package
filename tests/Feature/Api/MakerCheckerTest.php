@@ -194,3 +194,18 @@ it('leaves behaviour unchanged when approvals are disabled', function (): void {
     $draft = $this->postJson(MC_API.'/journal-entries', draftPayload(5))->json('data.id');
     $this->postJson(MC_API."/journal-entries/{$draft}/submit")->assertUnprocessable();
 });
+
+it('lets only an approver reverse an entry at or above the threshold', function (): void {
+    Sanctum::actingAs($this->maker);
+    $id = $this->postJson(MC_API.'/journal-entries', draftPayload(60000))->json('data.id');
+    $this->postJson(MC_API."/journal-entries/{$id}/submit")->assertOk();
+    Sanctum::actingAs($this->checker);
+    $this->postJson(MC_API."/journal-entries/{$id}/approve")->assertOk();
+
+    Sanctum::actingAs($this->maker);
+    $this->postJson(MC_API."/journal-entries/{$id}/reverse")->assertUnprocessable();
+    expect(JournalEntry::query()->where('reverses_entry_id', $id)->exists())->toBeFalse();
+
+    config(['accounting.approvals.include_reversals' => false]);
+    $this->postJson(MC_API."/journal-entries/{$id}/reverse")->assertOk();
+});
