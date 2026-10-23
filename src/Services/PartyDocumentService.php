@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Jobs\SubmitFbrInvoice;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\FbrSubmission;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
@@ -258,6 +259,11 @@ class PartyDocumentService
 
             if (PartyAllocation::query()->where('document_id', $document->id)->orWhere('credit_document_id', $document->id)->exists()) {
                 throw new AccountingException('The document has payments or credits applied: undo them first.');
+            }
+
+            // FBR keeps its own record of an accepted (or in-flight) digital invoice: it is cancelled with a credit note, never by voiding.
+            if (FbrSubmission::query()->where('party_document_id', $document->id)->whereIn('status', ['accepted', 'pending'])->exists()) {
+                throw new AccountingException('This invoice was submitted to FBR: issue a credit note instead of voiding it.');
             }
 
             if ($document->journal_entry_id !== null) {
