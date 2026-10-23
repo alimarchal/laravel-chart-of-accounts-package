@@ -34,6 +34,9 @@ return new class extends Migration
             $table->foreignId('acquisition_entry_id')->nullable()->constrained('accounting_journal_entries', indexName: 'acct_assets_acq_entry_fk')->nullOnDelete();
             $table->string('status', 12)->default('active');
             $table->decimal('accumulated_depreciation', 18, 2)->default(0);
+            // An asset brought over from earlier years: what was already depreciated (opening balance) and the month depreciation starts again.
+            $table->decimal('opening_accumulated_depreciation', 18, 2)->default(0);
+            $table->date('depreciate_from')->nullable();
             $table->date('disposed_at')->nullable();
             $table->decimal('disposal_proceeds', 18, 2)->nullable();
             $table->decimal('disposal_gain_loss', 18, 2)->nullable();

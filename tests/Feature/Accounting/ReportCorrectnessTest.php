@@ -101,3 +101,22 @@ it('keeps the income statement of a closed year intact', function (): void {
         ->and((float) $rows->firstWhere('account_code', '5104')->balance)->toBe(300.0)
         ->and(app(BalanceSheetReport::class)->totals(['as_of_date' => $this->period->end_date->toDateString()])['difference'])->toBe(0.0);
 });
+
+it('lists the trial balance by closing balance on the debit or credit side', function (): void {
+    journal(['1108' => 100000, '3102' => -100000]);
+    journal(['5104' => 20000, '1108' => -20000]);
+    journal(['1108' => 50000, '4101' => -50000]);
+
+    $report = app(\Alimarchal\LaravelChartOfAccounts\Reports\TrialBalanceReport::class);
+    $rows = $report->rows()->keyBy('account_code');
+
+    expect($rows['1108']->debit_balance)->toBe('130000.00')->and($rows['1108']->credit_balance)->toBe('0.00')
+        ->and((float) $rows['1108']->total_debits)->toBe(150000.0)->and((float) $rows['1108']->total_credits)->toBe(20000.0)
+        ->and($rows['5104']->debit_balance)->toBe('20000.00')
+        ->and($rows['3102']->credit_balance)->toBe('100000.00')->and($rows['4101']->credit_balance)->toBe('50000.00');
+
+    foreach ([$report->totals(), $report->totals($report->rows())] as $totals) {
+        expect($totals['total_debit_balance'])->toEqual(150000.0)->and($totals['total_credit_balance'])->toEqual(150000.0)
+            ->and($totals['balance_difference'])->toEqual(0.0)->and($totals['total_debit'])->toEqual(170000.0);
+    }
+});

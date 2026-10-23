@@ -46,7 +46,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('accounting_periods', function (Blueprint $table): void {
-            $table->dropForeign('acct_periods_closing_journal_fk');
+            $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['closing_journal_entry_id'] : 'acct_periods_closing_journal_fk');
         });
 
         Schema::dropIfExists('accounting_journal_entries');

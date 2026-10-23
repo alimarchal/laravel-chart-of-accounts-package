@@ -102,6 +102,13 @@ it('routes period status changes through close and reopen with their permissions
 
     $payload['status'] = 'open';
     $this->putJson("/api/v1/accounting/periods/{$this->period->id}", $payload)->assertForbidden();
+
+    // With the permission, reopening through the update still needs a reason.
+    $editor->givePermissionTo('periods.reopen');
+    $this->putJson("/api/v1/accounting/periods/{$this->period->id}", $payload)->assertUnprocessable();
+    expect($this->period->fresh()->status)->toBe('closed');
+    $this->putJson("/api/v1/accounting/periods/{$this->period->id}", [...$payload, 'reason' => 'Auditor adjustment'])->assertSuccessful();
+    expect($this->period->fresh()->status)->toBe('open');
 });
 
 it('protects periods that contain journal entries', function (): void {

@@ -39,6 +39,7 @@ class PayrollStructureService
             'code' => ['required', 'string', 'max:30', CompanyRule::unique('accounting_salary_grades', 'code')->ignore($grade?->id)],
             'name' => ['required', 'string', 'max:120'],
             'base_salary' => ['required', 'numeric', 'min:0', 'max:999999999999'],
+            'working_hours_per_month' => ['nullable', 'numeric', 'gt:0', 'max:744'],
             'is_active' => ['nullable', 'boolean'],
             'components' => ['nullable', 'array', 'max:50'],
             'components.*.pay_component_id' => ['required', 'integer', 'distinct', CompanyRule::exists('accounting_pay_components', 'id')],
@@ -53,6 +54,10 @@ class PayrollStructureService
     {
         return DB::transaction(function () use ($data, $grade): SalaryGrade {
             $fields = collect($data)->except('components')->all();
+
+            if (($fields['working_hours_per_month'] ?? null) === '') {
+                $fields['working_hours_per_month'] = null;
+            }
             $grade = $grade ? tap($grade)->update($fields) : SalaryGrade::query()->create($fields);
 
             if (array_key_exists('components', $data)) {

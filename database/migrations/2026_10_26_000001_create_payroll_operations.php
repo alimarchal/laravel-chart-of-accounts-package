@@ -16,6 +16,7 @@ return new class extends Migration
 
         Schema::table('accounting_employees', function (Blueprint $table): void {
             $table->boolean('overtime_eligible')->default(false)->after('withhold_tax');
+            $table->decimal('working_hours_per_month', 6, 2)->nullable()->after('overtime_eligible'); // overtime rate = monthly salary / these hours (grade, then the company default, when empty)
         });
 
         Schema::table('accounting_payslips', function (Blueprint $table): void {
@@ -152,6 +153,6 @@ return new class extends Migration
         Schema::dropIfExists('accounting_leave_types');
         Schema::table('accounting_payroll_runs', fn (Blueprint $table) => $table->dropColumn('employer'));
         Schema::table('accounting_payslips', fn (Blueprint $table) => $table->dropColumn('employer'));
-        Schema::table('accounting_employees', fn (Blueprint $table) => $table->dropColumn('overtime_eligible'));
+        Schema::table('accounting_employees', fn (Blueprint $table) => $table->dropColumn(['overtime_eligible', 'working_hours_per_month']));
     }
 };
