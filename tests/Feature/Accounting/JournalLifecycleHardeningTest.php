@@ -187,3 +187,13 @@ it('answers 422, not 500, for an amount above the allowed maximum', function ():
     $post('999999999999.99')->assertCreated();                      // the limit itself is fine
     $this->postJson('/api/v1/accounting/journal-entries/simple', ['debit_account_code' => '5104', 'credit_account_code' => '1101', 'amount' => '99999999999999999999', 'post' => false])->assertUnprocessable()->assertJsonValidationErrors(['amount']);
 });
+
+it('refuses every amount above the money column limit instead of overflowing or converting it silently', function (): void {
+    foreach (['9999999999999999.99' => 999999999999999999, '-9999999999999999.99' => -999999999999999999, '9999999999999999.994' => 999999999999999999] as $ok => $cents) {
+        expect(Money::toCents((string) $ok))->toBe($cents);
+    }
+
+    foreach (['10000000000000000', '10000000000000000.00', '9999999999999999.995', '92233720368547758.08', '92233720368547758.99', '92233720368547758.075', '-92233720368547758.99', '-10000000000000000.01'] as $bad) {
+        expect(fn () => Money::toCents($bad))->toThrow(AccountingException::class, 'too large');
+    }
+});
