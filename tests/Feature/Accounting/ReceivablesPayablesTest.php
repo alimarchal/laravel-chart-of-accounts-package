@@ -312,6 +312,18 @@ it('renders the React pages', function (): void {
     expect(PartyPayment::query()->count())->toBe(1);
 });
 
+it('keeps an advance receipt in the ageing between its date and the invoice it is allocated to', function (): void {
+    $receipt = ($this->receipt)(1000, 1);                 // an advance, nothing to allocate to yet
+    $invoice = ($this->invoice)(1000, 10, ['prices_include_tax' => true]);   // issued later, 1,000 gross
+    ($this->pay)()->allocate($receipt->refresh(), [['document_id' => $invoice->id, 'amount' => '1000']]);
+
+    $aging = ($this->ledger)()->aging('receivable', ($this->on)(5));
+
+    expect($aging['rows'][0]['unapplied'])->toBe('-1000.00')
+        ->and(($this->ledger)()->reconcile('receivable', ($this->on)(5))['difference'])->toBe('0.00')
+        ->and(PartyAllocation::query()->firstOrFail()->allocated_on->toDateString())->toBe(($this->on)(10));
+});
+
 it('needs a user who may approve for a bill or payment at or above the approval threshold', function (): void {
     config(['accounting.approvals.enabled' => true, 'accounting.approvals.threshold' => '1000']);
     $approver = tap(User::factory()->create())->assignRole('approver');
