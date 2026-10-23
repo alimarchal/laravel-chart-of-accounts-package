@@ -48,6 +48,9 @@ class CloseFiscalYearAction
                     'description' => "Year-end close for {$period->name}",
                     'auto_post' => true,
                     'system_generated' => true,
+                    // Flagged before it posts: a closing entry must be able to empty an account that has since been deactivated.
+                    'is_closing_entry' => true,
+                    'closes_period_id' => $period->id,
                     'lines' => array_map(fn (array $line) => array_intersect_key($line, array_flip(['chart_of_account_id', 'debit', 'credit', 'description'])), $preview['lines']),
                 ]);
 
