@@ -16,6 +16,7 @@ return new class extends Migration
 
         Schema::create('accounting_exchange_rates', function (Blueprint $table) use ($users): void {
             $table->id();
+            $table->foreignId('company_id')->constrained('accounting_companies', indexName: 'acct_fx_rates_company_fk')->restrictOnDelete();
             $table->foreignId('currency_id')->constrained('accounting_currencies', indexName: 'acct_fx_rates_currency_fk')->cascadeOnDelete();
             $table->date('rate_date');
             $table->decimal('rate', 18, 8);
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->foreignId('updated_by')->nullable()->constrained($users, indexName: 'acct_fx_rates_updated_by_fk')->nullOnDelete();
             $table->timestamps();
 
-            $table->unique(['currency_id', 'rate_date'], 'acct_fx_rates_currency_date_unique');
+            $table->unique(['company_id', 'currency_id', 'rate_date'], 'acct_fx_rates_currency_date_unique');
         });
 
         Schema::create('accounting_fx_revaluations', function (Blueprint $table) use ($users): void {
