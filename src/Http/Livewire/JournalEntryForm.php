@@ -129,7 +129,7 @@ class JournalEntryForm extends Component
             ...SourceDocuments::rules(),
             'accounting_period_id' => ['nullable', CompanyRule::exists('accounting_periods', 'id')],
             'currency_id' => ['required', 'exists:accounting_currencies,id'],
-            'fx_rate_to_base' => ['required', 'numeric', 'min:0'],
+            'fx_rate_to_base' => ['required', 'numeric', 'gt:0'],
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.chart_of_account_id' => ['required', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
             'lines.*.debit' => ['required', 'numeric', 'min:0'],
@@ -154,7 +154,8 @@ class JournalEntryForm extends Component
             'entry_date' => $this->entry_date,
             'accounting_period_id' => $this->accounting_period_id,
             'currency_id' => $this->currency_id,
-            'fx_rate_to_base' => $this->fx_rate_to_base,
+            // The base currency always has rate 1, whatever the field holds.
+            'fx_rate_to_base' => $this->currency_id === Currency::query()->where('is_base', true)->value('id') ? 1 : $this->fx_rate_to_base,
             'reference' => $this->reference,
             'source_document_type' => $this->source_document_type,
             'source_document_number' => $this->source_document_number,

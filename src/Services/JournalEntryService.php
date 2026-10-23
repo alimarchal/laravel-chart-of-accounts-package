@@ -218,6 +218,10 @@ class JournalEntryService
         $given = $data['fx_rate_to_base'] ?? null;
         $given = $given === '' ? null : $given;
 
+        if ($given !== null && (! is_numeric($given) || (float) $given <= 0)) {
+            throw new AccountingException('The exchange rate must be greater than zero.');
+        }
+
         if ($currencyId === $baseId) {
             if ($given !== null && (float) $given !== 1.0) {
                 throw new AccountingException('An entry in the base currency always has an exchange rate of 1.');
