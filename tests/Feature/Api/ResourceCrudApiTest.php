@@ -116,3 +116,20 @@ it('does not let a completed reconciliation be edited', function (): void {
         'bank_account_id' => $reconciliation->bank_account_id, 'statement_date' => $reconciliation->statement_date->toDateString(), 'statement_balance' => 1,
     ])->assertUnprocessable();
 });
+
+it('refuses to delete a completed reconciliation and releases the lines of a draft one', function (): void {
+    $bank = BankAccount::factory()->create();
+    $line = journal(['1108' => 100, '4101' => -100])->lines->firstWhere('chart_of_account_id', account('1108')->id);
+
+    $draft = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'draft']);
+    $line->forceFill(['reconciliation_id' => $draft->id, 'reconciliation_status' => 'reconciled'])->save();
+
+    $this->deleteJson("/api/v1/accounting/reconciliations/{$draft->id}")->assertNoContent();
+    expect($line->fresh()->reconciliation_id)->toBeNull()->and($line->fresh()->reconciliation_status)->toBe('cleared');
+
+    $done = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'completed']);
+    $line->forceFill(['reconciliation_id' => $done->id, 'reconciliation_status' => 'reconciled'])->save();
+
+    $this->deleteJson("/api/v1/accounting/reconciliations/{$done->id}")->assertUnprocessable();
+    expect($line->fresh()->reconciliation_id)->toBe($done->id)->and($done->fresh())->not->toBeNull();
+});
