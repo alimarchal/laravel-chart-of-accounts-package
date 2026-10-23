@@ -176,7 +176,7 @@ class JournalEntryController extends Controller
     public function reverse(Request $request, JournalEntry $journalEntry, JournalEntryService $service): RedirectResponse
     {
         $validated = $request->validate([
-            'description' => ['nullable', 'string', 'max:1000'],
+            'description' => [config('accounting.require_reversal_reason', false) ? 'required' : 'nullable', 'string', 'max:1000'],
             'reversal_date' => ['nullable', 'date'],
         ]);
 

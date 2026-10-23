@@ -10,13 +10,21 @@ class AccountingOpenPeriodCommand extends Command
 {
     use RunsForCompany;
 
-    protected $signature = 'accounting:open-period {period_id}';
+    protected $signature = 'accounting:open-period {period_id} {--reason= : Why the closed period is reopened (required, kept in the audit trail)}';
 
     protected $description = 'Reopen a closed accounting period.';
 
     public function handle(ReopenAccountingPeriodAction $action): int
     {
-        $action->execute($this->periodForCommand($this->argument('period_id')));
+        $reason = trim((string) $this->option('reason'));
+
+        if (strlen($reason) < 5) {
+            $this->error('Say why the period is reopened: --reason="…" (at least 5 characters).');
+
+            return self::INVALID;
+        }
+
+        $action->execute($this->periodForCommand($this->argument('period_id')), $reason);
         $this->info('Accounting period reopened.');
 
         return self::SUCCESS;

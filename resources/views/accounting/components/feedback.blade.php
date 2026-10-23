@@ -129,5 +129,27 @@
         e.preventDefault(); e.stopImmediatePropagation();
         ask(text, function () { button.__accConfirmed = true; button.removeAttribute('onclick'); button.click(); });
     }, true);
+
+    // Submit once: a double click or a second Enter must not post the same form twice (receipts, payments, journals …).
+    // Forms that are not plain POST/PUT/DELETE forms, and Livewire forms (which guard themselves), are left alone.
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (e.defaultPrevented || !form || !form.getAttribute) { return; }
+        var method = (form.getAttribute('method') || 'get').toLowerCase();
+        if (method === 'get' || form.hasAttribute('wire:submit') || form.hasAttribute('wire:submit.prevent') || form.hasAttribute('data-allow-resubmit')) { return; }
+        if (form.__accSubmitting) { e.preventDefault(); return; }
+        form.__accSubmitting = true;
+        setTimeout(function () {
+            Array.prototype.forEach.call(form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"]'), function (b) { b.disabled = true; });
+        }, 0);
+        // A page that stays (validation error shown by script, download response) becomes usable again.
+        setTimeout(function () {
+            form.__accSubmitting = false;
+            Array.prototype.forEach.call(form.querySelectorAll('button, input[type="submit"]'), function (b) { b.disabled = false; });
+        }, 15000);
+    });
+    window.addEventListener('pageshow', function () {
+        Array.prototype.forEach.call(document.forms, function (f) { f.__accSubmitting = false; });
+    });
 })();
 </script>
