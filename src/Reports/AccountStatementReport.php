@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -32,8 +33,8 @@ class AccountStatementReport
             ->where('status', 'posted')
             ->when($filters['account_id'] ?? null, fn ($query, int|string $accountId) => $query->where('account_id', $accountId))
             ->when($filters['account_code'] ?? null, fn ($query, string $accountCode) => $query->where('account_code', $accountCode))
-            ->when($filters['date_from'] ?? null, fn ($query, string $date) => $query->whereDate('entry_date', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn ($query, string $date) => $query->whereDate('entry_date', '<=', $date))
+            ->when($filters['date_from'] ?? null, fn ($query, string $date) => $query->where('entry_date', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn ($query, string $date) => $query->where('entry_date', '<', Carbon::parse($date)->addDay()->toDateString()))
             ->orderBy('entry_date')
             ->orderBy('journal_entry_id')
             ->orderBy('line_no');
@@ -53,12 +54,12 @@ class AccountStatementReport
             ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('branch_id', CurrentBranch::reportIds()))->where('status', 'posted')->where('account_id', $account->id);
 
         $openingNet = $dateFrom
-            ? Money::toCents($posted()->whereDate('entry_date', '<', $dateFrom)->selectRaw('COALESCE(SUM(base_debit) - SUM(base_credit), 0) as net')->value('net'))
+            ? Money::toCents($posted()->where('entry_date', '<', $dateFrom)->selectRaw('COALESCE(SUM(base_debit) - SUM(base_credit), 0) as net')->value('net'))
             : 0;
 
         $inRange = fn () => $posted()
-            ->when($dateFrom, fn ($query, string $date) => $query->whereDate('entry_date', '>=', $date))
-            ->when($dateTo, fn ($query, string $date) => $query->whereDate('entry_date', '<=', $date));
+            ->when($dateFrom, fn ($query, string $date) => $query->where('entry_date', '>=', $date))
+            ->when($dateTo, fn ($query, string $date) => $query->where('entry_date', '<', Carbon::parse($date)->addDay()->toDateString()));
 
         $totals = $inRange()->selectRaw('COALESCE(SUM(base_debit), 0) as debit, COALESCE(SUM(base_credit), 0) as credit')->first();
         $debit = Money::toCents($totals->debit);

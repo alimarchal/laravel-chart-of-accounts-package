@@ -41,7 +41,7 @@ abstract class AgingReport
             ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('branch_id', CurrentBranch::reportIds()))
             ->where('status', 'posted')
             ->whereIn('account_id', $accountIds)
-            ->whereDate('entry_date', '<=', $asOfStr)
+            ->where('entry_date', '<', Carbon::parse($asOfStr)->addDay()->toDateString())
             ->selectRaw("
                 account_code,
                 account_name,
