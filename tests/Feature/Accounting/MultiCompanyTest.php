@@ -328,3 +328,51 @@ it('keeps exchange rates per company', function (): void {
     expect(($this->inSub)(fn () => (float) $fx->rateOn($usd, $date)))->toBe(999.0)
         ->and(app(CurrentCompany::class)->runAs($this->main, fn () => (float) $fx->rateOn($usd, $date)))->toBe(280.0);
 });
+
+it('lets only a super-admin change the installation-wide feature switches when there are several companies', function (): void {
+    $subAdmin = User::factory()->create();
+    $subAdmin->assignRole('admin');
+    app(CompanyService::class)->grantAccess($this->sub, $subAdmin, default: true);
+
+    Sanctum::actingAs($subAdmin);
+    $this->withHeader('X-Company', 'SUB')->putJson('/api/v1/accounting/features', ['features' => ['payroll' => false]])->assertForbidden();
+    expect(app(\Alimarchal\LaravelChartOfAccounts\Support\FeatureManager::class)->enabled('payroll'))->toBeTrue();
+
+    $owner = User::factory()->create();
+    $owner->assignRole('super-admin');
+    Sanctum::actingAs($owner);
+    $this->putJson('/api/v1/accounting/features', ['features' => ['payroll' => false]])->assertOk();
+});
+
+it('lists and shows only the users of the companies the administrator works in', function (): void {
+    $subAdmin = User::factory()->create();
+    $subAdmin->assignRole('admin');
+    app(CompanyService::class)->grantAccess($this->sub, $subAdmin, default: true);
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    Sanctum::actingAs($subAdmin);
+    $emails = collect($this->withHeader('X-Company', 'SUB')->getJson('/api/v1/accounting/users')->assertOk()->json('data'))->pluck('email');
+
+    expect($emails)->toContain($this->subUser->email, $subAdmin->email)->not->toContain($this->mainUser->email);
+    $this->withHeader('X-Company', 'SUB')->getJson("/api/v1/accounting/users/{$this->mainUser->id}")->assertNotFound();
+    $this->withHeader('X-Company', 'SUB')->getJson("/api/v1/accounting/users/{$this->subUser->id}")->assertOk();
+
+    // A user the SUB administrator creates works in SUB, so they can see them.
+    $created = $this->withHeader('X-Company', 'SUB')->postJson('/api/v1/accounting/users', ['name' => 'New Clerk', 'email' => 'new.clerk@example.com', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])->assertCreated()->json('data.id');
+    $this->withHeader('X-Company', 'SUB')->getJson("/api/v1/accounting/users/{$created}")->assertOk();
+
+    Sanctum::actingAs($superAdmin);
+    expect(collect($this->getJson('/api/v1/accounting/users')->assertOk()->json('data'))->pluck('email'))->toContain($this->mainUser->email, $this->subUser->email);
+});
+
+it('refuses to switch the base currency from a company without entries while another company has posted entries', function (): void {
+    app(CurrentCompany::class)->runAs($this->main, fn () => journal(['5104' => 10, '1101' => -10]));
+
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+
+    expect(fn () => ($this->inSub)(fn () => $usd->update(['is_base' => true])))
+        ->toThrow(AccountingException::class, 'base currency cannot be changed');
+
+    expect(\Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('is_base', true)->value('code'))->toBe('PKR');
+});

@@ -12,8 +12,8 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
  */
 final class Money
 {
-    /** The largest whole amount that still fits integer cents (PHP_INT_MAX / 100). */
-    private const MAX_WHOLE = 92233720368547758;
+    /** The largest whole amount the money columns hold, DECIMAL(18,2): 16 digits. It is far inside integer cents (PHP_INT_MAX / 100), so no input can overflow. */
+    private const MAX_WHOLE = 9999999999999999;
 
     /**
      * @throws AccountingException when the value is not a plain decimal number ("1,000.50", "1e3", "12abc") or is too large for integer cents
@@ -66,7 +66,58 @@ final class Money
 
         $total = $whole * 100 + $cents;
 
+        // Rounding up the third decimal can carry past the limit (9999999999999999.995).
+        if ($total > self::MAX_WHOLE * 100 + 99) {
+            throw new AccountingException("The amount [{$amount}] is too large.");
+        }
+
         return $negative ? -$total : $total;
+    }
+
+    /**
+     * Quantity × unit price in whole cents, exact (bcmath) and rounded half away from zero: 1 × 1.005 is 1.01, not 1.00.
+     *
+     * @throws AccountingException when an operand is not a plain number or the product does not fit integer cents
+     */
+    public static function productToCents(int|float|string $quantity, int|float|string $price): int
+    {
+        $quantity = self::plainNumber($quantity);
+        $price = self::plainNumber($price);
+
+        if (! function_exists('bcmul')) {
+            $cents = (float) $quantity * (float) $price * 100;
+
+            if (! is_finite($cents) || abs($cents) >= (float) PHP_INT_MAX) {
+                throw new AccountingException("The amount [{$quantity} × {$price}] is too large.");
+            }
+
+            return (int) round($cents);
+        }
+
+        $raw = bcmul(bcmul($quantity, $price, 8), '100', 8);
+        $negative = str_starts_with($raw, '-');
+        $rounded = bcadd(ltrim($raw, '-'), '0.5', 0);
+
+        if (bccomp($rounded, (string) PHP_INT_MAX) > 0) {
+            throw new AccountingException("The amount [{$quantity} × {$price}] is too large.");
+        }
+
+        return $negative ? -(int) $rounded : (int) $rounded;
+    }
+
+    private static function plainNumber(int|float|string $value): string
+    {
+        if (is_float($value)) {
+            $value = rtrim(rtrim(number_format($value, 8, '.', ''), '0'), '.');
+        }
+
+        $value = trim((string) $value);
+
+        if (! preg_match('/^[+-]?(\d+\.?\d*|\.\d+)$/', $value)) {
+            throw new AccountingException("The amount [{$value}] is not a valid number.");
+        }
+
+        return ltrim($value, '+');
     }
 
     public static function fromCents(int $cents): string
