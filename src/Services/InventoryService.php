@@ -294,7 +294,7 @@ class InventoryService
     private function issue(InventoryItem $item, array $data, int $units, int $debitAccount, string $type, string $description): StockMovement
     {
         $onHand = $this->units($item->on_hand_quantity);
-        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $onHand);
+        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $onHand, (string) $data['movement_date']);
         $valueCents = $units === $onHand ? Money::toCents($item->on_hand_value) : (int) round(Money::toCents($item->on_hand_value) * $units / $onHand);
         $unitCost = number_format($valueCents / 100 / ($units / self::SCALE), 4, '.', '');
         $entry = $this->book($data, $description, [
@@ -312,7 +312,7 @@ class InventoryService
      */
     private function transfer(InventoryItem $item, array $data, int $units): array
     {
-        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $this->units($item->on_hand_quantity));
+        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $this->units($item->on_hand_quantity), (string) $data['movement_date']);
         $cost = $this->averageCost($item);
         $key = bin2hex(random_bytes(8));
         $out = $this->record($item, $data, 'transfer_out', -$units, number_format($cost / 100, 4, '.', ''), 0, null, $key);
@@ -366,8 +366,15 @@ class InventoryService
         ])->save();
     }
 
-    private function assertStock(int $itemId, int $warehouseId, int $units, int $onHand): void
+    private function assertStock(int $itemId, int $warehouseId, int $units, int $onHand, string $date): void
     {
+        // Stock out is checked against the quantity on hand now, so it cannot be dated before stock that came in later (negative history).
+        $latest = StockMovement::query()->where('item_id', $itemId)->max('movement_date');
+
+        if ($latest !== null && Carbon::parse($date)->startOfDay()->lt(Carbon::parse($latest)->startOfDay())) {
+            throw new AccountingException('A stock issue cannot be dated before the latest movement of this item ('.Carbon::parse($latest)->toDateString().'): the stock on hand would be negative on the dates in between.');
+        }
+
         if ($units > $onHand) {
             throw new AccountingException('Not enough stock: '.$this->quantity($onHand).' on hand, '.$this->quantity($units).' requested.');
         }
