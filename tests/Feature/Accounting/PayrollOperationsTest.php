@@ -289,3 +289,36 @@ it('accepts the blank fields the screens send for optional numbers', function ()
     $this->post('/accounting/payroll/schemes', ['code' => 'EOBI', 'name' => 'EOBI', 'base' => 'basic', 'employee_rate' => 1, 'employer_rate' => '', 'employee_fixed' => '', 'employer_fixed' => '', 'ceiling' => '', 'employee_account_id' => account('2102')->id])->assertRedirect()->assertSessionHasNoErrors();
     expect(ContributionScheme::query()->firstOrFail()->employer_rate)->toBe('0.0000');
 });
+
+it('works out a day\'s pay on the chosen basis: calendar, fixed or working days', function (): void {
+    $employee = ($this->employee)(['base_salary' => '60000']);
+    ($this->sheet)(0, [['employee_id' => $employee->id, 'absent_days' => 1]]);
+    $days = $this->month->daysInMonth;
+    $basic = function () use ($employee) {
+        $run = ($this->run)();
+        $value = (float) ($this->slip)($employee, $run)->basic;
+        ($this->payroll)()->deleteRun($run);
+
+        return $value;
+    };
+
+    expect($basic())->toBe(round(60000 * ($days - 1) / $days, 2));
+
+    config(['accounting.payroll.day_basis' => 'fixed', 'accounting.payroll.gratuity.days_per_month' => 30]);
+    expect($basic())->toBe(round(60000 * 29 / 30, 2));
+
+    config(['accounting.payroll.day_basis' => 'working', 'accounting.payroll.weekly_off_days' => [0]]);
+    $working = collect(range(0, $days - 1))->filter(fn ($offset) => $this->month->copy()->addDays($offset)->dayOfWeek !== 0)->count();
+    expect($basic())->toBe(round(60000 * ($working - 1) / $working, 2));
+});
+
+it('pays the full salary for a whole month on any basis', function (): void {
+    $employee = ($this->employee)(['base_salary' => '60000']);
+
+    foreach (['calendar', 'fixed', 'working'] as $basis) {
+        config(['accounting.payroll.day_basis' => $basis]);
+        $run = ($this->run)();
+        expect((float) ($this->slip)($employee, $run)->basic)->toBe(60000.0);
+        ($this->payroll)()->deleteRun($run);
+    }
+});

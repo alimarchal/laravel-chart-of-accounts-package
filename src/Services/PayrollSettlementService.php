@@ -14,6 +14,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\VoucherType;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Alimarchal\LaravelChartOfAccounts\Support\PayrollDays;
 use Alimarchal\LaravelChartOfAccounts\Support\SalaryHistory;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -69,10 +70,10 @@ class PayrollSettlementService
         $minYears = (float) ($settings['min_years'] ?? 1);
         $gratuity = isset($data['gratuity']) && $data['gratuity'] !== ''
             ? Money::toCents((string) $data['gratuity'])
-            : ($years >= $minYears ? (int) round($basic / 30 * (float) ($settings['days_per_year'] ?? 30) * $years) : 0);
+            : ($years >= $minYears ? (int) round($basic / PayrollDays::inMonth($leave) * (float) ($settings['days_per_year'] ?? 30) * $years) : 0);
 
         $leaveDays = isset($data['leave_days']) && $data['leave_days'] !== '' ? (float) $data['leave_days'] : $this->unusedLeaveDays($employee, $leave);
-        $encashment = (int) round($basic / max(1.0, (float) ($settings['days_per_month'] ?? 30)) * $leaveDays);
+        $encashment = (int) round($basic / PayrollDays::inMonth($leave) * $leaveDays);
         $adjustment = Money::toCents((string) ($data['adjustment'] ?? 0));
         $recoveries = $this->loans->activeOf($employee->id);
         $recovery = array_sum(array_map(fn (array $row): int => Money::toCents($row['outstanding']), $recoveries));

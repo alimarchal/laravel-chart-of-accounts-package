@@ -146,6 +146,10 @@ return [
         'arrears_account' => env('ACCOUNTING_PAYROLL_ARREARS'),
         // Loans and salary advances to employees are an asset: paid out to, and recovered from salary by, this account code.
         'employee_loans_account' => env('ACCOUNTING_PAYROLL_EMPLOYEE_LOANS'),
+        // How a day's pay is worked out (joiners, leavers, unpaid absence, leave encashment, gratuity):
+        // calendar = the real 28–31 days of the month; fixed = gratuity.days_per_month every month (e.g. 30); working = the month's days less weekly_off_days.
+        'day_basis' => env('ACCOUNTING_PAYROLL_DAY_BASIS', 'calendar'),
+        'weekly_off_days' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_PAYROLL_WEEKLY_OFF', '0')), fn ($day) => $day !== '')), // 0 = Sunday … 6 = Saturday
         // Overtime for employees flagged "overtime": hourly pay = monthly salary / hours_per_month, times the multiplier
         // (holiday_multiplier on holidays and rest days). account: the expense account code (empty = the salary expense account).
         'overtime' => [
