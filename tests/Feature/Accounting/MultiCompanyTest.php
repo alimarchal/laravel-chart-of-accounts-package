@@ -317,6 +317,21 @@ it('leaves zero balances out of consolidated reports unless asked', function ():
         ->and(count($codes('?include_zero=1')))->toBeGreaterThan(50);
 });
 
+it('lets only a super-admin change the installation-wide feature switches when there are several companies', function (): void {
+    $subAdmin = User::factory()->create();
+    $subAdmin->assignRole('admin');
+    app(CompanyService::class)->grantAccess($this->sub, $subAdmin, default: true);
+
+    Sanctum::actingAs($subAdmin);
+    $this->withHeader('X-Company', 'SUB')->putJson('/api/v1/accounting/features', ['features' => ['payroll' => false]])->assertForbidden();
+    expect(app(\Alimarchal\LaravelChartOfAccounts\Support\FeatureManager::class)->enabled('payroll'))->toBeTrue();
+
+    $owner = User::factory()->create();
+    $owner->assignRole('super-admin');
+    Sanctum::actingAs($owner);
+    $this->putJson('/api/v1/accounting/features', ['features' => ['payroll' => false]])->assertOk();
+});
+
 it('lists and shows only the users of the companies the administrator works in', function (): void {
     $subAdmin = User::factory()->create();
     $subAdmin->assignRole('admin');
