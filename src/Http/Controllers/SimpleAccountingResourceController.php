@@ -56,12 +56,22 @@ abstract class SimpleAccountingResourceController extends Controller
         ]);
     }
 
+    /**
+     * The fields the create/edit form asks for: a field with 'form' => false is shown in the list and the detail page only.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function formFields(): array
+    {
+        return collect($this->fields())->reject(fn (array $field): bool => ($field['form'] ?? true) === false)->values()->all();
+    }
+
     public function create(): Response
     {
         return Inertia::render('accounting/resources/form', [
             'title' => 'Create '.$this->title(),
             'routeName' => $this->routeName(),
-            'fields' => $this->fields(),
+            'fields' => $this->formFields(),
             'record' => null,
             'method' => 'post',
             'action' => route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.store'),
@@ -88,7 +98,7 @@ abstract class SimpleAccountingResourceController extends Controller
         return Inertia::render('accounting/resources/form', [
             'title' => 'Edit '.$this->title(),
             'routeName' => $this->routeName(),
-            'fields' => $this->fields(),
+            'fields' => $this->formFields(),
             'record' => $record,
             'method' => 'put',
             'action' => route(config('accounting.route_name_prefix', 'settings').'.'.$this->routeName().'.update', $record),
