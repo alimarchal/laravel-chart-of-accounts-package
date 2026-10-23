@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
 use Alimarchal\LaravelChartOfAccounts\Database\Factories\AccountTypeFactory;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -25,6 +26,16 @@ class AccountType extends AccountingModel
         'created_by',
         'updated_by',
     ];
+
+    protected static function booted(): void
+    {
+        // Types are global and other modules look them up by code: once accounts (of any company) use a type, what it means is fixed.
+        static::updating(function (AccountType $type): void {
+            if ($type->isDirty(['code', 'normal_balance', 'report_group']) && ChartOfAccount::query()->withoutGlobalScopes()->where('account_type_id', $type->id)->exists()) {
+                throw new AccountingException("Account type {$type->getOriginal('code')} is used by accounts: its code, normal balance and report group can no longer change.");
+            }
+        });
+    }
 
     protected function casts(): array
     {

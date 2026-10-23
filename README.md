@@ -1630,6 +1630,7 @@ imbalance. Full numbers: [docs/performance.md](docs/performance.md).
 
 Base URL: `/api/v1/accounting` — `ACCOUNTING_API_PREFIX`; middleware `ACCOUNTING_API_MIDDLEWARE` (default `api,auth:sanctum`)
 plus `throttle:accounting-api` (`ACCOUNTING_API_RATE_LIMIT`, default 120/min per user). Every endpoint checks a permission.
+Amounts: a transaction amount may not exceed `accounting.max_amount` (`ACCOUNTING_MAX_AMOUNT`, default 999,999,999,999.99; the database columns hold more, `DECIMAL(18,2)`). Larger values answer 422.
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->

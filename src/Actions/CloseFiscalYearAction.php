@@ -35,7 +35,7 @@ class CloseFiscalYearAction
             $preview = $this->preview($period);
 
             if ($preview['retained_earnings'] === null) {
-                throw new AccountingException('The configured retained earnings account is missing, inactive, or a group account.');
+                throw new AccountingException('The configured retained earnings account is missing, inactive, a group account or not an equity account.');
             }
 
             $closingEntry = null;
@@ -48,6 +48,9 @@ class CloseFiscalYearAction
                     'description' => "Year-end close for {$period->name}",
                     'auto_post' => true,
                     'system_generated' => true,
+                    // Flagged before it posts: a closing entry must be able to empty an account that has since been deactivated.
+                    'is_closing_entry' => true,
+                    'closes_period_id' => $period->id,
                     'lines' => array_map(fn (array $line) => array_intersect_key($line, array_flip(['chart_of_account_id', 'debit', 'credit', 'description'])), $preview['lines']),
                 ]);
 
@@ -79,6 +82,7 @@ class CloseFiscalYearAction
             ->where('account_code', AccountRoles::code('retained_earnings'))
             ->where('is_group', false)
             ->where('is_active', true)
+            ->whereHas('accountType', fn ($query) => $query->where('code', 'EQUITY'))
             ->first();
 
         $rows = DB::table('accounting_chart_of_accounts as coa')

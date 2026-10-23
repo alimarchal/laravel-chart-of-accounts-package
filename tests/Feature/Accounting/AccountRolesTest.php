@@ -96,3 +96,24 @@ it('renders the Blade screen and saves from its form', function (): void {
 
     expect(AccountRoles::code('cash'))->toBe('1108');
 })->skip(fn () => config('accounting.ui_driver') !== 'blade', 'Only meaningful with ACCOUNTING_UI_DRIVER=blade');
+
+it('refuses an account of the wrong type for a role', function (): void {
+    $this->putJson('/api/v1/accounting/account-roles', ['roles' => ['retained_earnings' => [account('5102')->id]]])->assertUnprocessable()->assertJsonValidationErrors('roles.retained_earnings');
+    $this->putJson('/api/v1/accounting/account-roles', ['roles' => ['cash' => [account('2101')->id]]])->assertUnprocessable()->assertJsonValidationErrors('roles.cash');
+    $this->putJson('/api/v1/accounting/account-roles', ['roles' => ['salary_expense' => [account('1101')->id]]])->assertUnprocessable();
+
+    expect(AccountRoles::code('retained_earnings'))->toBe('3101')->and(AccountRoles::code('cash'))->toBe('1101');
+
+    $this->putJson('/api/v1/accounting/account-roles', ['roles' => ['retained_earnings' => [account('3102')->id], 'cash' => [account('1108')->id]]])->assertOk();
+    expect(AccountRoles::code('retained_earnings'))->toBe('3102');
+
+    $this->artisan('accounting:account-roles', ['action' => 'set', 'role' => 'cash', 'codes' => ['2101']])->assertFailed();
+});
+
+it('does not close a year into a retained-earnings account that is not equity', function (): void {
+    AccountRoles::set('retained_earnings', [account('5102')->id]);
+    journal(['1101' => 1000, '4101' => -1000]);
+
+    expect(fn () => app(\Alimarchal\LaravelChartOfAccounts\Actions\CloseFiscalYearAction::class)->execute(\Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->where('status', 'open')->firstOrFail()))
+        ->toThrow(\Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException::class, 'not an equity account');
+});
