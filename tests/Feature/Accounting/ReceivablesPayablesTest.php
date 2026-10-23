@@ -311,3 +311,10 @@ it('renders the React pages', function (): void {
     $this->get('/accounting/receivables/aging?side=payable')->assertInertia(fn (AssertableInertia $page) => $page->where('report.side', 'payable')->has('report.rows', 0));
     expect(PartyPayment::query()->count())->toBe(1);
 });
+
+it('posts an invoice that has a free (zero-price) line and leaves it out of the entry', function (): void {
+    $invoice = ($this->document)('invoice', $this->customer, [['4101', 1, '1000'], ['4101', 1, '0']]);
+
+    expect($invoice->status)->toBe('posted')->and($invoice->lines)->toHaveCount(2)
+        ->and(JournalEntry::query()->findOrFail($invoice->journal_entry_id)->lines)->toHaveCount(2);   // receivable + the 1,000 line
+});
