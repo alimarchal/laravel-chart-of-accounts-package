@@ -241,3 +241,46 @@ it('renders the React pages', function (): void {
 
     $this->post('/accounting/bank-statements/import/preview', ['file' => ($this->csv)([($this->day)(20).',New,,,10,10']), 'bank_account_id' => $this->bank->id])->assertRedirect();
 });
+
+it('books a statement line of a foreign-currency bank account in its own currency at the dated rate', function (): void {
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    account('1108')->forceFill(['currency_id' => $usd->id])->save();
+    $statement = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,100.00,100.00']);
+
+    $entry = ($this->service)()->createEntry($statement->lines[0], account('4101')->id);
+    $line = $entry->lines->firstWhere('chart_of_account_id', account('1108')->id);
+
+    expect($entry->status)->toBe('posted')->and($entry->currency_id)->toBe($usd->id)->and((float) $entry->fx_rate_to_base)->toBe(280.0)
+        ->and($line->debit)->toBe('100.00')->and($line->base_debit)->toBe('28000.00')
+        ->and($line->reconciliation_status)->toBe('cleared')
+        ->and(($this->service)()->reconcile($statement->refresh())->status)->toBe('completed');
+});
+
+it('completes consecutive monthly statements, each against the cumulative closing balance', function (): void {
+    journal(['1108' => 5000, '4101' => -5000], ($this->day)(10));
+    journal(['5102' => 1000, '1108' => -1000], ($this->day)(40));
+
+    $october = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,5000.00,5000.00']);
+    ($this->service)()->autoMatch($october);
+    $first = ($this->service)()->reconcile($october->refresh());
+
+    $november = ($this->import)([($this->day)(40).',Office rent,CHQ101,1000.00,,4000.00']);
+    ($this->service)()->autoMatch($november);
+    $second = ($this->service)()->reconcile($november->refresh());
+
+    expect($first->status)->toBe('completed')
+        ->and($second->status)->toBe('completed')
+        ->and($second->book_balance)->toBe('4000.00')
+        ->and($second->completed_at)->not->toBeNull();
+});
+
+it('reads amounts with a currency prefix and full stop', function (): void {
+    $service = ($this->service)();
+
+    expect($service->parseAmount('Rs. 2,500'))->toBe(250000)
+        ->and($service->parseAmount('Rs. 5,000.00'))->toBe(500000)
+        ->and($service->parseAmount('PKR 1,234.50'))->toBe(123450)
+        ->and($service->parseAmount('Rs.2,500'))->toBe(250000)
+        ->and($service->parseAmount('(Rs. 120.00)'))->toBe(-12000)
+        ->and($service->parseAmount('Rs. 500.00 DR'))->toBe(-50000);
+});
