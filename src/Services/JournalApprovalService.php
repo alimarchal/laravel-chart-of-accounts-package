@@ -183,6 +183,11 @@ class JournalApprovalService
         if ($checker !== null && in_array((string) $checker, [(string) $entry->created_by, (string) $entry->submitted_by], true)) {
             throw new AccountingException('You cannot approve or reject a journal entry you created or submitted.');
         }
+
+        // Changing the amounts of someone else's draft makes you its maker too.
+        if ($checker !== null && $entry->edited_by !== null && (string) $checker === (string) $entry->edited_by) {
+            throw new AccountingException('You edited this journal entry: someone else has to approve or reject it.');
+        }
     }
 
     private function baseTotalCents(JournalEntry $entry): int
