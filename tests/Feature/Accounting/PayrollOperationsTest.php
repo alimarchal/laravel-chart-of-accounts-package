@@ -289,3 +289,19 @@ it('accepts the blank fields the screens send for optional numbers', function ()
     $this->post('/accounting/payroll/schemes', ['code' => 'EOBI', 'name' => 'EOBI', 'base' => 'basic', 'employee_rate' => 1, 'employer_rate' => '', 'employee_fixed' => '', 'employer_fixed' => '', 'ceiling' => '', 'employee_account_id' => account('2102')->id])->assertRedirect()->assertSessionHasNoErrors();
     expect(ContributionScheme::query()->firstOrFail()->employer_rate)->toBe('0.0000');
 });
+
+it('re-opens a loan when the run that recovered its last instalment is voided', function (): void {
+    $employee = ($this->employee)();
+    $service = ($this->loans)();
+    $loan = $service->create($service->validate(['employee_id' => $employee->id, 'kind' => 'loan', 'principal' => '10000', 'installments' => 1, 'start_month' => $this->month->toDateString()]));
+    $service->disburse($loan, account('1101')->id, $this->month->toDateString());
+
+    $run = ($this->payroll)()->post(($this->run)());
+    expect($loan->refresh()->status)->toBe('closed');
+
+    ($this->payroll)()->void($run->refresh());
+    expect($loan->refresh()->status)->toBe('active')->and($service->outstanding($loan))->toBe('10000.00');
+
+    $next = ($this->run)(1);
+    expect((float) ($this->slip)($employee, $next)->deductions)->toBe(10000.0);
+});

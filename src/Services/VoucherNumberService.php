@@ -63,20 +63,28 @@ class VoucherNumberService
         $scope = $this->scope($type, $date);
 
         return DB::transaction(function () use ($type, $date, $scope): array {
-            DB::table('accounting_voucher_sequences')->insertOrIgnore([
-                'company_id' => $type->company_id,
-                'voucher_type_id' => $type->id,
-                'scope' => $scope,
-                'next_number' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $sequence = DB::table('accounting_voucher_sequences')
+            $locked = fn () => DB::table('accounting_voucher_sequences')
                 ->where('voucher_type_id', $type->id)
                 ->where('scope', $scope)
                 ->lockForUpdate()
                 ->first();
+
+            // Lock the row first. Inserting before locking (insert-or-ignore on an existing row) takes a shared lock that
+            // two concurrent postings then try to upgrade to exclusive: a deadlock on MySQL/MariaDB.
+            $sequence = $locked();
+
+            if ($sequence === null) {
+                DB::table('accounting_voucher_sequences')->insertOrIgnore([
+                    'company_id' => $type->company_id,
+                    'voucher_type_id' => $type->id,
+                    'scope' => $scope,
+                    'next_number' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $sequence = $locked();
+            }
 
             $number = (int) $sequence->next_number;
 
