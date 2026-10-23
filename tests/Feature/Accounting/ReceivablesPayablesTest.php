@@ -312,6 +312,20 @@ it('renders the React pages', function (): void {
     expect(PartyPayment::query()->count())->toBe(1);
 });
 
+it('needs a user who may approve for a bill or payment at or above the approval threshold', function (): void {
+    config(['accounting.approvals.enabled' => true, 'accounting.approvals.threshold' => '1000']);
+    $approver = tap(User::factory()->create())->assignRole('approver');
+
+    expect(fn () => ($this->bill)(5000))->toThrow(AccountingException::class, 'approval threshold')
+        ->and(fn () => ($this->pay)()->create(($this->pay)()->validate(['party_id' => $this->supplier->id, 'kind' => 'payment', 'payment_date' => ($this->on)(2), 'amount' => 2500000, 'account_id' => account('1101')->id])))->toThrow(AccountingException::class, 'approval threshold');
+    expect(PartyDocument::query()->where('status', 'posted')->count())->toBe(0);
+
+    ($this->bill)(100);   // below the threshold: fine
+    $this->actingAs($approver);
+    expect(($this->bill)(5000, 3)->status)->toBe('posted');
+});
+
+
 it('answers 422, not 500, for a quantity × price above the maximum amount', function (): void {
     Sanctum::actingAs($this->accountant);
 

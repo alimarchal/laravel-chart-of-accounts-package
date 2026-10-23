@@ -66,6 +66,9 @@ return [
         'enabled' => (bool) env('ACCOUNTING_APPROVALS_ENABLED', false),
         'threshold' => env('ACCOUNTING_APPROVAL_THRESHOLD', '0'), // 0 = every entry needs approval
         'allow_self_approval' => (bool) env('ACCOUNTING_ALLOW_SELF_APPROVAL', false),
+        // Postings made by these modules (their origin_module) at or above the threshold can only be made by a user who may approve
+        // journal entries (`journal-entries.approve`); the budget control applies to every module posting. Payroll has its own approval.
+        'modules' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_APPROVAL_MODULES', 'receivables,payables,inventory,fixed_assets,tax-return')))),
     ],
 
     // Source documents a journal entry can refer to (type key => label). With prevent_duplicates, a document
