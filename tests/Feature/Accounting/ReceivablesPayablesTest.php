@@ -311,3 +311,19 @@ it('renders the React pages', function (): void {
     $this->get('/accounting/receivables/aging?side=payable')->assertInertia(fn (AssertableInertia $page) => $page->where('report.side', 'payable')->has('report.rows', 0));
     expect(PartyPayment::query()->count())->toBe(1);
 });
+
+it('refuses the same receipt submitted twice', function (): void {
+    $input = ['party_id' => $this->customer->id, 'kind' => 'receipt', 'payment_date' => ($this->on)(5), 'amount' => 25000, 'account_id' => account('1101')->id, 'reference' => 'CHQ-0091'];
+    ($this->pay)()->create(($this->pay)()->validate($input));
+
+    expect(fn () => ($this->pay)()->create(($this->pay)()->validate($input)))->toThrow(AccountingException::class, 'submitted twice')
+        ->and(PartyPayment::query()->count())->toBe(1);
+
+    // Another reference or amount is a different receipt.
+    ($this->pay)()->create(($this->pay)()->validate([...$input, 'reference' => 'CHQ-0092']));
+    expect(PartyPayment::query()->count())->toBe(2);
+});
+
+it('ships a submit-once guard in the layout script', function (): void {
+    expect(file_get_contents(__DIR__.'/../../../resources/views/accounting/components/feedback.blade.php'))->toContain('__accSubmitting');
+});
