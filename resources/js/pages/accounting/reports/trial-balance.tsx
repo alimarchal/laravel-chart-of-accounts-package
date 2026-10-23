@@ -16,6 +16,8 @@ type TrialBalanceRow = {
     total_debits: number | string;
     total_credits: number | string;
     balance: number | string;
+    debit_balance: number | string;
+    credit_balance: number | string;
 };
 
 function money(value: number | string | null | undefined): string {
@@ -83,21 +85,27 @@ export default function TrialBalance({
                     <Card className="rounded-lg">
                         <CardHeader>
                             <CardTitle className="text-sm">
-                                Total Debit
+                                Total debit balances
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="text-2xl font-semibold">
-                            {money(totals.total_debit)}
+                            {money(totals.total_debit_balance)}
+                            <div className="text-xs font-normal text-muted-foreground">
+                                Movements {money(totals.total_debit)}
+                            </div>
                         </CardContent>
                     </Card>
                     <Card className="rounded-lg">
                         <CardHeader>
                             <CardTitle className="text-sm">
-                                Total Credit
+                                Total credit balances
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="text-2xl font-semibold">
-                            {money(totals.total_credit)}
+                            {money(totals.total_credit_balance)}
+                            <div className="text-xs font-normal text-muted-foreground">
+                                Movements {money(totals.total_credit)}
+                            </div>
                         </CardContent>
                     </Card>
                     <Card className="rounded-lg">
@@ -107,8 +115,8 @@ export default function TrialBalance({
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex items-center gap-2 text-2xl font-semibold">
-                            {money(totals.difference)}{' '}
-                            {Number(totals.difference) === 0 ? (
+                            {money(totals.balance_difference)}{' '}
+                            {Number(totals.balance_difference) === 0 ? (
                                 <Badge variant="secondary">Balanced</Badge>
                             ) : (
                                 <Badge variant="destructive">Review</Badge>
@@ -124,15 +132,17 @@ export default function TrialBalance({
                                 <th className="p-3 font-medium">Code</th>
                                 <th className="p-3 font-medium">Account</th>
                                 <th className="p-3 font-medium">Type</th>
-                                <th className="p-3 font-medium">Normal</th>
                                 <th className="p-3 text-right font-medium">
-                                    Debit
+                                    Movements Dr
                                 </th>
                                 <th className="p-3 text-right font-medium">
-                                    Credit
+                                    Movements Cr
                                 </th>
                                 <th className="p-3 text-right font-medium">
-                                    Balance
+                                    Debit balance
+                                </th>
+                                <th className="p-3 text-right font-medium">
+                                    Credit balance
                                 </th>
                             </tr>
                         </thead>
@@ -152,9 +162,6 @@ export default function TrialBalance({
                                         <td className="p-3">
                                             {row.account_type}
                                         </td>
-                                        <td className="p-3 capitalize">
-                                            {row.normal_balance}
-                                        </td>
                                         <td className="p-3 text-right tabular-nums">
                                             {money(row.total_debits)}
                                         </td>
@@ -162,7 +169,10 @@ export default function TrialBalance({
                                             {money(row.total_credits)}
                                         </td>
                                         <td className="p-3 text-right tabular-nums">
-                                            {money(row.balance)}
+                                            {money(row.debit_balance)}
+                                        </td>
+                                        <td className="p-3 text-right tabular-nums">
+                                            {money(row.credit_balance)}
                                         </td>
                                     </tr>
                                 ))

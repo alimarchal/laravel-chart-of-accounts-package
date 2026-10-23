@@ -56,16 +56,18 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-blue-50 p-4 rounded-lg">
-                        <div class="text-sm text-gray-600">Total Debits</div>
+                        <div class="text-sm text-gray-600">Total debit balances</div>
                         <div class="text-2xl font-bold font-mono text-blue-700">
-                            {{ number_format((float) $trialBalance->total_debits, 2) }}
+                            {{ number_format((float) $trialBalance->total_debit_balances, 2) }}
                         </div>
+                        <div class="text-xs text-gray-500">Movements {{ number_format((float) $trialBalance->total_debits, 2) }}</div>
                     </div>
                     <div class="bg-green-50 p-4 rounded-lg">
-                        <div class="text-sm text-gray-600">Total Credits</div>
+                        <div class="text-sm text-gray-600">Total credit balances</div>
                         <div class="text-2xl font-bold font-mono text-green-700">
-                            {{ number_format((float) $trialBalance->total_credits, 2) }}
+                            {{ number_format((float) $trialBalance->total_credit_balances, 2) }}
                         </div>
+                        <div class="text-xs text-gray-500">Movements {{ number_format((float) $trialBalance->total_credits, 2) }}</div>
                     </div>
                     <div class="p-4 rounded-lg {{ abs($trialBalance->difference) < 0.01 ? 'bg-emerald-50' : 'bg-red-50' }}">
                         <div class="text-sm text-gray-600">Difference</div>
@@ -82,12 +84,12 @@
             </div>
 
             <div class="bg-white shadow rounded-lg overflow-x-auto"><table class="min-w-full text-sm">
-                <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Code</th><th class="py-2 px-3 text-left font-medium text-gray-600">Account</th><th class="py-2 px-3 text-left font-medium text-gray-600">Type</th><th class="py-2 px-3 text-right font-medium text-gray-600">Debits</th><th class="py-2 px-3 text-right font-medium text-gray-600">Credits</th><th class="py-2 px-3 text-right font-medium text-gray-600">Balance</th></tr></thead>
+                <thead class="bg-gray-50"><tr><th class="py-2 px-3 text-left font-medium text-gray-600">Code</th><th class="py-2 px-3 text-left font-medium text-gray-600">Account</th><th class="py-2 px-3 text-left font-medium text-gray-600">Type</th><th class="py-2 px-3 text-right font-medium text-gray-600">Movements Dr</th><th class="py-2 px-3 text-right font-medium text-gray-600">Movements Cr</th><th class="py-2 px-3 text-right font-medium text-gray-600">Debit balance</th><th class="py-2 px-3 text-right font-medium text-gray-600">Credit balance</th></tr></thead>
                 <tbody>
                 @forelse ($rows as $row)
-                    <tr class="border-t"><td class="py-2 px-3">{{ $row->account_code }}</td><td class="py-2 px-3">{{ $row->account_name }}</td><td class="py-2 px-3">{{ $row->account_type }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row->total_debits, 2) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row->total_credits, 2) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row->balance, 2) }}</td></tr>
+                    <tr class="border-t"><td class="py-2 px-3">{{ $row->account_code }}</td><td class="py-2 px-3">{{ $row->account_name }}</td><td class="py-2 px-3">{{ $row->account_type }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row->total_debits, 2) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row->total_credits, 2) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row->debit_balance, 2) }}</td><td class="py-2 px-3 text-right tabular-nums">{{ number_format((float) $row->credit_balance, 2) }}</td></tr>
                 @empty
-                    <tr><td colspan="6" class="py-8 text-center text-gray-500">No accounts match.</td></tr>
+                    <tr><td colspan="7" class="py-8 text-center text-gray-500">No accounts match.</td></tr>
                 @endforelse
                 </tbody>
             </table></div>
