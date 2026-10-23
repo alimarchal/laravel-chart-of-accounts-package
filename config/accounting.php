@@ -16,6 +16,8 @@ return [
     // Table referenced by created_by / updated_by / posted_by foreign keys in the package migrations.
     // Largest amount one field may hold (journal lines, simple entries). Keeps sums inside DECIMAL(18,2) and integer cents.
     'max_amount' => (float) env('ACCOUNTING_MAX_AMOUNT', 999999999999.99),
+    // Reversing a journal entry must give a reason (kept in its description and the audit trail). Reopening a closed period always needs one.
+    'require_reversal_reason' => (bool) env('ACCOUNTING_REQUIRE_REVERSAL_REASON', false),
     'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
 

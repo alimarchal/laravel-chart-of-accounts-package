@@ -155,7 +155,7 @@ for uri, (tag, schema_name, perm, props, req) in crud.items():
 
 paths["/periods/{id}/close"] = {"parameters": [ID], "post": op("Periods", "Close a period", "periods.close", {"200": resp("Closed period", data(ref("Period"))), **E404_422}, desc="Writes balance snapshots and stores totals and net income. Fails (422) while drafts are dated in the period.", opid="close_period")}
 paths["/periods/{id}/reopen"] = {"parameters": [ID], "post": op("Periods", "Reopen a closed period", "periods.reopen", {"200": resp("Reopened period", data(ref("Period"))), **E404_422},
-    body={"type": "object", "properties": {"reason": {"type": "string", "maxLength": 500, "description": "Kept in the audit trail."}}},
+    body={"type": "object", "required": ["reason"], "properties": {"reason": {"type": "string", "minLength": 5, "maxLength": 500, "description": "Required; kept in the audit trail."}}},
     desc="Periods are reopened newest first (422 while a later period is closed). A year-end closing entry is reversed automatically.", opid="reopen_period")}
 schemas["CloseChecklist"] = {"type": "object", "properties": {
     "period": ref("Period"), "year_end": {"type": "boolean"}, "can_close": {"type": "boolean"},
