@@ -83,3 +83,25 @@ it('closes the year even when an expense account with a balance was deactivated'
     expect($closed->status)->toBe('closed')
         ->and($closed->closingJournalEntry->is_closing_entry)->toBeTrue();
 });
+
+it('closes the year when an income account is denominated in a foreign currency', function (): void {
+    $period = AccountingPeriod::query()->where('status', 'open')->firstOrFail();
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    ChartOfAccount::query()->where('account_code', '4101')->update(['currency_id' => $usd->id]);
+
+    app(JournalEntryService::class)->create([
+        'entry_date' => $period->start_date->toDateString(),
+        'currency_id' => $usd->id,
+        'fx_rate_to_base' => '280',
+        'auto_post' => true,
+        'lines' => [
+            ['chart_of_account_id' => account('1103')->id, 'debit' => '100.00', 'credit' => 0],
+            ['chart_of_account_id' => account('4101')->id, 'debit' => 0, 'credit' => '100.00'],
+        ],
+    ]);
+
+    $closed = app(CloseFiscalYearAction::class)->execute($period);
+
+    expect($closed->status)->toBe('closed')
+        ->and($closed->closing_net_income)->toBe('28000.00');
+});
