@@ -71,3 +71,15 @@ it('cannot close an already-closed period', function (): void {
 
     $action->execute($period);
 })->throws(InvalidArgumentException::class, 'Only open periods can be year-end closed.');
+
+it('closes the year even when an expense account with a balance was deactivated', function (): void {
+    $period = AccountingPeriod::query()->where('status', 'open')->firstOrFail();
+
+    journal(['5103' => 999, '1101' => -999], $period->start_date->toDateString());
+    ChartOfAccount::query()->where('account_code', '5103')->update(['is_active' => false]);
+
+    $closed = app(CloseFiscalYearAction::class)->execute($period);
+
+    expect($closed->status)->toBe('closed')
+        ->and($closed->closingJournalEntry->is_closing_entry)->toBeTrue();
+});
