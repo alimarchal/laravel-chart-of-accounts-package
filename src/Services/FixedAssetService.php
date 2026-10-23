@@ -331,6 +331,12 @@ class FixedAssetService
 
         return DB::transaction(function () use ($asset, $data, $proceeds): FixedAsset {
             $date = Carbon::parse($data['disposal_date']);
+
+            // Depreciation is brought up to the month before the disposal; months already booked from the disposal month on would stay in the gain or loss.
+            if (AssetDepreciation::query()->where('fixed_asset_id', $asset->id)->whereDate('period_month', '>=', $date->copy()->startOfMonth()->toDateString())->exists()) {
+                throw new AccountingException('Depreciation has already been booked for '.$date->format('F Y').' or later: dispose of the asset after the last depreciated month, or reverse the later depreciation first.');
+            }
+
             $this->run($date->copy()->subMonthNoOverflow()->toDateString(), [$asset->id]);
             $asset->refresh();
             $accumulated = Money::toCents($asset->accumulated_depreciation);
