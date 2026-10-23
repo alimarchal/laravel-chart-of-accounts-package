@@ -194,3 +194,40 @@ it('leaves behaviour unchanged when approvals are disabled', function (): void {
     $draft = $this->postJson(MC_API.'/journal-entries', draftPayload(5))->json('data.id');
     $this->postJson(MC_API."/journal-entries/{$draft}/submit")->assertUnprocessable();
 });
+
+it('does not let a user who edited a draft approve it', function (): void {
+    $editor = User::factory()->create();
+    $editor->assignRole('super-admin');
+
+    Sanctum::actingAs($this->maker);
+    $id = $this->postJson(MC_API.'/journal-entries', draftPayload(1000))->json('data.id');
+
+    Sanctum::actingAs($editor);
+    $this->putJson(MC_API."/journal-entries/{$id}", draftPayload(950000))->assertOk();
+
+    Sanctum::actingAs($this->maker);
+    $this->postJson(MC_API."/journal-entries/{$id}/submit")->assertOk();
+
+    Sanctum::actingAs($editor);
+    $this->postJson(MC_API."/journal-entries/{$id}/approve")
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'You edited this journal entry: someone else has to approve or reject it.');
+
+    Sanctum::actingAs($this->checker);
+    $this->postJson(MC_API."/journal-entries/{$id}/approve")->assertOk()->assertJsonPath('data.status', 'posted');
+});
+
+it('lets only an approver reverse an entry at or above the threshold', function (): void {
+    Sanctum::actingAs($this->maker);
+    $id = $this->postJson(MC_API.'/journal-entries', draftPayload(60000))->json('data.id');
+    $this->postJson(MC_API."/journal-entries/{$id}/submit")->assertOk();
+    Sanctum::actingAs($this->checker);
+    $this->postJson(MC_API."/journal-entries/{$id}/approve")->assertOk();
+
+    Sanctum::actingAs($this->maker);
+    $this->postJson(MC_API."/journal-entries/{$id}/reverse")->assertUnprocessable();
+    expect(JournalEntry::query()->where('reverses_entry_id', $id)->exists())->toBeFalse();
+
+    config(['accounting.approvals.include_reversals' => false]);
+    $this->postJson(MC_API."/journal-entries/{$id}/reverse")->assertOk();
+});

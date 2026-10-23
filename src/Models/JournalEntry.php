@@ -292,8 +292,8 @@ class JournalEntry extends AccountingModel
         $creditAccount = ChartOfAccount::where('account_code', $creditAccountCode)->firstOrFail();
         $currency = Currency::where('is_base', true)->firstOrFail();
         $period = AccountingPeriod::where('status', 'open')
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now())
+            ->whereDate('start_date', '<=', now()->toDateString())
+            ->whereDate('end_date', '>=', now()->toDateString())
             ->firstOrFail();
 
         return DB::transaction(function () use ($description, $debitAccount, $creditAccount, $amount, $post, $reference, $currency, $period, $source, $documentType, $documentNumber, $module) {
