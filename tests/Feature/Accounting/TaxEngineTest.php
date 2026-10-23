@@ -272,3 +272,31 @@ it('renders the React pages', function (): void {
     $this->post('/accounting/tax/entries', ['type' => 'purchase', 'entry_date' => ($this->on)(6), 'amount' => '100', 'tax_code_id' => $this->in->id, 'account_id' => account('5102')->id, 'counter_account_id' => account('2101')->id])->assertRedirect();
     expect(JournalEntry::query()->where('status', 'draft')->count())->toBe(1);
 });
+
+it('refuses to delete a tax code that is used on journal lines and keeps the report intact', function (): void {
+    ($this->sale)('1000');
+    Sanctum::actingAs(tap(User::factory()->create())->assignRole('super-admin'));
+
+    $before = JournalEntryLine::query()->where('tax_code_id', $this->out->id)->count();
+    $this->deleteJson('/api/v1/accounting/tax-codes/'.$this->out->id)->assertUnprocessable();
+
+    expect(JournalEntryLine::query()->where('tax_code_id', $this->out->id)->count())->toBe($before)->toBeGreaterThan(0)
+        ->and(TaxCode::query()->whereKey($this->out->id)->exists())->toBeTrue();
+});
+
+it('still deletes a tax code that nothing uses', function (): void {
+    Sanctum::actingAs(tap(User::factory()->create())->assignRole('super-admin'));
+
+    $this->deleteJson('/api/v1/accounting/tax-codes/'.$this->zero->id)->assertNoContent();
+});
+
+it('keeps the kind and tax account of a tax code that is used on journal lines', function (): void {
+    ($this->sale)('1000');
+    Sanctum::actingAs(tap(User::factory()->create())->assignRole('super-admin'));
+
+    $this->putJson('/api/v1/accounting/tax-codes/'.$this->out->id, ['code' => 'GST17', 'name' => 'GST 17%', 'kind' => 'input', 'tax_account_id' => account('2104')->id])->assertUnprocessable();
+    $this->putJson('/api/v1/accounting/tax-codes/'.$this->out->id, ['code' => 'GST17', 'name' => 'GST 17% renamed', 'kind' => 'output', 'tax_account_id' => account('2105')->id])->assertUnprocessable();
+    $this->putJson('/api/v1/accounting/tax-codes/'.$this->out->id, ['code' => 'GST17', 'name' => 'GST 17% renamed', 'kind' => 'output', 'tax_account_id' => account('2104')->id])->assertOk();
+
+    expect($this->out->refresh()->kind)->toBe('output');
+});

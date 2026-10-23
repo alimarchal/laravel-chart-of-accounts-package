@@ -25,8 +25,7 @@ class JournalEntryService
         $this->assertAccountsInCompany($data['lines']);
 
         return DB::transaction(function () use ($data): JournalEntry {
-            $currencyId = $data['currency_id']
-                ?? Currency::query()->where('is_base', true)->value('id');
+            [$currencyId, $rate] = $this->currencyAndRate($data);
 
             $journalEntry = JournalEntry::query()->create([
                 'branch_id' => CurrentBranch::resolve(array_key_exists('branch_id', $data) ? $data['branch_id'] : CurrentBranch::defaultId()),
@@ -36,7 +35,7 @@ class JournalEntryService
                 'closes_period_id' => $data['closes_period_id'] ?? null,
                 'entry_date' => $data['entry_date'],
                 'currency_id' => $currencyId,
-                'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,
+                'fx_rate_to_base' => $rate,
                 'reference' => $data['reference'] ?? null,
                 ...$this->sourceDocument($data),
                 'description' => $data['description'] ?? null,
@@ -88,8 +87,7 @@ class JournalEntryService
                 throw new JournalEntryNotEditableException('Only draft journal entries can be edited.');
             }
 
-            $currencyId = $data['currency_id']
-                ?? Currency::query()->where('is_base', true)->value('id');
+            [$currencyId, $rate] = $this->currencyAndRate($data, $journalEntry);
 
             // Changing a submitted or approved draft invalidates that approval.
             app(JournalApprovalService::class)->resetForEdit($journalEntry);
@@ -99,7 +97,7 @@ class JournalEntryService
                 'voucher_type_id' => array_key_exists('voucher_type_id', $data) ? $data['voucher_type_id'] : $journalEntry->voucher_type_id,
                 'entry_date' => $data['entry_date'],
                 'currency_id' => $currencyId,
-                'fx_rate_to_base' => $data['fx_rate_to_base'] ?? 1,
+                'fx_rate_to_base' => $rate,
                 'reference' => $data['reference'] ?? null,
                 ...$this->sourceDocument($data, $journalEntry),
                 'description' => $data['description'] ?? null,
@@ -205,5 +203,45 @@ class JournalEntryService
     public function reverse(JournalEntry $journalEntry, ?string $description = null, DateTimeInterface|string|null $reversalDate = null): JournalEntry
     {
         return app(ReverseJournalEntryAction::class)->execute($journalEntry, $description, $reversalDate);
+    }
+
+    /**
+     * The currency of an entry and the rate that converts it to the base currency. A rate that was sent is used as given; without one a
+     * foreign-currency entry takes the rate recorded for its date (a draft being edited keeps its own rate while its currency is unchanged).
+     * A foreign-currency entry is never silently booked at rate 1.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: int, 1: int|float|string}
+     */
+    private function currencyAndRate(array $data, ?JournalEntry $existing = null): array
+    {
+        $baseId = (int) Currency::query()->where('is_base', true)->value('id');
+        $currencyId = (int) ($data['currency_id'] ?? $baseId);
+        $given = $data['fx_rate_to_base'] ?? null;
+        $given = $given === '' ? null : $given;
+
+        if ($given !== null && (! is_numeric($given) || (float) $given <= 0)) {
+            throw new AccountingException('The exchange rate must be greater than zero.');
+        }
+
+        if ($currencyId === $baseId) {
+            if ($given !== null && (float) $given !== 1.0) {
+                throw new AccountingException('An entry in the base currency always has an exchange rate of 1.');
+            }
+
+            return [$currencyId, 1];
+        }
+
+        if ($given !== null) {
+            return [$currencyId, $given];
+        }
+
+        if ($existing !== null && (int) $existing->currency_id === $currencyId) {
+            return [$currencyId, $existing->fx_rate_to_base];
+        }
+
+        $currency = Currency::query()->findOrFail($currencyId);
+
+        return [$currencyId, app(FxRevaluationService::class)->rateOn($currency, (string) $data['entry_date'])];
     }
 }
