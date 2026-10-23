@@ -152,7 +152,7 @@ class InventoryService
             'movement_date' => ['required', 'date'],
             'quantity' => ['required', 'numeric', $type === 'adjustment' ? 'not_in:0' : 'gt:0', 'max:999999999', 'min:-999999999'],
             'unit_cost' => [$type === 'receipt' ? 'required' : 'nullable', 'numeric', 'min:0', 'max:999999999999'],
-            'offset_account_id' => [in_array($type, ['receipt', 'adjustment'], true) ? 'required' : 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true))],
+            'offset_account_id' => [in_array($type, ['receipt', 'adjustment'], true) ? 'required' : 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true)->whereNull('control_type'))],
             'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:500'],
         ])->validate();
@@ -272,8 +272,13 @@ class InventoryService
      */
     private function receive(InventoryItem $item, array $data, int $units, string $type = 'receipt'): StockMovement
     {
-        $cost = isset($data['unit_cost']) ? (float) $data['unit_cost'] : $this->averageCost($item) / 100;
-        $valueCents = (int) round($units / self::SCALE * $cost * 100);
+        $cost = isset($data['unit_cost']) ? (string) $data['unit_cost'] : number_format($this->averageCost($item) / 100, 8, '.', '');
+        $valueCents = Money::productToCents($this->quantity($units), $cost);
+
+        if ($valueCents > Money::toCents(number_format((float) config('accounting.max_amount', 999999999999.99), 2, '.', ''))) {
+            throw new AccountingException('The value of this stock movement is above the maximum amount.');
+        }
+
         $entry = $this->book($data, $type === 'receipt' ? 'Stock received' : 'Stock adjustment (gain)', [
             ['chart_of_account_id' => $item->inventory_account_id, 'debit' => Money::fromCents($valueCents), 'credit' => 0, 'description' => $item->name],
             ['chart_of_account_id' => (int) $data['offset_account_id'], 'debit' => 0, 'credit' => Money::fromCents($valueCents)],
@@ -289,7 +294,7 @@ class InventoryService
     private function issue(InventoryItem $item, array $data, int $units, int $debitAccount, string $type, string $description): StockMovement
     {
         $onHand = $this->units($item->on_hand_quantity);
-        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $onHand);
+        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $onHand, (string) $data['movement_date']);
         $valueCents = $units === $onHand ? Money::toCents($item->on_hand_value) : (int) round(Money::toCents($item->on_hand_value) * $units / $onHand);
         $unitCost = number_format($valueCents / 100 / ($units / self::SCALE), 4, '.', '');
         $entry = $this->book($data, $description, [
@@ -307,7 +312,7 @@ class InventoryService
      */
     private function transfer(InventoryItem $item, array $data, int $units): array
     {
-        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $this->units($item->on_hand_quantity));
+        $this->assertStock($item->id, (int) $data['warehouse_id'], $units, $this->units($item->on_hand_quantity), (string) $data['movement_date']);
         $cost = $this->averageCost($item);
         $key = bin2hex(random_bytes(8));
         $out = $this->record($item, $data, 'transfer_out', -$units, number_format($cost / 100, 4, '.', ''), 0, null, $key);
@@ -361,8 +366,15 @@ class InventoryService
         ])->save();
     }
 
-    private function assertStock(int $itemId, int $warehouseId, int $units, int $onHand): void
+    private function assertStock(int $itemId, int $warehouseId, int $units, int $onHand, string $date): void
     {
+        // Stock out is checked against the quantity on hand now, so it cannot be dated before stock that came in later (negative history).
+        $latest = StockMovement::query()->where('item_id', $itemId)->max('movement_date');
+
+        if ($latest !== null && Carbon::parse($date)->startOfDay()->lt(Carbon::parse($latest)->startOfDay())) {
+            throw new AccountingException('A stock issue cannot be dated before the latest movement of this item ('.Carbon::parse($latest)->toDateString().'): the stock on hand would be negative on the dates in between.');
+        }
+
         if ($units > $onHand) {
             throw new AccountingException('Not enough stock: '.$this->quantity($onHand).' on hand, '.$this->quantity($units).' requested.');
         }

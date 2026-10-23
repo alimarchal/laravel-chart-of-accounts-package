@@ -338,3 +338,14 @@ it('lists and shows only the users of the companies the administrator works in',
     Sanctum::actingAs($superAdmin);
     expect(collect($this->getJson('/api/v1/accounting/users')->assertOk()->json('data'))->pluck('email'))->toContain($this->mainUser->email, $this->subUser->email);
 });
+
+it('refuses to switch the base currency from a company without entries while another company has posted entries', function (): void {
+    app(CurrentCompany::class)->runAs($this->main, fn () => journal(['5104' => 10, '1101' => -10]));
+
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+
+    expect(fn () => ($this->inSub)(fn () => $usd->update(['is_base' => true])))
+        ->toThrow(AccountingException::class, 'base currency cannot be changed');
+
+    expect(\Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('is_base', true)->value('code'))->toBe('PKR');
+});

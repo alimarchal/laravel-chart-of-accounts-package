@@ -247,7 +247,11 @@ it('manages templates over the API and enforces permissions', function (): void 
     $this->getJson("/api/v1/accounting/recurring-entries/{$id}")->assertOk()->assertJsonCount(2, 'data.entry.lines')->assertJsonCount(6, 'data.upcoming');
     $this->putJson("/api/v1/accounting/recurring-entries/{$id}", $payload(['name' => 'Insurance (annual)', 'frequency' => 'yearly']))->assertOk()->assertJsonPath('data.frequency', 'yearly');
 
-    $this->postJson("/api/v1/accounting/recurring-entries/{$id}/run")->assertCreated()->assertJsonPath('data.run.status', 'draft')->assertJsonPath('data.entry.runs_count', 1);
+    $this->postJson("/api/v1/accounting/recurring-entries/{$id}/run", ["force" => true])->assertCreated()->assertJsonPath('data.run.status', 'draft')->assertJsonPath('data.entry.runs_count', 1);
+    // A second click (or a retried request) must not post next period's entry early; going ahead is explicit.
+    $this->postJson("/api/v1/accounting/recurring-entries/{$id}/run")->assertUnprocessable()->assertJsonPath('message', fn ($message) => str_contains($message, 'not due yet'));
+    expect(JournalEntry::query()->count())->toBe(1);
+    $this->postJson("/api/v1/accounting/recurring-entries/{$id}/run", ['force' => true])->assertCreated()->assertJsonPath('data.entry.runs_count', 2);
     $this->postJson("/api/v1/accounting/recurring-entries/{$id}/pause")->assertOk()->assertJsonPath('data.status', 'paused');
     $this->postJson("/api/v1/accounting/recurring-entries/{$id}/resume", ['skip_missed' => false])->assertOk()->assertJsonPath('data.status', 'active');
     $this->deleteJson("/api/v1/accounting/recurring-entries/{$id}")->assertUnprocessable();            // it has generated an entry
@@ -276,7 +280,7 @@ it('runs from the React screens', function (): void {
     $this->get("/accounting/recurring-entries/{$entry->id}/edit")->assertInertia(fn (AssertableInertia $page) => $page->where('entry.name', 'Office rent'));
 
     $this->post('/accounting/recurring-entries', ['name' => 'Bad', 'frequency' => 'monthly', 'start_date' => now()->toDateString(), 'mode' => 'draft', 'lines' => []])->assertSessionHasErrors('lines');
-    $this->post("/accounting/recurring-entries/{$entry->id}/run")->assertSessionHas('success', 'Entry generated as a draft.');
+    $this->post("/accounting/recurring-entries/{$entry->id}/run", ["force" => 1])->assertSessionHas('success', 'Entry generated as a draft.');
     $this->post("/accounting/recurring-entries/{$entry->id}/pause")->assertSessionHas('success');
     $this->delete("/accounting/recurring-entries/{$entry->id}")->assertSessionHas('error', 'This template has generated entries: pause it instead of deleting it.');
 });

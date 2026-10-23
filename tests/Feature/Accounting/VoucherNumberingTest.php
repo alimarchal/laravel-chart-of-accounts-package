@@ -211,3 +211,14 @@ it('renders the React voucher type screen and saves types from it', function ():
     $this->get('/accounting/journal-entries/create')->assertInertia(fn (AssertableInertia $page) => $page
         ->where('voucherTypes.0.code', 'JV'));
 });
+
+it('refuses a voucher type whose numbers could repeat another type\'s', function (): void {
+    Sanctum::actingAs(auth()->user());
+
+    $this->postJson('/api/v1/accounting/voucher-types', ['code' => 'JV2', 'name' => 'Second JV', 'prefix' => 'JV', 'format' => '{PREFIX}-{FY}-{SEQ:5}', 'reset' => 'yearly'])
+        ->assertUnprocessable()->assertJsonValidationErrors('prefix');
+    $this->postJson('/api/v1/accounting/voucher-types', ['code' => 'JV3', 'name' => 'Third JV', 'prefix' => 'JV', 'format' => '{PREFIX}-{FY}-{SEQ:3}', 'reset' => 'yearly'])
+        ->assertUnprocessable();
+    $this->postJson('/api/v1/accounting/voucher-types', ['code' => 'JV4', 'name' => 'Fourth', 'prefix' => 'JVX', 'format' => '{PREFIX}-{FY}-{SEQ:5}', 'reset' => 'yearly'])
+        ->assertCreated();
+});
