@@ -151,3 +151,15 @@ it('serves the pages and the API', function (): void {
     $this->postJson('/api/v1/accounting/inventory/items', ['sku' => 'PEN', 'name' => 'Pen', 'inventory_account_id' => account('1153')->id, 'cogs_account_id' => account('5204')->id])->assertCreated();
     $this->getJson("/api/v1/accounting/inventory/items/{$item->id}")->assertOk()->assertJsonCount(2, 'data.card');
 });
+
+it('refuses a stock issue dated before stock that arrived later, so history never goes negative', function (): void {
+    $item = ($this->item)();
+    $warehouse = ($this->warehouse)();
+    ($this->receive)($item, $warehouse, '10', '100', 20);
+
+    expect(fn () => ($this->move)(['type' => 'issue', 'item_id' => $item->id, 'warehouse_id' => $warehouse->id, 'quantity' => '10', 'movement_date' => ($this->day)(1)]))
+        ->toThrow(AccountingException::class, 'before the latest movement');
+
+    ($this->move)(['type' => 'issue', 'item_id' => $item->id, 'warehouse_id' => $warehouse->id, 'quantity' => '10', 'movement_date' => ($this->day)(20)]);
+    expect($item->refresh()->on_hand_quantity)->toBe('0.0000');
+});
