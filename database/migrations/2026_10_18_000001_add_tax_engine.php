@@ -26,7 +26,7 @@ return new class extends Migration
         app(AccountingDatabaseObjectSynchronizer::class)->drop();
 
         Schema::table('accounting_journal_entry_lines', function (Blueprint $table): void {
-            $table->foreignId('tax_code_id')->nullable()->after('description')->constrained('accounting_tax_codes', indexName: 'acct_lines_tax_code_fk')->nullOnDelete();
+            $table->foreignId('tax_code_id')->nullable()->after('description')->constrained('accounting_tax_codes', indexName: 'acct_lines_tax_code_fk')->restrictOnDelete();
             $table->string('tax_role', 4)->nullable()->after('tax_code_id');
             $table->decimal('tax_rate', 8, 4)->nullable()->after('tax_role');
             $table->index(['tax_code_id', 'tax_role'], 'acct_lines_tax_idx');

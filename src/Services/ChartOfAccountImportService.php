@@ -224,6 +224,13 @@ class ChartOfAccountImportService
             $clean[self::ALIASES[$key] ?? $key] = trim((string) $value);
         }
 
+        // Codes are upper-case everywhere, so a file may write them in any case.
+        foreach (['account_code', 'parent_code'] as $column) {
+            if (isset($clean[$column])) {
+                $clean[$column] = mb_strtoupper($clean[$column]);
+            }
+        }
+
         return $clean;
     }
 

@@ -32,6 +32,7 @@ class AccountingPeriodService
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'status' => ['sometimes', Rule::in(['open', 'closed', 'archived'])],
+            'reason' => ['nullable', 'string', 'max:500'],   // why a closed period is reopened (required then)
         ];
     }
 
@@ -48,6 +49,7 @@ class AccountingPeriodService
             }
 
             $data['status'] = 'open';
+            unset($data['reason']);
 
             return AccountingPeriod::query()->create($data);
         });
@@ -88,7 +90,8 @@ class AccountingPeriodService
         return DB::transaction(function () use ($period, $data): AccountingPeriod {
             $period = AccountingPeriod::query()->lockForUpdate()->findOrFail($period->id);
             $status = $data['status'] ?? $period->status;
-            unset($data['status']);
+            $reason = $data['reason'] ?? null;
+            unset($data['status'], $data['reason']);
 
             $datesChanged = ! Carbon::parse($data['start_date'])->isSameDay($period->start_date)
                 || ! Carbon::parse($data['end_date'])->isSameDay($period->end_date);
@@ -103,7 +106,7 @@ class AccountingPeriodService
 
             $period->update($data);
 
-            return $this->transition($period->refresh(), $status);
+            return $this->transition($period->refresh(), $status, $reason);
         });
     }
 
@@ -120,7 +123,7 @@ class AccountingPeriodService
         $period->delete();
     }
 
-    private function transition(AccountingPeriod $period, string $status): AccountingPeriod
+    private function transition(AccountingPeriod $period, string $status, ?string $reason = null): AccountingPeriod
     {
         if ($status === $period->status) {
             return $period;
@@ -135,7 +138,11 @@ class AccountingPeriodService
         if ($period->status === 'closed' && $status === 'open') {
             $this->authorize('periods.reopen');
 
-            return app(ReopenAccountingPeriodAction::class)->execute($period);
+            if (trim((string) $reason) === '') {
+                throw new AccountingException('A reason is required to reopen a closed period.');
+            }
+
+            return app(ReopenAccountingPeriodAction::class)->execute($period, $reason);
         }
 
         if ($period->status === 'closed' && $status === 'archived') {

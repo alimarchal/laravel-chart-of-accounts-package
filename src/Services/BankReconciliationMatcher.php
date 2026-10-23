@@ -56,8 +56,13 @@ class BankReconciliationMatcher
                     'updated_at' => now(),
                 ]);
 
+            // The statement closing balance is cumulative, so the book side is too: everything reconciled so far for this bank
+            // account up to the statement date (earlier statements' lines and this one's), not only this statement's lines.
             $bookBalance = JournalEntryLine::query()
-                ->where('reconciliation_id', $reconciliation->id)
+                ->whereIn('reconciliation_id', Reconciliation::query()
+                    ->where('bank_account_id', $reconciliation->bank_account_id)
+                    ->whereDate('statement_date', '<=', $reconciliation->statement_date)
+                    ->select('id'))
                 ->selectRaw('COALESCE(SUM(debit - credit), 0) as balance')
                 ->value('balance');
 
