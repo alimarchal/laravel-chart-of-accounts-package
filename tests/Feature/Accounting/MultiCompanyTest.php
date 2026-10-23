@@ -317,6 +317,22 @@ it('leaves zero balances out of consolidated reports unless asked', function ():
         ->and(count($codes('?include_zero=1')))->toBeGreaterThan(50);
 });
 
+it('does not add up accounts that share a code but mean different things in two charts', function (): void {
+    journal(['5104' => 1000, '1101' => -1000]);
+    ($this->inSub)(function (): void {
+        ChartOfAccount::query()->where('account_code', '5104')->update(['account_name' => 'Cost of Goods Sold']);
+        journal(['5104' => 250000, '1101' => -250000]);
+    });
+    $admin = User::factory()->create();
+    $admin->assignRole('super-admin');
+    Sanctum::actingAs($admin);
+
+    $rows = collect($this->getJson('/api/v1/accounting/reports/consolidated/income-statement?companies=MAIN,SUB')->assertOk()->json('data'))->where('account_code', '5104');
+
+    expect($rows)->toHaveCount(2)
+        ->and($rows->pluck('balance')->map(fn ($b) => (float) $b)->sort()->values()->all())->toBe([1000.0, 250000.0]);
+});
+
 it('keeps exchange rates per company', function (): void {
     $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
     $date = now()->toDateString();
