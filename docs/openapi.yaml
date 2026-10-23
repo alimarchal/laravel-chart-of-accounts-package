@@ -15,7 +15,8 @@ info:
 
     * **Errors:** 422 with `message` (accounting rules) and `errors` (validation).
 
-    * **Money:** amounts are returned as decimal strings with two decimals.
+    * **Money:** amounts are returned as decimal strings with two decimals. A transaction amount may not exceed `accounting.max_amount`
+    (`ACCOUNTING_MAX_AMOUNT`, default 999,999,999,999.99): larger values answer 422.
 
     * **Retries:** send `Idempotency-Key` when creating journal entries.
 
