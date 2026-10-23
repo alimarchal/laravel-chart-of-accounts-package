@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Jobs\SubmitFbrInvoice;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\FbrSubmission;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
@@ -138,6 +139,10 @@ class PartyDocumentService
             throw new AccountingException('The document total must be greater than zero.');
         }
 
+        if ($subtotal + $taxTotal > $this->maxCents()) {
+            throw new AccountingException('The document total is above the maximum amount ('.number_format($this->maxCents() / 100, 2).').');
+        }
+
         return ['lines' => $lines, 'subtotal' => $subtotal, 'tax_total' => $taxTotal, 'total' => $subtotal + $taxTotal];
     }
 
@@ -256,6 +261,11 @@ class PartyDocumentService
                 throw new AccountingException('The document has payments or credits applied: undo them first.');
             }
 
+            // FBR keeps its own record of an accepted (or in-flight) digital invoice: it is cancelled with a credit note, never by voiding.
+            if (FbrSubmission::query()->where('party_document_id', $document->id)->whereIn('status', ['accepted', 'pending'])->exists()) {
+                throw new AccountingException('This invoice was submitted to FBR: issue a credit note instead of voiding it.');
+            }
+
             if ($document->journal_entry_id !== null) {
                 $this->journals->reverse(JournalEntry::query()->findOrFail($document->journal_entry_id), "Void of {$document->number}");
             }
@@ -303,6 +313,11 @@ class PartyDocumentService
         $codes = TaxCode::query()->whereIn('id', $document->lines->pluck('tax_code_id')->filter()->all())->get()->keyBy('id');
 
         foreach ($document->lines as $line) {
+            // A free line (unit price 0) stays on the document but has nothing to book.
+            if (Money::toCents($line->net_amount) === 0) {
+                continue;
+            }
+
             $extra = $line->tax_code_id === null ? [] : ['tax_code_id' => $line->tax_code_id, 'tax_role' => 'base', 'tax_rate' => $line->tax_rate];
             $lines[] = ['chart_of_account_id' => $line->chart_of_account_id, 'cost_center_id' => $line->cost_center_id, $lineSide => $line->net_amount, 'description' => $line->description, ...$extra];
 
@@ -346,8 +361,17 @@ class PartyDocumentService
 
     private function cents(string $quantity, string $price): int
     {
-        $cents = function_exists('bcmul') ? bcmul(bcmul($quantity, $price, 8), '100', 4) : (string) ((float) $quantity * (float) $price * 100);
+        $cents = Money::productToCents($quantity, $price);
 
-        return (int) round((float) $cents);
+        if ($cents > $this->maxCents()) {
+            throw new AccountingException('A line total is above the maximum amount ('.number_format($this->maxCents() / 100, 2).').');
+        }
+
+        return $cents;
+    }
+
+    private function maxCents(): int
+    {
+        return Money::toCents(number_format((float) config('accounting.max_amount', 999999999999.99), 2, '.', ''));
     }
 }

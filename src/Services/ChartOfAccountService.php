@@ -66,6 +66,11 @@ class ChartOfAccountService
             $request->merge(['control_type' => null]);
         }
 
+        // Case does not make a different code: the uniqueness check sees the code as it will be stored.
+        if (is_string($request->input('account_code'))) {
+            $request->merge(['account_code' => mb_strtoupper(trim($request->input('account_code')))]);
+        }
+
         $data = $request->validate($this->rules($record));
 
         if (empty($data['normal_balance'])) {

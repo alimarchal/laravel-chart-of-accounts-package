@@ -2,6 +2,7 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Models;
 
+use Alimarchal\LaravelChartOfAccounts\Concerns\BelongsToCompany;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ExchangeRate extends AccountingModel
 {
+    use BelongsToCompany;
+
     protected $table = 'accounting_exchange_rates';
 
     protected $fillable = ['currency_id', 'rate_date', 'rate', 'source'];

@@ -311,3 +311,70 @@ it('renders the React pages', function (): void {
     $this->get('/accounting/receivables/aging?side=payable')->assertInertia(fn (AssertableInertia $page) => $page->where('report.side', 'payable')->has('report.rows', 0));
     expect(PartyPayment::query()->count())->toBe(1);
 });
+
+it('refuses the same receipt submitted twice', function (): void {
+    $input = ['party_id' => $this->customer->id, 'kind' => 'receipt', 'payment_date' => ($this->on)(5), 'amount' => 25000, 'account_id' => account('1101')->id, 'reference' => 'CHQ-0091'];
+    ($this->pay)()->create(($this->pay)()->validate($input));
+
+    expect(fn () => ($this->pay)()->create(($this->pay)()->validate($input)))->toThrow(AccountingException::class, 'submitted twice')
+        ->and(PartyPayment::query()->count())->toBe(1);
+
+    // Another reference or amount is a different receipt.
+    ($this->pay)()->create(($this->pay)()->validate([...$input, 'reference' => 'CHQ-0092']));
+    expect(PartyPayment::query()->count())->toBe(2);
+});
+
+it('ships a submit-once guard in the layout script', function (): void {
+    expect(file_get_contents(__DIR__.'/../../../resources/views/accounting/components/feedback.blade.php'))->toContain('__accSubmitting');
+});
+
+it('posts an invoice that has a free (zero-price) line and leaves it out of the entry', function (): void {
+    $invoice = ($this->document)('invoice', $this->customer, [['4101', 1, '1000'], ['4101', 1, '0']]);
+
+    expect($invoice->status)->toBe('posted')->and($invoice->lines)->toHaveCount(2)
+        ->and(JournalEntry::query()->findOrFail($invoice->journal_entry_id)->lines)->toHaveCount(2);   // receivable + the 1,000 line
+});
+
+it('keeps an advance receipt in the ageing between its date and the invoice it is allocated to', function (): void {
+    $receipt = ($this->receipt)(1000, 1);                 // an advance, nothing to allocate to yet
+    $invoice = ($this->invoice)(1000, 10, ['prices_include_tax' => true]);   // issued later, 1,000 gross
+    ($this->pay)()->allocate($receipt->refresh(), [['document_id' => $invoice->id, 'amount' => '1000']]);
+
+    $aging = ($this->ledger)()->aging('receivable', ($this->on)(5));
+
+    expect($aging['rows'][0]['unapplied'])->toBe('-1000.00')
+        ->and(($this->ledger)()->reconcile('receivable', ($this->on)(5))['difference'])->toBe('0.00')
+        ->and(PartyAllocation::query()->firstOrFail()->allocated_on->toDateString())->toBe(($this->on)(10));
+});
+
+it('needs a user who may approve for a bill or payment at or above the approval threshold', function (): void {
+    config(['accounting.approvals.enabled' => true, 'accounting.approvals.threshold' => '1000']);
+    $approver = tap(User::factory()->create())->assignRole('approver');
+
+    expect(fn () => ($this->bill)(5000))->toThrow(AccountingException::class, 'approval threshold')
+        ->and(fn () => ($this->pay)()->create(($this->pay)()->validate(['party_id' => $this->supplier->id, 'kind' => 'payment', 'payment_date' => ($this->on)(2), 'amount' => 2500000, 'account_id' => account('1101')->id])))->toThrow(AccountingException::class, 'approval threshold');
+    expect(PartyDocument::query()->where('status', 'posted')->count())->toBe(0);
+
+    ($this->bill)(100);   // below the threshold: fine
+    $this->actingAs($approver);
+    expect(($this->bill)(5000, 3)->status)->toBe('posted');
+});
+
+
+it('answers 422, not 500, for a quantity × price above the maximum amount', function (): void {
+    Sanctum::actingAs($this->accountant);
+
+    foreach ([['quantity' => 999999999, 'unit_price' => 999999999999], ['quantity' => 100000, 'unit_price' => 999999999999]] as $line) {
+        $this->postJson('/api/v1/accounting/party-documents', [
+            'party_id' => $this->customer->id, 'kind' => 'invoice', 'issue_date' => ($this->on)(1),
+            'lines' => [['chart_of_account_id' => account('4101')->id, ...$line]],
+        ])->assertUnprocessable();
+    }
+
+    expect(PartyDocument::query()->count())->toBe(0);
+});
+
+it('caps the document total, not only each line', function (): void {
+    expect(fn () => ($this->document)('invoice', $this->customer, [['4101', 1, '600000000000'], ['4101', 1, '600000000000']], 1, [], false))
+        ->toThrow(AccountingException::class, 'above the maximum');
+});

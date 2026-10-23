@@ -49,9 +49,9 @@ return new class extends Migration
         Schema::dropIfExists('accounting_payroll_adjustments');
 
         Schema::table('accounting_payroll_runs', function (Blueprint $table): void {
-            $table->dropConstrainedForeignId('submitted_by');
-            $table->dropConstrainedForeignId('approved_by');
-            $table->dropColumn(['submitted_at', 'approved_at', 'rejection_reason']);
+            $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['submitted_by'] : 'acct_payrun_submitted_by_fk');
+            $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['approved_by'] : 'acct_payrun_approved_by_fk');
+            $table->dropColumn(['submitted_by', 'approved_by', 'submitted_at', 'approved_at', 'rejection_reason']);
         });
     }
 };

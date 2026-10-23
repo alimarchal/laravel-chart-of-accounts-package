@@ -16,8 +16,13 @@ return [
     // Table referenced by created_by / updated_by / posted_by foreign keys in the package migrations.
     // Largest amount one field may hold (journal lines, simple entries). Keeps sums inside DECIMAL(18,2) and integer cents.
     'max_amount' => (float) env('ACCOUNTING_MAX_AMOUNT', 999999999999.99),
+    // Reversing a journal entry must give a reason (kept in its description and the audit trail). Reopening a closed period always needs one.
+    'require_reversal_reason' => (bool) env('ACCOUNTING_REQUIRE_REVERSAL_REASON', false),
     'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
     'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
+    // Honour the abilities of Sanctum tokens: reading needs `accounting:read`, anything else `accounting:write` (a token with `*` can do both).
+    // Off by default so existing tokens keep working; switch it on once your tokens carry abilities. Permissions are always checked as well.
+    'api_enforce_token_abilities' => (bool) env('ACCOUNTING_API_ENFORCE_TOKEN_ABILITIES', false),
 
     // Several companies in one database. Off: everything belongs to the default company and no company
     // switching or access checks happen (single-company installs behave exactly as before).
@@ -66,6 +71,11 @@ return [
         'enabled' => (bool) env('ACCOUNTING_APPROVALS_ENABLED', false),
         'threshold' => env('ACCOUNTING_APPROVAL_THRESHOLD', '0'), // 0 = every entry needs approval
         'allow_self_approval' => (bool) env('ACCOUNTING_ALLOW_SELF_APPROVAL', false),
+        // A reversal at or above the threshold can only be made by a user who may approve (year-end closing entries are exempt).
+        'include_reversals' => (bool) env('ACCOUNTING_APPROVAL_INCLUDE_REVERSALS', true),
+        // Postings made by these modules (their origin_module) at or above the threshold can only be made by a user who may approve
+        // journal entries (`journal-entries.approve`); the budget control applies to every module posting. Payroll has its own approval.
+        'modules' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_APPROVAL_MODULES', 'receivables,payables,inventory,fixed_assets,tax-return')))),
     ],
 
     // Source documents a journal entry can refer to (type key => label). With prevent_duplicates, a document
@@ -146,6 +156,10 @@ return [
         'arrears_account' => env('ACCOUNTING_PAYROLL_ARREARS'),
         // Loans and salary advances to employees are an asset: paid out to, and recovered from salary by, this account code.
         'employee_loans_account' => env('ACCOUNTING_PAYROLL_EMPLOYEE_LOANS'),
+        // How a day's pay is worked out (joiners, leavers, unpaid absence, leave encashment, gratuity):
+        // calendar = the real 28–31 days of the month; fixed = gratuity.days_per_month every month (e.g. 30); working = the month's days less weekly_off_days.
+        'day_basis' => env('ACCOUNTING_PAYROLL_DAY_BASIS', 'calendar'),
+        'weekly_off_days' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_PAYROLL_WEEKLY_OFF', '0')), fn ($day) => $day !== '')), // 0 = Sunday … 6 = Saturday
         // Overtime for employees flagged "overtime": hourly pay = monthly salary / hours_per_month, times the multiplier
         // (holiday_multiplier on holidays and rest days). account: the expense account code (empty = the salary expense account).
         'overtime' => [

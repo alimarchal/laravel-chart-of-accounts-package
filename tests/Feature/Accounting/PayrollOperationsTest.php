@@ -289,3 +289,67 @@ it('accepts the blank fields the screens send for optional numbers', function ()
     $this->post('/accounting/payroll/schemes', ['code' => 'EOBI', 'name' => 'EOBI', 'base' => 'basic', 'employee_rate' => 1, 'employer_rate' => '', 'employee_fixed' => '', 'employer_fixed' => '', 'ceiling' => '', 'employee_account_id' => account('2102')->id])->assertRedirect()->assertSessionHasNoErrors();
     expect(ContributionScheme::query()->firstOrFail()->employer_rate)->toBe('0.0000');
 });
+
+it('works out a day\'s pay on the chosen basis: calendar, fixed or working days', function (): void {
+    $employee = ($this->employee)(['base_salary' => '60000']);
+    ($this->sheet)(0, [['employee_id' => $employee->id, 'absent_days' => 1]]);
+    $days = $this->month->daysInMonth;
+    $basic = function () use ($employee) {
+        $run = ($this->run)();
+        $value = (float) ($this->slip)($employee, $run)->basic;
+        ($this->payroll)()->deleteRun($run);
+
+        return $value;
+    };
+
+    expect($basic())->toBe(round(60000 * ($days - 1) / $days, 2));
+
+    config(['accounting.payroll.day_basis' => 'fixed', 'accounting.payroll.gratuity.days_per_month' => 30]);
+    expect($basic())->toBe(round(60000 * 29 / 30, 2));
+
+    config(['accounting.payroll.day_basis' => 'working', 'accounting.payroll.weekly_off_days' => [0]]);
+    $working = collect(range(0, $days - 1))->filter(fn ($offset) => $this->month->copy()->addDays($offset)->dayOfWeek !== 0)->count();
+    expect($basic())->toBe(round(60000 * ($working - 1) / $working, 2));
+});
+
+it('pays the full salary for a whole month on any basis', function (): void {
+    $employee = ($this->employee)(['base_salary' => '60000']);
+
+    foreach (['calendar', 'fixed', 'working'] as $basis) {
+        config(['accounting.payroll.day_basis' => $basis]);
+        $run = ($this->run)();
+        expect((float) ($this->slip)($employee, $run)->basic)->toBe(60000.0);
+        ($this->payroll)()->deleteRun($run);
+    }
+});
+
+it('pays overtime by each employee\'s own working hours, falling back to the grade and then the company default', function (): void {
+    $grade = app(PayrollStructureService::class)->saveGrade(app(PayrollStructureService::class)->validateGrade(['code' => 'PT', 'name' => 'Part time', 'base_salary' => 60000, 'working_hours_per_month' => 156]));
+    $full = ($this->employee)(['code' => 'E1', 'base_salary' => '60000', 'overtime_eligible' => true]);
+    $own = ($this->employee)(['code' => 'E2', 'name' => 'Own hours', 'base_salary' => '60000', 'overtime_eligible' => true, 'working_hours_per_month' => 120]);
+    $graded = ($this->employee)(['code' => 'E3', 'name' => 'Graded', 'base_salary' => '60000', 'overtime_eligible' => true, 'salary_grade_id' => $grade->id]);
+    ($this->sheet)(0, collect([$full, $own, $graded])->map(fn ($employee) => ['employee_id' => $employee->id, 'overtime_hours' => 10])->all());
+
+    $run = ($this->run)();
+    $line = fn ($employee) => (float) PayslipLine::query()->where('payslip_id', ($this->slip)($employee, $run)->id)->where('description', 'like', 'Overtime%')->value('amount');
+
+    expect($line($full))->toBe(round(60000 / 208 * 10 * 2, 2))
+        ->and($line($own))->toBe(round(60000 / 120 * 10 * 2, 2))
+        ->and($line($graded))->toBe(round(60000 / 156 * 10 * 2, 2));
+});
+
+it('re-opens a loan when the run that recovered its last instalment is voided', function (): void {
+    $employee = ($this->employee)();
+    $service = ($this->loans)();
+    $loan = $service->create($service->validate(['employee_id' => $employee->id, 'kind' => 'loan', 'principal' => '10000', 'installments' => 1, 'start_month' => $this->month->toDateString()]));
+    $service->disburse($loan, account('1101')->id, $this->month->toDateString());
+
+    $run = ($this->payroll)()->post(($this->run)());
+    expect($loan->refresh()->status)->toBe('closed');
+
+    ($this->payroll)()->void($run->refresh());
+    expect($loan->refresh()->status)->toBe('active')->and($service->outstanding($loan))->toBe('10000.00');
+
+    $next = ($this->run)(1);
+    expect((float) ($this->slip)($employee, $next)->deductions)->toBe(10000.0);
+});

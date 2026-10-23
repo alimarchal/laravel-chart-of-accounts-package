@@ -41,10 +41,11 @@ class SalaryHistory
     {
         $start = Carbon::parse($period)->startOfMonth();
         $end = $start->copy()->endOfMonth()->startOfDay();
-        $days = $start->daysInMonth;
+        $days = PayrollDays::inMonth($start);
         $from = Carbon::parse($employee->join_date)->startOfDay()->max($start);
         $to = ($employee->leave_date ? Carbon::parse($employee->leave_date)->startOfDay()->min($end) : $end)->copy()->startOfDay();
-        $worked = (int) round($from->diffInDays($to)) + 1;
+        // A whole month is a whole month's pay, whatever the basis counts as its days.
+        $worked = $from->eq($start) && $to->eq($end) ? $days : PayrollDays::between($from, $to);
 
         $changesInside = $revisions->contains(fn (SalaryRevision $revision): bool => $revision->effective_from->gt($from) && $revision->effective_from->lte($to));
 
