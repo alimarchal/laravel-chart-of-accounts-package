@@ -59,7 +59,7 @@ class FixedAssetService
             'asset_account_id' => ['required', 'integer', $posting('ASSET')],
             'accumulated_account_id' => ['required', 'integer', $posting('ASSET'), 'different:asset_account_id'],
             'expense_account_id' => ['required', 'integer', $posting('EXPENSE')],
-            'offset_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true))],
+            'offset_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true)->whereNull('control_type'))],
         ]);
         $data = $validator->validate();
         $data['in_service_date'] ??= $data['acquisition_date'];
@@ -351,6 +351,12 @@ class FixedAssetService
 
         return DB::transaction(function () use ($asset, $data, $proceeds): FixedAsset {
             $date = Carbon::parse($data['disposal_date']);
+
+            // Depreciation is brought up to the month before the disposal; months already booked from the disposal month on would stay in the gain or loss.
+            if (AssetDepreciation::query()->where('fixed_asset_id', $asset->id)->whereDate('period_month', '>=', $date->copy()->startOfMonth()->toDateString())->exists()) {
+                throw new AccountingException('Depreciation has already been booked for '.$date->format('F Y').' or later: dispose of the asset after the last depreciated month, or reverse the later depreciation first.');
+            }
+
             $this->run($date->copy()->subMonthNoOverflow()->toDateString(), [$asset->id]);
             $asset->refresh();
             $accumulated = Money::toCents($asset->accumulated_depreciation);

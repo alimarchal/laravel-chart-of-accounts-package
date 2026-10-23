@@ -49,7 +49,10 @@ class UserManagementService
      */
     public function findUser(int|string $id): Model
     {
-        $user = ($this->userModel())::query()->with(['roles', 'permissions'])->findOrFail($id);
+        $user = ($this->userModel())::query()->with(['roles', 'permissions'])->when(
+            ($visible = $this->visibleUserIds(request()->user())) !== null,
+            fn ($query) => $query->whereIn($query->getModel()->getQualifiedKeyName(), $visible),
+        )->findOrFail($id);
 
         if (! $user instanceof Authenticatable) {
             throw new \LogicException('The configured user model must implement Authenticatable.');
@@ -69,12 +72,32 @@ class UserManagementService
      */
     public function userQuery(Request $request): QueryBuilder
     {
-        return ListFilters::for(($this->userModel())::query()->with('roles'), $request, [
+        $visible = $this->visibleUserIds($request->user());
+        $users = ($this->userModel())::query()->with('roles')->when($visible !== null, fn ($query) => $query->whereIn($query->getModel()->getQualifiedKeyName(), $visible));
+
+        return ListFilters::for($users, $request, [
             ListFilters::search('search', ['name', 'email']),
             ListFilters::search('name', ['name']),
             ListFilters::search('email', ['email']),
             ListFilters::custom('role', fn ($query, string $role) => $query->whereHas('roles', fn ($roles) => $roles->whereIn('name', explode(',', $role)))),
         ], sorts: ['name', 'email', 'created_at'], defaultSort: '-created_at');
+    }
+
+    /**
+     * With several companies, an administrator sees the users who work in a company they work in themselves (a super-admin sees everybody).
+     * Null means no restriction.
+     *
+     * @return list<int|string>|null
+     */
+    private function visibleUserIds(?Authenticatable $actor): ?array
+    {
+        if (! CurrentCompany::enabled() || $actor === null || $this->guard->isSuperAdmin($actor)) {
+            return null;
+        }
+
+        $companies = DB::table('accounting_company_user')->where('user_id', $actor->getAuthIdentifier())->pluck('company_id');
+
+        return DB::table('accounting_company_user')->whereIn('company_id', $companies)->pluck('user_id')->push($actor->getAuthIdentifier())->unique()->values()->all();
     }
 
     /**
@@ -122,6 +145,14 @@ class UserManagementService
 
             if ($roles !== []) {
                 $user->syncRoles($roles);
+            }
+
+            // A person added while working in a company works in it (otherwise the administrator who added them could not see them).
+            if (CurrentCompany::enabled()) {
+                DB::table('accounting_company_user')->updateOrInsert(
+                    ['company_id' => CurrentCompany::currentId(), 'user_id' => $user->getKey()],
+                    ['is_default' => ! DB::table('accounting_company_user')->where('user_id', $user->getKey())->exists(), 'updated_at' => now(), 'created_at' => now()],
+                );
             }
 
             if (CurrentBranch::enabled() && ! empty($data['branches']) && $user instanceof Authenticatable) {
@@ -196,6 +227,10 @@ class UserManagementService
         abort_unless($actor->can('user.assign-role'), 403, 'You are not allowed to change roles.');
         $this->guard->assertCanAssignRoles($actor, $wanted);
         $this->guard->assertCanAssignRoles($actor, $current);
+
+        if (in_array(PrivilegeGuard::SUPER_ADMIN_ROLE, $current, true) && ! in_array(PrivilegeGuard::SUPER_ADMIN_ROLE, $wanted, true)) {
+            $this->assertNotLastSuperAdmin();
+        }
 
         $user->syncRoles($wanted);
         $this->audit($user, 'USER_ROLES_CHANGED', ['roles' => $current], ['roles' => $wanted], $actor, [
@@ -289,12 +324,24 @@ class UserManagementService
     }
 
     /**
+     * At least one super-admin always remains: without one nobody could manage users, roles or settings again.
+     */
+    private function assertNotLastSuperAdmin(): void
+    {
+        abort_if(($this->userModel())::query()->role(PrivilegeGuard::SUPER_ADMIN_ROLE)->count() <= 1, 422, 'The last super-admin cannot be removed: make someone else a super-admin first.');
+    }
+
+    /**
      * @param  Model&Authenticatable  $user
      */
     public function deleteUser(Authenticatable $actor, Model $user): void
     {
         abort_if((string) $user->getKey() === (string) $actor->getAuthIdentifier(), 403, 'You cannot delete your own account here.');
         $this->guard->assertCanManageUser($actor, $user);
+
+        if ($user->hasRole(PrivilegeGuard::SUPER_ADMIN_ROLE)) {
+            $this->assertNotLastSuperAdmin();
+        }
 
         DB::transaction(function () use ($actor, $user): void {
             $this->audit($user, 'USER_DELETED', ['name' => $user->getAttribute('name'), 'email' => $user->getAttribute('email'), 'roles' => $user->getRoleNames()->all()], null, $actor);
@@ -378,6 +425,12 @@ class UserManagementService
     {
         abort_if($role->name === PrivilegeGuard::SUPER_ADMIN_ROLE, 422, 'The super-admin role cannot be deleted.');
         $this->guard->assertCanManageRole($actor, $role);
+
+        // Deleting a role someone still holds would silently take their permissions away.
+        $pivot = config('permission.table_names.model_has_roles', 'model_has_roles');
+        $roleKey = config('permission.column_names.role_pivot_key') ?: 'role_id';
+        $holders = DB::table($pivot)->where($roleKey, $role->getKey())->count();
+        abort_if($holders > 0, 422, "The role {$role->name} is held by {$holders} user(s): move them to another role first.");
 
         DB::transaction(function () use ($actor, $role): void {
             $this->audit($role, 'ROLE_DELETED', ['name' => $role->name, 'permissions' => $role->permissions()->pluck('name')->all()], null, $actor);

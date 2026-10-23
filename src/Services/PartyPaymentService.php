@@ -89,6 +89,13 @@ class PartyPaymentService
     {
         $payment = DB::transaction(function () use ($data): PartyPayment {
             $party = Party::query()->findOrFail($data['party_id']);
+
+            // The same receipt/payment sent twice (double click, refresh, retried request) is recognised and refused. Needs a reference to be certain.
+            if (! empty($data['reference']) && PartyPayment::query()->where('party_id', $party->id)->where('kind', $data['kind'])->where('status', 'posted')
+                ->whereDate('payment_date', $data['payment_date'])->where('reference', $data['reference'])->where('amount', Money::fromCents(Money::toCents((string) $data['amount'])))->exists()) {
+                throw new AccountingException("A {$data['kind']} from {$party->name} for the same amount, date and reference ({$data['reference']}) is already posted: it was probably submitted twice.");
+            }
+
             $receipt = $data['kind'] === 'receipt';
             $number = $this->numbers->next($data['kind'], (int) substr((string) $data['payment_date'], 0, 4));
             $control = $this->documents->controlAccount($party, $receipt ? 'receivables' : 'payables');
@@ -192,7 +199,7 @@ class PartyPaymentService
                 }
 
                 $remaining -= $cents;
-                PartyAllocation::query()->create(['party_id' => $payment->party_id, 'document_id' => $document->id, 'payment_id' => $payment->id, 'amount' => Money::fromCents($cents), 'allocated_on' => $payment->payment_date->toDateString()]);
+                PartyAllocation::query()->create(['party_id' => $payment->party_id, 'document_id' => $document->id, 'payment_id' => $payment->id, 'amount' => Money::fromCents($cents), 'allocated_on' => max($payment->payment_date, $document->issue_date)->toDateString()]);
             }
 
             AccountingAuditLog::record($payment, 'PARTY_PAYMENT_ALLOCATED', null, ['allocations' => count($allocations)]);

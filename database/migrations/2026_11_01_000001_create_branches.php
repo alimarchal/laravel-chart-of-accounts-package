@@ -72,7 +72,7 @@ return new class extends Migration
 
         foreach (self::TABLES as [$name, $prefix]) {
             Schema::table($name, function (Blueprint $table) use ($prefix): void {
-                $table->dropForeign($prefix.'_branch_fk');
+                $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['branch_id'] : $prefix.'_branch_fk');
                 $table->dropIndex($prefix.'_branch_idx');
                 $table->dropColumn('branch_id');
             });

@@ -59,6 +59,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\WhatsAppWebhookController
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingBranchAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingCompanyAccess;
 use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingFeatureEnabled;
+use Alimarchal\LaravelChartOfAccounts\Http\Middleware\EnsureAccountingTokenAbility;
 use Alimarchal\LaravelChartOfAccounts\Reports\ConsolidatedReport;
 use Illuminate\Support\Facades\Route;
 
@@ -82,7 +83,7 @@ $apiResourceRoutes = function (string $uri, string $controller, string $routeNam
 
 // The address Meta calls: no login (Meta has none), proven by the verify token and the X-Hub-Signature-256 signature instead.
 Route::middleware(['api', 'throttle:120,1'])
-    ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
+    ->prefix(config('accounting.api_prefix', 'api/v1/accounting'))
     ->name('api.accounting.')
     ->group(function (): void {
         Route::get('whatsapp/webhook', [WhatsAppWebhookController::class, 'verify'])->name('whatsapp.webhook.verify');
@@ -95,12 +96,13 @@ if ((int) config('accounting.api_rate_limit', 120) > 0) {
     $apiMiddleware[] = 'throttle:accounting-api';
 }
 
+$apiMiddleware[] = EnsureAccountingTokenAbility::class;
 $apiMiddleware[] = EnsureAccountingCompanyAccess::class;
 $apiMiddleware[] = EnsureAccountingBranchAccess::class;
 $apiMiddleware[] = EnsureAccountingFeatureEnabled::class;
 
 Route::middleware($apiMiddleware)
-    ->prefix(config('accounting.api_prefix', 'api/accounting/v1'))
+    ->prefix(config('accounting.api_prefix', 'api/v1/accounting'))
     ->name('api.accounting.')
     ->group(function () use ($apiResourceRoutes): void {
         $apiResourceRoutes('account-types', AccountTypeApiController::class, 'account-types', 'account-types');

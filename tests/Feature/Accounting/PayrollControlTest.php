@@ -181,3 +181,23 @@ it('serves approval and adjustments over the API with the right permissions', fu
     $this->postJson("/api/v1/accounting/payroll/runs/{$runId}/approve")->assertOk()->assertJsonPath('data.status', 'approved');
     $this->postJson("/api/v1/accounting/payroll/runs/{$runId}/post")->assertOk();
 });
+
+it('does not let the preparer of a run approve it after a colleague submitted it', function (): void {
+    app(FeatureManager::class)->set('payroll_approval', true);
+    $clerk = tap(User::factory()->create())->assignRole('accountant');
+    $preparer = tap(User::factory()->create())->assignRole('approver');
+    ($this->employee)();
+    $payroll = ($this->payroll)();
+
+    $this->actingAs($preparer);
+    $run = $payroll->createRun($this->month->toDateString());
+
+    $this->actingAs($clerk);
+    $payroll->submit($run);
+
+    $this->actingAs($preparer);
+    expect(fn () => $payroll->approve($run))->toThrow(AccountingException::class, 'You prepared this run');
+
+    $this->actingAs($this->finance);
+    expect($payroll->approve($run)->status)->toBe('approved');
+});

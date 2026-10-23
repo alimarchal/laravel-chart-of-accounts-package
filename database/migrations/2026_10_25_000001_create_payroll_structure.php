@@ -89,7 +89,7 @@ return new class extends Migration
         Schema::dropIfExists('accounting_payroll_arrears');
         Schema::dropIfExists('accounting_salary_revisions');
         Schema::table('accounting_employees', function (Blueprint $table): void {
-            $table->dropForeign('acct_emp_grade_fk');
+            $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['salary_grade_id'] : 'acct_emp_grade_fk');
             $table->dropColumn('salary_grade_id');
         });
         Schema::dropIfExists('accounting_salary_grade_components');
