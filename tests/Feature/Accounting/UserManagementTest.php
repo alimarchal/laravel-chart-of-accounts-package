@@ -136,3 +136,37 @@ it('runs user and role management from the React screens', function (): void {
     $this->delete("/accounting/users/{$sana->id}")->assertRedirect('/accounting/users');
     expect(User::query()->find($sana->id))->toBeNull();
 });
+
+it('refuses to delete a role that users still hold', function (): void {
+    Sanctum::actingAs($this->owner);
+    $clerk = User::factory()->create();
+    $clerk->assignRole('accountant');
+    $accountant = Role::findByName('accountant', 'web');
+
+    $this->deleteJson("/api/v1/accounting/roles/{$accountant->id}")->assertUnprocessable();
+    expect($clerk->refresh()->hasRole('accountant'))->toBeTrue();
+
+    $clerk->removeRole('accountant');
+    $this->deleteJson("/api/v1/accounting/roles/{$accountant->id}")->assertNoContent();
+});
+
+it('never removes the last super-admin by changing roles or deleting the user', function (): void {
+    $other = User::factory()->create();
+    $other->assignRole('super-admin');
+    Sanctum::actingAs($this->owner);
+
+    // Two super-admins: one may step down.
+    $this->putJson("/api/v1/accounting/users/{$other->id}/roles", ['roles' => ['viewer']])->assertOk();
+
+    // The owner is now the only one left.
+    $this->putJson("/api/v1/accounting/users/{$this->owner->id}/roles", ['roles' => ['viewer']])->assertUnprocessable();
+    $this->deleteJson("/api/v1/accounting/users/{$this->owner->id}")->assertForbidden();   // not your own account
+
+    $second = User::factory()->create();
+    $second->assignRole('super-admin');
+    Sanctum::actingAs($second);
+    $this->putJson("/api/v1/accounting/users/{$this->owner->id}/roles", ['roles' => ['viewer']])->assertOk();
+    $this->putJson("/api/v1/accounting/users/{$second->id}/roles", ['roles' => ['viewer']])->assertUnprocessable();
+
+    expect($second->refresh()->hasRole('super-admin'))->toBeTrue();
+});

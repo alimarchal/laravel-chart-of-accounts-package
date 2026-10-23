@@ -189,7 +189,9 @@ it('closes, reopens and year-end closes periods over the API', function (): void
 
     $this->postJson(API."/periods/{$period->id}/close")->assertOk()->assertJsonPath('data.status', 'closed');
     $this->postJson(API."/periods/{$period->id}/close")->assertUnprocessable();
-    $this->postJson(API."/periods/{$period->id}/reopen")->assertOk()->assertJsonPath('data.status', 'open');
+    $this->postJson(API."/periods/{$period->id}/reopen")->assertUnprocessable()->assertJsonValidationErrors('reason');
+    $this->postJson(API."/periods/{$period->id}/reopen", ['reason' => 'Late supplier invoice'])->assertOk()->assertJsonPath('data.status', 'open');
+    expect(\Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog::query()->where('action', 'like', '%REOPEN%')->latest('id')->first()?->metadata['reason'] ?? null)->toBe('Late supplier invoice');
     $this->postJson(API."/periods/{$period->id}/close-fiscal-year")
         ->assertOk()
         ->assertJsonPath('data.status', 'closed')
@@ -198,4 +200,38 @@ it('closes, reopens and year-end closes periods over the API', function (): void
 
 it('reports installation health', function (): void {
     $this->getJson(API.'/health')->assertOk()->assertJsonPath('ok', true);
+});
+
+it('requires a reason to reverse an entry when configured', function (): void {
+    $entry = journal(['5102' => 100, '1101' => -100]);
+
+    config(['accounting.require_reversal_reason' => true]);
+    $this->postJson(API."/journal-entries/{$entry->id}/reverse")->assertUnprocessable()->assertJsonValidationErrors('description');
+    $this->postJson(API."/journal-entries/{$entry->id}/reverse", ['description' => 'Booked twice'])->assertOk();
+    expect(JournalEntry::query()->where('reverses_entry_id', $entry->id)->value('description'))->toBe('Booked twice');
+
+    config(['accounting.require_reversal_reason' => false]);
+    $other = journal(['5102' => 50, '1101' => -50]);
+    $this->postJson(API."/journal-entries/{$other->id}/reverse")->assertOk();
+});
+
+it('refuses inactive cost centres and inactive currencies on journal entries', function (): void {
+    $center = CostCenter::query()->firstOrFail();
+    $center->update(['is_active' => false]);
+    $eur = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'EUR')->firstOrFail();
+    $eur->update(['is_active' => false]);
+
+    $lines = fn (array $first = []) => [
+        ['account_code' => '5102', 'debit' => '100', 'credit' => 0, ...$first],
+        ['account_code' => '1101', 'debit' => 0, 'credit' => '100'],
+    ];
+
+    $this->postJson(API.'/journal-entries', ['entry_date' => now()->toDateString(), 'lines' => $lines(['cost_center_id' => $center->id])])->assertUnprocessable()->assertJsonValidationErrors('lines.0.cost_center_id');
+    $this->postJson(API.'/journal-entries', ['entry_date' => now()->toDateString(), 'currency_id' => $eur->id, 'fx_rate_to_base' => 305, 'lines' => $lines()])->assertUnprocessable()->assertJsonValidationErrors('currency_id');
+
+    // A draft made while they were active cannot be posted afterwards.
+    $center->update(['is_active' => true]);
+    $id = $this->postJson(API.'/journal-entries', ['entry_date' => now()->toDateString(), 'lines' => $lines(['cost_center_id' => $center->id])])->assertCreated()->json('data.id');
+    $center->update(['is_active' => false]);
+    $this->postJson(API."/journal-entries/{$id}/post")->assertUnprocessable();
 });
