@@ -58,7 +58,7 @@ return new class extends Migration
         app(AccountingDatabaseObjectSynchronizer::class)->drop();
 
         Schema::table('accounting_chart_of_accounts', function (Blueprint $table): void {
-            $table->dropForeign('acct_coa_report_line_fk');
+            $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['report_line_id'] : 'acct_coa_report_line_fk');
             $table->dropColumn(['report_line_id', 'cash_flow_category']);
         });
 

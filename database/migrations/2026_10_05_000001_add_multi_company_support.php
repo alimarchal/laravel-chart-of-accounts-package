@@ -134,7 +134,7 @@ return new class extends Migration
 
         foreach ($this->tables() as $tableName => [$prefix, $oldUniques, $newUniques]) {
             Schema::table($tableName, function (Blueprint $table) use ($prefix, $oldUniques, $newUniques): void {
-                $table->dropForeign("{$prefix}_company_fk");
+                $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['company_id'] : "{$prefix}_company_fk");
 
                 foreach (array_keys($newUniques) as $index) {
                     $table->dropUnique($index);

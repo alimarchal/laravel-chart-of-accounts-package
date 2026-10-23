@@ -41,10 +41,11 @@ return new class extends Migration
         app(AccountingDatabaseObjectSynchronizer::class)->drop();
         Schema::table('accounting_journal_entries', function (Blueprint $table): void {
             $table->dropIndex('acct_journals_approval_idx');
-            $table->dropForeign('acct_journals_submitted_by_fk');
-            $table->dropForeign('acct_journals_approved_by_fk');
-            $table->dropForeign('acct_journals_rejected_by_fk');
-            $table->dropForeign('acct_journals_edited_by_fk');
+            $sqlite = Schema::getConnection()->getDriverName() === 'sqlite';
+            $table->dropForeign($sqlite ? ['submitted_by'] : 'acct_journals_submitted_by_fk');
+            $table->dropForeign($sqlite ? ['approved_by'] : 'acct_journals_approved_by_fk');
+            $table->dropForeign($sqlite ? ['rejected_by'] : 'acct_journals_rejected_by_fk');
+            $table->dropForeign($sqlite ? ['edited_by'] : 'acct_journals_edited_by_fk');
             $table->dropColumn(['approval_status', 'submitted_at', 'submitted_by', 'approved_at', 'approved_by', 'rejected_at', 'rejected_by', 'rejection_reason', 'edited_by']);
         });
         app(AccountingDatabaseObjectSynchronizer::class)->sync();
