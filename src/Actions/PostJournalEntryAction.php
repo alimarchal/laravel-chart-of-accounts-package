@@ -139,7 +139,18 @@ class PostJournalEntryAction
      */
     private function assertModulePostingControls(JournalEntry $entry): void
     {
-        if ($entry->reverses_entry_id !== null || $entry->is_closing_entry) {
+        if ($entry->is_closing_entry) {
+            return;
+        }
+
+        // A reversal is a new posting: at or above the threshold only someone who may approve can make it (accounting.approvals.include_reversals).
+        if ($entry->reverses_entry_id !== null) {
+            $user = Auth::user();
+
+            if ($user !== null && config('accounting.approvals.include_reversals', true) && app(JournalApprovalService::class)->requiresApproval($entry) && ! $user->can('journal-entries.approve')) {
+                throw new AccountingException('Reversing an entry at or above the approval threshold needs a user who can approve journal entries.');
+            }
+
             return;
         }
 
