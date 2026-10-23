@@ -73,13 +73,28 @@ export default function ShowRecurringEntry({ entry, runs, upcoming }: Props) {
                             <Button
                                 variant="outline"
                                 className="gap-2"
-                                onClick={() =>
+                                onClick={() => {
+                                    // Ahead of the schedule only on purpose: a double click must not post the next period.
+                                    const early =
+                                        entry.next_run_date !== null &&
+                                        entry.next_run_date >
+                                            new Date().toISOString().slice(0, 10);
+
+                                    if (
+                                        early &&
+                                        !window.confirm(
+                                            `The next occurrence is on ${entry.next_run_date}, not due yet. Generate it early?`,
+                                        )
+                                    ) {
+                                        return;
+                                    }
+
                                     router.post(
                                         `/accounting/recurring-entries/${entry.id}/run`,
-                                        {},
+                                        early ? { force: true } : {},
                                         { preserveScroll: true },
-                                    )
-                                }
+                                    );
+                                }}
                             >
                                 <Zap className="size-4" />
                                 Generate now

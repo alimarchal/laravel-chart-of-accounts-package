@@ -43,13 +43,13 @@ class FixedAsset extends AccountingModel
 
     protected $fillable = [
         'code', 'name', 'category', 'description', 'acquisition_date', 'in_service_date', 'cost', 'salvage_value', 'useful_life_months',
-        'method', 'declining_rate', 'asset_account_id', 'accumulated_account_id', 'expense_account_id',
+        'method', 'declining_rate', 'asset_account_id', 'accumulated_account_id', 'expense_account_id', 'opening_accumulated_depreciation', 'depreciate_from',
     ];
 
     protected function casts(): array
     {
         return [
-            'acquisition_date' => 'date', 'in_service_date' => 'date', 'disposed_at' => 'date',
+            'acquisition_date' => 'date', 'in_service_date' => 'date', 'disposed_at' => 'date', 'depreciate_from' => 'date', 'opening_accumulated_depreciation' => 'decimal:2',
             'cost' => 'decimal:2', 'salvage_value' => 'decimal:2', 'accumulated_depreciation' => 'decimal:2',
             'disposal_proceeds' => 'decimal:2', 'disposal_gain_loss' => 'decimal:2', 'declining_rate' => 'decimal:2',
         ];

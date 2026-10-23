@@ -52,6 +52,44 @@ final class AccountRoles
     }
 
     /**
+     * The account types (codes) each role accepts: a role the modules post to must point at an account of the right kind
+     * (retained earnings is equity, cash and bank are assets, salary expense is an expense, …).
+     *
+     * @return list<string>
+     */
+    public static function allowedTypes(string $role): array
+    {
+        return match ($role) {
+            'cash', 'bank', 'aging.receivables', 'control.receivables', 'control.inventory', 'employee_advances' => ['ASSET'],
+            'retained_earnings' => ['EQUITY'],
+            'rounding', 'fx_gain_loss' => ['INCOME', 'EXPENSE'],
+            'aging.payables', 'control.payables', 'control.payroll', 'income_tax_payable', 'net_salary_payable', 'gratuity_payable' => ['LIABILITY'],
+            'control.tax' => ['ASSET', 'LIABILITY'],
+            'salary_expense', 'salary_arrears', 'bonus_expense', 'gratuity_expense' => ['EXPENSE'],
+            default => [],
+        };
+    }
+
+    /**
+     * The problem with giving these accounts to a role, or null when they all suit it.
+     *
+     * @param  list<int>  $accountIds
+     */
+    public static function typeProblem(string $role, array $accountIds): ?string
+    {
+        $allowed = self::allowedTypes($role);
+
+        if ($allowed === [] || $accountIds === []) {
+            return null;
+        }
+
+        $wrong = ChartOfAccount::query()->with('accountType:id,code')->whereIn('id', $accountIds)->get()
+            ->reject(fn (ChartOfAccount $account) => in_array($account->accountType?->code, $allowed, true));
+
+        return $wrong->isEmpty() ? null : 'Choose '.strtolower(implode(' or ', $allowed)).' accounts for this role ('.$wrong->pluck('account_code')->implode(', ').' '.($wrong->count() === 1 ? 'is' : 'are').' not).';
+    }
+
+    /**
      * The charts the package can seed: key => name.
      *
      * @return array<string, string>

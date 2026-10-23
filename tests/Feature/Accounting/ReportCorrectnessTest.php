@@ -101,3 +101,51 @@ it('keeps the income statement of a closed year intact', function (): void {
         ->and((float) $rows->firstWhere('account_code', '5104')->balance)->toBe(300.0)
         ->and(app(BalanceSheetReport::class)->totals(['as_of_date' => $this->period->end_date->toDateString()])['difference'])->toBe(0.0);
 });
+
+it('filters the general ledger by plain date comparisons and still includes both boundary days', function (): void {
+    $start = \Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
+    journal(['5104' => 10, '1101' => -10], $start->copy()->addDays(1)->toDateString());
+    journal(['5104' => 20, '1101' => -20], $start->copy()->addDays(5)->toDateString());
+    journal(['5104' => 40, '1101' => -40], $start->copy()->addDays(9)->toDateString());
+
+    $rows = app(\Alimarchal\LaravelChartOfAccounts\Reports\GeneralLedgerReport::class)->query([
+        'account_id' => account('5104')->id, 'date_from' => $start->copy()->addDays(5)->toDateString(), 'date_to' => $start->copy()->addDays(9)->toDateString(),
+    ])->get();
+
+    expect($rows)->toHaveCount(2)->and($rows->sum(fn ($row) => (float) $row->debit))->toBe(60.0);
+});
+
+it('ages the general ledger by open items: a partial payment shrinks the old invoice', function (): void {
+    $report = app(\Alimarchal\LaravelChartOfAccounts\Reports\AgedReceivablesReport::class);
+    account('1103')->forceFill(['control_type' => null])->save();
+    journal(['1103' => 1000, '4101' => -1000], now()->subDays(130)->toDateString());
+    journal(['1101' => 600, '1103' => -600], now()->toDateString());
+
+    $row = $report->rows()->firstWhere('account_code', '1103');
+
+    expect($row->balance)->toBe('400.00')->and($row->days_over_90)->toBe('400.00')->and($row->current_balance)->toBe('0.00');
+
+    // A credit with nothing to settle stays a negative current amount; oldest invoices are settled first.
+    journal(['1101' => 1000, '1103' => -1000], now()->toDateString());
+    $row = $report->rows()->firstWhere('account_code', '1103');
+    expect($row->balance)->toBe('-600.00')->and($row->current_balance)->toBe('-600.00')->and($row->days_over_90)->toBe('0.00');
+});
+
+it('lists the trial balance by closing balance on the debit or credit side', function (): void {
+    journal(['1108' => 100000, '3102' => -100000]);
+    journal(['5104' => 20000, '1108' => -20000]);
+    journal(['1108' => 50000, '4101' => -50000]);
+
+    $report = app(\Alimarchal\LaravelChartOfAccounts\Reports\TrialBalanceReport::class);
+    $rows = $report->rows()->keyBy('account_code');
+
+    expect($rows['1108']->debit_balance)->toBe('130000.00')->and($rows['1108']->credit_balance)->toBe('0.00')
+        ->and((float) $rows['1108']->total_debits)->toBe(150000.0)->and((float) $rows['1108']->total_credits)->toBe(20000.0)
+        ->and($rows['5104']->debit_balance)->toBe('20000.00')
+        ->and($rows['3102']->credit_balance)->toBe('100000.00')->and($rows['4101']->credit_balance)->toBe('50000.00');
+
+    foreach ([$report->totals(), $report->totals($report->rows())] as $totals) {
+        expect($totals['total_debit_balance'])->toEqual(150000.0)->and($totals['total_credit_balance'])->toEqual(150000.0)
+            ->and($totals['balance_difference'])->toEqual(0.0)->and($totals['total_debit'])->toEqual(170000.0);
+    }
+});

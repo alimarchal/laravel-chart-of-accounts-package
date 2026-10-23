@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\Branch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -34,8 +35,8 @@ class BranchComparisonReport
             ->where('type.report_group', 'IncomeStatement')
             ->where('entry.status', 'posted')
             ->where('entry.is_closing_entry', false)
-            ->whereDate('entry.entry_date', '>=', $from)
-            ->whereDate('entry.entry_date', '<=', $to)
+            ->where('entry.entry_date', '>=', $from)
+            ->where('entry.entry_date', '<', Carbon::parse($to)->addDay()->toDateString())
             ->groupBy('entry.branch_id', 'coa.normal_balance')
             ->selectRaw('entry.branch_id, coa.normal_balance, COALESCE(SUM(line.base_debit), 0) as debits, COALESCE(SUM(line.base_credit), 0) as credits')
             ->get()

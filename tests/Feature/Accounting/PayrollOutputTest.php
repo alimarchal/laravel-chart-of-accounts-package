@@ -212,3 +212,21 @@ it('serves settlements, reports, tax pages, payslip documents and the API', func
     $this->deleteJson("/api/v1/accounting/payroll/settlements/{$id}")->assertForbidden();
     expect(Loan::query()->count())->toBe(0);
 });
+
+it('refuses a settlement while an instalment of the loan sits in a draft payroll run, so it is never recovered twice', function (): void {
+    $employee = ($this->employee)();
+    $loans = app(PayrollLoanService::class);
+    $loan = $loans->disburse($loans->create($loans->validate(['employee_id' => $employee->id, 'kind' => 'loan', 'principal' => 30000, 'installments' => 3, 'start_month' => $this->month->toDateString()])), account('1101')->id);
+    $run = ($this->payroll)()->createRun($this->month->toDateString());   // a draft run holding instalment 1
+
+    $service = ($this->settlements)();
+    $settlement = $service->create($service->validate(['employee_id' => $employee->id, 'leave_date' => $this->month->copy()->addDays(20)->toDateString()]));
+
+    expect(fn () => $service->post($settlement, null, $this->month->copy()->addDays(20)->toDateString()))->toThrow(AccountingException::class, 'draft payroll run')
+        ->and($loan->refresh()->status)->toBe('active');
+
+    ($this->payroll)()->deleteRun($run);
+    $posted = $service->post($settlement->refresh(), null, $this->month->copy()->addDays(20)->toDateString());
+
+    expect($posted->status)->toBe('posted')->and($loan->refresh()->status)->toBe('closed');
+});

@@ -155,7 +155,7 @@ for uri, (tag, schema_name, perm, props, req) in crud.items():
 
 paths["/periods/{id}/close"] = {"parameters": [ID], "post": op("Periods", "Close a period", "periods.close", {"200": resp("Closed period", data(ref("Period"))), **E404_422}, desc="Writes balance snapshots and stores totals and net income. Fails (422) while drafts are dated in the period.", opid="close_period")}
 paths["/periods/{id}/reopen"] = {"parameters": [ID], "post": op("Periods", "Reopen a closed period", "periods.reopen", {"200": resp("Reopened period", data(ref("Period"))), **E404_422},
-    body={"type": "object", "properties": {"reason": {"type": "string", "maxLength": 500, "description": "Kept in the audit trail."}}},
+    body={"type": "object", "required": ["reason"], "properties": {"reason": {"type": "string", "minLength": 5, "maxLength": 500, "description": "Required; kept in the audit trail."}}},
     desc="Periods are reopened newest first (422 while a later period is closed). A year-end closing entry is reversed automatically.", opid="reopen_period")}
 schemas["CloseChecklist"] = {"type": "object", "properties": {
     "period": ref("Period"), "year_end": {"type": "boolean"}, "can_close": {"type": "boolean"},
@@ -528,7 +528,8 @@ paths["/recurring-entries/{id}/resume"] = {"parameters": [ID], "post": op("Recur
     body={"type": "object", "properties": {"skip_missed": {"type": "boolean", "default": True, "description": "Skip the occurrences missed while paused (default) or generate them"}}}, opid="resume_recurring_entry")}
 paths["/recurring-entries/{id}/run"] = {"parameters": [ID], "post": op("Recurring entries", "Generate the next entry now", "recurring-entries.run",
     {"201": resp("Generated", data({"type": "object", "properties": {"run": {"type": "object", "properties": {"id": {"type": "integer"}, "run_date": {"type": "string", "format": "date"}, "status": {"type": "string", "enum": ["posted", "submitted", "draft", "failed"]}, "journal_entry_id": {"type": ["integer", "null"]}, "error": {"type": ["string", "null"]}}}, "entry": ref("RecurringEntry")}})), **E404_422},
-    desc="Generates the next scheduled occurrence immediately, even if it is not due yet (dated on its scheduled day). 422 when the entry could not be created.", opid="run_recurring_entry")}
+    body={"type": "object", "properties": {"force": {"type": "boolean", "default": False, "description": "Required to generate an occurrence that is not due yet; without it a future occurrence answers 422."}}},
+    desc="Generates the next scheduled occurrence immediately (dated on its scheduled day). An occurrence that is not due yet is refused with 422 unless `force` is true, so a double click cannot post the next period. 422 also when the entry could not be created.", opid="run_recurring_entry")}
 
 # Foreign-currency revaluation.
 schemas["FxRevaluationRow"] = {"type": "object", "properties": {
@@ -1021,12 +1022,12 @@ spec = {
  "openapi": "3.1.0",
  "info": {"title": "Laravel Chart of Accounts API", "version": "2.38.0",
   "description": "Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.\n\n"
-   "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).\n"
+   "* **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`). With `ACCOUNTING_API_ENFORCE_TOKEN_ABILITIES=true` the token needs the `accounting:read` ability to read and `accounting:write` to change data (a `*` token has both).\n"
    "* **Permissions:** every endpoint requires a Spatie permission (listed per operation).\n"
    "* **Rate limit:** `ACCOUNTING_API_RATE_LIMIT` requests/minute per user (default 120) → 429.\n"
    "* **Pagination:** `?page=` and `?per_page=` (max `ACCOUNTING_API_MAX_PER_PAGE`, default 100).\n"
    "* **Errors:** 422 with `message` (accounting rules) and `errors` (validation).\n"
-   "* **Money:** amounts are returned as decimal strings with two decimals.\n"
+   "* **Money:** amounts are returned as decimal strings with two decimals. A transaction amount may not exceed `accounting.max_amount` (`ACCOUNTING_MAX_AMOUNT`, default 999,999,999,999.99): larger values answer 422.\n"
    "* **Retries:** send `Idempotency-Key` when creating journal entries.\n"
    "* **Branches:** with ACCOUNTING_BRANCHES=true, send `X-Branch: <code or id>` to work in one branch; a user limited to branches only sees theirs.\n"
    "* **Companies:** with multi-company enabled, send `X-Company: <code or id>`; records of other companies are never visible (404).\n"

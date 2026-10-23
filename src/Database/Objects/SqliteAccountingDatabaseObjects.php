@@ -144,6 +144,10 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         if (Schema::hasColumn('accounting_journal_entries', 'origin_module')) {
             $voucher .= ' OR NEW.origin_module IS NOT OLD.origin_module';
         }
+        // The reporting attributes of a posted entry and its lines never change either.
+        $voucher .= ' OR NEW.reference IS NOT OLD.reference OR NEW.description IS NOT OLD.description OR NEW.accounting_period_id IS NOT OLD.accounting_period_id';
+        $lineColumns = ['cost_center_id', 'description', 'line_no', ...(Schema::hasColumn('accounting_journal_entry_lines', 'tax_code_id') ? ['tax_code_id', 'tax_role', 'tax_rate'] : [])];
+        $lineChanges = collect($lineColumns)->map(fn (string $column) => "NEW.{$column} IS NOT OLD.{$column}")->implode(' OR ');
         $parentPosted = fn (string $row) => "(SELECT status FROM accounting_journal_entries WHERE id = {$row}.journal_entry_id) = 'posted'";
 
         DB::statement("CREATE TRIGGER acct_journals_posted_guard_update BEFORE UPDATE ON accounting_journal_entries
@@ -159,7 +163,8 @@ class SqliteAccountingDatabaseObjects implements AccountingDatabaseObjects
         DB::statement("CREATE TRIGGER acct_lines_posted_guard_update BEFORE UPDATE ON accounting_journal_entry_lines
             WHEN {$parentPosted('OLD')} AND (NEW.debit IS NOT OLD.debit OR NEW.credit IS NOT OLD.credit
                 OR NEW.base_debit IS NOT OLD.base_debit OR NEW.base_credit IS NOT OLD.base_credit
-                OR NEW.chart_of_account_id IS NOT OLD.chart_of_account_id OR NEW.journal_entry_id IS NOT OLD.journal_entry_id)
+                OR NEW.chart_of_account_id IS NOT OLD.chart_of_account_id OR NEW.journal_entry_id IS NOT OLD.journal_entry_id
+                OR {$lineChanges})
             BEGIN {$abort}; END");
         DB::statement("CREATE TRIGGER acct_lines_posted_guard_delete BEFORE DELETE ON accounting_journal_entry_lines
             WHEN {$parentPosted('OLD')} BEGIN {$abort}; END");
