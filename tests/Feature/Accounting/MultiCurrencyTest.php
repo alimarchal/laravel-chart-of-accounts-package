@@ -178,3 +178,8 @@ it('accepts an explicit rate of 1 on a base-currency entry', function (): void {
 
     expect($entry->lines->firstWhere('chart_of_account_id', account('1101')->id)->base_debit)->toBe('100.00');
 });
+
+it('refuses a zero or negative exchange rate on a foreign-currency entry', function (string $rate): void {
+    expect(fn () => fxEntry([['1103', '100.00', 0], ['4101', 0, '100.00']], $rate))
+        ->toThrow(AccountingException::class, 'greater than zero');
+})->with(['0', '-5']);
