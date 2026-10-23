@@ -26,7 +26,8 @@ class Currency extends AccountingModel
 
             $otherBase = static::query()->where('is_base', true)->whereKeyNot($currency->getKey())->exists();
 
-            if ($otherBase && JournalEntry::query()->where('status', 'posted')->exists()) {
+            // Currencies are shared by every company: look at the books of all of them, not just the current one.
+            if ($otherBase && JournalEntry::query()->withoutGlobalScopes()->where('status', 'posted')->exists()) {
                 throw new AccountingException('The base currency cannot be changed once journal entries have been posted.');
             }
 
