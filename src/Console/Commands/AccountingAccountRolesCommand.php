@@ -80,6 +80,12 @@ class AccountingAccountRolesCommand extends Command
             return self::FAILURE;
         }
 
+        if ($problem = AccountRoles::typeProblem($role, $accounts->values()->map(fn ($id) => (int) $id)->all())) {
+            $this->error($problem);
+
+            return self::FAILURE;
+        }
+
         AccountRoles::set($role, collect($codes)->map(fn (string $code) => $accounts[$code])->all());
         $this->info("{$role}: ".($codes === [] ? 'no account' : implode(', ', $codes)));
 

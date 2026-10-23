@@ -126,3 +126,22 @@ it('serves the register, the asset page and the depreciation run over the web an
     $this->postJson("/api/v1/accounting/fixed-assets/{$asset->id}/dispose", ['disposal_date' => $this->start->copy()->addMonths(4)->toDateString(), 'gain_loss_account_id' => account('5102')->id])->assertOk()->assertJsonPath('data.status', 'disposed');
     $this->deleteJson("/api/v1/accounting/fixed-assets/{$asset->id}")->assertStatus(422);
 });
+
+it('refuses a disposal dated before depreciation that is already booked', function (): void {
+    $asset = ($this->make)();
+    ($this->service)()->run(($this->monthEnd)(9));   // ten months booked
+
+    expect(fn () => ($this->service)()->dispose($asset, ['disposal_date' => $this->start->copy()->addMonths(4)->addDays(14)->toDateString(), 'gain_loss_account_id' => account('5102')->id]))
+        ->toThrow(AccountingException::class, 'already been booked');
+    expect($asset->refresh()->status)->toBe('active')->and($asset->accumulated_depreciation)->toBe('10000.00');
+
+    $disposed = ($this->service)()->dispose($asset, ['disposal_date' => $this->start->copy()->addMonths(10)->addDays(3)->toDateString(), 'gain_loss_account_id' => account('5102')->id]);
+    expect($disposed->disposal_gain_loss)->toBe('-2000.00');
+});
+
+it('refuses a receivables or payables control account as the purchase offset', function (): void {
+    account('2101')->forceFill(['control_type' => 'payables'])->save();
+
+    expect(fn () => ($this->make)(['offset_account_id' => account('2101')->id]))->toThrow(Illuminate\Validation\ValidationException::class)
+        ->and(FixedAsset::query()->count())->toBe(0);
+});
