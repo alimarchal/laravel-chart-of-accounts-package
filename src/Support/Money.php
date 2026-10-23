@@ -12,8 +12,8 @@ use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
  */
 final class Money
 {
-    /** The largest whole amount that still fits integer cents (PHP_INT_MAX / 100). */
-    private const MAX_WHOLE = 92233720368547758;
+    /** The largest whole amount the money columns hold, DECIMAL(18,2): 16 digits. It is far inside integer cents (PHP_INT_MAX / 100), so no input can overflow. */
+    private const MAX_WHOLE = 9999999999999999;
 
     /**
      * @throws AccountingException when the value is not a plain decimal number ("1,000.50", "1e3", "12abc") or is too large for integer cents
@@ -65,6 +65,11 @@ final class Money
         }
 
         $total = $whole * 100 + $cents;
+
+        // Rounding up the third decimal can carry past the limit (9999999999999999.995).
+        if ($total > self::MAX_WHOLE * 100 + 99) {
+            throw new AccountingException("The amount [{$amount}] is too large.");
+        }
 
         return $negative ? -$total : $total;
     }
