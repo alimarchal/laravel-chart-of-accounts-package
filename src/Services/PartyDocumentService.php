@@ -51,6 +51,8 @@ class PartyDocumentService
             'kind' => [$document ? 'sometimes' : 'required', Rule::in(PartyDocument::KINDS)],
             'issue_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:issue_date'],
+            // Migrating an open invoice/bill: keep its real dates for the ageing and book it on the go-live date (use Opening Balance Equity on the lines).
+            'opening_date' => ['nullable', 'date', 'after_or_equal:issue_date'],
             'reference' => ['nullable', 'string', 'max:120'],
             'prices_include_tax' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -154,7 +156,7 @@ class PartyDocumentService
         $computed = $this->compute($data);
 
         return DB::transaction(function () use ($data, $computed): PartyDocument {
-            $document = new PartyDocument(['branch_id' => CurrentBranch::resolve(array_key_exists('branch_id', $data) ? $data['branch_id'] : CurrentBranch::defaultId()), 'party_id' => $data['party_id'], 'kind' => $data['kind'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
+            $document = new PartyDocument(['branch_id' => CurrentBranch::resolve(array_key_exists('branch_id', $data) ? $data['branch_id'] : CurrentBranch::defaultId()), 'party_id' => $data['party_id'], 'kind' => $data['kind'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'opening_date' => $data['opening_date'] ?? null, 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
             $document->forceFill(['status' => 'draft', ...$this->totals($computed)])->save();
             $this->saveLines($document, $computed['lines']);
             AccountingAuditLog::record($document, 'PARTY_DOCUMENT_CREATED', null, ['kind' => $document->kind, 'party_id' => $document->party_id, 'total' => $document->total]);
@@ -177,7 +179,7 @@ class PartyDocumentService
                 throw new AccountingException('Only a draft can be edited: void a posted document and issue a new one.');
             }
 
-            $document->fill(['branch_id' => array_key_exists('branch_id', $data) ? CurrentBranch::resolve($data['branch_id']) : $document->branch_id, 'party_id' => $data['party_id'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
+            $document->fill(['branch_id' => array_key_exists('branch_id', $data) ? CurrentBranch::resolve($data['branch_id']) : $document->branch_id, 'party_id' => $data['party_id'], 'issue_date' => $data['issue_date'], 'due_date' => $data['due_date'], 'opening_date' => $data['opening_date'] ?? null, 'reference' => $data['reference'] ?? null, 'prices_include_tax' => (bool) ($data['prices_include_tax'] ?? false), 'notes' => $data['notes'] ?? null]);
             $document->forceFill($this->totals($computed))->save();
             $document->lines()->delete();
             $this->saveLines($document, $computed['lines']);
@@ -222,7 +224,7 @@ class PartyDocumentService
             $control = $this->controlAccount($party, $document->isSales() ? 'receivables' : 'payables');
             $entry = $this->journals->create([
                 'branch_id' => $document->branch_id,
-                'entry_date' => $document->issue_date->toDateString(),
+                'entry_date' => ($document->opening_date ?? $document->issue_date)->toDateString(),
                 'origin_module' => $document->isSales() ? 'receivables' : 'payables',
                 'reference' => $number,
                 'source_document_type' => $document->kind,

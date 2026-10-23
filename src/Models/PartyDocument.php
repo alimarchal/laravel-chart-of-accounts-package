@@ -38,11 +38,11 @@ class PartyDocument extends AccountingModel
 
     protected $table = 'accounting_party_documents';
 
-    protected $fillable = ['party_id', 'kind', 'issue_date', 'due_date', 'reference', 'prices_include_tax', 'notes'];
+    protected $fillable = ['party_id', 'kind', 'issue_date', 'due_date', 'opening_date', 'reference', 'prices_include_tax', 'notes'];
 
     protected function casts(): array
     {
-        return ['issue_date' => 'date', 'due_date' => 'date', 'prices_include_tax' => 'boolean', 'subtotal' => 'decimal:2', 'tax_total' => 'decimal:2', 'total' => 'decimal:2'];
+        return ['issue_date' => 'date', 'due_date' => 'date', 'opening_date' => 'date', 'prices_include_tax' => 'boolean', 'subtotal' => 'decimal:2', 'tax_total' => 'decimal:2', 'total' => 'decimal:2'];
     }
 
     public function isSales(): bool

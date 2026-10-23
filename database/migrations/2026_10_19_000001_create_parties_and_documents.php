@@ -50,6 +50,7 @@ return new class extends Migration
             $table->string('number', 40)->nullable();
             $table->date('issue_date');
             $table->date('due_date');
+            $table->date('opening_date')->nullable(); // an opening-balance document: booked on this (go-live) date, aged by its own issue and due dates
             $table->string('reference', 120)->nullable();
             $table->boolean('prices_include_tax')->default(false);
             $table->decimal('subtotal', 18, 2)->default(0);

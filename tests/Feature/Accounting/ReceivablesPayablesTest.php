@@ -312,6 +312,19 @@ it('renders the React pages', function (): void {
     expect(PartyPayment::query()->count())->toBe(1);
 });
 
+it('migrates an open invoice with its original dates: booked on the go-live date, aged by its due date', function (): void {
+    $issue = $this->start->copy()->subMonths(4)->toDateString();
+    $due = $this->start->copy()->subMonths(3)->toDateString();
+    $invoice = ($this->document)('invoice', $this->customer, [['3102', 1, '50000']], 1, ['issue_date' => $issue, 'due_date' => $due, 'opening_date' => ($this->on)(1)]);
+
+    expect($invoice->status)->toBe('posted')
+        ->and(JournalEntry::query()->findOrFail($invoice->journal_entry_id)->entry_date->toDateString())->toBe(($this->on)(1));
+
+    $row = ($this->ledger)()->aging('receivable', ($this->on)(5))['rows'][0];
+    expect($row['over_90'])->toBe('50000.00')
+        ->and(($this->ledger)()->reconcile('receivable', ($this->on)(5))['difference'])->toBe('0.00');
+});
+
 it('refuses the same receipt submitted twice', function (): void {
     $input = ['party_id' => $this->customer->id, 'kind' => 'receipt', 'payment_date' => ($this->on)(5), 'amount' => 25000, 'account_id' => account('1101')->id, 'reference' => 'CHQ-0091'];
     ($this->pay)()->create(($this->pay)()->validate($input));
