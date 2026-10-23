@@ -379,6 +379,12 @@ class UserManagementService
         abort_if($role->name === PrivilegeGuard::SUPER_ADMIN_ROLE, 422, 'The super-admin role cannot be deleted.');
         $this->guard->assertCanManageRole($actor, $role);
 
+        // Deleting a role someone still holds would silently take their permissions away.
+        $pivot = config('permission.table_names.model_has_roles', 'model_has_roles');
+        $roleKey = config('permission.column_names.role_pivot_key') ?: 'role_id';
+        $holders = DB::table($pivot)->where($roleKey, $role->getKey())->count();
+        abort_if($holders > 0, 422, "The role {$role->name} is held by {$holders} user(s): move them to another role first.");
+
         DB::transaction(function () use ($actor, $role): void {
             $this->audit($role, 'ROLE_DELETED', ['name' => $role->name, 'permissions' => $role->permissions()->pluck('name')->all()], null, $actor);
             $role->delete();

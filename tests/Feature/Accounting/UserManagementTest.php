@@ -136,3 +136,16 @@ it('runs user and role management from the React screens', function (): void {
     $this->delete("/accounting/users/{$sana->id}")->assertRedirect('/accounting/users');
     expect(User::query()->find($sana->id))->toBeNull();
 });
+
+it('refuses to delete a role that users still hold', function (): void {
+    Sanctum::actingAs($this->owner);
+    $clerk = User::factory()->create();
+    $clerk->assignRole('accountant');
+    $accountant = Role::findByName('accountant', 'web');
+
+    $this->deleteJson("/api/v1/accounting/roles/{$accountant->id}")->assertUnprocessable();
+    expect($clerk->refresh()->hasRole('accountant'))->toBeTrue();
+
+    $clerk->removeRole('accountant');
+    $this->deleteJson("/api/v1/accounting/roles/{$accountant->id}")->assertNoContent();
+});
