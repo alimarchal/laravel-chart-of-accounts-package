@@ -189,7 +189,9 @@ it('closes, reopens and year-end closes periods over the API', function (): void
 
     $this->postJson(API."/periods/{$period->id}/close")->assertOk()->assertJsonPath('data.status', 'closed');
     $this->postJson(API."/periods/{$period->id}/close")->assertUnprocessable();
-    $this->postJson(API."/periods/{$period->id}/reopen")->assertOk()->assertJsonPath('data.status', 'open');
+    $this->postJson(API."/periods/{$period->id}/reopen")->assertUnprocessable()->assertJsonValidationErrors('reason');
+    $this->postJson(API."/periods/{$period->id}/reopen", ['reason' => 'Late supplier invoice'])->assertOk()->assertJsonPath('data.status', 'open');
+    expect(\Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog::query()->where('action', 'like', '%REOPEN%')->latest('id')->first()?->metadata['reason'] ?? null)->toBe('Late supplier invoice');
     $this->postJson(API."/periods/{$period->id}/close-fiscal-year")
         ->assertOk()
         ->assertJsonPath('data.status', 'closed')
@@ -198,6 +200,19 @@ it('closes, reopens and year-end closes periods over the API', function (): void
 
 it('reports installation health', function (): void {
     $this->getJson(API.'/health')->assertOk()->assertJsonPath('ok', true);
+});
+
+it('requires a reason to reverse an entry when configured', function (): void {
+    $entry = journal(['5102' => 100, '1101' => -100]);
+
+    config(['accounting.require_reversal_reason' => true]);
+    $this->postJson(API."/journal-entries/{$entry->id}/reverse")->assertUnprocessable()->assertJsonValidationErrors('description');
+    $this->postJson(API."/journal-entries/{$entry->id}/reverse", ['description' => 'Booked twice'])->assertOk();
+    expect(JournalEntry::query()->where('reverses_entry_id', $entry->id)->value('description'))->toBe('Booked twice');
+
+    config(['accounting.require_reversal_reason' => false]);
+    $other = journal(['5102' => 50, '1101' => -50]);
+    $this->postJson(API."/journal-entries/{$other->id}/reverse")->assertOk();
 });
 
 it('refuses inactive cost centres and inactive currencies on journal entries', function (): void {
