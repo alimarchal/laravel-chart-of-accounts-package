@@ -5,7 +5,8 @@ info:
   description: 'Double-entry accounting REST API for `alimarchal/laravel-chart-of-accounts`.
 
 
-    * **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`).
+    * **Auth:** `Authorization: Bearer <Sanctum token>` (configurable with `ACCOUNTING_API_MIDDLEWARE`). With `ACCOUNTING_API_ENFORCE_TOKEN_ABILITIES=true`
+    the token needs the `accounting:read` ability to read and `accounting:write` to change data (a `*` token has both).
 
     * **Permissions:** every endpoint requires a Spatie permission (listed per operation).
 

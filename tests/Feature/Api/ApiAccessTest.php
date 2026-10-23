@@ -350,3 +350,30 @@ it('documents every API route in docs/openapi.yaml', function (): void {
         }
     }
 });
+
+it('honours the abilities of a token when enforcement is on', function (): void {
+    config(['accounting.api_enforce_token_abilities' => true]);
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    $payload = ['entry_date' => now()->toDateString(), 'lines' => [
+        ['account_code' => '5102', 'debit' => '10', 'credit' => 0], ['account_code' => '1101', 'debit' => 0, 'credit' => '10'],
+    ]];
+
+    Sanctum::actingAs($user, ['accounting:read']);
+    $this->getJson('/api/v1/accounting/journal-entries')->assertOk();
+    $this->postJson('/api/v1/accounting/journal-entries', $payload)->assertForbidden();
+
+    Sanctum::actingAs($user, ['accounting:write']);
+    $this->postJson('/api/v1/accounting/journal-entries', $payload)->assertCreated();
+    $this->getJson('/api/v1/accounting/journal-entries')->assertOk();
+
+    Sanctum::actingAs($user, ['*']);
+    $this->postJson('/api/v1/accounting/journal-entries', $payload)->assertCreated();
+
+    Sanctum::actingAs($user, ['something-else']);
+    $this->getJson('/api/v1/accounting/journal-entries')->assertForbidden();
+
+    // Off (the default): abilities are not looked at.
+    config(['accounting.api_enforce_token_abilities' => false]);
+    $this->getJson('/api/v1/accounting/journal-entries')->assertOk();
+});
