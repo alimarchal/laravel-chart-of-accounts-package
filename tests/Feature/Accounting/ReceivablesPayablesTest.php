@@ -323,3 +323,35 @@ it('keeps an advance receipt in the ageing between its date and the invoice it i
         ->and(($this->ledger)()->reconcile('receivable', ($this->on)(5))['difference'])->toBe('0.00')
         ->and(PartyAllocation::query()->firstOrFail()->allocated_on->toDateString())->toBe(($this->on)(10));
 });
+
+it('needs a user who may approve for a bill or payment at or above the approval threshold', function (): void {
+    config(['accounting.approvals.enabled' => true, 'accounting.approvals.threshold' => '1000']);
+    $approver = tap(User::factory()->create())->assignRole('approver');
+
+    expect(fn () => ($this->bill)(5000))->toThrow(AccountingException::class, 'approval threshold')
+        ->and(fn () => ($this->pay)()->create(($this->pay)()->validate(['party_id' => $this->supplier->id, 'kind' => 'payment', 'payment_date' => ($this->on)(2), 'amount' => 2500000, 'account_id' => account('1101')->id])))->toThrow(AccountingException::class, 'approval threshold');
+    expect(PartyDocument::query()->where('status', 'posted')->count())->toBe(0);
+
+    ($this->bill)(100);   // below the threshold: fine
+    $this->actingAs($approver);
+    expect(($this->bill)(5000, 3)->status)->toBe('posted');
+});
+
+
+it('answers 422, not 500, for a quantity × price above the maximum amount', function (): void {
+    Sanctum::actingAs($this->accountant);
+
+    foreach ([['quantity' => 999999999, 'unit_price' => 999999999999], ['quantity' => 100000, 'unit_price' => 999999999999]] as $line) {
+        $this->postJson('/api/v1/accounting/party-documents', [
+            'party_id' => $this->customer->id, 'kind' => 'invoice', 'issue_date' => ($this->on)(1),
+            'lines' => [['chart_of_account_id' => account('4101')->id, ...$line]],
+        ])->assertUnprocessable();
+    }
+
+    expect(PartyDocument::query()->count())->toBe(0);
+});
+
+it('caps the document total, not only each line', function (): void {
+    expect(fn () => ($this->document)('invoice', $this->customer, [['4101', 1, '600000000000'], ['4101', 1, '600000000000']], 1, [], false))
+        ->toThrow(AccountingException::class, 'above the maximum');
+});
