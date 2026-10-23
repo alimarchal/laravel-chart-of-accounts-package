@@ -528,7 +528,8 @@ paths["/recurring-entries/{id}/resume"] = {"parameters": [ID], "post": op("Recur
     body={"type": "object", "properties": {"skip_missed": {"type": "boolean", "default": True, "description": "Skip the occurrences missed while paused (default) or generate them"}}}, opid="resume_recurring_entry")}
 paths["/recurring-entries/{id}/run"] = {"parameters": [ID], "post": op("Recurring entries", "Generate the next entry now", "recurring-entries.run",
     {"201": resp("Generated", data({"type": "object", "properties": {"run": {"type": "object", "properties": {"id": {"type": "integer"}, "run_date": {"type": "string", "format": "date"}, "status": {"type": "string", "enum": ["posted", "submitted", "draft", "failed"]}, "journal_entry_id": {"type": ["integer", "null"]}, "error": {"type": ["string", "null"]}}}, "entry": ref("RecurringEntry")}})), **E404_422},
-    desc="Generates the next scheduled occurrence immediately, even if it is not due yet (dated on its scheduled day). 422 when the entry could not be created.", opid="run_recurring_entry")}
+    body={"type": "object", "properties": {"force": {"type": "boolean", "default": False, "description": "Required to generate an occurrence that is not due yet; without it a future occurrence answers 422."}}},
+    desc="Generates the next scheduled occurrence immediately (dated on its scheduled day). An occurrence that is not due yet is refused with 422 unless `force` is true, so a double click cannot post the next period. 422 also when the entry could not be created.", opid="run_recurring_entry")}
 
 # Foreign-currency revaluation.
 schemas["FxRevaluationRow"] = {"type": "object", "properties": {
