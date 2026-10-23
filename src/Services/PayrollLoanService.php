@@ -161,9 +161,7 @@ class PayrollLoanService
                 throw new AccountingException('Only an active loan can be settled.');
             }
 
-            if (LoanInstallment::query()->where('loan_id', $loan->id)->where('status', 'included')->whereIn('payroll_run_id', PayrollRun::query()->where('status', 'draft')->select('id'))->exists()) {
-                throw new AccountingException('An instalment is part of a draft payroll run: post or delete the run first.');
-            }
+            $this->assertNoDraftRunInstalment($loan);
 
             $left = Money::toCents($this->outstanding($loan));
 
@@ -194,6 +192,16 @@ class PayrollLoanService
     }
 
     /**
+     * An instalment that sits in a draft payroll run is deducted when the run is posted: recovering the whole loan now would charge it twice.
+     */
+    private function assertNoDraftRunInstalment(Loan $loan): void
+    {
+        if (LoanInstallment::query()->where('loan_id', $loan->id)->where('status', 'included')->whereIn('payroll_run_id', PayrollRun::query()->where('status', 'draft')->select('id'))->exists()) {
+            throw new AccountingException('An instalment is part of a draft payroll run: post or delete the run first.');
+        }
+    }
+
+    /**
      * A leaver's final settlement recovers what is left of an active loan: the loan closes and its instalments are cancelled.
      * Returns what is needed to put it back if the settlement is voided.
      *
@@ -201,6 +209,8 @@ class PayrollLoanService
      */
     public function recoverFromSettlement(Loan $loan): array
     {
+        $this->assertNoDraftRunInstalment($loan);
+
         $amount = $this->outstanding($loan);
         $ids = LoanInstallment::query()->where('loan_id', $loan->id)->where('status', 'scheduled')->pluck('id')->all();
         LoanInstallment::query()->whereIn('id', $ids)->update(['status' => 'cancelled']);
