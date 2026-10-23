@@ -152,7 +152,7 @@ class InventoryService
             'movement_date' => ['required', 'date'],
             'quantity' => ['required', 'numeric', $type === 'adjustment' ? 'not_in:0' : 'gt:0', 'max:999999999', 'min:-999999999'],
             'unit_cost' => [$type === 'receipt' ? 'required' : 'nullable', 'numeric', 'min:0', 'max:999999999999'],
-            'offset_account_id' => [in_array($type, ['receipt', 'adjustment'], true) ? 'required' : 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true))],
+            'offset_account_id' => [in_array($type, ['receipt', 'adjustment'], true) ? 'required' : 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true)->whereNull('control_type'))],
             'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:500'],
         ])->validate();
@@ -272,8 +272,13 @@ class InventoryService
      */
     private function receive(InventoryItem $item, array $data, int $units, string $type = 'receipt'): StockMovement
     {
-        $cost = isset($data['unit_cost']) ? (float) $data['unit_cost'] : $this->averageCost($item) / 100;
-        $valueCents = (int) round($units / self::SCALE * $cost * 100);
+        $cost = isset($data['unit_cost']) ? (string) $data['unit_cost'] : number_format($this->averageCost($item) / 100, 8, '.', '');
+        $valueCents = Money::productToCents($this->quantity($units), $cost);
+
+        if ($valueCents > Money::toCents(number_format((float) config('accounting.max_amount', 999999999999.99), 2, '.', ''))) {
+            throw new AccountingException('The value of this stock movement is above the maximum amount.');
+        }
+
         $entry = $this->book($data, $type === 'receipt' ? 'Stock received' : 'Stock adjustment (gain)', [
             ['chart_of_account_id' => $item->inventory_account_id, 'debit' => Money::fromCents($valueCents), 'credit' => 0, 'description' => $item->name],
             ['chart_of_account_id' => (int) $data['offset_account_id'], 'debit' => 0, 'credit' => Money::fromCents($valueCents)],

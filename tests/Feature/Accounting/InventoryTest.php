@@ -151,3 +151,25 @@ it('serves the pages and the API', function (): void {
     $this->postJson('/api/v1/accounting/inventory/items', ['sku' => 'PEN', 'name' => 'Pen', 'inventory_account_id' => account('1153')->id, 'cogs_account_id' => account('5204')->id])->assertCreated();
     $this->getJson("/api/v1/accounting/inventory/items/{$item->id}")->assertOk()->assertJsonCount(2, 'data.card');
 });
+
+it('refuses a payables control account as the offset of a stock receipt', function (): void {
+    account('2101')->forceFill(['control_type' => 'payables'])->save();
+
+    expect(fn () => ($this->receive)(($this->item)(), ($this->warehouse)(), '10', '100'))->toThrow(ValidationException::class)
+        ->and(StockMovement::query()->count())->toBe(0);
+});
+
+it('values a receipt exactly, rounding half a cent up', function (): void {
+    [$move] = ($this->receive)(($this->item)(), ($this->warehouse)(), '1', '1.005');
+
+    expect($move->value)->toBe('1.01');
+});
+
+it('answers 422 instead of 500 for a receipt whose value is too large', function (): void {
+    $item = ($this->item)();
+    $warehouse = ($this->warehouse)();
+
+    expect(fn () => ($this->receive)($item, $warehouse, '999999999', '999999999999'))->toThrow(AccountingException::class, 'too large')
+        ->and(fn () => ($this->receive)($item, $warehouse, '100000', '999999999999'))->toThrow(AccountingException::class)
+        ->and(StockMovement::query()->count())->toBe(0);
+});

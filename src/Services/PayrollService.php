@@ -658,6 +658,11 @@ class PayrollService
                 throw new AccountingException('You submitted this run: someone else has to approve it.');
             }
 
+            // Whoever prepared the run (created or recalculated it) cannot approve it either, even if a colleague submitted it.
+            if ($run->created_by !== null && (string) $run->created_by === (string) Auth::id()) {
+                throw new AccountingException('You prepared this run: someone else has to approve it.');
+            }
+
             $run->forceFill(['status' => 'approved', 'approved_by' => Auth::id(), 'approved_at' => now(), 'rejection_reason' => null])->save();
             AccountingAuditLog::record($run, 'PAYROLL_RUN_APPROVED', null, null, ['month' => Carbon::parse($run->period_month)->format('Y-m'), 'net' => $run->net]);
 
