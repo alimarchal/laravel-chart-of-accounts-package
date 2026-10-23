@@ -38,7 +38,6 @@ it('supports create, read, update, list and delete for every master-data resourc
     'bank accounts' => ['bank-accounts', fn () => ['account_name' => 'Main', 'account_number' => 'PK00-1', 'chart_of_account_id' => account('1108')->id], 'bank_name', 'HBL'],
     'tax codes' => ['tax-codes', fn () => ['code' => 'VAT5', 'name' => 'VAT 5%'], 'name', 'VAT five'],
     'tax rates' => ['tax-rates', fn () => ['tax_code_id' => TaxCode::query()->value('id'), 'rate' => 5, 'effective_from' => '2031-01-01'], 'is_active', false],
-    'reconciliations' => ['reconciliations', fn () => ['bank_account_id' => BankAccount::factory()->create()->id, 'statement_date' => '2026-01-31', 'statement_balance' => 100, 'book_balance' => 100, 'status' => 'draft'], 'status', 'completed'],
 ]);
 
 it('rejects linking a bank account to a group account', function (): void {
@@ -98,4 +97,22 @@ it('lists balance snapshots after a period close', function (): void {
         ->json('data.0.id');
 
     $this->getJson("/api/v1/accounting/account-balance-snapshots/{$id}")->assertSuccessful();
+});
+
+it('derives the status and book balance of a reconciliation instead of accepting typed values', function (): void {
+    $payload = ['bank_account_id' => BankAccount::factory()->create()->id, 'statement_date' => '2026-01-31', 'statement_balance' => 987654.32, 'book_balance' => 987654.32, 'status' => 'completed'];
+
+    $id = $this->postJson('/api/v1/accounting/reconciliations', $payload)->assertCreated()
+        ->assertJsonPath('data.status', 'draft')->assertJsonPath('data.book_balance', '0.00')->json('data.id');
+
+    $this->putJson("/api/v1/accounting/reconciliations/{$id}", [...$payload, 'statement_balance' => 100, 'status' => 'completed', 'book_balance' => 100])
+        ->assertSuccessful()->assertJsonPath('data.status', 'draft')->assertJsonPath('data.book_balance', '0.00');
+});
+
+it('does not let a completed reconciliation be edited', function (): void {
+    $reconciliation = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['status' => 'completed']);
+
+    $this->putJson("/api/v1/accounting/reconciliations/{$reconciliation->id}", [
+        'bank_account_id' => $reconciliation->bank_account_id, 'statement_date' => $reconciliation->statement_date->toDateString(), 'statement_balance' => 1,
+    ])->assertUnprocessable();
 });
