@@ -241,3 +241,17 @@ it('renders the React pages', function (): void {
 
     $this->post('/accounting/bank-statements/import/preview', ['file' => ($this->csv)([($this->day)(20).',New,,,10,10']), 'bank_account_id' => $this->bank->id])->assertRedirect();
 });
+
+it('books a statement line of a foreign-currency bank account in its own currency at the dated rate', function (): void {
+    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    account('1108')->forceFill(['currency_id' => $usd->id])->save();
+    $statement = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,100.00,100.00']);
+
+    $entry = ($this->service)()->createEntry($statement->lines[0], account('4101')->id);
+    $line = $entry->lines->firstWhere('chart_of_account_id', account('1108')->id);
+
+    expect($entry->status)->toBe('posted')->and($entry->currency_id)->toBe($usd->id)->and((float) $entry->fx_rate_to_base)->toBe(280.0)
+        ->and($line->debit)->toBe('100.00')->and($line->base_debit)->toBe('28000.00')
+        ->and($line->reconciliation_status)->toBe('cleared')
+        ->and(($this->service)()->reconcile($statement->refresh())->status)->toBe('completed');
+});

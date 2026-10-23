@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
@@ -405,6 +406,15 @@ class BankStatementService
                 ['chart_of_account_id' => $counter->id, ($deposit > 0 ? 'credit' : 'debit') => $amount, 'description' => $line->description],
             ],
         ];
+
+        // A foreign-currency bank account books in its own currency at the rate of the transaction date (the statement amounts are in that currency).
+        $bankAccount = ChartOfAccount::query()->find($bank->chart_of_account_id);
+        $baseId = Currency::query()->where('is_base', true)->value('id');
+
+        if ($bankAccount?->currency_id !== null && (int) $bankAccount->currency_id !== (int) $baseId) {
+            $data['currency_id'] = (int) $bankAccount->currency_id;
+            $data['fx_rate_to_base'] = app(FxRevaluationService::class)->rateOn(Currency::query()->findOrFail($bankAccount->currency_id), $data['entry_date']);
+        }
 
         return DB::transaction(function () use ($line, $data, $bank): JournalEntry {
             try {
