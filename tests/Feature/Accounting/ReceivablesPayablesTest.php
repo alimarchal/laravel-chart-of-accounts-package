@@ -312,6 +312,13 @@ it('renders the React pages', function (): void {
     expect(PartyPayment::query()->count())->toBe(1);
 });
 
+it('posts an invoice that has a free (zero-price) line and leaves it out of the entry', function (): void {
+    $invoice = ($this->document)('invoice', $this->customer, [['4101', 1, '1000'], ['4101', 1, '0']]);
+
+    expect($invoice->status)->toBe('posted')->and($invoice->lines)->toHaveCount(2)
+        ->and(JournalEntry::query()->findOrFail($invoice->journal_entry_id)->lines)->toHaveCount(2);   // receivable + the 1,000 line
+});
+
 it('keeps an advance receipt in the ageing between its date and the invoice it is allocated to', function (): void {
     $receipt = ($this->receipt)(1000, 1);                 // an advance, nothing to allocate to yet
     $invoice = ($this->invoice)(1000, 10, ['prices_include_tax' => true]);   // issued later, 1,000 gross

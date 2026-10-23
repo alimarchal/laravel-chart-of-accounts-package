@@ -307,6 +307,11 @@ class PartyDocumentService
         $codes = TaxCode::query()->whereIn('id', $document->lines->pluck('tax_code_id')->filter()->all())->get()->keyBy('id');
 
         foreach ($document->lines as $line) {
+            // A free line (unit price 0) stays on the document but has nothing to book.
+            if (Money::toCents($line->net_amount) === 0) {
+                continue;
+            }
+
             $extra = $line->tax_code_id === null ? [] : ['tax_code_id' => $line->tax_code_id, 'tax_role' => 'base', 'tax_rate' => $line->tax_rate];
             $lines[] = ['chart_of_account_id' => $line->chart_of_account_id, 'cost_center_id' => $line->cost_center_id, $lineSide => $line->net_amount, 'description' => $line->description, ...$extra];
 
