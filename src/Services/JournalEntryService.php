@@ -219,7 +219,11 @@ class JournalEntryService
         $given = $given === '' ? null : $given;
 
         if ($currencyId === $baseId) {
-            return [$currencyId, $given ?? 1];
+            if ($given !== null && (float) $given !== 1.0) {
+                throw new AccountingException('An entry in the base currency always has an exchange rate of 1.');
+            }
+
+            return [$currencyId, 1];
         }
 
         if ($given !== null) {

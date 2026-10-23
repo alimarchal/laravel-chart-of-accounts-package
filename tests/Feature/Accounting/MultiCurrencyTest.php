@@ -1,6 +1,7 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Actions\ReverseJournalEntryAction;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
@@ -150,4 +151,30 @@ it('keeps the stored rate of a draft when it is edited without a rate', function
     ]);
 
     expect((float) $updated->fx_rate_to_base)->toBe(300.0);
+});
+
+it('refuses an exchange rate other than 1 on a base-currency entry', function (): void {
+    expect(fn () => app(JournalEntryService::class)->create([
+        'entry_date' => now()->toDateString(),
+        'fx_rate_to_base' => '280',
+        'auto_post' => true,
+        'lines' => [
+            ['chart_of_account_id' => account('1101')->id, 'debit' => '100.00', 'credit' => 0],
+            ['chart_of_account_id' => account('4101')->id, 'debit' => 0, 'credit' => '100.00'],
+        ],
+    ]))->toThrow(AccountingException::class, 'base currency always has an exchange rate of 1');
+});
+
+it('accepts an explicit rate of 1 on a base-currency entry', function (): void {
+    $entry = app(JournalEntryService::class)->create([
+        'entry_date' => now()->toDateString(),
+        'fx_rate_to_base' => '1',
+        'auto_post' => true,
+        'lines' => [
+            ['chart_of_account_id' => account('1101')->id, 'debit' => '100.00', 'credit' => 0],
+            ['chart_of_account_id' => account('4101')->id, 'debit' => 0, 'credit' => '100.00'],
+        ],
+    ]);
+
+    expect($entry->lines->firstWhere('chart_of_account_id', account('1101')->id)->base_debit)->toBe('100.00');
 });
