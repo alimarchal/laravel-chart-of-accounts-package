@@ -289,3 +289,18 @@ it('accepts the blank fields the screens send for optional numbers', function ()
     $this->post('/accounting/payroll/schemes', ['code' => 'EOBI', 'name' => 'EOBI', 'base' => 'basic', 'employee_rate' => 1, 'employer_rate' => '', 'employee_fixed' => '', 'employer_fixed' => '', 'ceiling' => '', 'employee_account_id' => account('2102')->id])->assertRedirect()->assertSessionHasNoErrors();
     expect(ContributionScheme::query()->firstOrFail()->employer_rate)->toBe('0.0000');
 });
+
+it('pays overtime by each employee\'s own working hours, falling back to the grade and then the company default', function (): void {
+    $grade = app(PayrollStructureService::class)->saveGrade(app(PayrollStructureService::class)->validateGrade(['code' => 'PT', 'name' => 'Part time', 'base_salary' => 60000, 'working_hours_per_month' => 156]));
+    $full = ($this->employee)(['code' => 'E1', 'base_salary' => '60000', 'overtime_eligible' => true]);
+    $own = ($this->employee)(['code' => 'E2', 'name' => 'Own hours', 'base_salary' => '60000', 'overtime_eligible' => true, 'working_hours_per_month' => 120]);
+    $graded = ($this->employee)(['code' => 'E3', 'name' => 'Graded', 'base_salary' => '60000', 'overtime_eligible' => true, 'salary_grade_id' => $grade->id]);
+    ($this->sheet)(0, collect([$full, $own, $graded])->map(fn ($employee) => ['employee_id' => $employee->id, 'overtime_hours' => 10])->all());
+
+    $run = ($this->run)();
+    $line = fn ($employee) => (float) PayslipLine::query()->where('payslip_id', ($this->slip)($employee, $run)->id)->where('description', 'like', 'Overtime%')->value('amount');
+
+    expect($line($full))->toBe(round(60000 / 208 * 10 * 2, 2))
+        ->and($line($own))->toBe(round(60000 / 120 * 10 * 2, 2))
+        ->and($line($graded))->toBe(round(60000 / 156 * 10 * 2, 2));
+});
