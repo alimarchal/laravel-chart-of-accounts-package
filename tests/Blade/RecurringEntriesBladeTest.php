@@ -21,7 +21,7 @@ it('creates, runs and reviews a recurring entry in Blade', function (): void {
     $entry = RecurringEntry::query()->sole();
 
     $this->get("/accounting/recurring-entries/{$entry->id}")->assertOk()->assertSee('Office rent')->assertSee('Nothing generated yet.')->assertSee('Upcoming');
-    $this->post("/accounting/recurring-entries/{$entry->id}/run")->assertSessionHas('success', 'Entry generated as a draft.');
+    $this->post("/accounting/recurring-entries/{$entry->id}/run", ["force" => 1])->assertSessionHas('success', 'Entry generated as a draft.');
     $this->get("/accounting/recurring-entries/{$entry->id}")->assertSee('draft')->assertSee('Draft #');
     $this->get("/accounting/recurring-entries/{$entry->id}/edit")->assertOk()->assertSee('Save changes');
     $this->get('/accounting/recurring-entries')->assertSee('Office rent')->assertSee('1,500.00');
