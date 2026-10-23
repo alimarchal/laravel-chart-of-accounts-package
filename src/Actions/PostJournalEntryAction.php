@@ -161,14 +161,17 @@ class PostJournalEntryAction
                 throw new AccountingException('Each line must have either debit or credit.');
             }
 
-            if ($line->account->is_group || ! $line->account->is_active) {
+            // A year-end closing entry must be able to empty an account that was deactivated while it still had a balance, and a
+            // reversal only unwinds history: neither is refused because an account has been deactivated since.
+            if ($line->account->is_group || (! $line->account->is_active && ! $entry->is_closing_entry && $entry->reverses_entry_id === null)) {
                 throw new AccountingException('Journal lines can only post to active posting accounts.');
             }
 
             $accountCurrency = $line->account->currency_id;
 
-            // A revaluation adjusts a foreign-currency account's carrying value with a base-currency entry.
-            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id && $entry->origin_module !== FxRevaluationService::ORIGIN) {
+            // A revaluation adjusts a foreign-currency account's carrying value with a base-currency entry, and so does the year-end close
+            // (it moves the base balance of an income/expense account, whatever its currency, to retained earnings).
+            if ($accountCurrency !== $baseCurrencyId && $accountCurrency !== $entry->currency_id && $entry->origin_module !== FxRevaluationService::ORIGIN && ! $entry->is_closing_entry) {
                 throw new AccountingException(
                     "Account {$line->account->account_code} is denominated in a different currency than this journal entry."
                 );
