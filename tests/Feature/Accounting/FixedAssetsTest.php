@@ -126,3 +126,29 @@ it('serves the register, the asset page and the depreciation run over the web an
     $this->postJson("/api/v1/accounting/fixed-assets/{$asset->id}/dispose", ['disposal_date' => $this->start->copy()->addMonths(4)->toDateString(), 'gain_loss_account_id' => account('5102')->id])->assertOk()->assertJsonPath('data.status', 'disposed');
     $this->deleteJson("/api/v1/accounting/fixed-assets/{$asset->id}")->assertStatus(422);
 });
+
+it('depreciates current assets even when another asset came from before the books start', function (): void {
+    $current = ($this->make)(['code' => 'EQ-NEW', 'cost' => '1200', 'useful_life_months' => 12]);
+    $old = ($this->make)([
+        'code' => 'EQ-OLD', 'acquisition_date' => $this->start->copy()->subYears(3)->toDateString(), 'cost' => '36000', 'useful_life_months' => 60,
+        'opening_accumulated_depreciation' => '21600', 'depreciate_from' => $this->start->toDateString(),
+    ]);
+
+    expect($old->accumulated_depreciation)->toBe('21600.00');
+
+    $result = ($this->service)()->run(($this->monthEnd)(1));
+
+    // 2 months of each: 100 × 2 for the new one, 600 × 2 for the migrated one (36,000 / 60).
+    expect($result['skipped'])->toBe([])->and($result['total'])->toBe('1400.00')
+        ->and($old->refresh()->accumulated_depreciation)->toBe('22800.00')->and($current->refresh()->accumulated_depreciation)->toBe('200.00');
+});
+
+it('skips and reports months without an open period instead of stopping the run', function (): void {
+    $old = ($this->make)(['code' => 'EQ-OLD', 'acquisition_date' => $this->start->copy()->subMonths(2)->toDateString(), 'cost' => '1200', 'useful_life_months' => 12]);
+    $current = ($this->make)(['code' => 'EQ-NEW', 'cost' => '1200', 'useful_life_months' => 12]);
+
+    $result = ($this->service)()->run(($this->monthEnd)(0));
+
+    expect($result['skipped'])->toHaveCount(2)->and($result['months'])->toBe(1)
+        ->and($current->refresh()->accumulated_depreciation)->toBe('100.00')->and($old->refresh()->accumulated_depreciation)->toBe('100.00');
+});
