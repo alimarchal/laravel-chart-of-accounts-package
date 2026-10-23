@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Events\JournalEntryPosted;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
@@ -136,6 +137,20 @@ class PostJournalEntryAction
         }
 
         $baseCurrencyId = Currency::query()->where('is_base', true)->value('id');
+
+        // New postings use active currencies and cost centres; a reversal or closing entry only unwinds what already happened.
+        if ($entry->reverses_entry_id === null && ! $entry->is_closing_entry) {
+            if (Currency::query()->whereKey($entry->currency_id)->where('is_active', false)->exists()) {
+                throw new AccountingException('The currency of this journal entry is inactive.');
+            }
+
+            $costCenters = $entry->lines->pluck('cost_center_id')->filter()->unique();
+
+            if ($costCenters->isNotEmpty() && CostCenter::query()->whereKey($costCenters)->where('is_active', false)->exists()) {
+                throw new AccountingException('Journal lines can only use active cost centres.');
+            }
+        }
+
         $totalDebit = 0;
         $totalCredit = 0;
 
