@@ -241,3 +241,14 @@ it('renders the React pages', function (): void {
 
     $this->post('/accounting/bank-statements/import/preview', ['file' => ($this->csv)([($this->day)(20).',New,,,10,10']), 'bank_account_id' => $this->bank->id])->assertRedirect();
 });
+
+it('reads amounts with a currency prefix and full stop', function (): void {
+    $service = ($this->service)();
+
+    expect($service->parseAmount('Rs. 2,500'))->toBe(250000)
+        ->and($service->parseAmount('Rs. 5,000.00'))->toBe(500000)
+        ->and($service->parseAmount('PKR 1,234.50'))->toBe(123450)
+        ->and($service->parseAmount('Rs.2,500'))->toBe(250000)
+        ->and($service->parseAmount('(Rs. 120.00)'))->toBe(-12000)
+        ->and($service->parseAmount('Rs. 500.00 DR'))->toBe(-50000);
+});
