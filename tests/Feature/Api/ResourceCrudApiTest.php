@@ -38,7 +38,6 @@ it('supports create, read, update, list and delete for every master-data resourc
     'bank accounts' => ['bank-accounts', fn () => ['account_name' => 'Main', 'account_number' => 'PK00-1', 'chart_of_account_id' => account('1108')->id], 'bank_name', 'HBL'],
     'tax codes' => ['tax-codes', fn () => ['code' => 'VAT5', 'name' => 'VAT 5%'], 'name', 'VAT five'],
     'tax rates' => ['tax-rates', fn () => ['tax_code_id' => TaxCode::query()->value('id'), 'rate' => 5, 'effective_from' => '2031-01-01'], 'is_active', false],
-    'reconciliations' => ['reconciliations', fn () => ['bank_account_id' => BankAccount::factory()->create()->id, 'statement_date' => '2026-01-31', 'statement_balance' => 100, 'book_balance' => 100, 'status' => 'draft'], 'status', 'completed'],
 ]);
 
 it('rejects linking a bank account to a group account', function (): void {
@@ -98,4 +97,51 @@ it('lists balance snapshots after a period close', function (): void {
         ->json('data.0.id');
 
     $this->getJson("/api/v1/accounting/account-balance-snapshots/{$id}")->assertSuccessful();
+});
+
+it('derives the status and book balance of a reconciliation instead of accepting typed values', function (): void {
+    $payload = ['bank_account_id' => BankAccount::factory()->create()->id, 'statement_date' => '2026-01-31', 'statement_balance' => 987654.32, 'book_balance' => 987654.32, 'status' => 'completed'];
+
+    $id = $this->postJson('/api/v1/accounting/reconciliations', $payload)->assertCreated()
+        ->assertJsonPath('data.status', 'draft')->assertJsonPath('data.book_balance', '0.00')->json('data.id');
+
+    $this->putJson("/api/v1/accounting/reconciliations/{$id}", [...$payload, 'statement_balance' => 100, 'status' => 'completed', 'book_balance' => 100])
+        ->assertSuccessful()->assertJsonPath('data.status', 'draft')->assertJsonPath('data.book_balance', '0.00');
+});
+
+it('does not let a completed reconciliation be edited', function (): void {
+    $reconciliation = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['status' => 'completed']);
+
+    $this->putJson("/api/v1/accounting/reconciliations/{$reconciliation->id}", [
+        'bank_account_id' => $reconciliation->bank_account_id, 'statement_date' => $reconciliation->statement_date->toDateString(), 'statement_balance' => 1,
+    ])->assertUnprocessable();
+});
+
+it('refuses to delete a completed reconciliation and releases the lines of a draft one', function (): void {
+    $bank = BankAccount::factory()->create();
+    $line = journal(['1108' => 100, '4101' => -100])->lines->firstWhere('chart_of_account_id', account('1108')->id);
+
+    $draft = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'draft']);
+    $line->forceFill(['reconciliation_id' => $draft->id, 'reconciliation_status' => 'reconciled'])->save();
+
+    $this->deleteJson("/api/v1/accounting/reconciliations/{$draft->id}")->assertNoContent();
+    expect($line->fresh()->reconciliation_id)->toBeNull()->and($line->fresh()->reconciliation_status)->toBe('cleared');
+
+    $done = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'completed']);
+    $line->forceFill(['reconciliation_id' => $done->id, 'reconciliation_status' => 'reconciled'])->save();
+
+    $this->deleteJson("/api/v1/accounting/reconciliations/{$done->id}")->assertUnprocessable();
+    expect($line->fresh()->reconciliation_id)->toBe($done->id)->and($done->fresh())->not->toBeNull();
+});
+
+it('does not let an account type in use change its code, normal balance or report group', function (): void {
+    $expense = \Alimarchal\LaravelChartOfAccounts\Models\AccountType::query()->where('code', 'EXPENSE')->firstOrFail();
+    journal(['5102' => 1000, '1101' => -1000]);
+
+    $this->putJson("/api/v1/accounting/account-types/{$expense->id}", ['code' => 'COSTS', 'name' => $expense->name, 'normal_balance' => 'credit', 'report_group' => 'BalanceSheet'])
+        ->assertUnprocessable();
+    $this->putJson("/api/v1/accounting/account-types/{$expense->id}", ['code' => 'EXPENSE', 'name' => 'Operating Expense', 'normal_balance' => $expense->normal_balance, 'report_group' => $expense->report_group, 'description' => 'Costs'])
+        ->assertSuccessful();
+
+    expect($expense->refresh()->code)->toBe('EXPENSE')->and($expense->name)->toBe('Operating Expense');
 });

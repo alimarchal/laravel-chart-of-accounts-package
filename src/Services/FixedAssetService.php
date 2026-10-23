@@ -54,15 +54,22 @@ class FixedAssetService
             'useful_life_months' => ['required', 'integer', 'min:1', 'max:1200'],
             'method' => ['required', Rule::in(array_keys(FixedAsset::METHODS))],
             'declining_rate' => ['nullable', 'numeric', 'gt:0', 'max:100'],
+            'opening_accumulated_depreciation' => ['nullable', 'numeric', 'min:0', 'max:999999999999999'],
+            'depreciate_from' => ['nullable', 'date', 'after_or_equal:in_service_date'],
             'asset_account_id' => ['required', 'integer', $posting('ASSET')],
             'accumulated_account_id' => ['required', 'integer', $posting('ASSET'), 'different:asset_account_id'],
             'expense_account_id' => ['required', 'integer', $posting('EXPENSE')],
-            'offset_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true))],
+            'offset_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false)->where('is_active', true)->whereNull('control_type'))],
         ]);
         $data = $validator->validate();
         $data['in_service_date'] ??= $data['acquisition_date'];
         $data['salvage_value'] = Money::fromCents(Money::toCents($data['salvage_value'] ?? 0));
         $data['cost'] = Money::fromCents(Money::toCents($data['cost']));
+        $data['opening_accumulated_depreciation'] = Money::fromCents(Money::toCents($data['opening_accumulated_depreciation'] ?? 0));
+
+        if (Money::toCents($data['opening_accumulated_depreciation']) > Money::toCents($data['cost']) - Money::toCents($data['salvage_value'])) {
+            throw ValidationException::withMessages(['opening_accumulated_depreciation' => 'The opening accumulated depreciation cannot exceed the cost less the salvage value.']);
+        }
 
         return $data;
     }
@@ -77,6 +84,7 @@ class FixedAssetService
         return DB::transaction(function () use ($data): FixedAsset {
             $offset = $data['offset_account_id'] ?? null;
             $asset = FixedAsset::query()->create(collect($data)->except('offset_account_id')->all());
+            $asset->forceFill(['accumulated_depreciation' => $asset->opening_accumulated_depreciation])->save();
 
             if ($offset) {
                 $entry = $this->journals->create([
@@ -187,14 +195,16 @@ class FixedAssetService
 
         foreach ($assets as $asset) {
             $done = collect($booked->get($asset->id, []))->mapWithKeys(fn (AssetDepreciation $row) => [Carbon::parse($row->period_month)->format('Y-m') => Money::toCents($row->amount)]);
-            $accumulated = $done->sum();
+            $accumulated = $done->sum() + Money::toCents($asset->opening_accumulated_depreciation);
             $month = Carbon::parse($asset->in_service_date)->startOfMonth();
             $index = 0;
+            $from = $asset->depreciate_from ? Carbon::parse($asset->depreciate_from)->startOfMonth() : null;
 
             while ($month->lte($end)) {
                 $key = $month->format('Y-m');
 
-                if ($done->has($key)) {
+                // Months before the migration date are covered by the opening accumulated depreciation.
+                if ($done->has($key) || ($from !== null && $month->lt($from))) {
                     $index++;
                     $month->addMonth();
 
@@ -247,58 +257,68 @@ class FixedAssetService
      * Book the depreciation due up to the end of a month: one entry per month, each month all-or-nothing.
      *
      * @param  list<int>|null  $only
-     * @return array{months: int, total: string, entries: list<int>}
+     * @return array{months: int, skipped: list<string>, total: string, entries: list<int>}
      */
     public function run(string $upTo, ?array $only = null): array
     {
         $entries = [];
+        $skipped = [];
         $total = 0;
 
         foreach ($this->plan($upTo, $only) as $month => $row) {
-            DB::transaction(function () use ($month, $row, &$entries, &$total): void {
-                $assets = FixedAsset::query()->whereIn('id', array_keys($row))->get()->keyBy('id');
-                $debit = [];
-                $credit = [];
+            // A month with no open accounting period (an asset from before the books start) is skipped and reported: it never blocks the others.
+            try {
+                DB::transaction(function () use ($month, $row, &$entries, &$total): void {
+                    $assets = FixedAsset::query()->whereIn('id', array_keys($row))->get()->keyBy('id');
+                    $debit = [];
+                    $credit = [];
 
-                foreach ($row as $id => $cents) {
-                    $debit[$assets[$id]->expense_account_id] = ($debit[$assets[$id]->expense_account_id] ?? 0) + $cents;
-                    $credit[$assets[$id]->accumulated_account_id] = ($credit[$assets[$id]->accumulated_account_id] ?? 0) + $cents;
+                    foreach ($row as $id => $cents) {
+                        $debit[$assets[$id]->expense_account_id] = ($debit[$assets[$id]->expense_account_id] ?? 0) + $cents;
+                        $credit[$assets[$id]->accumulated_account_id] = ($credit[$assets[$id]->accumulated_account_id] ?? 0) + $cents;
+                    }
+
+                    $lines = [];
+
+                    foreach ($debit as $account => $cents) {
+                        $lines[] = ['chart_of_account_id' => $account, 'debit' => Money::fromCents($cents), 'credit' => 0];
+                    }
+
+                    foreach ($credit as $account => $cents) {
+                        $lines[] = ['chart_of_account_id' => $account, 'debit' => 0, 'credit' => Money::fromCents($cents)];
+                    }
+
+                    $date = Carbon::parse($month.'-01')->endOfMonth()->toDateString();
+                    $entry = $this->journals->create([
+                        'voucher_type_id' => VoucherType::query()->where('code', VoucherType::DEFAULT_CODE)->value('id'),
+                        'origin_module' => self::ORIGIN,
+                        'entry_date' => $date,
+                        'reference' => 'DEPR-'.$month,
+                        'description' => 'Depreciation for '.Carbon::parse($month.'-01')->format('F Y'),
+                        'lines' => $lines,
+                        'auto_post' => true,
+                        'system_generated' => true,
+                    ]);
+
+                    foreach ($row as $id => $cents) {
+                        AssetDepreciation::query()->create(['fixed_asset_id' => $id, 'period_month' => $month.'-01', 'amount' => Money::fromCents($cents), 'journal_entry_id' => $entry->id]);
+                        $assets[$id]->forceFill(['accumulated_depreciation' => Money::fromCents(Money::toCents($assets[$id]->accumulated_depreciation) + $cents)])->save();
+                    }
+
+                    AccountingAuditLog::record($entry, 'ASSET_DEPRECIATION_POSTED', null, null, ['month' => $month, 'assets' => count($row), 'total' => Money::fromCents(array_sum($row))]);
+                    $entries[] = $entry->id;
+                    $total += array_sum($row);
+                });
+            } catch (AccountingException $exception) {
+                if (! str_contains($exception->getMessage(), 'No open accounting period')) {
+                    throw $exception;
                 }
 
-                $lines = [];
-
-                foreach ($debit as $account => $cents) {
-                    $lines[] = ['chart_of_account_id' => $account, 'debit' => Money::fromCents($cents), 'credit' => 0];
-                }
-
-                foreach ($credit as $account => $cents) {
-                    $lines[] = ['chart_of_account_id' => $account, 'debit' => 0, 'credit' => Money::fromCents($cents)];
-                }
-
-                $date = Carbon::parse($month.'-01')->endOfMonth()->toDateString();
-                $entry = $this->journals->create([
-                    'voucher_type_id' => VoucherType::query()->where('code', VoucherType::DEFAULT_CODE)->value('id'),
-                    'origin_module' => self::ORIGIN,
-                    'entry_date' => $date,
-                    'reference' => 'DEPR-'.$month,
-                    'description' => 'Depreciation for '.Carbon::parse($month.'-01')->format('F Y'),
-                    'lines' => $lines,
-                    'auto_post' => true,
-                    'system_generated' => true,
-                ]);
-
-                foreach ($row as $id => $cents) {
-                    AssetDepreciation::query()->create(['fixed_asset_id' => $id, 'period_month' => $month.'-01', 'amount' => Money::fromCents($cents), 'journal_entry_id' => $entry->id]);
-                    $assets[$id]->forceFill(['accumulated_depreciation' => Money::fromCents(Money::toCents($assets[$id]->accumulated_depreciation) + $cents)])->save();
-                }
-
-                AccountingAuditLog::record($entry, 'ASSET_DEPRECIATION_POSTED', null, null, ['month' => $month, 'assets' => count($row), 'total' => Money::fromCents(array_sum($row))]);
-                $entries[] = $entry->id;
-                $total += array_sum($row);
-            });
+                $skipped[] = $month;
+            }
         }
 
-        return ['months' => count($entries), 'total' => Money::fromCents($total), 'entries' => $entries];
+        return ['months' => count($entries), 'skipped' => $skipped, 'total' => Money::fromCents($total), 'entries' => $entries];
     }
 
     /**
@@ -331,6 +351,12 @@ class FixedAssetService
 
         return DB::transaction(function () use ($asset, $data, $proceeds): FixedAsset {
             $date = Carbon::parse($data['disposal_date']);
+
+            // Depreciation is brought up to the month before the disposal; months already booked from the disposal month on would stay in the gain or loss.
+            if (AssetDepreciation::query()->where('fixed_asset_id', $asset->id)->whereDate('period_month', '>=', $date->copy()->startOfMonth()->toDateString())->exists()) {
+                throw new AccountingException('Depreciation has already been booked for '.$date->format('F Y').' or later: dispose of the asset after the last depreciated month, or reverse the later depreciation first.');
+            }
+
             $this->run($date->copy()->subMonthNoOverflow()->toDateString(), [$asset->id]);
             $asset->refresh();
             $accumulated = Money::toCents($asset->accumulated_depreciation);

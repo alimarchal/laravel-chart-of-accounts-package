@@ -124,3 +124,17 @@ it('serves the page and the API', function (): void {
     $this->getJson('/api/v1/accounting/fbr')->assertOk();
     $this->postJson("/api/v1/accounting/fbr/documents/{$sent->id}/submit")->assertForbidden();
 });
+
+it('refuses to void an invoice that FBR has accepted', function (): void {
+    $document = ($this->invoice)();
+    app(FbrService::class)->submit($document);
+    $service = app(PartyDocumentService::class);
+
+    expect(fn () => $service->void($document->refresh()))->toThrow(AccountingException::class, 'credit note')
+        ->and($document->refresh()->status)->toBe('posted');
+
+    // An invoice FBR never accepted can still be voided.
+    $other = ($this->invoice)('invoice', 'REJECT');
+    app(FbrService::class)->submit($other);
+    expect($service->void($other->refresh())->status)->toBe('void');
+});

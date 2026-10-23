@@ -71,7 +71,8 @@ final class EnvQuestions
             [
                 'key' => 'payroll', 'title' => 'Payroll', 'gate' => 'Do you want to set the payroll options (working days, overtime, gratuity, approval)?',
                 'questions' => [
-                    ['env' => 'ACCOUNTING_PAYROLL_DAYS_PER_MONTH', 'label' => 'Days in a salary month', 'type' => 'int', 'default' => 30],
+                    ['env' => 'ACCOUNTING_PAYROLL_DAY_BASIS', 'label' => 'How a day\'s pay is worked out: calendar (the real 28-31 days), fixed (the days below every month) or working (month less weekly off days)', 'type' => 'choice', 'choices' => ['calendar', 'fixed', 'working'], 'default' => 'calendar'],
+                    ['env' => 'ACCOUNTING_PAYROLL_DAYS_PER_MONTH', 'label' => 'Days in a salary month (used when the day basis is fixed)', 'type' => 'int', 'default' => 30],
                     ['env' => 'ACCOUNTING_PAYROLL_REQUIRE_APPROVAL', 'label' => 'HR submits and finance approves every payroll run?', 'type' => 'bool', 'default' => false],
                     ['env' => 'ACCOUNTING_PAYROLL_AUTO_RUN', 'label' => 'Create the payroll run automatically every month?', 'type' => 'bool', 'default' => false],
                     ['env' => 'ACCOUNTING_PAYROLL_AUTO_RUN_DAY', 'label' => 'Day of the month for the automatic run', 'type' => 'int', 'default' => 1, 'when' => ['ACCOUNTING_PAYROLL_AUTO_RUN' => 'true']],

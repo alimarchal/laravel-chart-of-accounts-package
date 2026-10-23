@@ -74,9 +74,10 @@ class AccountingApiController extends Controller
 
     public function reopenPeriod(Request $request, AccountingPeriod $period, ReopenAccountingPeriodAction $action): JsonResponse
     {
-        $data = $request->validate(['reason' => ['nullable', 'string', 'max:500']]);
+        // Reopening closed books always says why; the reason goes to the audit trail.
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:500']]);
 
-        return response()->json(['data' => $action->execute($period, $data['reason'] ?? null)]);
+        return response()->json(['data' => $action->execute($period, $data['reason'])]);
     }
 
     /**

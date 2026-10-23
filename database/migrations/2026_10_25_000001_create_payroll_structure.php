@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('code', 30);
             $table->string('name', 120);
             $table->decimal('base_salary', 18, 2)->default(0);
+            $table->decimal('working_hours_per_month', 6, 2)->nullable(); // default for the employees of the grade (overtime rate)
             $table->boolean('is_active')->default(true);
             $table->foreignId('created_by')->nullable()->constrained($users, indexName: 'acct_grade_created_by_fk')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained($users, indexName: 'acct_grade_updated_by_fk')->nullOnDelete();
@@ -89,7 +90,7 @@ return new class extends Migration
         Schema::dropIfExists('accounting_payroll_arrears');
         Schema::dropIfExists('accounting_salary_revisions');
         Schema::table('accounting_employees', function (Blueprint $table): void {
-            $table->dropForeign('acct_emp_grade_fk');
+            $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['salary_grade_id'] : 'acct_emp_grade_fk');
             $table->dropColumn('salary_grade_id');
         });
         Schema::dropIfExists('accounting_salary_grade_components');

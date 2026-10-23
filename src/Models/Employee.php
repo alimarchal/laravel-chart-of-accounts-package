@@ -33,10 +33,10 @@ class Employee extends AccountingModel
 
     protected $table = 'accounting_employees';
 
-    protected $fillable = ['code', 'name', 'national_id', 'email', 'designation', 'cost_center_id', 'salary_grade_id', 'join_date', 'leave_date', 'base_salary', 'withhold_tax', 'overtime_eligible', 'bank_name', 'bank_account', 'is_active'];
+    protected $fillable = ['code', 'name', 'national_id', 'email', 'designation', 'cost_center_id', 'salary_grade_id', 'join_date', 'leave_date', 'base_salary', 'withhold_tax', 'overtime_eligible', 'working_hours_per_month', 'bank_name', 'bank_account', 'is_active'];
 
     protected function casts(): array
     {
-        return ['join_date' => 'date', 'leave_date' => 'date', 'base_salary' => 'decimal:2', 'withhold_tax' => 'boolean', 'overtime_eligible' => 'boolean', 'is_active' => 'boolean'];
+        return ['join_date' => 'date', 'leave_date' => 'date', 'base_salary' => 'decimal:2', 'withhold_tax' => 'boolean', 'overtime_eligible' => 'boolean', 'working_hours_per_month' => 'decimal:2', 'is_active' => 'boolean'];
     }
 }

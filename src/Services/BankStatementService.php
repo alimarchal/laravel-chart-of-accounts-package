@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
@@ -406,6 +407,15 @@ class BankStatementService
             ],
         ];
 
+        // A foreign-currency bank account books in its own currency at the rate of the transaction date (the statement amounts are in that currency).
+        $bankAccount = ChartOfAccount::query()->find($bank->chart_of_account_id);
+        $baseId = Currency::query()->where('is_base', true)->value('id');
+
+        if ($bankAccount?->currency_id !== null && (int) $bankAccount->currency_id !== (int) $baseId) {
+            $data['currency_id'] = (int) $bankAccount->currency_id;
+            $data['fx_rate_to_base'] = app(FxRevaluationService::class)->rateOn(Currency::query()->findOrFail($bankAccount->currency_id), $data['entry_date']);
+        }
+
         return DB::transaction(function () use ($line, $data, $bank): JournalEntry {
             try {
                 $entry = DB::transaction(fn () => $this->journals->create([...$data, 'auto_post' => true]));
@@ -614,6 +624,8 @@ class BankStatementService
             $text = substr($text, 1, -1);
         }
 
+        // "Rs. 2,500" / "PKR 1,234.50": drop the currency word with its full stop before only digits and separators are kept.
+        $text = (string) preg_replace('/\b(?:rs|pkr|usd|eur|gbp|aed|sar|inr)\b\.?/iu', '', $text);
         $text = (string) preg_replace('/[^\d.,\-+]/u', '', $text);
 
         if (str_starts_with($text, '-')) {

@@ -50,7 +50,8 @@ class ConsolidatedReport
 
         foreach ($perCompany as $code => $result) {
             foreach ($result['rows'] as $row) {
-                $key = $row->account_code !== '' ? $row->account_code : $row->account_name;
+                // Accounts only merge when they are the same account: the same code in another company's chart can mean something else, so the name and type count too.
+                $key = $row->account_code.'|'.mb_strtolower(trim((string) $row->account_name)).'|'.mb_strtolower((string) ($row->account_type ?? ''));
                 $rows[$key] ??= [
                     'account_code' => $row->account_code,
                     'account_name' => $row->account_name,
