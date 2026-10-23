@@ -31,8 +31,8 @@ class IncomeStatementReport
             ->where('type.report_group', 'IncomeStatement')
             ->where('entry.status', 'posted')
             ->where('entry.is_closing_entry', false)
-            ->whereDate('entry.entry_date', '>=', $from)
-            ->whereDate('entry.entry_date', '<=', $to)
+            ->where('entry.entry_date', '>=', $from)
+            ->where('entry.entry_date', '<', Carbon::parse($to)->addDay()->toDateString())
             ->groupBy('coa.id', 'coa.account_code', 'coa.account_name', 'type.name', 'type.report_group', 'coa.normal_balance')
             ->selectRaw("
                 coa.id as account_id,

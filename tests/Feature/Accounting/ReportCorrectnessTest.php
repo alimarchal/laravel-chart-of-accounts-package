@@ -102,6 +102,19 @@ it('keeps the income statement of a closed year intact', function (): void {
         ->and(app(BalanceSheetReport::class)->totals(['as_of_date' => $this->period->end_date->toDateString()])['difference'])->toBe(0.0);
 });
 
+it('filters the general ledger by plain date comparisons and still includes both boundary days', function (): void {
+    $start = \Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
+    journal(['5104' => 10, '1101' => -10], $start->copy()->addDays(1)->toDateString());
+    journal(['5104' => 20, '1101' => -20], $start->copy()->addDays(5)->toDateString());
+    journal(['5104' => 40, '1101' => -40], $start->copy()->addDays(9)->toDateString());
+
+    $rows = app(\Alimarchal\LaravelChartOfAccounts\Reports\GeneralLedgerReport::class)->query([
+        'account_id' => account('5104')->id, 'date_from' => $start->copy()->addDays(5)->toDateString(), 'date_to' => $start->copy()->addDays(9)->toDateString(),
+    ])->get();
+
+    expect($rows)->toHaveCount(2)->and($rows->sum(fn ($row) => (float) $row->debit))->toBe(60.0);
+});
+
 it('ages the general ledger by open items: a partial payment shrinks the old invoice', function (): void {
     $report = app(\Alimarchal\LaravelChartOfAccounts\Reports\AgedReceivablesReport::class);
     account('1103')->forceFill(['control_type' => null])->save();

@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Reports;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -62,11 +63,11 @@ class TrialBalanceReport
                 $join->on('je.id', '=', 'jed.journal_entry_id')->where('je.status', 'posted');
 
                 if ($from) {
-                    $join->whereDate('je.entry_date', '>=', $from);
+                    $join->where('je.entry_date', '>=', $from);
                 }
 
                 if ($to) {
-                    $join->whereDate('je.entry_date', '<=', $to);
+                    $join->where('je.entry_date', '<', Carbon::parse($to)->addDay()->toDateString());
                 }
 
                 if (($branches = CurrentBranch::reportIds()) !== null) {

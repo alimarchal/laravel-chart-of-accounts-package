@@ -5,6 +5,7 @@ namespace Alimarchal\LaravelChartOfAccounts\Reports;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -31,7 +32,7 @@ class BalanceSheetReport
             ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))
             ->where('type.report_group', 'BalanceSheet')
             ->where('entry.status', 'posted')
-            ->whereDate('entry.entry_date', '<=', $asOf)
+            ->where('entry.entry_date', '<', Carbon::parse($asOf)->addDay()->toDateString())
             ->groupBy('coa.id', 'coa.account_code', 'coa.account_name', 'type.name', 'type.report_group', 'type.normal_balance', 'coa.normal_balance')
             ->selectRaw("
                 coa.id as account_id,
@@ -111,7 +112,7 @@ class BalanceSheetReport
             ->join('accounting_account_types as type', 'type.id', '=', 'coa.account_type_id')
             ->where('type.report_group', 'IncomeStatement')
             ->where('entry.status', 'posted')
-            ->whereDate('entry.entry_date', '<=', $asOf)
+            ->where('entry.entry_date', '<', Carbon::parse($asOf)->addDay()->toDateString())
             ->selectRaw('COALESCE(SUM(line.base_credit), 0) as credits, COALESCE(SUM(line.base_debit), 0) as debits')
             ->first();
 
