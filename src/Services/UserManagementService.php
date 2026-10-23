@@ -49,7 +49,10 @@ class UserManagementService
      */
     public function findUser(int|string $id): Model
     {
-        $user = ($this->userModel())::query()->with(['roles', 'permissions'])->findOrFail($id);
+        $user = ($this->userModel())::query()->with(['roles', 'permissions'])->when(
+            ($visible = $this->visibleUserIds(request()->user())) !== null,
+            fn ($query) => $query->whereIn($query->getModel()->getQualifiedKeyName(), $visible),
+        )->findOrFail($id);
 
         if (! $user instanceof Authenticatable) {
             throw new \LogicException('The configured user model must implement Authenticatable.');
@@ -69,12 +72,32 @@ class UserManagementService
      */
     public function userQuery(Request $request): QueryBuilder
     {
-        return ListFilters::for(($this->userModel())::query()->with('roles'), $request, [
+        $visible = $this->visibleUserIds($request->user());
+        $users = ($this->userModel())::query()->with('roles')->when($visible !== null, fn ($query) => $query->whereIn($query->getModel()->getQualifiedKeyName(), $visible));
+
+        return ListFilters::for($users, $request, [
             ListFilters::search('search', ['name', 'email']),
             ListFilters::search('name', ['name']),
             ListFilters::search('email', ['email']),
             ListFilters::custom('role', fn ($query, string $role) => $query->whereHas('roles', fn ($roles) => $roles->whereIn('name', explode(',', $role)))),
         ], sorts: ['name', 'email', 'created_at'], defaultSort: '-created_at');
+    }
+
+    /**
+     * With several companies, an administrator sees the users who work in a company they work in themselves (a super-admin sees everybody).
+     * Null means no restriction.
+     *
+     * @return list<int|string>|null
+     */
+    private function visibleUserIds(?Authenticatable $actor): ?array
+    {
+        if (! CurrentCompany::enabled() || $actor === null || $this->guard->isSuperAdmin($actor)) {
+            return null;
+        }
+
+        $companies = DB::table('accounting_company_user')->where('user_id', $actor->getAuthIdentifier())->pluck('company_id');
+
+        return DB::table('accounting_company_user')->whereIn('company_id', $companies)->pluck('user_id')->push($actor->getAuthIdentifier())->unique()->values()->all();
     }
 
     /**
@@ -122,6 +145,14 @@ class UserManagementService
 
             if ($roles !== []) {
                 $user->syncRoles($roles);
+            }
+
+            // A person added while working in a company works in it (otherwise the administrator who added them could not see them).
+            if (CurrentCompany::enabled()) {
+                DB::table('accounting_company_user')->updateOrInsert(
+                    ['company_id' => CurrentCompany::currentId(), 'user_id' => $user->getKey()],
+                    ['is_default' => ! DB::table('accounting_company_user')->where('user_id', $user->getKey())->exists(), 'updated_at' => now(), 'created_at' => now()],
+                );
             }
 
             if (CurrentBranch::enabled() && ! empty($data['branches']) && $user instanceof Authenticatable) {
