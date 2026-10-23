@@ -89,7 +89,7 @@ class StoreJournalEntryRequest extends FormRequest
             'branch_id' => ['nullable', 'integer'],
             'voucher_type_id' => ['nullable', 'integer', CompanyRule::exists('accounting_voucher_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'voucher_type_code' => ['nullable', 'string', 'max:20'],
-            'currency_id' => ['nullable', Rule::exists('accounting_currencies', 'id')],
+            'currency_id' => ['nullable', Rule::exists('accounting_currencies', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'currency_code' => ['nullable', 'string', 'size:3'],
             'fx_rate_to_base' => ['nullable', 'numeric', 'gt:0'],
             'reference' => ['nullable', 'string', 'max:255'],
@@ -100,8 +100,8 @@ class StoreJournalEntryRequest extends FormRequest
             'lines.*.id' => ['nullable', 'integer'],
             'lines.*.chart_of_account_id' => ['required_without:lines.*.account_code', 'nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
             'lines.*.account_code' => ['nullable', 'string', CompanyRule::exists('accounting_chart_of_accounts', 'account_code')->where(fn ($query) => $query->where('is_group', false))],
-            'lines.*.cost_center_id' => ['nullable', 'integer', CompanyRule::exists('accounting_cost_centers', 'id')],
-            'lines.*.cost_center_code' => ['nullable', 'string', CompanyRule::exists('accounting_cost_centers', 'code')],
+            'lines.*.cost_center_id' => ['nullable', 'integer', CompanyRule::exists('accounting_cost_centers', 'id')->where(fn ($query) => $query->where('is_active', true))],
+            'lines.*.cost_center_code' => ['nullable', 'string', CompanyRule::exists('accounting_cost_centers', 'code')->where(fn ($query) => $query->where('is_active', true))],
             'lines.*.debit' => $this->moneyRules(),
             'lines.*.credit' => $this->moneyRules(),
             'lines.*.description' => ['nullable', 'string', 'max:255'],
@@ -119,7 +119,7 @@ class StoreJournalEntryRequest extends FormRequest
     {
         return [
             'lines.*.chart_of_account_id.required_without' => 'Each line needs a chart_of_account_id or an account_code.',
-            'currency_id.exists' => 'The selected currency is invalid.',
+            'currency_id.exists' => 'The selected currency is invalid or inactive.',
             'voucher_type_id.exists' => 'Choose an active voucher type of this company.',
             'lines.*.chart_of_account_id.exists' => 'Line :position: choose a posting account of this company (group accounts only total their children).',
             'lines.*.account_code.exists' => 'Line :position: choose a posting account of this company (group accounts only total their children).',
