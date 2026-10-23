@@ -325,3 +325,21 @@ it('needs a user who may approve for a bill or payment at or above the approval 
     expect(($this->bill)(5000, 3)->status)->toBe('posted');
 });
 
+
+it('answers 422, not 500, for a quantity × price above the maximum amount', function (): void {
+    Sanctum::actingAs($this->accountant);
+
+    foreach ([['quantity' => 999999999, 'unit_price' => 999999999999], ['quantity' => 100000, 'unit_price' => 999999999999]] as $line) {
+        $this->postJson('/api/v1/accounting/party-documents', [
+            'party_id' => $this->customer->id, 'kind' => 'invoice', 'issue_date' => ($this->on)(1),
+            'lines' => [['chart_of_account_id' => account('4101')->id, ...$line]],
+        ])->assertUnprocessable();
+    }
+
+    expect(PartyDocument::query()->count())->toBe(0);
+});
+
+it('caps the document total, not only each line', function (): void {
+    expect(fn () => ($this->document)('invoice', $this->customer, [['4101', 1, '600000000000'], ['4101', 1, '600000000000']], 1, [], false))
+        ->toThrow(AccountingException::class, 'above the maximum');
+});
