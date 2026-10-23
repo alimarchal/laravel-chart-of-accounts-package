@@ -222,3 +222,23 @@ it('explains up front that a foreign-currency account with a balance cannot be m
     $empty->forceFill(['currency_id' => $usd->id])->save();
     expect($this->restructure->merge($empty, $target)['transfer_entry_id'])->toBeNull();
 });
+
+it('moves the settings of other modules to the account that keeps the balance, and lists them in the preview', function (): void {
+    $source = ($this->duplicate)('5191', 'Duplicate expense');
+    $target = ($this->duplicate)('5192', 'Kept expense');
+    $code = \Alimarchal\LaravelChartOfAccounts\Models\TaxCode::query()->create(['code' => 'GSTX', 'name' => 'GST X', 'kind' => 'input', 'tax_account_id' => $source->id]);
+    $assets = app(\Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService::class);
+    $asset = $assets->create($assets->validate([
+        'code' => 'EQ-9', 'name' => 'Laptop', 'acquisition_date' => now()->toDateString(), 'cost' => '1200', 'salvage_value' => '0', 'useful_life_months' => 12, 'method' => 'straight_line',
+        'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => $source->id,
+    ]));
+
+    $plan = $this->restructure->mergePlan($source, $target);
+    expect(collect($plan['references'])->map(fn ($row) => "{$row['table']}.{$row['column']}")->all())->toBe(['accounting_tax_codes.tax_account_id', 'accounting_fixed_assets.expense_account_id']);
+
+    $result = $this->restructure->merge($source, $target);
+
+    expect($result['moved_references'])->toBe(2)
+        ->and($code->refresh()->tax_account_id)->toBe($target->id)
+        ->and($asset->refresh()->expense_account_id)->toBe($target->id);
+});
