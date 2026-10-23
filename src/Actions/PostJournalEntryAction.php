@@ -30,6 +30,7 @@ class PostJournalEntryAction
      */
     public function execute(JournalEntry $journalEntry, bool $systemGenerated = false): JournalEntry
     {
+        // Three attempts: a deadlock between concurrent postings on MySQL/MariaDB is retried instead of failing the request.
         return DB::transaction(function () use ($journalEntry, $systemGenerated): JournalEntry {
             $entry = JournalEntry::query()->with(['lines.account'])->lockForUpdate()->findOrFail($journalEntry->id);
 
@@ -82,7 +83,7 @@ class PostJournalEntryAction
             event(new JournalEntryPosted($entry));
 
             return $entry;
-        });
+        }, 3);
     }
 
     /**
