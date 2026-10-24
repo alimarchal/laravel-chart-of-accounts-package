@@ -10,7 +10,7 @@ Everything lives under one **Accounting** entry in your menu. It opens into sect
 |---|---|
 | **Overview** | The dashboard (cash, receivables, payables, what needs attention) and *All modules*, a page with a card for every screen |
 | **Journal & ledger** | Journal entries, recurring entries, the chart of accounts, account types, currency revaluation, balance snapshots |
-| **Sales & purchases** | Customers and suppliers, invoices and bills, receipts and payments, ageing, tax, FBR, WhatsApp |
+| **Sales & purchases** | Customers and suppliers, invoices and bills, receipts and payments, ageing, tax, WhatsApp |
 | **Banking** | Bank accounts, bank statements, reconciliations, bank book, cash book |
 | **Payroll** | Salary runs, employees, attendance and leave, loans, payroll reports |
 | **Assets & stock** | Fixed assets and inventory |

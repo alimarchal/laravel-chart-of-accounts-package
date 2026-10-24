@@ -145,7 +145,7 @@ The installer asks what it needs, so there is nothing to edit by hand afterwards
 
 Then one yes/no question per topic, and a "yes" asks that topic's settings (each shows the current or default value; an empty answer
 leaves the package default): **REST API** (prefix, rate limit, page size), **WhatsApp** (sandbox or live, token, phone number ID, business account ID, app secret,
-verify token, country code, language, receipt template, queue), **FBR** (mode, URL, token, seller NTN, name, province, address, HS code, auto-submit), **signed
+verify token, country code, language, receipt template, queue), **signed
 webhooks** (URLs, secret, attempts, timeout), **payroll** (days per month, approval, automatic run, overtime, gratuity, tax year), **budgets and bank statements**,
 **PDF, exports and attachments**, **language** and **modules you will not use** (switched off through `ACCOUNTING_FEATURES_DISABLED`). Secrets (verify token,
 webhook secret) can be generated for you. `--advanced` asks every topic without the yes/no. Every key the package reads is covered by these questions
@@ -603,7 +603,7 @@ order in every kit, and shows each person only what their role may open (a modul
 |---|---|
 | **Overview** | Overview (the dashboard), All modules |
 | **Journal & ledger** | Journal entries, Recurring entries, Chart of accounts, Account types, Currency revaluation, Balance snapshots |
-| **Sales & purchases** | Customers & suppliers, Invoices & bills, Receipts & payments, Aged receivables, Aged payables, Tax returns, FBR invoices, WhatsApp |
+| **Sales & purchases** | Customers & suppliers, Invoices & bills, Receipts & payments, Aged receivables, Aged payables, Tax returns, WhatsApp |
 | **Banking** | Bank accounts, Bank statements, Reconciliations, Bank book, Cash book |
 | **Payroll** | Payroll runs, Employees, Attendance & leave, Loans & advances, Payroll reports & tax |
 | **Assets & stock** | Fixed assets, Inventory |
@@ -645,7 +645,7 @@ The accounting area still has two parts, with tabs at the top of the *All module
 
 | Part | URL / route | What is in it |
 |---|---|---|
-| **Accounting** | `/accounting` · `accounting.dashboard` | the daily work: journal entries, chart of accounts, recurring entries, reports (overview, ledger, trial balance, balance sheet, income statement, cash flow, statements, ageing), customers and suppliers, invoices/bills, receipts/payments, tax, banking, payroll, inventory, fixed assets, budgets, FBR, WhatsApp |
+| **Accounting** | `/accounting` · `accounting.dashboard` | the daily work: journal entries, chart of accounts, recurring entries, reports (overview, ledger, trial balance, balance sheet, income statement, cash flow, statements, ageing), customers and suppliers, invoices/bills, receipts/payments, tax, banking, payroll, inventory, fixed assets, budgets, WhatsApp |
 | **Settings** | `/accounting/settings` · `accounting.settings` | **Users & access** (users with their roles, direct permissions and branches; roles and what each may do; permissions; features; account roles; branches; companies), **Setup** (currencies, periods, account types, cost centers, tax codes and rates, voucher types, control accounts, report mapping) and **Audit** |
 
 Only the cards and links the signed-in person's permissions allow are shown, and a route without the permission answers 403. Roles are created and changed in **Settings → Users & access → Roles**
@@ -693,27 +693,6 @@ The look lives in one file, `resources/views/accounting/components/ui-styles.bla
 cash and bank, receivables and payables with ageing, income vs expense by month, top expenses, recent entries and a list of things
 needing attention, each linking to the page that deals with it. Sections are filtered by the user's permissions. The existing
 `/accounting` page remains the module hub.
-
-## FBR sales tax invoices
-
-`/accounting/fbr` (and `/api/v1/accounting/fbr`) sends posted **sales invoices and credit notes** to FBR as digital invoices and keeps
-the invoice number FBR returns.
-
-- Each document is turned into the digital-invoice payload (seller and buyer NTN, name, province and address, one item per line
-  with HS code, unit of measure, rate, value excluding sales tax, sales tax and total; a credit note carries the FBR number of
-  the invoice it refers to). Sent once: an accepted invoice is never sent again, a refused one keeps the reason and can be
-  retried; every attempt stores what was sent and received.
-- **Configuration** (`accounting.fbr`, all `ACCOUNTING_FBR_*` environment variables): `enabled`, `mode`, `url`, `token`,
-  the seller identity, and the defaults the books do not hold (HS code, unit of measure, sale type, scenario, buyer province).
-  With `auto_submit` an invoice is queued for sending as soon as it is posted.
-- **Modes:** `fake` (the default) accepts locally with a generated number: use it for development, demos and tests, nothing leaves
-  your server. `live` posts the payload as JSON with a bearer token to the URL you configure and reads the invoice number from
-  the response key `invoice_number_key`. To integrate differently (certificates, another format) bind your own
-  `Alimarchal\LaravelChartOfAccounts\Contracts\FbrGateway`.
-- **Check before going live:** the field names follow FBR's published digital-invoice format as understood when this was written,
-  and this package has not been exercised against FBR's own sandbox or production service. Register with FBR, run your
-  invoices through their sandbox, and adjust the defaults, the response key or the gateway to what they require.
-- Permissions `fbr.view` and `fbr.submit`; audited (`FBR_INVOICE_ACCEPTED`, `FBR_INVOICE_FAILED`).
 
 ## WhatsApp (Cloud API)
 
@@ -906,7 +885,7 @@ back. A sub-feature (`payroll_loans`) is off whenever its parent (`payroll`) is 
 contributions, arrears, bonuses), and the schedulers of recurring entries and payroll do nothing while their module is off. The defaults come from
 `accounting.features.disabled` (`ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets"`); what is saved from the screen, API or command wins. Every
 change is in the audit trail (`FEATURE_ENABLED`, `FEATURE_DISABLED`). Keys: `parties`, `tax`, `banking`, `budgets`, `fixed_assets`, `inventory`,
-`recurring_entries`, `fx_revaluation`, `fbr`, `whatsapp`, `attachments`, `report_mapping`, `chart_templates`, `control_accounts`, `snapshots`, `audit_log`,
+`recurring_entries`, `fx_revaluation`, `whatsapp`, `attachments`, `report_mapping`, `chart_templates`, `control_accounts`, `snapshots`, `audit_log`,
 `payroll`, `payroll_grades`, `payroll_arrears`, `payroll_attendance`, `payroll_loans`, `payroll_contributions`, `payroll_bank_file`,
 `payroll_payslip_mail`, `payroll_adjustments`, `payroll_approval`, `payroll_settlements`, `payroll_reports`. Multi-company and maker-checker
 approvals of journal entries keep their own switches (`accounting.multi_company.enabled`, `accounting.approvals.enabled`).
@@ -932,7 +911,7 @@ GET /api/v1/accounting/party-documents?search=rent&status=posted&date_from=2026-
   own default order (newest first for documents and payments, by code for accounts).
 - **Strict where it matters**: an unknown filter or sort answers `400`, a malformed date or number `422`, so a typo never silently
   returns everything.
-- Filters **combine with AND**; a result that is capped (for example the 300 newest FBR documents) is capped *after* filtering, so the
+- Filters **combine with AND**; a result that is capped (for example the 300 newest documents) is capped *after* filtering, so the
   record you are looking for is found by its status or date, not only when it is recent.
 - **Reports keep their filters when exported**: the CSV / Excel / PDF of the trial balance, balance sheet, income statement and the aged
   reports contain exactly the date and filters on the screen (the Blade screens pick a period instead of a date; its last day is used).
@@ -951,7 +930,7 @@ GET /api/v1/accounting/party-documents?search=rent&status=posted&date_from=2026-
 | Payroll: loans, arrears, adjustments, settlements | `employee_id` and a search by the employee's code or name, `status`, `kind`, dates, amounts |
 | Payroll: components, grades, schemes | `kind`, `method`, `taxable`, `base`, `applies_to_all`, `active`, `min_salary`/`max_salary` |
 | Users, roles, voucher types, companies, control accounts | `role`, `name`, `email`; `guard_name`; `active`, `system`, `reset`; `is_active`; `control_type` |
-| Tax returns, exchange rates, revaluations, FBR, periods | `return_from`/`return_to`, `min_payable`; `currency_id`, `source`, `rate_from`/`rate_to`; `status`, `kind`, dates; `status`, dates |
+| Tax returns, exchange rates, revaluations, periods | `return_from`/`return_to`, `min_payable`; `currency_id`, `source`, `rate_from`/`rate_to`; `status`, `kind`, dates; `status`, dates |
 | Journal entries, chart of accounts, audit log, small master data | `reference`, `status`, `entry_date_from`/`entry_date_to`, … (see the OpenAPI document) |
 
 ## Inventory
@@ -1636,7 +1615,7 @@ Amounts: a transaction amount may not exceed `accounting.max_amount` (`ACCOUNTIN
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->
-_328 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
+_326 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
 
 ### Journal entries
 
@@ -1919,13 +1898,6 @@ _328 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | DELETE | `/fx-revaluation/rates/{exchangeRate}` | Remove a dated rate | `fx-revaluation.rates` |
 | GET | `/fx-revaluation/{fxRevaluation}` | One revaluation with its accounts | `fx-revaluation.view` |
 | POST | `/fx-revaluation/{fxRevaluation}/reverse` | Reverse a revaluation | `fx-revaluation.run` |
-
-### FBR
-
-| Method | Endpoint | What it does | Permission |
-|--------|----------|--------------|------------|
-| GET | `/fbr` | Posted sales invoices and credit notes with their FBR status | `fbr.view` |
-| POST | `/fbr/documents/{document}/submit` | Send a sales invoice or credit note to FBR (or retry a failed one) | `fbr.submit` |
 
 ### Fixed assets
 
@@ -2314,8 +2286,6 @@ super-admin can manage super-admin users or the `super-admin` role, changing a u
 | `payroll.run` | ✔ |  | ✔ |  |  |  |
 | `payroll.post` | ✔ |  |  | ✔ |  |  |
 | `payroll.void` | ✔ |  |  | ✔ |  |  |
-| `fbr.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
-| `fbr.submit` | ✔ |  | ✔ |  |  |  |
 | `whatsapp.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
 | `whatsapp.send` | ✔ |  | ✔ |  |  |  |
 | `bank-statements.view` | ✔ |  | ✔ | ✔ | ✔ | ✔ |
@@ -2498,7 +2468,6 @@ The package is reviewed against the OWASP top ten for what it controls; see `tes
 - **Company isolation:** a record of another company is never served, changed or deleted by id, on any API resource (tested for every route).
 - **Uploads:** attachments are limited to a whitelist of document types, stored on a private disk and downloaded with `nosniff`; Excel imports reject DOCTYPE/entity tricks and oversized (zip-bomb) parts.
 - **Exports:** CSV cells starting with `=`, `+`, `-` or `@` are prefixed so spreadsheets never run them as formulas.
-- **FBR:** the token is only sent to an `https://` address.
 - **Audit:** postings, voids, role and permission changes are written to the audit trail.
 
 A UAT checklist for accountants is in `docs/uat.md`.

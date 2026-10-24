@@ -3,10 +3,8 @@
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
-use Alimarchal\LaravelChartOfAccounts\Jobs\SubmitFbrInvoice;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
-use Alimarchal\LaravelChartOfAccounts\Models\FbrSubmission;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyAllocation;
@@ -15,8 +13,6 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocumentLine;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
-use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
-use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Alimarchal\LaravelChartOfAccounts\Support\TaxCalculator;
 use Illuminate\Support\Carbon;
@@ -239,10 +235,6 @@ class PartyDocumentService
             $document->forceFill(['number' => $number, 'status' => 'posted', 'journal_entry_id' => $entry->id])->save();
             AccountingAuditLog::record($document, 'PARTY_DOCUMENT_POSTED', null, ['number' => $number, 'total' => $document->total, 'journal_entry_id' => $entry->id]);
 
-            if (app(FeatureManager::class)->enabled('fbr') && config('accounting.fbr.auto_submit') && in_array($document->kind, ['invoice', 'credit_note'], true)) {
-                SubmitFbrInvoice::dispatch($document->id, CurrentCompany::currentId())->afterCommit();
-            }
-
             return $document->refresh();
         });
     }
@@ -261,11 +253,6 @@ class PartyDocumentService
 
             if (PartyAllocation::query()->where('document_id', $document->id)->orWhere('credit_document_id', $document->id)->exists()) {
                 throw new AccountingException('The document has payments or credits applied: undo them first.');
-            }
-
-            // FBR keeps its own record of an accepted (or in-flight) digital invoice: it is cancelled with a credit note, never by voiding.
-            if (FbrSubmission::query()->where('party_document_id', $document->id)->whereIn('status', ['accepted', 'pending'])->exists()) {
-                throw new AccountingException('This invoice was submitted to FBR: issue a credit note instead of voiding it.');
             }
 
             if ($document->journal_entry_id !== null) {

@@ -213,44 +213,16 @@ return [
         ],
     ],
 
-    // FBR sales tax invoicing: posted sales invoices and credit notes are sent as digital invoices and the invoice number
-    // FBR returns is kept. mode: fake (accepts locally, for development and demos) or live (posts JSON with a bearer
-    // token to url; the invoice number is read from the response key invoice_number_key). seller and defaults fill what
-    // the books do not hold; auto_submit sends an invoice on a queue as soon as it is posted. Bind your own
-    // Alimarchal\LaravelChartOfAccounts\Contracts\FbrGateway to integrate differently.
     /*
     | Feature switches. Every optional module and payroll sub-feature is on unless it is listed here; an administrator can also switch
     | them from the settings screen (/accounting/settings/features), the API or `php artisan accounting:features`, and what is saved
-    | there wins over this list. Keys: parties, tax, banking, budgets, fixed_assets, inventory, recurring_entries, fx_revaluation, fbr, whatsapp,
+    | there wins over this list. Keys: parties, tax, banking, budgets, fixed_assets, inventory, recurring_entries, fx_revaluation, whatsapp,
     | attachments, report_mapping, chart_templates, control_accounts, snapshots, audit_log, payroll, payroll_grades, payroll_arrears,
     | payroll_attendance, payroll_loans, payroll_contributions, payroll_bank_file, payroll_payslip_mail, payroll_settlements, payroll_reports.
     | ACCOUNTING_FEATURES_DISABLED="inventory,fixed_assets" turns those off by default.
     */
     'features' => [
         'disabled' => array_values(array_filter(array_map('trim', explode(',', (string) env('ACCOUNTING_FEATURES_DISABLED', ''))))),
-    ],
-
-    'fbr' => [
-        'enabled' => (bool) env('ACCOUNTING_FBR_ENABLED', false),
-        'mode' => env('ACCOUNTING_FBR_MODE', 'fake'),
-        'url' => env('ACCOUNTING_FBR_URL'),
-        'token' => env('ACCOUNTING_FBR_TOKEN'),
-        'timeout' => (int) env('ACCOUNTING_FBR_TIMEOUT', 20),
-        'auto_submit' => (bool) env('ACCOUNTING_FBR_AUTO_SUBMIT', false),
-        'invoice_number_key' => env('ACCOUNTING_FBR_INVOICE_NUMBER_KEY', 'invoiceNumber'),
-        'seller' => [
-            'ntn' => env('ACCOUNTING_FBR_SELLER_NTN'),
-            'business_name' => env('ACCOUNTING_FBR_SELLER_NAME'),
-            'province' => env('ACCOUNTING_FBR_SELLER_PROVINCE'),
-            'address' => env('ACCOUNTING_FBR_SELLER_ADDRESS'),
-        ],
-        'defaults' => [
-            'hs_code' => env('ACCOUNTING_FBR_HS_CODE'),
-            'uom' => env('ACCOUNTING_FBR_UOM', 'Numbers, pieces, units'),
-            'sale_type' => env('ACCOUNTING_FBR_SALE_TYPE', 'Goods at standard rate (default)'),
-            'scenario_id' => env('ACCOUNTING_FBR_SCENARIO_ID'),
-            'buyer_province' => env('ACCOUNTING_FBR_BUYER_PROVINCE'),
-        ],
     ],
 
     /*
@@ -435,8 +407,6 @@ return [
         'payroll.post',
         'payroll.approve',
         'payroll.void',
-        'fbr.view',
-        'fbr.submit',
         'whatsapp.view',
         'whatsapp.send',
         'tax-returns.view',
@@ -587,8 +557,6 @@ return [
             'payroll.view',
             'payroll.manage',
             'payroll.run',
-            'fbr.view',
-            'fbr.submit',
             'whatsapp.view',
             'whatsapp.send',
             'tax-returns.view',
@@ -662,7 +630,6 @@ return [
             'payroll.post',
             'payroll.approve',
             'payroll.void',
-            'fbr.view',
             'whatsapp.view',
             'tax-returns.view',
             'parties.view',
@@ -700,7 +667,6 @@ return [
             'fixed-assets.view',
             'inventory.view',
             'payroll.view',
-            'fbr.view',
             'whatsapp.view',
             'tax-returns.view',
             'parties.view',
@@ -739,7 +705,6 @@ return [
             'fixed-assets.view',
             'inventory.view',
             'payroll.view',
-            'fbr.view',
             'whatsapp.view',
             'tax-returns.view',
             'parties.view',

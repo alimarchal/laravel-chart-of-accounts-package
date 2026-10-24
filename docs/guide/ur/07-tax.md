@@ -1,6 +1,6 @@
 <div dir="rtl" align="right">
 
-# باب 7: ٹیکس اور FBR
+# باب 7: ٹیکس
 
 [← پچھلا باب](06-parties.md) · [فہرست](README.md) · [اگلا باب: منصوبہ بندی →](08-planning.md)
 
@@ -30,14 +30,5 @@
 
 ![Tax Report](../images/accounting-tax-returns-report.jpg)
 
-## 7.4 FBR سیلز ٹیکس انوائسنگ
-
-پوسٹ شدہ سیلز انوائس/کریڈٹ نوٹ FBR کو بھیجے جاتے ہیں اور FBR کا انوائس نمبر واپس درج ہوتا ہے۔
-
-- **ترتیب:** `ACCOUNTING_FBR_ENABLED=true`، موڈ `fake` (آزمائش)، `live` (اصلی) یا اپنا gateway؛ URL **لازماً https** ہو، ٹوکن کبھی سادہ http پر نہیں جاتا۔
-- **استعمال:** `FBR invoices` کھولیں، انوائس کے سامنے `Submit` دبائیں۔ نتیجہ: `accepted` (FBR نمبر کے ساتھ) یا `failed` (وجہ کے ساتھ؛ دوبارہ کوشش ممکن)۔
-- اس فیچر کو **Features** سے بند بھی کیا جا سکتا ہے (باب 10)۔
-
-![FBR invoices](../images/accounting-fbr-index.jpg)
 
 </div>

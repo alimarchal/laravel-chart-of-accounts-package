@@ -16,7 +16,7 @@
 | [4](04-reports.md) | رپورٹیں | Trial Balance سے Cash Flow تک، ایکسپورٹ |
 | [5](05-bank.md) | بینک | بینک کھاتے، اسٹیٹمنٹ امپورٹ، Auto-match، مفاہمت |
 | [6](06-parties.md) | گاہک و سپلائر | انوائس، بل، وصولی/ادائیگی، Ageing |
-| [7](07-tax-fbr.md) | ٹیکس اور FBR | Tax Codes، Taxed Document، ٹیکس رپورٹ، FBR انوائسنگ |
+| [7](07-tax.md) | ٹیکس | Tax Codes، Taxed Document، ٹیکس رپورٹ |
 | [8](08-planning.md) | بجٹ، اثاثے، انوینٹری | Budget vs Actual، فرسودگی، اسٹاک |
 | [9](09-payroll.md) | پے رول | ملازمین، تنخواہ Run، بقایا جات، چھٹی، قرض، EOBI، منظوری، بونس، تصفیہ، ٹیکس سرٹیفکیٹ |
 | [10](10-admin.md) | انتظامی ٹولز | صارفین، رولز، **Features آن/آف**، کمپنیاں، Audit Log |

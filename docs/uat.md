@@ -21,7 +21,6 @@ Tick each line; write down the screen, the entry number and what you saw when so
 - [ ] Create a customer invoice with tax, post it, receive part payment, see ageing move.
 - [ ] Create a supplier bill with withholding, post it, pay it.
 - [ ] Customer and supplier ledgers agree with the control accounts (reconciliation shows no difference).
-- [ ] Sales invoice shows FBR status; submit it and see the FBR invoice number.
 
 ## 4. Assets, stock, payroll
 - [ ] Add a fixed asset, run depreciation for a month, check the journal entry, dispose of the asset.

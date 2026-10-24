@@ -98,7 +98,7 @@ curl "${H[@]}" -o tb.csv "$API/reports/trial-balance/export/csv"
 | **رپورٹیں** | `/reports/{trial-balance، balance-sheet، income-statement، general-ledger، cash-flow، bank-book، cash-book، aged-receivables، aged-payables، account-statement}` اور `/export/{csv\|xlsx\|pdf}` |
 | **بینک** | `/bank-accounts`, `/reconciliations`, `/bank-statements` (+ `/import`, `/{id}/auto-match`, `/{id}/reconcile`) |
 | **گاہک و سپلائر** | `/parties`, `/party-documents` (+ `/{id}/post`, `/{id}/void`, `/{id}/apply`), `/party-payments` (+ `/{id}/allocate`, `/{id}/void`), `/reports/aged-receivables` |
-| **ٹیکس / FBR** | `/tax-codes`, `/tax-rates`, `/tax/calculate`, `/tax/entries`, `/tax/returns`, `/fbr`, `/fbr/documents/{id}/submit` |
+| **ٹیکس** | `/tax-codes`, `/tax-rates`, `/tax/calculate`, `/tax/entries`, `/tax/returns` |
 | **بجٹ** | `/budgets` (+ `/{id}/approve`, `/{id}/close`, `/{id}/reopen`, `/{id}/copy`, `/{id}/export/{format}`) |
 | **تکرار والے واؤچر / FX** | `/recurring-entries` (+ `/{id}/run`, `/{id}/pause`, `/{id}/resume`)، `/fx-revaluation` (+ `/preview`, `/rates`, `/{id}/reverse`) |
 | **اثاثے / انوینٹری** | `/fixed-assets` (+ `/depreciation`, `/{id}/dispose`, `/export/{format}`)، `/inventory` (+ `/items`, `/warehouses`, `/movements`, `/export/{format}`) |

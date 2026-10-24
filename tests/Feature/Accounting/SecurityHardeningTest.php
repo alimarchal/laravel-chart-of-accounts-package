@@ -3,10 +3,8 @@
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Services\AccountingReportExporter;
 use Alimarchal\LaravelChartOfAccounts\Services\AttachmentService;
-use Alimarchal\LaravelChartOfAccounts\Support\Fbr\HttpFbrGateway;
 use Alimarchal\LaravelChartOfAccounts\Support\SpreadsheetReader;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 
 function workbook(string $sheet, ?string $doctype = null): string
@@ -41,16 +39,6 @@ it('stops formulas in exported CSV cells', function (): void {
         ->and(AccountingReportExporter::safeCell('1200.50'))->toBe('1200.50')
         ->and(AccountingReportExporter::safeCell('Rent'))->toBe('Rent')
         ->and(AccountingReportExporter::safeCell(null))->toBe('');
-});
-
-it('never sends the FBR token over plain http', function (): void {
-    config(['accounting.fbr.url' => 'http://fbr.test/invoices', 'accounting.fbr.token' => 'secret']);
-    Http::fake();
-
-    $result = (new HttpFbrGateway)->submit([]);
-
-    expect($result['accepted'])->toBeFalse()->and($result['error'])->toContain('https://');
-    Http::assertNothingSent();
 });
 
 it('accepts only the whitelisted document types as attachments', function (): void {
