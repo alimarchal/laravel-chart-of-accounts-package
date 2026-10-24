@@ -808,7 +808,10 @@ With `ACCOUNTING_WHATSAPP_MODE=fake` nothing is sent and no Meta account is need
 - A **payroll run** for a month works out every payslip: new joiners and leavers are paid for the days employed, percent
   components follow the prorated basic, and flagged employees have **income tax withheld** from the slabs in
   `accounting.payroll.tax_slabs` (annualised taxable pay; the defaults are illustrative Pakistani salaried-individual slabs, so
-  check them against the current rules). A negative net salary is refused. One run per month; a draft can be recalculated or deleted.
+  check them against the current rules). A negative net salary is refused (the message lists every overdrawn employee at once).
+  How a day's pay is worked out (joiners, leavers, unpaid absence, leave encashment) follows `ACCOUNTING_PAYROLL_DAY_BASIS`:
+  `calendar` (the real 28–31 days, the default), `fixed` (`gratuity.days_per_month` every month) or `working` (the month's days less
+  the weekly off days in `ACCOUNTING_PAYROLL_WEEKLY_OFF`, `0` = Sunday … `6` = Saturday). One run per month; a draft can be recalculated or deleted.
 - **Post** books one entry in the payroll module: basic pay and earnings as expense (by account and cost center), deductions and
   tax as liabilities, and the net pay owed to employees (`ACCOUNTING_PAYROLL_NET_PAYABLE`, default 2103). **Pay** clears that
   liability against a bank or cash account. **Void** reverses the payment and the salary entry; the month can then be run again.
@@ -1464,7 +1467,13 @@ ACCOUNTING_APPROVAL_THRESHOLD=100000   # base currency; entries below post direc
   about problems before the checker sees the entry.
 - Editing a rejected or pending entry sends it back to draft; it must be submitted again.
 - The threshold is compared in the base currency (`amount × fx_rate_to_base`).
-- Reversals and year-end closing entries are system-generated and are not held for approval.
+- Year-end closing entries are system-generated and are not held for approval. A **reversal** at or above the threshold can only be
+  made by a user who may approve (`ACCOUNTING_APPROVAL_INCLUDE_REVERSALS`, default `true`).
+- **Module postings** (`ACCOUNTING_APPROVAL_MODULES`, default `receivables,payables,inventory,fixed_assets,tax-return`) at or above the
+  threshold can only be made by a user who holds `journal-entries.approve`; the budget control applies to every module posting.
+  Payroll has its own run approval.
+- Whoever last **edited** an entry cannot approve it either (`edited_by`), so editing is not a way around the four-eyes rule.
+- `ACCOUNTING_REQUIRE_REVERSAL_REASON=true` makes a reason mandatory when reversing an entry (reopening a closed period always needs one).
 - Every step is recorded (who + when) and shown as an **audit trail** on the entry page; the pending queue is
   `GET /journal-entries?filter[approval_status]=pending`.
 
@@ -2494,7 +2503,7 @@ composer format:check             # Pint
 - [ ] `php artisan config:cache route:cache` in deploys; `php artisan accounting:update` after every upgrade.
 - [ ] Back up before closing a fiscal year; give `periods.reopen` to as few people as possible.
 - [ ] Multi-company: give each user access only to their companies; review `accounting:roles` (roles apply in every company).
-- [ ] Known limitations: all companies share one base currency; consolidation does not eliminate intercompany balances; seeded exchange rates are samples — set your own.
+- [ ] Known limitations: customer refunds are not built yet, and large Excel exports are built in memory (not streamed); all companies share one base currency; consolidation does not eliminate intercompany balances; seeded exchange rates are samples — set your own.
 
 ---
 
