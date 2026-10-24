@@ -84,7 +84,7 @@ final class AccountRoles
         }
 
         $wrong = ChartOfAccount::query()->with('accountType:id,code')->whereIn('id', $accountIds)->get()
-            ->reject(fn (ChartOfAccount $account) => in_array($account->accountType?->code, $allowed, true));
+            ->reject(fn (ChartOfAccount $account) => in_array(data_get($account, 'accountType.code'), $allowed, true));
 
         return $wrong->isEmpty() ? null : 'Choose '.strtolower(implode(' or ', $allowed)).' accounts for this role ('.$wrong->pluck('account_code')->implode(', ').' '.($wrong->count() === 1 ? 'is' : 'are').' not).';
     }
