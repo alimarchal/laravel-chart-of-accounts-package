@@ -4,6 +4,9 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+### Changed
+- Documentation brought up to date with 2.40–2.41: README (maker-checker rules for reversals, module postings and editors, reversal reason, payroll day basis, known limitations), OpenAPI version, Urdu guide, help catalog and Postman collection regenerated without FBR.
+
 ## [2.41.0] - 2026-10-24
 
 ### Removed
@@ -50,7 +53,7 @@ Every screen now looks like the journal screens (payroll included), the menu of 
 - **Tax and chart:** a tax code in use cannot be deleted or change kind/tax account; an account type in use cannot be redefined; posted rows are immutable on cost centre, description, tax and period columns; account codes are stored upper-case (case-insensitive uniqueness); account roles accept only suitable account types; merges repoint other modules' settings and refuse back-dated or foreign-currency-with-balance merges.
 - **Periods and posting:** `JournalEntry::record()` works on a period's last day; year-end close and reversals work with deactivated accounts and foreign-currency P&L accounts; reopening a period needs a reason; "Run now" of a recurring entry will not post a future occurrence unless forced.
 - **Controls:** self-approval through editing and payroll self-approval are refused; module postings (bills, payments, stock, assets, tax returns) and reversals respect the approval threshold and budget control; the last super-admin and roles in use are protected; user lists are company-scoped; feature switches need a super-admin with several companies; exchange rates are per company; the base currency cannot change while any company has postings; optional enforcement of Sanctum token abilities.
-- **Banking, receivables, payroll, assets:** monthly bank reconciliation completes for later statements and cannot be completed by typing values; USD statement lines are booked in USD; FBR-accepted invoices cannot be voided; free (zero-price) lines post; ageing keeps advance receipts and ages the GL by open items; double-submitted receipts are caught; opening-balance invoices keep their dates; loans re-open when their run is voided and are never recovered twice; payroll day basis (calendar/fixed/working) and working hours per employee; migrated assets (opening depreciation) and safe disposal/stock dates.
+- **Banking, receivables, payroll, assets:** monthly bank reconciliation completes for later statements and cannot be completed by typing values; USD statement lines are booked in USD; free (zero-price) lines post; ageing keeps advance receipts and ages the GL by open items; double-submitted receipts are caught; opening-balance invoices keep their dates; loans re-open when their run is voided and are never recovered twice; payroll day basis (calendar/fixed/working) and working hours per employee; migrated assets (opening depreciation) and safe disposal/stock dates.
 - **Operations:** voucher numbering no longer deadlocks on MySQL/MariaDB (not re-measured here), voucher types cannot collide, every migration can be rolled back, report date filters are index-friendly, trial balance shows closing balances by debit/credit side.
 - Known open items: customer refunds (#76), streaming XLSX export (#88), and the rest of the report-performance work (#87).
 
