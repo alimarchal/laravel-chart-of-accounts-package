@@ -4,6 +4,13 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [2.42.0] - 2026-10-24
+
+### Changed
+- **One migration per table.** The 43 migration files (many of them `add_…` migrations that changed tables created earlier, with data backfills for old installations) were replaced by 67 `create_…_table` migrations in dependency order, plus the database objects (views and triggers) as the last migration. The schema is identical (columns, indexes, foreign keys and triggers were compared before and after), apart from the `ENUM` check constraints that SQLite used to lose when an `add_…` migration rebuilt a table. The default company, the default voucher types and the standard statement lines are still created by the migrations that create their tables.
+- **Breaking for databases created by an older version:** the migration file names changed. Rebuild a development database with `php artisan migrate:fresh`; no upgrade path is provided while the package is in development.
+- The test of the base-amount backfill migration was removed together with that migration.
+
 ## [2.41.1] - 2026-10-24
 
 Documentation only.
