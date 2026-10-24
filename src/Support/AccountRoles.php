@@ -31,6 +31,7 @@ final class AccountRoles
             'cash' => ['label' => 'Cash in hand (cash book)', 'config' => 'accounting.defaults.cash_account_code', 'multiple' => false, 'defaults' => ['general' => ['1101'], 'school' => ['1101'], 'erpnext' => ['1100']]],
             'bank' => ['label' => 'Bank accounts (bank book, close checklist)', 'config' => 'accounting.defaults.bank_account_code', 'multiple' => false, 'defaults' => ['general' => ['1102'], 'school' => ['1102'], 'erpnext' => ['1200']]],
             'retained_earnings' => ['label' => 'Retained earnings (year-end close)', 'config' => 'accounting.defaults.retained_earnings_account_code', 'multiple' => false, 'defaults' => ['general' => ['3101'], 'school' => ['3101'], 'erpnext' => ['3400']]],
+            'opening_balance_equity' => ['label' => 'Opening balance equity (carries the difference of the opening balances)', 'config' => null, 'multiple' => false, 'defaults' => ['general' => ['3102'], 'school' => ['3102'], 'erpnext' => ['3300']]],
             'rounding' => ['label' => 'Rounding difference', 'config' => 'accounting.defaults.rounding_account_code', 'multiple' => false, 'defaults' => ['general' => ['5201'], 'school' => ['5201'], 'erpnext' => ['5212']]],
             'fx_gain_loss' => ['label' => 'Exchange gain or loss (revaluation)', 'config' => 'accounting.fx.gain_loss_account', 'multiple' => false, 'defaults' => ['general' => [], 'school' => [], 'erpnext' => ['5219']]],
             'aging.receivables' => ['label' => 'Receivables in the ageing report', 'config' => 'accounting.aging.receivable_account_codes', 'multiple' => true, 'defaults' => ['general' => ['1103', '1104'], 'school' => ['1103', '1104'], 'erpnext' => ['1310']]],
@@ -61,7 +62,7 @@ final class AccountRoles
     {
         return match ($role) {
             'cash', 'bank', 'aging.receivables', 'control.receivables', 'control.inventory', 'employee_advances' => ['ASSET'],
-            'retained_earnings' => ['EQUITY'],
+            'retained_earnings', 'opening_balance_equity' => ['EQUITY'],
             'rounding', 'fx_gain_loss' => ['INCOME', 'EXPENSE'],
             'aging.payables', 'control.payables', 'control.payroll', 'income_tax_payable', 'net_salary_payable', 'gratuity_payable' => ['LIABILITY'],
             'control.tax' => ['ASSET', 'LIABILITY'],

@@ -1102,6 +1102,7 @@ ageing report?". Each company has its own answers, filled in from the chart when
 |---|---|
 | `cash`, `bank` | Cash book, bank book, close checklist (bank reconciled) |
 | `retained_earnings`, `rounding`, `fx_gain_loss` | Year-end close, rounding differences, currency revaluation |
+| `opening_balance_equity` | Carries the difference of the opening balances (see below) |
 | `aging.receivables`, `aging.payables` | The ageing reports and the party statements |
 | `control.receivables`, `.payables`, `.inventory`, `.payroll`, `.tax` | "Recommended setup" of the control accounts |
 | `salary_expense`, `net_salary_payable`, `income_tax_payable`, `employee_advances` | Payroll posting, loans, settlements |
@@ -1127,6 +1128,27 @@ PUT /api/v1/accounting/account-roles   {"roles": {"cash": [12], "aging.receivabl
 - **They follow the money**: merging an account into another moves its roles to the account that keeps the balance; an account that plays a
   role cannot be deleted or deactivated until the role is given to another account; and cash, bank, retained earnings and rounding cannot be
   renumbered, merged away or deactivated while they play their role.
+
+### Opening balances
+
+A company that starts using the books brings its balances over with one entry on the go-live date:
+
+```http
+POST /api/v1/accounting/opening-balances
+{"date": "2026-07-01", "balances": [
+  {"chart_of_account_id": 12, "debit": "5000.00"},
+  {"chart_of_account_id": 31, "credit": "1500.00"}
+]}
+GET  /api/v1/accounting/opening-balances     # the posted entry, or null
+```
+
+- One posted entry (reference `OPENING-BALANCE`, voucher number from the normal sequence). Each balance is **either a debit or a credit**;
+  whatever the two sides do not balance by is booked to the `opening_balance_equity` role (account `3102`, or `3300` in the ERPNext chart),
+  so the entry always balances.
+- Needs `journal-entries.post`. The normal posting rules apply: open period, active posting accounts, and control accounts (receivables,
+  payables, stock) are opened with their own opening invoices, bills and stock rather than with a plain balance.
+- Only **one** opening entry can stand at a time (422 otherwise); reverse it to post the balances again.
+- API only for now: there is no screen for it.
 
 ## Industry chart templates
 
