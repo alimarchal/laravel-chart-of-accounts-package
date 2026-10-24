@@ -12,7 +12,7 @@ At set-up, and whenever you restructure the chart.
 
 ## How to
 
-For each role (cash, bank, retained earnings, rounding, exchange gain/loss, receivables and payables for ageing, payroll accounts …) pick the account or accounts. A role that takes one account refuses two. Leave it empty to go back to the chart's default.
+For each role (cash, bank, retained earnings, rounding, exchange gain/loss, opening balance equity, receivables and payables for ageing, payroll accounts …) pick the account or accounts. A role that takes one account refuses two. Leave it empty to go back to the chart's default.
 
 ## Good to know
 

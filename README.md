@@ -1150,6 +1150,10 @@ GET  /api/v1/accounting/opening-balances     # the posted entry, or null
 - Only **one** opening entry can stand at a time (422 otherwise); reverse it to post the balances again.
 - API only for now: there is no screen for it.
 
+The posted entry as it appears on the journal entry page:
+
+![Opening balance entry](docs/images/opening-balance-entry.jpg)
+
 ## Industry chart templates
 
 Chart of Accounts → **Templates** (React and Blade), `GET /chart-templates`, or `php artisan accounting:chart-templates`.
@@ -1646,7 +1650,7 @@ Amounts: a transaction amount may not exceed `accounting.max_amount` (`ACCOUNTIN
 Machine-readable spec: [`docs/openapi.yaml`](docs/openapi.yaml). **Every screen and endpoint with its permission: the [help catalog](docs/help-catalog.md).**
 
 <!-- api-reference:start -->
-_326 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
+_328 endpoints, generated from the routes by `docs/generate-route-catalog.py`. Screens: see the [help catalog](docs/help-catalog.md)._
 
 ### Journal entries
 
@@ -1657,6 +1661,8 @@ _326 endpoints, generated from the routes by `docs/generate-route-catalog.py`. S
 | POST | `/journal-entries/{journalEntry}/attachments` | Attach a document (multipart/form-data) | `attachments.create` |
 | GET | `/attachments/{attachment}/download` | Download a document | `attachments.view` |
 | DELETE | `/attachments/{attachment}` | Remove a document of a draft | `attachments.delete` |
+| GET | `/opening-balances` | The opening-balance entry of the company, if one is posted | `journal-entries.view` |
+| POST | `/opening-balances` | Post the balances the company starts with | `journal-entries.post` |
 | GET | `/journal-entries` | List entries | `journal-entries.view` |
 | POST | `/journal-entries` | Create (and optionally post) an entry | `journal-entries.create` |
 | POST | `/journal-entries/simple` | Two-line entry by account codes | `journal-entries.create` |
