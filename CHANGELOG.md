@@ -4,6 +4,11 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [2.41.2] - 2026-10-24
+
+### Added
+- The Karpathy guidelines for AI coding assistants (from multica-ai/andrej-karpathy-skills, MIT): `CLAUDE.md`, the `karpathy-guidelines` skill in `.claude/skills/`, and `.claude-plugin/` so the skill can also be installed as a Claude Code plugin. Development tooling only; nothing changes in the package itself.
+
 ## [2.41.1] - 2026-10-24
 
 Documentation only.
