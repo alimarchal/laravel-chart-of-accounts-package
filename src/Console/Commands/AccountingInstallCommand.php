@@ -31,7 +31,7 @@ class AccountingInstallCommand extends Command
         {--prefix= : URL prefix of the accounting screens (default accounting)}
         {--no-menu : Do not add the Accounting link to the starter kit navigation}
         {--no-env : Do not write the answers to .env}
-        {--advanced : Ask every optional setting (WhatsApp, FBR, webhooks, payroll, budgets, PDF, language, modules) instead of one yes/no per topic}
+        {--advanced : Ask every optional setting (WhatsApp, webhooks, payroll, budgets, PDF, language, modules) instead of one yes/no per topic}
         {--setup-only : Only ask the questions, write .env, create the administrator and add the menu (no publishing, migrating or seeding)}';
 
     protected $description = 'Full setup: publish assets, run migrations (including Spatie), seed master data, and verify.';

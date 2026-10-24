@@ -32,7 +32,7 @@
 
 **مقصد:** جو ماڈیول آپ کے کام کا نہیں اسے بند کر دیں تاکہ مینو صاف رہے اور عملہ غلطی سے وہاں نہ جائے؛ ضرورت پڑے تو دوبارہ آن۔
 
-`Features` (`/accounting/features`، Blade میں `/settings/features`) صرف `accounting.manage-settings` والے صارف کے لیے ہے۔ فہرست دو حصوں میں ہے: **Modules** (Customers & suppliers، Tax، Banking، Budgets، Fixed assets، Inventory، Recurring entries، FX revaluation، FBR، Attachments، Statement layout، Chart templates، Control accounts، Snapshots، Audit log، Payroll) اور **Payroll** کے ذیلی فیچر (Grades، Arrears، Attendance، Loans، Contributions، Bank file، Payslip e-mail، Bonuses، Run approval، Settlements، Reports & tax)۔
+`Features` (`/accounting/features`، Blade میں `/settings/features`) صرف `accounting.manage-settings` والے صارف کے لیے ہے۔ فہرست دو حصوں میں ہے: **Modules** (Customers & suppliers، Tax، Banking، Budgets، Fixed assets، Inventory، Recurring entries، FX revaluation، Attachments، Statement layout، Chart templates، Control accounts، Snapshots، Audit log، Payroll) اور **Payroll** کے ذیلی فیچر (Grades، Arrears، Attendance، Loans، Contributions، Bank file، Payslip e-mail، Bonuses، Run approval، Settlements، Reports & tax)۔
 
 ![Features](../images/accounting-features-index.jpg)
 

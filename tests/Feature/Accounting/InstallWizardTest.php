@@ -223,7 +223,6 @@ function declineGroups(PendingCommand $command, array $accept = []): PendingComm
     $gates = [
         'api' => 'Do you want to use the REST API? (needs Laravel Sanctum: "php artisan install:api")',
         'whatsapp' => 'Do you want to send WhatsApp messages (receipts, reminders)? You can start in the sandbox without any Meta account.',
-        'fbr' => 'Do you want to send sales invoices to FBR?',
         'webhooks' => 'Do you want to send events (entry posted, period closed …) to another system as signed webhooks?',
         'payroll' => 'Do you want to set the payroll options (working days, overtime, gratuity, approval)?',
         'budgets_bank' => 'Do you want to set budget control and bank statement import options?',
@@ -278,11 +277,11 @@ it('asks the setup questions and applies the answers', function (): void {
         ->and($env->get('ACCOUNTING_ALLOW_SELF_APPROVAL'))->toBe('false')
         ->and($env->get('ACCOUNTING_API_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_API_RATE_LIMIT'))->toBe('60')
         ->and($env->get('ACCOUNTING_ROUTE_PREFIX'))->toBe('books')
-        ->and($env->get('ACCOUNTING_WHATSAPP_ENABLED'))->toBeNull()->and($env->get('ACCOUNTING_FBR_ENABLED'))->toBeNull()        // declined: the package defaults stay
+        ->and($env->get('ACCOUNTING_WHATSAPP_ENABLED'))->toBeNull()        // declined: the package defaults stay
         ->and(User::query()->where('email', 'head@school.test')->firstOrFail()->hasRole('super-admin'))->toBeTrue();
 });
 
-it('asks for the WhatsApp credentials only in live mode, and the FBR and webhook settings on request', function (): void {
+it('asks for the WhatsApp credentials only in live mode, and the webhook settings on request', function (): void {
     setupProject($this);
 
     $command = $this->artisan('accounting:install', ['--setup-only' => true, '--no-menu' => true, '--ui' => 'blade', '--currency' => 'PKR', '--chart' => 'general', '--prefix' => 'accounting', '--admin-email' => 'nobody'])
@@ -301,15 +300,6 @@ it('asks for the WhatsApp credentials only in live mode, and the FBR and webhook
             ->expectsQuestion('Language code of your WhatsApp templates (en, en_US, ur …)', 'en')
             ->expectsQuestion('Template to send the customer when a receipt is recorded (empty = none)', 'fee_received')
             ->expectsConfirmation('Send the automatic messages through the queue?', 'yes'),
-        'fbr' => fn ($c) => $c
-            ->expectsChoice('FBR mode: fake (accepted locally) or live', 'fake', ['fake', 'live'])
-            ->expectsQuestion('Seller name', 'Green School')
-            ->expectsQuestion('Seller NTN', '1234567-8')
-            ->expectsQuestion('Seller province', 'Punjab')
-            ->expectsQuestion('Seller address', 'Lahore')
-            ->expectsQuestion('Province to use when a customer has none', 'Punjab')
-            ->expectsQuestion('Default HS code of your items', '9999.0000')
-            ->expectsConfirmation('Send an invoice to FBR as soon as it is posted?', 'no'),
         'webhooks' => fn ($c) => $c
             ->expectsQuestion('Webhook URL(s), comma separated', 'https://school.test/hooks/accounting')
             ->expectsQuestion('Secret that signs the webhooks (empty = generate a random one)', '')
@@ -326,8 +316,6 @@ it('asks for the WhatsApp credentials only in live mode, and the FBR and webhook
         ->and($env->get('WHATSAPP_TOKEN'))->toBe('EAAG-token')->and($env->get('WHATSAPP_PHONE_NUMBER_ID'))->toBe('1055550000')
         ->and($env->get('WHATSAPP_APP_SECRET'))->toBe('app-secret')->and($env->get('WHATSAPP_VERIFY_TOKEN'))->toBe('my-verify-word')
         ->and($env->get('WHATSAPP_NOTIFY_RECEIPT'))->toBe('fee_received')->and($env->get('WHATSAPP_USE_QUEUE'))->toBe('true')
-        ->and($env->get('ACCOUNTING_FBR_ENABLED'))->toBe('true')->and($env->get('ACCOUNTING_FBR_MODE'))->toBe('fake')->and($env->get('ACCOUNTING_FBR_URL'))->toBeNull()
-        ->and($env->get('ACCOUNTING_FBR_SELLER_NAME'))->toBe('Green School')
         ->and($env->get('ACCOUNTING_WEBHOOK_URLS'))->toBe('https://school.test/hooks/accounting')
         ->and(strlen((string) $env->get('ACCOUNTING_WEBHOOK_SECRET')))->toBe(40);                                  // generated
 });

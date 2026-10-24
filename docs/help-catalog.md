@@ -2,7 +2,7 @@
 
 Generated from the routes the package registers (`python3 docs/generate-route-catalog.py`); do not edit by hand.
 
-- **399 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **328 API endpoints**.
+- **399 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **326 API endpoints**.
 - Web screens live under `/accounting` (users, roles and the feature switches under `/settings` with the Blade driver); the API under `/api/v1/accounting` (see the prefixes in `config/accounting.php`).
 - *Permission* is the Spatie permission a user needs; a user without it gets 403. A feature that is switched off answers 404 (see *Feature switches* in the README).
 - The API is described in full in [`openapi.yaml`](openapi.yaml) and the [Postman collection](postman_collection.json).
@@ -41,10 +41,9 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 - [Fixed assets](#fixed-assets) (12)
 - [Inventory](#inventory) (17)
 - [Payroll](#payroll) (92)
-- [FBR invoices](#fbr-invoices) (2)
 - [Chart templates](#chart-templates) (2)
 - [Statement layout](#statement-layout) (5)
-- [Other](#other) (17)
+- [Other](#other) (19)
 - [API endpoints](#api-endpoints)
 
 ## Home and overview
@@ -580,13 +579,6 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 | GET | `/accounting/payroll/tax/annual/{format}` |  | Download the annual salary tax statement | `payroll.view` |
 | GET | `/accounting/payroll/tax/certificate/{employee}` |  | An employee's salary tax certificate | `payroll.view` |
 
-## FBR invoices
-
-| Method | Screen or action (React) | Blade driver | What it does | Permission |
-|--------|--------|--------------|--------------|------------|
-| GET | `/accounting/fbr` |  | Posted sales invoices and credit notes with their FBR status | `fbr.view` |
-| POST | `/accounting/fbr/documents/{document}/submit` |  | Send a sales invoice or credit note to FBR (or retry a failed one) | `fbr.submit` |
-
 ## Chart templates
 
 | Method | Screen or action (React) | Blade driver | What it does | Permission |
@@ -620,6 +612,8 @@ Generated from the routes the package registers (`python3 docs/generate-route-ca
 | GET | `—` | `/accounting/branches/{branch}/edit` | edit form — branches | `branches.update` |
 | POST | `/accounting/branches/{branch}/users` |  | Limit a user to this branch (add) | `branches.update` |
 | DELETE | `/accounting/branches/{branch}/users/{user}` |  | Remove a user from this branch | `branches.update` |
+| GET | `/accounting/help` |  | list — help | `accounting.view` |
+| GET | `/accounting/help/{topic}` |  | open — help | `accounting.view` |
 | GET | `/accounting/whatsapp` |  | Messages, the set-up checks (what is set in .env and what is missing) and the configured templates | `whatsapp.view` |
 | POST | `/accounting/whatsapp/messages` |  | Send a message: an approved template with its parameters, or free text | `whatsapp.send` |
 | POST | `/accounting/whatsapp/messages/{message}/retry` |  | Send a failed message again | `whatsapp.send` |
@@ -911,13 +905,6 @@ Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorizati
 | DELETE | `/fx-revaluation/rates/{exchangeRate}` | Remove a dated rate | `fx-revaluation.rates` |
 | GET | `/fx-revaluation/{fxRevaluation}` | One revaluation with its accounts | `fx-revaluation.view` |
 | POST | `/fx-revaluation/{fxRevaluation}/reverse` | Reverse a revaluation | `fx-revaluation.run` |
-
-### FBR
-
-| Method | Endpoint | What it does | Permission |
-|--------|----------|--------------|------------|
-| GET | `/fbr` | Posted sales invoices and credit notes with their FBR status | `fbr.view` |
-| POST | `/fbr/documents/{document}/submit` | Send a sales invoice or credit note to FBR (or retry a failed one) | `fbr.submit` |
 
 ### Fixed assets
 

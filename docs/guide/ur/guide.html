@@ -69,9 +69,9 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <td>انوائس، بل، وصولی/ادائیگی، Ageing</td>
 </tr>
 <tr>
-<td><a href="#07-tax-fbr">7</a></td>
-<td>ٹیکس اور FBR</td>
-<td>Tax Codes، Taxed Document، ٹیکس رپورٹ، FBR انوائسنگ</td>
+<td><a href="#07-tax">7</a></td>
+<td>ٹیکس</td>
+<td>Tax Codes، Taxed Document، ٹیکس رپورٹ</td>
 </tr>
 <tr>
 <td><a href="#08-planning">8</a></td>
@@ -470,7 +470,7 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 </section>
 <section id="06-parties">
 <h1 id="6">باب 6: گاہک، سپلائر، انوائس، بل اور ادائیگیاں</h1>
-<p><a href="#05-bank">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#07-tax-fbr">اگلا باب: ٹیکس اور FBR →</a></p>
+<p><a href="#05-bank">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#07-tax">اگلا باب: ٹیکس →</a></p>
 <p>یہ ماڈیول <strong>ادھار کی فروخت اور خریداری</strong> سنبھالتا ہے۔ ہر انوائس/بل/رسید خود بخود صحیح کنٹرول کھاتوں میں واؤچر بنا دیتی ہے؛ آپ کو ہاتھ سے جرنل نہیں لکھنا پڑتا۔</p>
 <h2 id="61-parties">6.1 گاہک اور سپلائر (Parties)</h2>
 <p>ایک <em>Party</em> گاہک بھی ہو سکتی ہے، سپلائر بھی، یا دونوں (<code>both</code>)۔ ہر Party کا کوڈ، نام، رابطہ، ادائیگی کی مدت (Credit days) اور حد (Credit limit) ہوتی ہے۔</p>
@@ -503,8 +503,8 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <p><code>Receivables aging</code> ہر گاہک کے بقایا کو عمر کے خانوں میں بانٹ کر دکھاتا ہے۔ ریکوری کی ترجیح یہیں سے طے کریں؛ CSV ایکسپورٹ بھی ہے۔</p>
 <p><img alt="Aged Receivables by Customer" src="../images/accounting-receivables-aging.jpg" /></p>
 </section>
-<section id="07-tax-fbr">
-<h1 id="7-fbr">باب 7: ٹیکس اور FBR</h1>
+<section id="07-tax">
+<h1 id="7">باب 7: ٹیکس</h1>
 <p><a href="#06-parties">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#08-planning">اگلا باب: منصوبہ بندی →</a></p>
 <h2 id="71">7.1 ٹیکس کوڈ اور شرحیں</h2>
 <p><strong>Tax Code</strong> ٹیکس کی قسم ہے (مثلاً <code>GST17</code> سیلز ٹیکس، Withholding)؛ ہر کوڈ کی <strong>Tax Rate</strong> تاریخ کے ساتھ درج ہوتی ہے تاکہ شرح بدلنے پر پرانے لین دین پرانی شرح ہی پر رہیں۔ کوڈ کی نوعیت: Output (فروخت پر واجب)، Input (خریداری پر قابل واپسی)، Withheld (کٹوتی) اور Advance (پیشگی ٹیکس)۔</p>
@@ -519,18 +519,10 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <h2 id="73">7.3 ٹیکس رپورٹ اور ریٹرن</h2>
 <p><code>Tax Report</code> کسی مدت کا Output ٹیکس، Input ٹیکس، کٹوتی شدہ ٹیکس اور <strong>خالص قابل ادائیگی</strong> دکھاتا ہے۔ ریٹرن تیار ہونے پر <code>Return</code> بنا کر ٹیکس کھاتے کو سرکاری ادائیگی کے کھاتے میں منتقل کیا جاتا ہے؛ ایک مدت کا ریٹرن دوبارہ نہیں بنتا۔</p>
 <p><img alt="Tax Report" src="../images/accounting-tax-returns-report.jpg" /></p>
-<h2 id="74-fbr">7.4 FBR سیلز ٹیکس انوائسنگ</h2>
-<p>پوسٹ شدہ سیلز انوائس/کریڈٹ نوٹ FBR کو بھیجے جاتے ہیں اور FBR کا انوائس نمبر واپس درج ہوتا ہے۔</p>
-<ul>
-<li><strong>ترتیب:</strong> <code>ACCOUNTING_FBR_ENABLED=true</code>، موڈ <code>fake</code> (آزمائش)، <code>live</code> (اصلی) یا اپنا gateway؛ URL <strong>لازماً https</strong> ہو، ٹوکن کبھی سادہ http پر نہیں جاتا۔</li>
-<li><strong>استعمال:</strong> <code>FBR invoices</code> کھولیں، انوائس کے سامنے <code>Submit</code> دبائیں۔ نتیجہ: <code>accepted</code> (FBR نمبر کے ساتھ) یا <code>failed</code> (وجہ کے ساتھ؛ دوبارہ کوشش ممکن)۔</li>
-<li>اس فیچر کو <strong>Features</strong> سے بند بھی کیا جا سکتا ہے (باب 10)۔</li>
-</ul>
-<p><img alt="FBR invoices" src="../images/accounting-fbr-index.jpg" /></p>
 </section>
 <section id="08-planning">
 <h1 id="8">باب 8: بجٹ، مستقل اثاثے اور انوینٹری</h1>
-<p><a href="#07-tax-fbr">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#09-payroll">اگلا باب: پے رول →</a></p>
+<p><a href="#07-tax">← پچھلا باب</a> · <a href="#top">فہرست</a> · <a href="#09-payroll">اگلا باب: پے رول →</a></p>
 <h2 id="81-budgets">8.1 بجٹ (Budgets)</h2>
 <p>بجٹ آمدنی اور اخراجات کی منصوبہ بندی <strong>کھاتے</strong> (اور اختیاری <strong>Cost Center</strong>) اور <strong>مہینے</strong> کے حساب سے کرتا ہے، پھر اصل (Actual) نتائج سے موازنہ دکھاتا ہے۔</p>
 <p><img alt="Budgets" src="../images/accounting-budgets-index.jpg" /></p>
@@ -916,7 +908,7 @@ blockquote { margin:1em 0; padding:.2em 1em; border-right:4px solid var(--accent
 <p><strong>ڈیفالٹ رولز</strong> کا خلاصہ باب 1 میں ہے۔ اپنے ادارے کی ضرورت کے مطابق نیا رول بنائیں (مثلاً "Payroll officer": <code>payroll.view</code>، <code>payroll.manage</code>، <code>payroll.run</code>)۔ کمانڈ لائن پر <code>php artisan accounting:roles</code> موجودہ رولز دکھاتی/لگاتی ہے۔</p>
 <h2 id="103-feature-switches">10.3 فیچرز — ہر چیز آن/آف (Feature Switches)</h2>
 <p><strong>مقصد:</strong> جو ماڈیول آپ کے کام کا نہیں اسے بند کر دیں تاکہ مینو صاف رہے اور عملہ غلطی سے وہاں نہ جائے؛ ضرورت پڑے تو دوبارہ آن۔</p>
-<p><code>Features</code> (<code>/accounting/features</code>، Blade میں <code>/settings/features</code>) صرف <code>accounting.manage-settings</code> والے صارف کے لیے ہے۔ فہرست دو حصوں میں ہے: <strong>Modules</strong> (Customers &amp; suppliers، Tax، Banking، Budgets، Fixed assets، Inventory، Recurring entries، FX revaluation، FBR، Attachments، Statement layout، Chart templates، Control accounts، Snapshots، Audit log، Payroll) اور <strong>Payroll</strong> کے ذیلی فیچر (Grades، Arrears، Attendance، Loans، Contributions، Bank file، Payslip e-mail، Bonuses، Run approval، Settlements، Reports &amp; tax)۔</p>
+<p><code>Features</code> (<code>/accounting/features</code>، Blade میں <code>/settings/features</code>) صرف <code>accounting.manage-settings</code> والے صارف کے لیے ہے۔ فہرست دو حصوں میں ہے: <strong>Modules</strong> (Customers &amp; suppliers، Tax، Banking، Budgets، Fixed assets، Inventory، Recurring entries، FX revaluation، Attachments، Statement layout، Chart templates، Control accounts، Snapshots، Audit log، Payroll) اور <strong>Payroll</strong> کے ذیلی فیچر (Grades، Arrears، Attendance، Loans، Contributions، Bank file، Payslip e-mail، Bonuses، Run approval، Settlements، Reports &amp; tax)۔</p>
 <p><img alt="Features" src="../images/accounting-features-index.jpg" /></p>
 <p><strong>طریقہ:</strong> خانہ ہٹائیں/لگائیں ← <code>Save</code>۔</p>
 <p><strong>بند کرنے کا اثر:</strong></p>
@@ -1105,8 +1097,8 @@ curl &quot;${H[@]}&quot; -o tb.csv &quot;$API/reports/trial-balance/export/csv&q
 <td><code>/parties</code>, <code>/party-documents</code> (+ <code>/{id}/post</code>, <code>/{id}/void</code>, <code>/{id}/apply</code>), <code>/party-payments</code> (+ <code>/{id}/allocate</code>, <code>/{id}/void</code>), <code>/reports/aged-receivables</code></td>
 </tr>
 <tr>
-<td><strong>ٹیکس / FBR</strong></td>
-<td><code>/tax-codes</code>, <code>/tax-rates</code>, <code>/tax/calculate</code>, <code>/tax/entries</code>, <code>/tax/returns</code>, <code>/fbr</code>, <code>/fbr/documents/{id}/submit</code></td>
+<td><strong>ٹیکس</strong></td>
+<td><code>/tax-codes</code>, <code>/tax-rates</code>, <code>/tax/calculate</code>, <code>/tax/entries</code>, <code>/tax/returns</code></td>
 </tr>
 <tr>
 <td><strong>بجٹ</strong></td>
@@ -1453,7 +1445,7 @@ curl &quot;${H[@]}&quot; -X PUT $API/features -d '{&quot;features&quot;:{&quot;i
 <p><a href="#13-zameema">← پچھلا باب</a> · <a href="#top">فہرست</a></p>
 <h2 id="141">14.1 ہر فہرست میں فلٹر اور تلاش</h2>
 <p><strong>مقصد:</strong> ہزاروں ریکارڈ میں سے وہی نکالنا جو چاہیے — نام/نمبر سے، حالت سے، تاریخ یا رقم کی حد سے۔</p>
-<p>ہر فہرست (گاہک و سپلائر، انوائس اور بل، وصولی/ادائیگی، فکسڈ اثاثے، انوینٹری، بجٹ، بینک اسٹیٹمنٹ، Recurring، پے رول کی تمام فہرستیں، صارفین، رولز، Voucher Types، کمپنیاں، ٹیکس، FBR، مدتیں وغیرہ) کے اوپر <strong>فلٹر بار</strong> ہے۔ خانے بھریں ← <code>Filter</code>۔ جتنے فلٹر لگے ہوں <code>Reset (تعداد)</code> اتنی تعداد دکھاتا ہے؛ اس پر دبانے سے سب ہٹ جاتے ہیں۔</p>
+<p>ہر فہرست (گاہک و سپلائر، انوائس اور بل، وصولی/ادائیگی، فکسڈ اثاثے، انوینٹری، بجٹ، بینک اسٹیٹمنٹ، Recurring، پے رول کی تمام فہرستیں، صارفین، رولز، Voucher Types، کمپنیاں، ٹیکس، مدتیں وغیرہ) کے اوپر <strong>فلٹر بار</strong> ہے۔ خانے بھریں ← <code>Filter</code>۔ جتنے فلٹر لگے ہوں <code>Reset (تعداد)</code> اتنی تعداد دکھاتا ہے؛ اس پر دبانے سے سب ہٹ جاتے ہیں۔</p>
 <p><img alt="انوائس اور بل — فلٹر بار" src="../images/filters-documents.jpg" /></p>
 <ul>
 <li><strong>Search</strong> خانہ نام، کوڈ، نمبر یا حوالہ کا <strong>کوئی بھی حصہ</strong> ڈھونڈتا ہے، بڑے/چھوٹے حروف کا فرق نہیں۔ <code>100%</code> لکھیں تو واقعی <code>100%</code> والا ہی ملے گا (<code>%</code> اور <code>_</code> عام حروف ہیں)۔</li>
@@ -1696,7 +1688,7 @@ class User extends Authenticatable
 </tr>
 </tbody>
 </table>
-<p>اس کے بعد ہر موضوع پر <strong>ایک ہاں/نہیں</strong> کا سوال آتا ہے: REST API، <strong>WhatsApp</strong>، <strong>FBR</strong>، ویب ہُک، پے رول، بجٹ اور بینک اسٹیٹمنٹ، PDF/ایکسپورٹ/اٹیچمنٹ، زبان، اور وہ ماڈیول جو آپ استعمال نہیں کریں گے۔ "ہاں" کہیں تو اس موضوع کی ساری سیٹنگز پوچھی جاتی ہیں (موجودہ یا ڈیفالٹ ویلیو سامنے دکھائی جاتی ہے؛ خالی چھوڑیں تو ڈیفالٹ رہتا ہے)۔ WhatsApp کا ٹوکن وغیرہ صرف <code>live</code> موڈ میں پوچھا جاتا ہے، اور ویب ہُک/ویریفائی ٹوکن آپ کے لیے خود بنایا جا سکتا ہے۔ سب کچھ ایک ساتھ پوچھنا ہو تو <code>--advanced</code> لگائیں۔</p>
+<p>اس کے بعد ہر موضوع پر <strong>ایک ہاں/نہیں</strong> کا سوال آتا ہے: REST API، <strong>WhatsApp</strong>، ویب ہُک، پے رول، بجٹ اور بینک اسٹیٹمنٹ، PDF/ایکسپورٹ/اٹیچمنٹ، زبان، اور وہ ماڈیول جو آپ استعمال نہیں کریں گے۔ "ہاں" کہیں تو اس موضوع کی ساری سیٹنگز پوچھی جاتی ہیں (موجودہ یا ڈیفالٹ ویلیو سامنے دکھائی جاتی ہے؛ خالی چھوڑیں تو ڈیفالٹ رہتا ہے)۔ WhatsApp کا ٹوکن وغیرہ صرف <code>live</code> موڈ میں پوچھا جاتا ہے، اور ویب ہُک/ویریفائی ٹوکن آپ کے لیے خود بنایا جا سکتا ہے۔ سب کچھ ایک ساتھ پوچھنا ہو تو <code>--advanced</code> لگائیں۔</p>
 <p>اس کے بعد انسٹالر ٹیبلز بناتا، کھاتوں کا چارٹ، کرنسی، مالی سال، رولز اور ٹیکس کوڈ بھر دیتا اور جانچ کرتا ہے۔ دوبارہ چلانا محفوظ ہے۔</p>
 <h2 id="163">16.3 مینو خود لگ جاتا ہے</h2>
 <p>انسٹالر آپ کے اسٹارٹر کٹ کے سائیڈ بار میں <strong>Dashboard</strong> کے برابر <strong>Accounting</strong> کا لنک خود لگا دیتا ہے:</p>

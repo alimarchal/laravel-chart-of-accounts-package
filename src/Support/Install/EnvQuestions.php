@@ -44,22 +44,6 @@ final class EnvQuestions
                 ],
             ],
             [
-                'key' => 'fbr', 'title' => 'FBR sales-tax invoices', 'gate' => 'Do you want to send sales invoices to FBR?',
-                'questions' => [
-                    ['env' => 'ACCOUNTING_FBR_ENABLED', 'forced' => true],
-                    ['env' => 'ACCOUNTING_FBR_MODE', 'label' => 'FBR mode: fake (accepted locally) or live', 'type' => 'choice', 'choices' => ['fake', 'live'], 'default' => 'fake'],
-                    ['env' => 'ACCOUNTING_FBR_URL', 'label' => 'FBR service URL', 'type' => 'url', 'when' => ['ACCOUNTING_FBR_MODE' => 'live']],
-                    ['env' => 'ACCOUNTING_FBR_TOKEN', 'label' => 'FBR token', 'type' => 'secret', 'when' => ['ACCOUNTING_FBR_MODE' => 'live']],
-                    ['env' => 'ACCOUNTING_FBR_SELLER_NAME', 'label' => 'Seller name', 'type' => 'text'],
-                    ['env' => 'ACCOUNTING_FBR_SELLER_NTN', 'label' => 'Seller NTN', 'type' => 'text'],
-                    ['env' => 'ACCOUNTING_FBR_SELLER_PROVINCE', 'label' => 'Seller province', 'type' => 'text'],
-                    ['env' => 'ACCOUNTING_FBR_SELLER_ADDRESS', 'label' => 'Seller address', 'type' => 'text'],
-                    ['env' => 'ACCOUNTING_FBR_BUYER_PROVINCE', 'label' => 'Province to use when a customer has none', 'type' => 'text'],
-                    ['env' => 'ACCOUNTING_FBR_HS_CODE', 'label' => 'Default HS code of your items', 'type' => 'text'],
-                    ['env' => 'ACCOUNTING_FBR_AUTO_SUBMIT', 'label' => 'Send an invoice to FBR as soon as it is posted?', 'type' => 'bool', 'default' => false],
-                ],
-            ],
-            [
                 'key' => 'webhooks', 'title' => 'Signed webhooks', 'gate' => 'Do you want to send events (entry posted, period closed …) to another system as signed webhooks?',
                 'questions' => [
                     ['env' => 'ACCOUNTING_WEBHOOK_URLS', 'label' => 'Webhook URL(s), comma separated', 'type' => 'text', 'default' => ''],

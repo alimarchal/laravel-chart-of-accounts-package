@@ -27,7 +27,6 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\BudgetController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartOfAccountImportController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartRestructureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\ChartTemplateController;
-use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FbrController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FeatureController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FinancialStatementController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\FixedAssetController;
@@ -185,8 +184,6 @@ Route::middleware($apiMiddleware)
         Route::post('tax/returns', [TaxController::class, 'fileReturn'])->name('tax.returns.store')->middleware('can:tax-returns.file');
         Route::get('tax/returns/{taxReturn}', [TaxController::class, 'showReturn'])->name('tax.returns.show')->middleware('can:tax-returns.view');
         Route::delete('tax/returns/{taxReturn}', [TaxController::class, 'destroyReturn'])->name('tax.returns.destroy')->middleware('can:tax-returns.file');
-        Route::get('fbr', [FbrController::class, 'index'])->name('fbr.index')->middleware('can:fbr.view');
-        Route::post('fbr/documents/{document}/submit', [FbrController::class, 'submit'])->name('fbr.submit')->middleware('can:fbr.submit');
         Route::get('whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp.index')->middleware('can:whatsapp.view');
         Route::post('whatsapp/messages', [WhatsAppController::class, 'send'])->name('whatsapp.send')->middleware('can:whatsapp.send');
         Route::post('whatsapp/messages/{message}/retry', [WhatsAppController::class, 'retry'])->name('whatsapp.retry')->middleware('can:whatsapp.send');

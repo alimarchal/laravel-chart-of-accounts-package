@@ -45,7 +45,6 @@ final class AccountingMenu
                 ['key' => 'aged-receivables', 'title' => 'Aged receivables', 'route' => 'reports.aged-receivables', 'permission' => ['reports.aged-receivables.view'], 'match' => ['reports/aged-receivables*', 'receivables*']],
                 ['key' => 'aged-payables', 'title' => 'Aged payables', 'route' => 'reports.aged-payables', 'permission' => ['reports.aged-payables.view'], 'match' => ['reports/aged-payables*']],
                 ['key' => 'tax', 'title' => 'Tax returns', 'route' => 'tax.index', 'permission' => ['tax-returns.view'], 'match' => ['tax']],
-                ['key' => 'fbr', 'title' => 'FBR invoices', 'route' => 'fbr.index', 'permission' => ['fbr.view'], 'match' => ['fbr*']],
                 ['key' => 'whatsapp', 'title' => 'WhatsApp', 'route' => 'whatsapp.index', 'permission' => ['whatsapp.view'], 'match' => ['whatsapp*']],
             ]],
             ['key' => 'banking', 'title' => 'Banking', 'area' => 'accounting', 'icon' => 'banking', 'items' => [

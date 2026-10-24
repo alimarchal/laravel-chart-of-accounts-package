@@ -6,7 +6,6 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\Loan;
 use Alimarchal\LaravelChartOfAccounts\Models\PayslipLine;
-use Alimarchal\LaravelChartOfAccounts\Services\FbrService;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollLoanService;
 use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
@@ -86,7 +85,7 @@ it('keeps loans out of the payslips while the loans feature is off', function ()
     expect(PayslipLine::query()->where('description', 'like', 'Advance%')->count())->toBe(1)->and(Loan::query()->firstOrFail()->status)->toBe('active');
 });
 
-it('follows the config default until an administrator decides, and fbr needs its own setting too', function (): void {
+it('follows the config default until an administrator decides', function (): void {
     config(['accounting.features.disabled' => ['budgets']]);
     $features = ($this->features)();
     expect($features->enabled('budgets'))->toBeFalse();
@@ -95,11 +94,6 @@ it('follows the config default until an administrator decides, and fbr needs its
     expect($features->enabled('budgets'))->toBeTrue();
     $features->reset('budgets');
     expect($features->enabled('budgets'))->toBeFalse();
-
-    config(['accounting.fbr.enabled' => true]);
-    expect(app(FbrService::class)->enabled())->toBeTrue();
-    $features->set('fbr', false);
-    expect(app(FbrService::class)->enabled())->toBeFalse();
 });
 
 it('records every change in the audit trail and refuses a name it does not know', function (): void {

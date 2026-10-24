@@ -4,6 +4,12 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [2.41.0] - 2026-10-24
+
+### Removed
+- **The FBR sales-tax integration is gone**: the FBR screens (React and Blade), API endpoints, `FbrService`, gateways, `FbrGateway` contract, queued job, `FbrSubmission` model, the `fbr_submissions` migration, the `accounting.fbr` configuration and `ACCOUNTING_FBR_*` variables, the `fbr.view` / `fbr.submit` permissions, the `fbr` feature switch, the menu and dashboard entries, the installer questions, and the related tests, help pages, README sections, OpenAPI/Postman entries and Urdu guide section. Posting a sales invoice no longer sends anything anywhere, and voiding an invoice no longer checks for an FBR submission. The generic tax engine (tax codes, returns) is unchanged.
+- On an installation that already ran the old migration, drop the unused `accounting_fbr_submissions` table by hand if you want it gone.
+
 ## [2.40.1] - 2026-10-24
 
 Static-analysis (Larastan) fixes for the 2.40.0 changes; no behaviour change.

@@ -6,14 +6,11 @@ use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Budget;
-use Alimarchal\LaravelChartOfAccounts\Models\FbrSubmission;
-use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\RecurringEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
 use Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService;
 use Alimarchal\LaravelChartOfAccounts\Services\InventoryService;
-use Alimarchal\LaravelChartOfAccounts\Services\PartyService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Blade;
 use Inertia\Testing\AssertableInertia;
@@ -147,7 +144,6 @@ it('keeps the active filters on the React list screens', function (): void {
         ['/accounting/budgets?status=draft', 'accounting/budgets/index', ['filters.status' => 'draft']],
         ['/accounting/bank-statements?unmatched=1', 'accounting/bank-statements/index', ['filters.unmatched' => '1']],
         ['/accounting/recurring-entries?frequency=monthly', 'accounting/recurring-entries/index', ['filters.frequency' => 'monthly']],
-        ['/accounting/fbr?status=failed&search=x', 'accounting/fbr/index', ['filters.status' => 'failed', 'filters.search' => 'x']],
         ['/accounting/tax?kind=output&return_search=q1', 'accounting/tax/index', ['filters.kind' => 'output', 'filters.return_search' => 'q1']],
         ['/accounting/voucher-types?active=1', 'accounting/voucher-types/index', ['filters.active' => '1']],
         ['/accounting/control-accounts?control_type=payables', 'accounting/control-accounts/index', ['filters.control_type' => 'payables']],
@@ -185,7 +181,7 @@ it('shows the filter bar on the Blade list screens when the Blade driver is acti
     $this->user->syncRoles(['super-admin']);
     $this->actingAs($this->user);
 
-    foreach (['/accounting/fixed-assets', '/accounting/inventory', '/accounting/inventory/movements', '/accounting/inventory/warehouses', '/accounting/budgets', '/accounting/bank-statements', '/accounting/recurring-entries', '/accounting/parties', '/accounting/party-documents', '/accounting/party-payments', '/accounting/payroll', '/accounting/payroll/employees', '/accounting/payroll/loans', '/accounting/payroll/arrears', '/accounting/payroll/adjustments', '/accounting/payroll/settlements', '/accounting/fbr', '/accounting/tax', '/accounting/voucher-types', '/accounting/control-accounts'] as $path) {
+    foreach (['/accounting/fixed-assets', '/accounting/inventory', '/accounting/inventory/movements', '/accounting/inventory/warehouses', '/accounting/budgets', '/accounting/bank-statements', '/accounting/recurring-entries', '/accounting/parties', '/accounting/party-documents', '/accounting/party-payments', '/accounting/payroll', '/accounting/payroll/employees', '/accounting/payroll/loans', '/accounting/payroll/arrears', '/accounting/payroll/adjustments', '/accounting/payroll/settlements', '/accounting/tax', '/accounting/voucher-types', '/accounting/control-accounts'] as $path) {
         $html = $this->get($path.'?search=zzz-nothing')->assertOk()->getContent();
 
         foreach (['role="search"', 'value="zzz-nothing"', 'Reset (1)'] as $needle) {
@@ -213,29 +209,6 @@ it('filters users and roles with the shared filters', function (): void {
     expect($roles('search=account'))->toContain('accountant')->not->toContain('viewer')
         ->and($roles('filter[search]=viewer'))->toBe(['viewer'])
         ->and($roles('search=zzz'))->toBe([]);
-});
-
-it('applies the FBR status filter before the 300-row cap so older failures stay reachable', function (): void {
-    $parties = app(PartyService::class);
-    $customer = $parties->create($parties->validate(['type' => 'customer', 'code' => 'C1', 'name' => 'Acme Traders']));
-    $row = fn (int $n, string $date) => PartyDocument::query()->forceCreate([
-        'party_id' => $customer->id, 'kind' => 'invoice', 'number' => sprintf('INV-%04d', $n), 'issue_date' => $date, 'due_date' => $date, 'subtotal' => 100, 'tax_total' => 0, 'total' => 100, 'status' => 'posted', 'company_id' => $customer->company_id,
-    ]);
-    $old = $row(1, '2020-01-01');
-    FbrSubmission::query()->forceCreate(['party_document_id' => $old->id, 'status' => 'failed', 'mode' => 'fake', 'attempts' => 1, 'error' => 'boom', 'company_id' => $customer->company_id]);
-
-    foreach (range(2, 305) as $n) {
-        $row($n, '2026-01-01');
-    }
-
-    $numbers = fn (string $query) => collect($this->getJson("/api/v1/accounting/fbr?{$query}")->assertOk()->json('data.documents'))->pluck('number')->all();
-
-    expect($numbers(''))->toHaveCount(300)->not->toContain('INV-0001')            // the cap keeps the newest 300
-        ->and($numbers('status=failed'))->toBe(['INV-0001'])                       // but the failure is still found by its status
-        ->and($numbers('status=none'))->toHaveCount(300)
-        ->and($numbers('search=INV-0001'))->toBe(['INV-0001'])
-        ->and($numbers('search=acme&date_to=2021-01-01'))->toBe(['INV-0001'])
-        ->and($numbers('status=accepted'))->toBe([]);
 });
 
 it('filters voucher types, control accounts, companies, tax returns and exchange rates', function (): void {
