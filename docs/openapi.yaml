@@ -13549,6 +13549,106 @@ paths:
                     payroll_loans: false
       parameters:
       - $ref: '#/components/parameters/Company'
+  /opening-balances:
+    get:
+      tags:
+      - Journal entries
+      summary: The opening-balance entry of the company, if one is posted
+      operationId: show_opening_balances
+      description: 'Permission: `journal-entries.view`.'
+      responses:
+        '200':
+          description: The entry, or null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id:
+                        type: integer
+                      voucher_number:
+                        type: string
+                      entry_date:
+                        type: string
+                        format: date
+      parameters:
+      - $ref: '#/components/parameters/Company'
+    post:
+      tags:
+      - Journal entries
+      summary: Post the balances the company starts with
+      operationId: post_opening_balances
+      description: 'One posted entry (reference `OPENING-BALANCE`). What the debits and credits do not balance by goes to
+        the `opening_balance_equity` account role. Refused (422) while an opening entry is already posted; reverse it first
+        to post again.
+
+
+        Permission: `journal-entries.post`.'
+      responses:
+        '201':
+          description: Posted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      voucher_number:
+                        type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - date
+              - balances
+              properties:
+                date:
+                  type: string
+                  format: date
+                  description: The go-live date.
+                description:
+                  type: string
+                balances:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - chart_of_account_id
+                    properties:
+                      chart_of_account_id:
+                        type: integer
+                      debit:
+                        type: string
+                        example: '5000.00'
+                      credit:
+                        type: string
+                        example: '1500.00'
+                      description:
+                        type: string
+                  description: One debit or one credit per account.
+      parameters:
+      - $ref: '#/components/parameters/Company'
   /account-roles:
     get:
       tags:

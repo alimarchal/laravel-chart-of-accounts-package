@@ -4,6 +4,9 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+### Added
+- **Opening balances.** `POST /api/v1/accounting/opening-balances` posts the balances a company starts with as one entry on the go-live date; the difference goes to the new `opening_balance_equity` account role (`3102`, `3300` in the ERPNext chart). One standing opening entry at a time; `GET` returns it. API only, no screen yet.
+
 ## [2.41.2] - 2026-10-24
 
 ### Added
