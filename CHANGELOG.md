@@ -4,6 +4,8 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [2.40.0] - 2026-10-24
+
 Every screen now looks like the journal screens (payroll included), the menu of the starter kits is one organised Accounting menu, and every screen has a help article.
 
 ### Fixed
@@ -27,6 +29,15 @@ Every screen now looks like the journal screens (payroll included), the menu of 
 - **Tables**: older screens get cell padding and a quiet header even without Tailwind classes (Blade), and every React table has cell padding (no more "Monthly salaryTax"); the ledger-style reports (general ledger, cash/bank book, account balances) use the light table, and the general ledger shows the description, the voucher, the reference and the cost center on two quiet lines.
 - The dashboard and settings hubs flow their groups into balanced columns.
 - **React journal entry page**: status and approval pills, a facts card (date, voucher type, reference, branch, currency, posted at), a *Balanced* check on the totals row and a timeline audit trail.
+
+### QA audit fixes (issues #52–#113)
+- **Money and currency:** foreign-currency entries are never booked at rate 1 (dated rate, drafts keep their rate), base-currency entries must have rate 1, rate 0 is refused, the journal form uses the API money rules, inactive cost centres/currencies are refused, `Money::toCents()` rejects everything above `DECIMAL(18,2)`, invoice and stock values are computed exactly and answer 422 (not 500) when too large, `Rs. 2,500` imports as 2,500.
+- **Tax and chart:** a tax code in use cannot be deleted or change kind/tax account; an account type in use cannot be redefined; posted rows are immutable on cost centre, description, tax and period columns; account codes are stored upper-case (case-insensitive uniqueness); account roles accept only suitable account types; merges repoint other modules' settings and refuse back-dated or foreign-currency-with-balance merges.
+- **Periods and posting:** `JournalEntry::record()` works on a period's last day; year-end close and reversals work with deactivated accounts and foreign-currency P&L accounts; reopening a period needs a reason; "Run now" of a recurring entry will not post a future occurrence unless forced.
+- **Controls:** self-approval through editing and payroll self-approval are refused; module postings (bills, payments, stock, assets, tax returns) and reversals respect the approval threshold and budget control; the last super-admin and roles in use are protected; user lists are company-scoped; feature switches need a super-admin with several companies; exchange rates are per company; the base currency cannot change while any company has postings; optional enforcement of Sanctum token abilities.
+- **Banking, receivables, payroll, assets:** monthly bank reconciliation completes for later statements and cannot be completed by typing values; USD statement lines are booked in USD; FBR-accepted invoices cannot be voided; free (zero-price) lines post; ageing keeps advance receipts and ages the GL by open items; double-submitted receipts are caught; opening-balance invoices keep their dates; loans re-open when their run is voided and are never recovered twice; payroll day basis (calendar/fixed/working) and working hours per employee; migrated assets (opening depreciation) and safe disposal/stock dates.
+- **Operations:** voucher numbering no longer deadlocks on MySQL/MariaDB (not re-measured here), voucher types cannot collide, every migration can be rolled back, report date filters are index-friendly, trial balance shows closing balances by debit/credit side.
+- Known open items: customer refunds (#76), streaming XLSX export (#88), and the rest of the report-performance work (#87).
 
 ## [2.39.0] - 2026-10-12
 
