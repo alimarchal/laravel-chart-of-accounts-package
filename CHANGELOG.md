@@ -4,6 +4,15 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [2.40.1] - 2026-10-24
+
+Static-analysis (Larastan) fixes for the 2.40.0 changes; no behaviour change.
+
+### Fixed
+- `JournalEntryService::create()` documents `is_closing_entry` and `closes_period_id` in its data shape.
+- Account-role type check reads the account type without a null-safe call on a non-nullable relation.
+- Typed the bank list and the inventory unit-cost formatting so the code passes Larastan.
+
 ## [2.40.0] - 2026-10-24
 
 Every screen now looks like the journal screens (payroll included), the menu of the starter kits is one organised Accounting menu, and every screen has a help article.

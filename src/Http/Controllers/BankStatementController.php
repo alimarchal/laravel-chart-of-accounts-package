@@ -261,7 +261,7 @@ class BankStatementController extends Controller
     }
 
     /**
-     * @return Collection<int, array{id: int, name: non-falsy-string}>
+     * @return Collection<int, array{id: int, name: string}>
      */
     private function banks(): Collection
     {

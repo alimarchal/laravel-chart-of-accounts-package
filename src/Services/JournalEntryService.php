@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 class JournalEntryService
 {
     /**
-     * @param  array{branch_id?: int|string|null, voucher_type_id?: int|null, origin_module?: string|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
+     * @param  array{branch_id?: int|string|null, voucher_type_id?: int|null, origin_module?: string|null, is_closing_entry?: bool, closes_period_id?: int|null, entry_date: string, currency_id?: int|null, fx_rate_to_base?: int|float|string|null, reference?: string|null, source_document_type?: string|null, source_document_number?: string|null, source_document_date?: string|null, source?: Model|null, description?: string|null, lines: array<int, array<string, mixed>>, auto_post?: bool, system_generated?: bool, idempotency_key?: string|null, idempotency_hash?: string|null}  $data
      */
     public function create(array $data): JournalEntry
     {

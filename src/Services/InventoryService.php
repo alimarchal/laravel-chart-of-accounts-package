@@ -285,7 +285,7 @@ class InventoryService
         ], $valueCents);
         $this->adjustItem($item, $units, $valueCents);
 
-        return $this->record($item, $data, $type, $units, number_format($cost, 4, '.', ''), $valueCents, $entry);
+        return $this->record($item, $data, $type, $units, number_format((float) $cost, 4, '.', ''), $valueCents, $entry);
     }
 
     /**
