@@ -80,7 +80,7 @@ ages each side once instead of up to three times); the stock valuation grouped m
 list per item; the depreciation plan reads what is booked on every asset in one query; bank auto-match reads the ledger lines that
 can match once per bank account and matches by amount and date in memory (the remaining queries are the two writes and their audit
 rows per matched line); payroll payslip lines are inserted in batches. Indexes were added for the allocation, payslip and stock
-movement lookups that PostgreSQL does not index on its own (`2026_10_24_000001_add_scale_indexes`); their effect is not visible at
+movement lookups that PostgreSQL does not index on its own; their effect is not visible at
 these sizes and was not measured.
 
 The query counts are guarded in the normal test suite (`tests/Performance/ScaleTest.php` runs on small data and asserts that the number

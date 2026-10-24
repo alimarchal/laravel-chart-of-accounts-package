@@ -314,6 +314,11 @@ curl "${H[@]}" "$API/reports/balance-sheet?as_of_date=2026-12-31"
 
 ## Upgrading
 
+**2.42 — one migration per table.** The migrations were rewritten: there is now one `create_…_table` migration for each table (68 files, in
+dependency order, no `add_…` migrations) and the database objects (views and triggers) are created by the last one. The resulting schema is
+the same, but the file names changed, so an installation that already ran the old migrations should be rebuilt (`php artisan migrate:fresh`
+on a development database, or export and re-import the data); this package is still in development, so no upgrade path is provided.
+
 After `composer update alimarchal/laravel-chart-of-accounts`:
 
 ```bash
@@ -1437,7 +1442,7 @@ types and currencies are shared, and every company reports in the shared base cu
 ACCOUNTING_MULTI_COMPANY=true      # off by default: a single-company install works exactly as before
 ```
 
-Existing data is moved to the default company (`MAIN`) by the migration, so upgrading changes nothing
+A new installation starts with the default company (`MAIN`), created by the companies migration; nothing changes
 until you add a second company.
 
 **Create a company** (chart of accounts, current fiscal year, cost centers and tax codes are created for it):

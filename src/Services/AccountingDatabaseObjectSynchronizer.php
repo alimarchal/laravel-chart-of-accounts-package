@@ -14,9 +14,9 @@ use InvalidArgumentException;
 class AccountingDatabaseObjectSynchronizer
 {
     /**
-     * Creates the reporting views and triggers. On a fresh install, earlier migrations call this
-     * before later ones have added the columns the objects use; until the schema is complete it
-     * does nothing and the last migration creates them.
+     * Creates the reporting views and triggers once the schema has the columns they use; on a
+     * database that is still incomplete it does nothing and returns false. The last migration
+     * calls it, as does `accounting:sync-database-objects`.
      */
     public function sync(): bool
     {
