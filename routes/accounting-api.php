@@ -15,6 +15,7 @@ use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ControlAccountApiCont
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CostCenterApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\CurrencyApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\JournalEntryApiController;
+use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\OpeningBalanceApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReconciliationApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\ReportApiController;
 use Alimarchal\LaravelChartOfAccounts\Http\Controllers\Api\RoleApiController;
@@ -397,6 +398,8 @@ Route::middleware($apiMiddleware)
             ->name('account-balance-snapshots.show')
             ->middleware('can:account-balance-snapshots.view');
 
+        Route::get('opening-balances', [OpeningBalanceApiController::class, 'show'])->name('opening-balances.show')->middleware('can:journal-entries.view');
+        Route::post('opening-balances', [OpeningBalanceApiController::class, 'store'])->name('opening-balances.store')->middleware('can:journal-entries.post');
         Route::get('journal-entries', [JournalEntryApiController::class, 'index'])
             ->name('journal-entries.index')
             ->middleware('can:journal-entries.view');

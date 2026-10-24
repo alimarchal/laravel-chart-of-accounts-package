@@ -2,7 +2,7 @@
 
 Generated from the routes the package registers (`python3 docs/generate-route-catalog.py`); do not edit by hand.
 
-- **399 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **326 API endpoints**.
+- **399 web routes** (screens and the form actions behind them; the same screens exist for the React/Inertia and the Blade driver) and **328 API endpoints**.
 - Web screens live under `/accounting` (users, roles and the feature switches under `/settings` with the Blade driver); the API under `/api/v1/accounting` (see the prefixes in `config/accounting.php`).
 - *Permission* is the Spatie permission a user needs; a user without it gets 403. A feature that is switched off answers 404 (see *Feature switches* in the README).
 - The API is described in full in [`openapi.yaml`](openapi.yaml) and the [Postman collection](postman_collection.json).
@@ -633,6 +633,8 @@ Base URL `/api/v1/accounting`; every request needs a Sanctum token (`Authorizati
 | POST | `/journal-entries/{journalEntry}/attachments` | Attach a document (multipart/form-data) | `attachments.create` |
 | GET | `/attachments/{attachment}/download` | Download a document | `attachments.view` |
 | DELETE | `/attachments/{attachment}` | Remove a document of a draft | `attachments.delete` |
+| GET | `/opening-balances` | The opening-balance entry of the company, if one is posted | `journal-entries.view` |
+| POST | `/opening-balances` | Post the balances the company starts with | `journal-entries.post` |
 | GET | `/journal-entries` | List entries | `journal-entries.view` |
 | POST | `/journal-entries` | Create (and optionally post) an entry | `journal-entries.create` |
 | POST | `/journal-entries/simple` | Two-line entry by account codes | `journal-entries.create` |
