@@ -4,6 +4,10 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [2.41.1] - 2026-10-24
+
+Documentation only.
+
 ### Changed
 - Documentation brought up to date with 2.40–2.41: README (maker-checker rules for reversals, module postings and editors, reversal reason, payroll day basis, known limitations), OpenAPI version, Urdu guide, help catalog and Postman collection regenerated without FBR.
 
