@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -81,6 +82,11 @@ return new class extends Migration
         Schema::table('accounting_periods', function (Blueprint $table): void {
             $table->dropForeign(Schema::getConnection()->getDriverName() === 'sqlite' ? ['closing_journal_entry_id'] : 'acct_periods_closing_journal_fk');
         });
+
+        // The table points at itself: with rows in it the database refuses to drop it until those links are cleared.
+        if (Schema::hasTable('accounting_journal_entries')) {
+            DB::table('accounting_journal_entries')->update(['reverses_entry_id' => null, 'reversed_by_entry_id' => null]);
+        }
 
         Schema::dropIfExists('accounting_journal_entries');
     }

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,6 +31,11 @@ return new class extends Migration
 
     public function down(): void
     {
+        // The table points at itself: with rows in it the database refuses to drop it until those links are cleared.
+        if (Schema::hasTable('accounting_cost_centers')) {
+            DB::table('accounting_cost_centers')->update(['parent_id' => null]);
+        }
+
         Schema::dropIfExists('accounting_cost_centers');
     }
 };

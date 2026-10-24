@@ -4,6 +4,11 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [2.42.1] - 2026-10-24
+
+### Fixed
+- **`migrate:reset` / `migrate:rollback` failed on an installation that already had data.** Dropping the chart of accounts, cost centers or journal entries table (each points at itself) was refused by the database while the rows were still there. Their `down()` now clears those links first. Found by installing the package into a fresh Laravel 13 app, seeding it and rolling everything back.
+
 ## [2.42.0] - 2026-10-24
 
 ### Added
