@@ -1,6 +1,6 @@
 {
     "name": "alimarchal/laravel-chart-of-accounts",
-    "description": "A comprehensive Chart of Accounts and Accounting module for Laravel — supports Inertia/React and Blade/Livewire frontends, double-entry journal entries, multi-currency, financial reports, bank reconciliation, and more.",
+    "description": "Laravel enterprise accounting package: chart of accounts, double-entry journals, multi-company, AR/AP, payroll, tax, WhatsApp, with React, Blade and API",
     "keywords": [
         "laravel",
         "accounting",
