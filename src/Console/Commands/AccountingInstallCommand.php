@@ -220,6 +220,10 @@ class AccountingInstallCommand extends Command
 
         $this->info('Syncing database objects...');
         Artisan::call('accounting:sync-db-objects', [], $this->output);
+
+        if (! class_exists(\Dompdf\Dompdf::class)) {
+            $this->warn('PDF vouchers and payslips need dompdf (reports fall back to the built-in renderer): composer require dompdf/dompdf');
+        }
     }
 
     /**

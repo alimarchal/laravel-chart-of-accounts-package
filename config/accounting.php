@@ -19,7 +19,7 @@ return [
     // Reversing a journal entry must give a reason (kept in its description and the audit trail). Reopening a closed period always needs one.
     'require_reversal_reason' => (bool) env('ACCOUNTING_REQUIRE_REVERSAL_REASON', false),
     'users_table' => env('ACCOUNTING_USERS_TABLE', 'users'),
-    'api_middleware' => array_values(array_filter(explode(',', env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
+    'api_middleware' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),
     // Honour the abilities of Sanctum tokens: reading needs `accounting:read`, anything else `accounting:write` (a token with `*` can do both).
     // Off by default so existing tokens keep working; switch it on once your tokens carry abilities. Permissions are always checked as well.
     'api_enforce_token_abilities' => (bool) env('ACCOUNTING_API_ENFORCE_TOKEN_ABILITIES', false),
