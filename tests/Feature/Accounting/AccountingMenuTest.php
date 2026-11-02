@@ -57,6 +57,16 @@ it('leaves out a module that is switched off', function () use ($keys): void {
     expect($keys(AccountingMenu::for($owner)))->not->toContain('inventory')->not->toContain('payroll-loans')->toContain('payroll');
 });
 
+it('leaves out Branches while branches are off and offers them when on', function () use ($keys): void {
+    $owner = ($this->makeUser)('super-admin');
+
+    config(['accounting.branches.enabled' => false]);
+    expect($keys(AccountingMenu::for($owner)))->not->toContain('branches');
+
+    config(['accounting.branches.enabled' => true]);
+    expect($keys(AccountingMenu::for($owner)))->toContain('branches');
+});
+
 it('gives every item of the menu a help article, and every article only working links', function (): void {
     $help = app(Help::class);
     $missing = collect(AccountingMenu::definition())->pluck('items')->flatten(1)->pluck('key')->reject(fn (string $key) => $key === 'help' || $help->topic($key) !== null)->all();
@@ -125,4 +135,17 @@ it('shares the menu and the help link of the screen with every Inertia page', fu
         ->has('accountingMenu', 10)
         ->where('accountingHelp.slug', 'payroll')
         ->where('accountingMenu.4.items.0.active', true));
+});
+
+it('reads ACCOUNTING_API_MIDDLEWARE safely when it is a boolean-like value', function (): void {
+    $repository = Illuminate\Support\Env::getRepository();
+    $repository->set('ACCOUNTING_API_MIDDLEWARE', 'true');
+
+    try {
+        $config = require dirname(__DIR__, 3).'/config/accounting.php';
+    } finally {
+        $repository->clear('ACCOUNTING_API_MIDDLEWARE');
+    }
+
+    expect($config['api_middleware'])->toBe(['1']);
 });
