@@ -166,9 +166,9 @@ it('builds the account tree with a constant number of queries', function (): voi
 });
 
 it('treats account codes that differ only in case as the same code', function (): void {
-    $user = \Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User::factory()->create();
+    $user = User::factory()->create();
     $user->assignRole('super-admin');
-    \Laravel\Sanctum\Sanctum::actingAs($user);
+    Sanctum::actingAs($user);
     $payload = fn (string $code) => [
         'account_code' => $code, 'account_name' => 'Case test', 'parent_id' => account('1100')->id, 'account_type_id' => account('1101')->account_type_id,
         'currency_id' => account('1101')->currency_id, 'normal_balance' => 'debit', 'is_group' => false, 'is_active' => true,

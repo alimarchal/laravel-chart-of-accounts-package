@@ -4,12 +4,17 @@ use Alimarchal\LaravelChartOfAccounts\Actions\PostJournalEntryAction;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
+use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartRestructureService;
+use Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService;
+use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
@@ -192,7 +197,7 @@ it('keeps sub-account codes the same length when a group is renumbered', functio
 
 it('refuses a merge date earlier than the last posting of the source account', function (): void {
     $source = ($this->duplicate)();
-    $start = \Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
+    $start = AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
     journal(['5199' => 1000, '1101' => -1000], $start->copy()->addDays(2)->toDateString());
     journal(['5199' => 5000, '1101' => -5000], $start->copy()->addDays(20)->toDateString());
 
@@ -204,13 +209,13 @@ it('refuses a merge date earlier than the last posting of the source account', f
 });
 
 it('explains up front that a foreign-currency account with a balance cannot be merged yet, and merges an empty one', function (): void {
-    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $usd = Currency::query()->where('code', 'USD')->firstOrFail();
     $source = ($this->duplicate)('5191', 'USD expense A');
     $target = ($this->duplicate)('5192', 'USD expense B');
     $source->forceFill(['currency_id' => $usd->id])->save();
     $target->forceFill(['currency_id' => $usd->id])->save();
 
-    app(\Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService::class)->create([
+    app(JournalEntryService::class)->create([
         'entry_date' => now()->toDateString(), 'currency_id' => $usd->id, 'fx_rate_to_base' => '280', 'auto_post' => true,
         'lines' => [['chart_of_account_id' => $source->id, 'debit' => '100.00', 'credit' => 0], ['chart_of_account_id' => account('1101')->id, 'debit' => 0, 'credit' => '100.00']],
     ]);
@@ -226,8 +231,8 @@ it('explains up front that a foreign-currency account with a balance cannot be m
 it('moves the settings of other modules to the account that keeps the balance, and lists them in the preview', function (): void {
     $source = ($this->duplicate)('5191', 'Duplicate expense');
     $target = ($this->duplicate)('5192', 'Kept expense');
-    $code = \Alimarchal\LaravelChartOfAccounts\Models\TaxCode::query()->create(['code' => 'GSTX', 'name' => 'GST X', 'kind' => 'input', 'tax_account_id' => $source->id]);
-    $assets = app(\Alimarchal\LaravelChartOfAccounts\Services\FixedAssetService::class);
+    $code = TaxCode::query()->create(['code' => 'GSTX', 'name' => 'GST X', 'kind' => 'input', 'tax_account_id' => $source->id]);
+    $assets = app(FixedAssetService::class);
     $asset = $assets->create($assets->validate([
         'code' => 'EQ-9', 'name' => 'Laptop', 'acquisition_date' => now()->toDateString(), 'cost' => '1200', 'salvage_value' => '0', 'useful_life_months' => 12, 'method' => 'straight_line',
         'asset_account_id' => account('1205')->id, 'accumulated_account_id' => account('1206')->id, 'expense_account_id' => $source->id,

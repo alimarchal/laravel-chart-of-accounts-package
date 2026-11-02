@@ -5,6 +5,7 @@ use Alimarchal\LaravelChartOfAccounts\Support\AccountingMenu;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Help;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
+use Illuminate\Support\Env;
 
 beforeEach(function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
@@ -138,7 +139,7 @@ it('shares the menu and the help link of the screen with every Inertia page', fu
 });
 
 it('reads ACCOUNTING_API_MIDDLEWARE safely when it is a boolean-like value', function (): void {
-    $repository = Illuminate\Support\Env::getRepository();
+    $repository = Env::getRepository();
     $repository->set('ACCOUNTING_API_MIDDLEWARE', 'true');
 
     try {

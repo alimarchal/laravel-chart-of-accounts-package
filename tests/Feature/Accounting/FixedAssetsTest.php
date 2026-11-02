@@ -168,6 +168,6 @@ it('refuses a disposal dated before depreciation that is already booked', functi
 it('refuses a receivables or payables control account as the purchase offset', function (): void {
     account('2101')->forceFill(['control_type' => 'payables'])->save();
 
-    expect(fn () => ($this->make)(['offset_account_id' => account('2101')->id]))->toThrow(Illuminate\Validation\ValidationException::class)
+    expect(fn () => ($this->make)(['offset_account_id' => account('2101')->id]))->toThrow(ValidationException::class)
         ->and(FixedAsset::query()->count())->toBe(0);
 });

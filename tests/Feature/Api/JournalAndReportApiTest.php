@@ -1,8 +1,10 @@
 <?php
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\CostCenter;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Laravel\Sanctum\Sanctum;
@@ -191,7 +193,7 @@ it('closes, reopens and year-end closes periods over the API', function (): void
     $this->postJson(API."/periods/{$period->id}/close")->assertUnprocessable();
     $this->postJson(API."/periods/{$period->id}/reopen")->assertUnprocessable()->assertJsonValidationErrors('reason');
     $this->postJson(API."/periods/{$period->id}/reopen", ['reason' => 'Late supplier invoice'])->assertOk()->assertJsonPath('data.status', 'open');
-    expect(\Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog::query()->where('action', 'like', '%REOPEN%')->latest('id')->first()?->metadata['reason'] ?? null)->toBe('Late supplier invoice');
+    expect(AccountingAuditLog::query()->where('action', 'like', '%REOPEN%')->latest('id')->first()?->metadata['reason'] ?? null)->toBe('Late supplier invoice');
     $this->postJson(API."/periods/{$period->id}/close-fiscal-year")
         ->assertOk()
         ->assertJsonPath('data.status', 'closed')
@@ -218,7 +220,7 @@ it('requires a reason to reverse an entry when configured', function (): void {
 it('refuses inactive cost centres and inactive currencies on journal entries', function (): void {
     $center = CostCenter::query()->firstOrFail();
     $center->update(['is_active' => false]);
-    $eur = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'EUR')->firstOrFail();
+    $eur = Currency::query()->where('code', 'EUR')->firstOrFail();
     $eur->update(['is_active' => false]);
 
     $lines = fn (array $first = []) => [

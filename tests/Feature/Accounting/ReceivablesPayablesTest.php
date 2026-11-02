@@ -373,7 +373,6 @@ it('needs a user who may approve for a bill or payment at or above the approval 
     expect(($this->bill)(5000, 3)->status)->toBe('posted');
 });
 
-
 it('answers 422, not 500, for a quantity × price above the maximum amount', function (): void {
     Sanctum::actingAs($this->accountant);
 
