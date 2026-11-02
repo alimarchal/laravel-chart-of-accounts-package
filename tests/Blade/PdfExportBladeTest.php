@@ -37,3 +37,12 @@ it('prints vouchers from the Blade entry page', function (): void {
         ->assertSee("/accounting/journal-entries/{$entry->id}/pdf", false);
     $this->get("/accounting/journal-entries/{$entry->id}/print")->assertOk()->assertSee('Seventy Five')->assertSee($entry->voucher_number);
 });
+
+it('hides the voucher PDF link while no PDF engine is available, and keeps the print link', function (): void {
+    config(['accounting.pdf.engine' => 'builtin']);
+    $entry = journal(['5104' => 75, '1101' => -75]);
+
+    $this->get("/accounting/journal-entries/{$entry->id}")->assertOk()
+        ->assertSee("/accounting/journal-entries/{$entry->id}/print", false)
+        ->assertDontSee("/accounting/journal-entries/{$entry->id}/pdf", false);
+});
