@@ -2,6 +2,7 @@
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountingMenu;
+use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Help;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
@@ -55,6 +56,20 @@ it('leaves out a module that is switched off', function () use ($keys): void {
     app(FeatureManager::class)->set('payroll_loans', false);
 
     expect($keys(AccountingMenu::for($owner)))->not->toContain('inventory')->not->toContain('payroll-loans')->toContain('payroll');
+});
+
+it('leaves out Branches while branches are switched off and shows them once they are on', function () use ($keys): void {
+    $owner = ($this->makeUser)('super-admin');
+
+    config(['accounting.branches.enabled' => false]);
+    CurrentBranch::flush();
+    expect($keys(AccountingMenu::for($owner)))->not->toContain('branches')->toContain('periods');
+
+    config(['accounting.branches.enabled' => true]);
+    CurrentBranch::flush();
+    expect($keys(AccountingMenu::for($owner)))->toContain('branches');
+
+    CurrentBranch::flush();
 });
 
 it('gives every item of the menu a help article, and every article only working links', function (): void {

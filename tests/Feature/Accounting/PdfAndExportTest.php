@@ -78,6 +78,14 @@ it('falls back to the built-in renderer with the company in the header', functio
         ->and($this->captured)->not->toHaveKey('accounting::pdf.report');
 });
 
+it('answers 501 for the voucher PDF while no PDF engine is available, and still prints the voucher', function (): void {
+    config(['accounting.pdf.engine' => 'builtin']);
+    $entry = journal(['5104' => 75, '1101' => -75]);
+
+    $this->get("/accounting/journal-entries/{$entry->id}/pdf")->assertStatus(501);
+    $this->get("/accounting/journal-entries/{$entry->id}/print")->assertOk()->assertSee($entry->voucher_number);
+});
+
 it('prints a voucher with amount in words, signatures and a draft watermark', function (): void {
     $entry = journal(['5104' => 1250.5, '1101' => -1250.5], post: false);
     $entry->forceFill(['source_document_type' => 'bill', 'source_document_number' => 'BILL-12'])->save();
