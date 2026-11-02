@@ -40,7 +40,9 @@
                 @endif
                 <x-accounting::more-menu>
                     <a href="{{ route('accounting.journal-entries.print', $journalEntry) }}" target="_blank" >Print voucher</a>
-                    <a href="{{ route('accounting.journal-entries.pdf', $journalEntry) }}" target="_blank" >Download PDF</a>
+                    @if (app(\Alimarchal\LaravelChartOfAccounts\Services\PdfRenderer::class)->available())
+                        <a href="{{ route('accounting.journal-entries.pdf', $journalEntry) }}" target="_blank" >Download PDF</a>
+                    @endif
                     @if ($journalEntry->status === 'posted')
                         @can('journal-entries.reverse')
                         <hr>

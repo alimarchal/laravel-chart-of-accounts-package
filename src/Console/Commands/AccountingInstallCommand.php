@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvFile;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\EnvQuestions;
 use Alimarchal\LaravelChartOfAccounts\Support\Install\StarterKitMenu;
+use Dompdf\Dompdf;
 use Flux\Flux;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
@@ -220,6 +221,10 @@ class AccountingInstallCommand extends Command
 
         $this->info('Syncing database objects...');
         Artisan::call('accounting:sync-db-objects', [], $this->output);
+
+        if (! class_exists(Dompdf::class)) {
+            $this->warn('PDF vouchers and payslips need dompdf (reports fall back to the built-in renderer): composer require dompdf/dompdf');
+        }
     }
 
     /**

@@ -132,6 +132,11 @@ final class AccountingMenu
                     continue;
                 }
 
+                // Branches are not a feature switch: while they are off their screens answer 404, so the link is left out.
+                if ($item['key'] === 'branches' && ! CurrentBranch::enabled()) {
+                    continue;
+                }
+
                 $url = route($routeName, absolute: false);
 
                 if (! $features->pathEnabled($url)) {
