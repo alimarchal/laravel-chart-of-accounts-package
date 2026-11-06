@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\Rule;
 
 /**
  * Read-only financial reports as JSON. Every report only includes posted entries.
@@ -31,7 +32,7 @@ class ReportApiController extends Controller
     public function trialBalance(Request $request, TrialBalanceReport $report): JsonResponse
     {
         $filters = $request->validate([
-            'as_of_date' => ['nullable', 'date'], 'date_from' => ['nullable', 'date', 'before_or_equal:as_of_date'], 'search' => ['nullable', 'string', 'max:100'],
+            'as_of_date' => ['nullable', 'date'], 'date_from' => ['nullable', 'date', Rule::when($request->filled('as_of_date'), 'before_or_equal:as_of_date')], 'search' => ['nullable', 'string', 'max:100'],
             'account_type' => ['nullable', 'string'], 'report_group' => ['nullable', 'string'], 'hide_zero' => ['nullable', 'boolean'],
         ]);
         $rows = $report->rows($filters);
