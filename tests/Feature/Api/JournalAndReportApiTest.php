@@ -235,3 +235,9 @@ it('refuses inactive cost centres and inactive currencies on journal entries', f
     $center->update(['is_active' => false]);
     $this->postJson(API."/journal-entries/{$id}/post")->assertUnprocessable();
 });
+
+it('accepts date_from on the trial balance without as_of_date but still rejects a reversed range', function (): void {
+    $this->getJson(API.'/reports/trial-balance?date_from=2026-01-01')->assertOk();
+    $this->getJson(API.'/reports/trial-balance?date_from=2026-01-01&as_of_date=2026-12-31')->assertOk();
+    $this->getJson(API.'/reports/trial-balance?date_from=2026-12-31&as_of_date=2026-01-01')->assertUnprocessable();
+});
