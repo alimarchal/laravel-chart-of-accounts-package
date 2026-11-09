@@ -17,6 +17,8 @@ type Statement = {
     lines_count: number;
     unmatched_count: number;
     reconciliation_id: number | null;
+    reconciliation_status: string | null;
+    reconciliation_difference: string | null;
 };
 
 const money = (value: string | null) =>
@@ -120,9 +122,13 @@ export default function BankStatements({
                                         {statement.lines_count}
                                     </td>
                                     <td className="px-3 py-2">
-                                        {statement.reconciliation_id ? (
+                                        {statement.reconciliation_id && statement.reconciliation_status === 'completed' ? (
                                             <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
                                                 reconciled
+                                            </Badge>
+                                        ) : statement.reconciliation_id ? (
+                                            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                                                not reconciled: difference {statement.reconciliation_difference}
                                             </Badge>
                                         ) : statement.unmatched_count > 0 ? (
                                             <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">

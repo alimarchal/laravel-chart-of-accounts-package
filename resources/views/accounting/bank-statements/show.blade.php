@@ -9,7 +9,7 @@
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
         <x-accounting::validation-errors />
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="text-sm text-gray-600">{{ $statement['bank'] }} · {{ $statement['from_date'] }} → {{ $statement['to_date'] }} · {{ $statement['lines_count'] }} transactions, {{ $statement['unmatched_count'] }} to match @if($statement['reconciliation_id'])<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800">reconciled</span>@endif</p>
+            <p class="text-sm text-gray-600">{{ $statement['bank'] }} · {{ $statement['from_date'] }} → {{ $statement['to_date'] }} · {{ $statement['lines_count'] }} transactions, {{ $statement['unmatched_count'] }} to match @if($statement['reconciliation_id'])@if($statement['reconciliation_status'] === 'completed')<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800">reconciled</span>@else<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">not reconciled: difference {{ number_format((float) $statement['reconciliation_difference'], 2) }}</span>@endif @endif</p>
             @can('bank-statements.match') @if($canMatch)
             <div class="flex flex-wrap items-center gap-2">
                 <form method="POST" action="{{ route('accounting.bank-statements.update', $statement['id']) }}" class="flex items-center gap-2">@csrf @method('PUT')

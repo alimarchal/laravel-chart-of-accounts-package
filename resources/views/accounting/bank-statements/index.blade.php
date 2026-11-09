@@ -22,7 +22,8 @@
                     <td class="py-2 px-3 text-right tabular-nums">{{ $statement['closing_balance'] === null ? '—' : number_format((float) $statement['closing_balance'], 2) }}</td>
                     <td class="py-2 px-3 text-right tabular-nums">{{ $statement['lines_count'] }}</td>
                     <td class="py-2 px-3">
-                        @if ($statement['reconciliation_id'])<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800">reconciled</span>
+                        @if ($statement['reconciliation_id'] && $statement['reconciliation_status'] === 'completed')<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800">reconciled</span>
+                        @elseif ($statement['reconciliation_id'])<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">not reconciled: difference {{ number_format((float) $statement['reconciliation_difference'], 2) }}</span>
                         @elseif ($statement['unmatched_count'] > 0)<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">{{ $statement['unmatched_count'] }} to match</span>
                         @else<span class="rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">ready to reconcile</span>@endif
                     </td>

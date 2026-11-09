@@ -284,3 +284,29 @@ it('reads amounts with a currency prefix and full stop', function (): void {
         ->and($service->parseAmount('(Rs. 120.00)'))->toBe(-12000)
         ->and($service->parseAmount('Rs. 500.00 DR'))->toBe(-50000);
 });
+
+it('completes the first reconciliation of an account that already held a balance before the statement', function (): void {
+    journal(['1108' => 2000, '4101' => -2000], ($this->day)(1));
+    journal(['1108' => 5000, '4101' => -5000], ($this->day)(10));
+
+    // The statement starts on day 10 and closes at what the ledger holds: 2,000 from before plus the 5,000 deposit.
+    $statement = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,5000.00,7000.00']);
+    ($this->service)()->autoMatch($statement);
+    $reconciliation = ($this->service)()->reconcile($statement->refresh());
+
+    expect($reconciliation->status)->toBe('completed')->and($reconciliation->book_balance)->toBe('7000.00');
+});
+
+it('never describes a draft reconciliation as reconciled and shows its difference', function (): void {
+    journal(['1108' => 5000, '4101' => -5000], ($this->day)(10));
+
+    $statement = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,5000.00,9999.00']);
+    ($this->service)()->autoMatch($statement);
+    Sanctum::actingAs($this->accountant);
+
+    $this->postJson("/api/v1/accounting/bank-statements/{$statement->id}/reconcile")->assertOk()
+        ->assertJsonPath('data.status', 'draft')->assertJsonPath('data.difference', '4999.00')
+        ->assertJsonPath('message', fn ($message) => str_contains($message, 'not reconciled yet') && str_contains($message, '4999.00'));
+    $this->getJson("/api/v1/accounting/bank-statements/{$statement->id}")->assertJsonPath('data.statement.reconciliation_status', 'draft')
+        ->assertJsonPath('data.statement.reconciliation_difference', '4999.00');
+});

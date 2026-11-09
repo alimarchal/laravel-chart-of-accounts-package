@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Services;
 
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Illuminate\Database\Eloquent\Collection;
@@ -58,13 +59,13 @@ class BankReconciliationMatcher
 
             // The statement closing balance is cumulative, so the book side is too: everything reconciled so far for this bank
             // account up to the statement date (earlier statements' lines and this one's), not only this statement's lines.
-            $bookBalance = JournalEntryLine::query()
+            $bookBalance = (float) JournalEntryLine::query()
                 ->whereIn('reconciliation_id', Reconciliation::query()
                     ->where('bank_account_id', $reconciliation->bank_account_id)
                     ->whereDate('statement_date', '<=', $reconciliation->statement_date)
                     ->select('id'))
                 ->selectRaw('COALESCE(SUM(debit - credit), 0) as balance')
-                ->value('balance');
+                ->value('balance') + $this->openingBalance($reconciliation);
 
             $reconciliation->forceFill([
                 'book_balance' => $bookBalance,
@@ -75,5 +76,30 @@ class BankReconciliationMatcher
 
             return $reconciliation->refresh()->load('lines');
         });
+    }
+
+    /**
+     * What the account already held before its first imported statement starts: the posted ledger lines dated before that statement,
+     * taken as cleared (opening balances and earlier transactions the statements do not cover). Without it a bank account that
+     * already has a balance could never agree with its first statement.
+     */
+    private function openingBalance(Reconciliation $reconciliation): float
+    {
+        $firstStart = BankStatement::query()
+            ->where('bank_account_id', $reconciliation->bank_account_id)
+            ->whereDate('to_date', '<=', $reconciliation->statement_date)
+            ->min('from_date');
+        $accountId = BankAccount::query()->whereKey($reconciliation->bank_account_id)->value('chart_of_account_id');
+
+        if ($firstStart === null || $accountId === null) {
+            return 0.0;
+        }
+
+        return (float) JournalEntryLine::query()
+            ->where('chart_of_account_id', $accountId)
+            ->whereNull('reconciliation_id')
+            ->whereHas('journalEntry', fn ($query) => $query->where('status', 'posted')->whereDate('entry_date', '<', $firstStart))
+            ->selectRaw('COALESCE(SUM(debit - credit), 0) as balance')
+            ->value('balance');
     }
 }
