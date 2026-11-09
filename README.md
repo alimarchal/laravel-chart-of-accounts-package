@@ -48,7 +48,7 @@
 - **Payroll** — employees, grades, quantity x rate pay, arrears, attendance and leave, loans, EOBI/PESSI/PF, bank file, payslip PDF/e-mail, settlements, tax certificates, HR-to-finance approval, bonuses
 - **Feature switches** — turn any module or payroll feature off and on from a screen, the API or `php artisan accounting:features`; menus and routes follow, data stays
 - **Help catalog and Urdu guide** — every screen and endpoint listed, plus a right-to-left Urdu manual with screenshots of every screen
-- **Tested** — 590+ Pest tests in CI on PHP 8.2–8.4, Laravel 11–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
+- **Tested** — 840+ Pest tests in CI on PHP 8.3–8.4, Laravel 12–13 (+ Laravel 14 dev), SQLite/MySQL/MariaDB/PostgreSQL; Larastan level 5
 
 ---
 
@@ -96,8 +96,8 @@
 
 | | Supported |
 |---|---|
-| PHP | 8.2, 8.3, 8.4 (Laravel 13 needs ≥ 8.3) |
-| Laravel | 11, 12, 13 — **Laravel 14** (expected Q1 2027, PHP ≥ 8.4) is tracked in CI against its dev branch and will be supported on release |
+| PHP | 8.3, 8.4 |
+| Laravel | 12, 13 (Laravel 11 and PHP 8.2 are no longer supported: Laravel 11 no longer gets security fixes) — **Laravel 14** (expected Q1 2027, PHP ≥ 8.4) is tracked in CI against its dev branch and will be supported on release |
 | Database | MySQL 8 · MariaDB 10.6+ · PostgreSQL 13+ · SQLite 3.35+ |
 | React UI | Laravel React starter kit — Inertia 3 (current kit) or Inertia 2 (small `app.tsx` addition, see Installation) |
 | Blade UI | Livewire 3 or 4 |
@@ -313,6 +313,12 @@ curl "${H[@]}" "$API/reports/balance-sheet?as_of_date=2026-12-31"
 ---
 
 ## Upgrading
+
+**3.0 — Laravel 12+ and PHP 8.3+.** Laravel 11 (it no longer gets security fixes, and Composer refuses to install any of its versions) and PHP 8.2
+are no longer supported: upgrade the application to Laravel 12 or 13 on PHP 8.3 or 8.4, then run `composer update` and `php artisan accounting:update`.
+The database schema and the migrations are unchanged. `accounting:update` now also tells you about lines of your published `config/accounting.php`
+that need a manual change (see below). The Aged receivables / Aged payables reports now age from the customer / supplier sub-ledger when the company
+has customers (suppliers), so they match the customer and supplier ageing; the full list of fixes is in the CHANGELOG.
 
 **2.42 — one migration per table.** The migrations were rewritten: there is now one `create_…_table` migration for each table (68 files, in
 dependency order, no `add_…` migrations) and the database objects (views and triggers) are created by the last one. The resulting schema is
