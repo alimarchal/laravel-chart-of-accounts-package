@@ -11,7 +11,10 @@ class CashFlowBladeController extends Controller
 {
     public function __invoke(Request $request, CashFlowReport $report): View
     {
-        $filters = $request->only(['date_from', 'date_to']);
+        $filters = $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
 
         return view('accounting::reports.cash-flow', [
             'rows' => $report->query($filters)->paginate(100)->withQueryString(),
