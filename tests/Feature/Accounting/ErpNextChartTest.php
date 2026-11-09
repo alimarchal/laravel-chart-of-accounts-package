@@ -8,6 +8,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingSetting;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
 use Alimarchal\LaravelChartOfAccounts\Models\Warehouse;
+use Alimarchal\LaravelChartOfAccounts\Reports\AgedPayablesReport;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartRestructureService;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartTemplateService;
@@ -202,4 +203,12 @@ it('starts a company from a chart with create-company --template and fills its r
     app(CurrentCompany::class)->runAs($second, function (): void {
         expect(account('1310')->account_name)->toBe('Debtors')->and(AccountRoles::code('cash'))->toBe('1100')->and(AccountRoles::codes('aging.receivables'))->toBe(['1310'])->and(AccountRoles::preset())->toBe('erpnext');
     });
+});
+
+it('ages only the trade creditors in the default aged payables report, not the tax and payroll liabilities', function (): void {
+    journal(['5213' => 1000, '2110' => -1000]);
+    journal(['1210' => 500, '2310' => -500]);
+
+    expect(AccountRoles::codes('aging.payables'))->toBe(['2110'])
+        ->and(app(AgedPayablesReport::class)->rows()->pluck('account_code')->unique()->values()->all())->toBe(['2110']);
 });
