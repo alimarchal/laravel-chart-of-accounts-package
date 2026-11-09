@@ -6,7 +6,7 @@
     @php($styles = ['new' => 'bg-emerald-100 text-emerald-800', 'exists' => 'bg-gray-100 text-gray-600', 'different' => 'bg-amber-100 text-amber-800', 'blocked' => 'bg-red-100 text-red-700'])
     <div class="py-6"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
         @if(session('error'))<div class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">{{ session('error') }}</div>@endif
-        <p class="text-sm text-gray-600">Start from an industry chart, or add an industry's accounts to the chart you have. Accounts that exist are never changed.</p>
+        <p class="text-sm text-gray-600">Start from an industry chart, or add an industry's accounts to a company on the general chart (the ERPNext chart can only start a new company from a template). Accounts that exist are never changed.</p>
 
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($templates as $template)

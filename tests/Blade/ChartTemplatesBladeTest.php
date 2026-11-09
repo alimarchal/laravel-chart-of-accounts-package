@@ -16,3 +16,12 @@ it('previews and applies a chart template from Blade', function (): void {
     expect(ChartOfAccount::query()->where('account_code', '1111')->value('account_name'))->toBe('Patient Receivables');
     $this->get('/accounting/chart-templates?template=healthcare')->assertSee('Nothing to add');
 });
+
+it('tells the user that the ERPNext chart can only start a new company from a template', function (): void {
+    $this->seed(AccountingDatabaseSeeder::class);
+    $user = User::factory()->create();
+    $user->assignRole('super-admin');
+    $this->actingAs($user);
+
+    $this->get('/accounting/chart-templates')->assertOk()->assertSee('company on the general chart', false)->assertSee('ERPNext chart can only start a new company', false);
+});
