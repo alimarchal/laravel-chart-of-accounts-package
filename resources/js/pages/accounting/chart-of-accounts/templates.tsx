@@ -76,7 +76,7 @@ export default function ChartTemplates({
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
                 <Heading
                     title="Chart Templates"
-                    description="Start from an industry chart, or add an industry's accounts to the chart you have. Accounts that exist are never changed."
+                    description="Start from an industry chart, or add an industry's accounts to a company on the general chart (the ERPNext chart can only start a new company from a template). Accounts that exist are never changed."
                 />
 
                 {flash.error ? (

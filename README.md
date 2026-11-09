@@ -34,7 +34,7 @@
 - **ERPNext standard chart on a fresh install** — a new company starts with ERPNext's chart of accounts and its account numbers (`1110 Cash`, `1310 Debtors`, `2110 Creditors`, `4110 Sales` …), already wired to the modules through **account roles**; pick the package's own general or the school chart instead with `--chart=`
 - **Account roles** — which account is "cash", "bank", "salary expense", "receivables in the ageing" … is a setting per company (screen, API, `accounting:account-roles`), not a code hard-wired in the program
 - **Filters and search on every list** — one filter language (`?filter[search]=…`, dates, amounts, status, sorting) on every screen, React and Blade, and every API list, built on Spatie Laravel Query Builder; reports and their exports use the same dates
-- **Industry chart templates** — trading, manufacturing, services, school, NGO and healthcare charts: start a company from one, or add an industry's accounts to the chart you have (existing accounts are never changed); add your own in config
+- **Industry chart templates** — trading, manufacturing, services, school, NGO and healthcare charts: start a company from one, or add an industry's accounts to a company on the general chart (the default ERPNext chart only starts a new company from a template; existing accounts are never changed); add your own in config
 - **Chart import & export** — bring your existing chart in from Excel or CSV with a line-by-line preview (new / updated / errors) before anything is saved; export it, edit it, import it back
 - **Renumber & merge accounts** — give an account (and its sub-accounts) new codes, or fold a duplicate into another account with a posted transfer entry — the ledger history is never rewritten
 - **Control accounts** — receivables, payables, inventory, payroll and tax control accounts that only their module may post to, with a manual-postings exception list
@@ -1177,6 +1177,8 @@ A template is a base chart plus the accounts an industry adds:
 
 - **Preview first**: every account is listed as *new*, *already there*, *named differently* (your name is kept) or
   *blocked* (missing parent).
+- **Starting versus adding**: a new company can start from any template. Adding a template to a chart you already have works on the **general** chart only (the industry
+  templates extend it); a company on the default **ERPNext** chart is told that the industry templates cannot be added to it.
 - **Safe on a chart in use**: only missing accounts are added, parents first; nothing existing is renamed, moved or
   re-typed, so a template can be applied again later or on top of another one. Contra accounts get the opposite
   side, and every new account is mapped to its **statement line** (see Report mapping) so the statements stay complete.
