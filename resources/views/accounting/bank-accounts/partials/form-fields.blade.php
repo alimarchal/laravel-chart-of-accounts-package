@@ -1,5 +1,14 @@
 @php $bankAccount = $bankAccount ?? null; @endphp
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="md:col-span-2">
+        <x-accounting::label for="chart_of_account_id" value="Ledger Account" />
+        <select id="chart_of_account_id" name="chart_of_account_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            <option value="">None (bank statements cannot be imported until one is chosen)</option>
+            @foreach (\Alimarchal\LaravelChartOfAccounts\Models\BankAccount::ledgerAccountOptions() as $id => $label)
+                <option value="{{ $id }}" @selected((string) old('chart_of_account_id', optional($bankAccount)->chart_of_account_id) === (string) $id)>{{ $label }}</option>
+            @endforeach
+        </select>
+    </div>
     <div>
         <x-accounting::label for="account_name" value="Account Name" />
         <x-accounting::input id="account_name" type="text" name="account_name" class="mt-1 block w-full" :value="old('account_name', optional($bankAccount)->account_name)" required />
