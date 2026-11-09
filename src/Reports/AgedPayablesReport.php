@@ -11,6 +11,11 @@ class AgedPayablesReport extends AgingReport
         return AccountRoles::codes('aging.payables');
     }
 
+    protected function partySide(): string
+    {
+        return 'payable';
+    }
+
     protected function amountExpression(): string
     {
         return 'base_credit - base_debit';

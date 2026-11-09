@@ -11,6 +11,11 @@ class AgedReceivablesReport extends AgingReport
         return AccountRoles::codes('aging.receivables');
     }
 
+    protected function partySide(): string
+    {
+        return 'receivable';
+    }
+
     protected function amountExpression(): string
     {
         return 'base_debit - base_credit';

@@ -2,9 +2,12 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Reports;
 
+use Alimarchal\LaravelChartOfAccounts\Models\Party;
 use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
+use Alimarchal\LaravelChartOfAccounts\Services\PartyLedgerService;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -13,6 +16,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * Ages posted balances by entry date into non-overlapping buckets that always sum to the balance:
  * current (dated on/after the as-of date), 1–30, 31–60, 61–90 and over 90 days.
+ *
+ * Once a company keeps customers or suppliers (the party sub-ledger, with due dates and the real allocations of receipts and payments),
+ * the report is that sub-ledger's ageing, one row per party, so it agrees with the customer and supplier ageing bucket by bucket. The
+ * ledger version below, by entry date and oldest-first, only serves companies without a sub-ledger.
  */
 abstract class AgingReport
 {
@@ -26,8 +33,17 @@ abstract class AgingReport
      */
     abstract protected function amountExpression(): string;
 
+    /**
+     * 'receivable' or 'payable': the side of the party sub-ledger this report ages.
+     */
+    abstract protected function partySide(): string;
+
     public function rows(string $asOfDate = ''): Collection
     {
+        if ($this->usesSubledger()) {
+            return $this->subledgerRows($asOfDate);
+        }
+
         $asOf = $asOfDate !== '' ? Carbon::parse($asOfDate)->startOfDay() : now()->startOfDay();
         $asOfStr = $asOf->toDateString();
         $amount = $this->amountExpression();
@@ -89,5 +105,32 @@ abstract class AgingReport
                 ...array_map(fn (int $cents): string => Money::fromCents($cents), $buckets),
             ];
         })->filter(fn (\stdClass $row): bool => Money::toCents($row->balance) !== 0)->values();
+    }
+
+    private function usesSubledger(): bool
+    {
+        return app(FeatureManager::class)->enabled('parties')
+            && Party::query()->whereIn('type', $this->partySide() === 'receivable' ? ['customer', 'both'] : ['supplier', 'both'])->exists();
+    }
+
+    /**
+     * The party ageing in the shape of this report: one row per party, the unapplied credit in its own column.
+     */
+    private function subledgerRows(string $asOfDate): Collection
+    {
+        $aging = app(PartyLedgerService::class)->aging($this->partySide(), $asOfDate !== '' ? $asOfDate : null);
+
+        return collect($aging['rows'])->map(fn (array $row): \stdClass => (object) [
+            'party_id' => $row['party_id'],
+            'account_code' => $row['code'] ?? 'P'.$row['party_id'],
+            'account_name' => $row['name'],
+            'balance' => $row['total'],
+            'current_balance' => $row['not_due'],
+            'days_1_30' => $row['days_1_30'],
+            'days_31_60' => $row['days_31_60'],
+            'days_61_90' => $row['days_61_90'],
+            'days_over_90' => $row['over_90'],
+            'unapplied' => $row['unapplied'],
+        ])->values();
     }
 }

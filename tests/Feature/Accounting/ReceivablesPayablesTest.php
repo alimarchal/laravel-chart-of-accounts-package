@@ -10,6 +10,8 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
+use Alimarchal\LaravelChartOfAccounts\Reports\AgedPayablesReport;
+use Alimarchal\LaravelChartOfAccounts\Reports\AgedReceivablesReport;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyDocumentService;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyLedgerService;
 use Alimarchal\LaravelChartOfAccounts\Services\PartyPaymentService;
@@ -390,4 +392,36 @@ it('answers 422, not 500, for a quantity × price above the maximum amount', fun
 it('caps the document total, not only each line', function (): void {
     expect(fn () => ($this->document)('invoice', $this->customer, [['4101', 1, '600000000000'], ['4101', 1, '600000000000']], 1, [], false))
         ->toThrow(AccountingException::class, 'above the maximum');
+});
+
+it('gives the aged receivables and payables reports the same buckets as the customer and supplier ageing', function (): void {
+    $asOf = ($this->on)(120);
+    $other = ($this->parties)()->create(($this->parties)()->validate(['type' => 'customer', 'code' => 'C002', 'name' => 'Zed Stores', 'payment_terms_days' => 30]));
+    $invoice = fn ($party, $net, $due) => ($this->document)('invoice', $party, [['4101', 1, $net, null]], 1, ['due_date' => ($this->on)($due)]);
+
+    $invoice($this->customer, 1000, 300);       // not yet due on day 120
+    $invoice($this->customer, 400, 110);        // 10 days past due
+    $old = $invoice($other, 2000, 20);          // 100 days past due: it must stay in "over 90", whatever else is paid
+    $settled = $invoice($other, 700, 60);       // paid below
+    $voided = $invoice($this->customer, 5000, 100);
+    ($this->docs)()->void($voided);
+    ($this->pay)()->create(($this->pay)()->validate(['party_id' => $other->id, 'kind' => 'receipt', 'payment_date' => ($this->on)(30), 'amount' => 700, 'account_id' => account('1101')->id, 'allocations' => [['document_id' => $settled->id, 'amount' => 700]]]));
+    ($this->receipt)(150, 40);                  // unapplied money of the first customer
+
+    $aging = ($this->ledger)()->aging('receivable', $asOf);
+    $report = app(AgedReceivablesReport::class)->rows($asOf);
+    $column = ['not_due' => 'current_balance', 'days_1_30' => 'days_1_30', 'days_31_60' => 'days_31_60', 'days_61_90' => 'days_61_90', 'over_90' => 'days_over_90', 'unapplied' => 'unapplied', 'total' => 'balance'];
+
+    foreach ($column as $bucket => $key) {
+        expect(number_format((float) $report->sum(fn ($row) => (float) $row->{$key}), 2, '.', ''))->toBe($aging['totals'][$bucket], $bucket);
+    }
+
+    expect($aging['totals']['over_90'])->toBe('2000.00')->and($aging['totals']['not_due'])->toBe('1000.00')->and($aging['totals']['days_1_30'])->toBe('400.00')
+        ->and($report->pluck('account_name')->all())->toBe(['Acme Traders', 'Zed Stores']);
+
+    // Payables follow the same rule.
+    ($this->bill)(300, 1, ['due_date' => ($this->on)(20)]);
+    $payables = app(AgedPayablesReport::class)->rows($asOf);
+
+    expect($payables->pluck('account_name')->all())->toBe(['Paper Mart'])->and($payables->first()->days_over_90)->toBe(($this->ledger)()->aging('payable', $asOf)['totals']['over_90']);
 });
