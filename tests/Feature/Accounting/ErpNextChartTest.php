@@ -132,7 +132,7 @@ it('works with customers and the ageing report on the ERPNext accounts', functio
     expect(($this->balance)('1310'))->toBe(1000.0)->and(($this->balance)('4110'))->toBe(-1000.0);
     Sanctum::actingAs($this->accountant);
     $report = $this->getJson('/api/v1/accounting/reports/aged-receivables?as_of_date='.$this->start->copy()->addDays(45)->toDateString())->assertOk()->json();
-    expect(json_encode($report))->toContain('Debtors')->toContain('1000');
+    expect(json_encode($report))->toContain('Acme Traders')->toContain('1000');
 });
 
 it('refuses to mix the ERPNext chart with an industry template, and keeps an older company on its own chart', function (): void {

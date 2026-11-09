@@ -14,6 +14,7 @@
                 <th class="py-2 px-3 text-right font-medium text-gray-600">31–60 Days</th>
                 <th class="py-2 px-3 text-right font-medium text-gray-600">61–90 Days</th>
                 <th class="py-2 px-3 text-right font-medium text-gray-600">&gt;90 Days</th>
+                <th class="py-2 px-3 text-right font-medium text-gray-600">Unapplied</th>
                 <th class="py-2 px-3 text-right font-medium text-gray-600">Total</th>
             </tr></thead>
             <tbody>
@@ -25,10 +26,11 @@
                     <td class="py-1 px-3 text-right font-mono">{{ number_format($row->days_31_60 ?? $row->period_2 ?? 0, 2) }}</td>
                     <td class="py-1 px-3 text-right font-mono">{{ number_format($row->days_61_90 ?? $row->period_3 ?? 0, 2) }}</td>
                     <td class="py-1 px-3 text-right font-mono">{{ number_format($row->days_over_90 ?? $row->period_4 ?? 0, 2) }}</td>
+                    <td class="py-1 px-3 text-right font-mono">{{ number_format((float) ($row->unapplied ?? 0), 2) }}</td>
                     <td class="py-1 px-3 text-right font-semibold font-mono">{{ number_format($row->balance ?? $row->total ?? 0, 2) }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="7" class="py-4 text-center text-gray-500">No data available.</td></tr>
+                <tr><td colspan="8" class="py-4 text-center text-gray-500">No data available.</td></tr>
                 @endforelse
             </tbody>
         </table>

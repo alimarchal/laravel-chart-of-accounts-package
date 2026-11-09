@@ -11,9 +11,11 @@ type AgedRow = {
     account_name: string;
     balance: number | string;
     current_balance: number | string;
+    days_1_30: number | string;
     days_31_60: number | string;
     days_61_90: number | string;
-    over_90: number | string;
+    days_over_90: number | string;
+    unapplied?: number | string;
 };
 
 function money(value: number | string | null | undefined): string {
@@ -70,11 +72,16 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                     </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     {[
                         {
-                            label: '0–30 Days',
+                            label: 'Not yet due',
                             value: sum(rows, 'current_balance'),
+                            color: 'text-green-600',
+                        },
+                        {
+                            label: '1–30 Days',
+                            value: sum(rows, 'days_1_30'),
                             color: 'text-green-600',
                         },
                         {
@@ -89,7 +96,7 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                         },
                         {
                             label: 'Over 90 Days',
-                            value: sum(rows, 'over_90'),
+                            value: sum(rows, 'days_over_90'),
                             color: 'text-red-600',
                         },
                     ].map(({ label, value, color }) => (
@@ -118,7 +125,10 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                                     Total Balance
                                 </th>
                                 <th className="p-3 text-right font-medium text-green-700">
-                                    0–30 Days
+                                    Not yet due
+                                </th>
+                                <th className="p-3 text-right font-medium text-green-700">
+                                    1–30 Days
                                 </th>
                                 <th className="p-3 text-right font-medium text-yellow-700">
                                     31–60 Days
@@ -128,6 +138,9 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                                 </th>
                                 <th className="p-3 text-right font-medium text-red-700">
                                     Over 90
+                                </th>
+                                <th className="p-3 text-right font-medium">
+                                    Unapplied
                                 </th>
                             </tr>
                         </thead>
@@ -150,6 +163,9 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                                         <td className="p-3 text-right text-green-700 tabular-nums">
                                             {money(row.current_balance)}
                                         </td>
+                                        <td className="p-3 text-right text-green-700 tabular-nums">
+                                            {money(row.days_1_30)}
+                                        </td>
                                         <td className="p-3 text-right text-yellow-700 tabular-nums">
                                             {money(row.days_31_60)}
                                         </td>
@@ -157,7 +173,10 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                                             {money(row.days_61_90)}
                                         </td>
                                         <td className="p-3 text-right text-red-700 tabular-nums">
-                                            {money(row.over_90)}
+                                            {money(row.days_over_90)}
+                                        </td>
+                                        <td className="p-3 text-right tabular-nums">
+                                            {money(row.unapplied)}
                                         </td>
                                     </tr>
                                 ))
@@ -165,7 +184,7 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                                 <tr>
                                     <td
                                         className="p-6 text-center text-muted-foreground"
-                                        colSpan={7}
+                                        colSpan={9}
                                     >
                                         No outstanding payables found.
                                     </td>
@@ -184,6 +203,9 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                                     <td className="p-3 text-right text-green-700 tabular-nums">
                                         {money(sum(rows, 'current_balance'))}
                                     </td>
+                                    <td className="p-3 text-right text-green-700 tabular-nums">
+                                        {money(sum(rows, 'days_1_30'))}
+                                    </td>
                                     <td className="p-3 text-right text-yellow-700 tabular-nums">
                                         {money(sum(rows, 'days_31_60'))}
                                     </td>
@@ -191,7 +213,10 @@ export default function AgedPayables({ rows, filters }: { rows: AgedRow[]; filte
                                         {money(sum(rows, 'days_61_90'))}
                                     </td>
                                     <td className="p-3 text-right text-red-700 tabular-nums">
-                                        {money(sum(rows, 'over_90'))}
+                                        {money(sum(rows, 'days_over_90'))}
+                                    </td>
+                                    <td className="p-3 text-right tabular-nums">
+                                        {money(sum(rows, 'unapplied'))}
                                     </td>
                                 </tr>
                             </tfoot>
