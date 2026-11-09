@@ -330,6 +330,10 @@ database views and triggers, and adds roles/permissions introduced by the new ve
 existing roles are kept). It never overwrites your `config/accounting.php` or customised views
 (`--views` re-publishes Blade views explicitly).
 
+Because your published `config/accounting.php` is not overwritten, a fix made inside the package's own config file does not reach it.
+`accounting:update` warns about the lines you have to change by hand. Right now that is `api_middleware` (typed after 2.42.1): if your file has
+`explode(',', env('ACCOUNTING_API_MIDDLEWARE', …))`, wrap the `env(...)` call in `(string)`, as the package config does, so static analysis passes.
+
 **Upgrading to 2.34.** The default chart of a *new* installation is now the ERPNext chart (`ACCOUNTING_CHART_PRESET=erpnext`); companies that
 already have a chart are not touched and keep the account codes they used (cash `1101`, receivables `1103` …). The fixed account codes in
 `config/accounting.php` (`defaults.*`, `aging.*`) are now optional overrides — if your published config still has them, they keep winning

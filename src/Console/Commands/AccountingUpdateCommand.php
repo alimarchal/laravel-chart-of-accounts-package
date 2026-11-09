@@ -38,6 +38,10 @@ class AccountingUpdateCommand extends Command
         $this->info('Publishing config (only if missing)...');
         Artisan::call('vendor:publish', ['--tag' => 'accounting-config'], $this->output);
 
+        foreach (self::outdatedConfigNotes((string) @file_get_contents(config_path('accounting.php'))) as $note) {
+            $this->warn($note);
+        }
+
         $this->info('Running new migrations...');
         Artisan::call('migrate', ['--force' => true, '--no-interaction' => true], $this->output);
 
@@ -52,5 +56,22 @@ class AccountingUpdateCommand extends Command
         $this->info('Accounting module updated successfully!');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The published config is never overwritten, so a fix inside the package's own config file does not reach an application that
+     * already published it. List the lines the application has to change by hand.
+     *
+     * @return list<string>
+     */
+    public static function outdatedConfigNotes(string $publishedConfig): array
+    {
+        $notes = [];
+
+        if (str_contains($publishedConfig, "explode(',', env('ACCOUNTING_API_MIDDLEWARE'")) {
+            $notes[] = "config/accounting.php: wrap the env value in a string cast, as the package config now does (static analysis rejects the old line):\n   'api_middleware' => array_values(array_filter(explode(',', (string) env('ACCOUNTING_API_MIDDLEWARE', 'api,auth:sanctum')))),";
+        }
+
+        return $notes;
     }
 }
