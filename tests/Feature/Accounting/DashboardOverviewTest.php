@@ -2,6 +2,7 @@
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Services\DashboardService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Inertia\Testing\AssertableInertia;
@@ -69,4 +70,17 @@ it('serves the React page, the Blade page and the API', function (): void {
     $this->getJson('/api/v1/accounting/dashboard?months=2')->assertOk()
         ->assertJsonPath('data.performance.this_month.income', '70.00')->assertJsonCount(2, 'data.performance.trend');
     $this->getJson('/api/v1/accounting/dashboard?months=99')->assertUnprocessable();
+});
+
+it('adds up the same accounts as the cash book and the bank book, not only the bank register', function (): void {
+    BankAccount::query()->create(['chart_of_account_id' => account('1108')->id, 'account_name' => 'Operating', 'account_number' => '1', 'is_active' => true]);
+    journal(['1101' => 64300, '4101' => -64300], $this->today->toDateString());
+    journal(['1108' => 991610.02, '4101' => -991610.02], $this->today->toDateString());
+    // A bank-group sub-account that is not in the register.
+    ChartOfAccount::query()->create(['parent_id' => account('1102')->id, 'account_code' => '1199', 'account_name' => 'USD Bank', 'account_type_id' => account('1101')->account_type_id, 'currency_id' => account('1101')->currency_id, 'normal_balance' => 'debit']);
+    journal(['1199' => 1405000, '4101' => -1405000], $this->today->toDateString());
+
+    $cash = ($this->overview)()['cash'];
+    expect($cash['total'])->toBe('2460910.02')
+        ->and(collect($cash['accounts'])->pluck('name')->all())->toContain('Operating');
 });

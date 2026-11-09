@@ -18,7 +18,7 @@ type Overview = {
         trend: Array<{ month: string; income: string; expense: string }>;
         top_expenses: Array<{ label: string; amount: string }>;
     } | null;
-    cash: { total: string; accounts: Array<{ bank_account_id: number; name: string; balance: string }> } | null;
+    cash: { total: string; accounts: Array<{ account_id: number; bank_account_id: number | null; name: string; balance: string }> } | null;
     receivables: Side | null;
     payables: Side | null;
     alerts: Array<{ key: string; level: string; count: number; label: string; amount: string | null }>;
@@ -181,7 +181,7 @@ export default function AccountingOverview({ overview }: { overview: Overview })
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {cash && <Kpi label="Cash and bank" value={cash.total} hint={`${cash.accounts.length} bank account${cash.accounts.length === 1 ? '' : 's'}`} />}
+                    {cash && <Kpi label="Cash and bank" value={cash.total} hint={`${cash.accounts.length} cash and bank account${cash.accounts.length === 1 ? '' : 's'}`} />}
                     {receivables && <Kpi label="Receivable" value={receivables.total} hint={`${money(receivables.overdue)} overdue`} />}
                     {payables && <Kpi label="Payable" value={payables.total} hint={`${money(payables.overdue)} overdue`} />}
                     {performance && <Kpi label="Net this month" value={performance.this_month.net} hint={`Last month ${money(performance.last_month.net)}`} />}
@@ -224,7 +224,7 @@ export default function AccountingOverview({ overview }: { overview: Overview })
                     <Card>
                         <CardHeader><CardTitle>Bank balances</CardTitle></CardHeader>
                         <CardContent className="space-y-1 text-sm">
-                            {cash.accounts.map((account) => (<div key={account.bank_account_id} className="flex justify-between"><span>{account.name}</span><span className="tabular-nums">{money(account.balance)}</span></div>))}
+                            {cash.accounts.map((account) => (<div key={account.account_id} className="flex justify-between"><span>{account.name}</span><span className="tabular-nums">{money(account.balance)}</span></div>))}
                         </CardContent>
                     </Card>
                 )}
