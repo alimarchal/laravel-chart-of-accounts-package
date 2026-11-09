@@ -49,6 +49,19 @@ class BankAccount extends AccountingModel
         ];
     }
 
+    /**
+     * The ledger accounts a bank account can be linked to (active asset posting accounts of the current company), id => "code - name".
+     *
+     * @return array<int, string>
+     */
+    public static function ledgerAccountOptions(): array
+    {
+        return ChartOfAccount::query()->where('is_group', false)->where('is_active', true)
+            ->whereHas('accountType', fn ($query) => $query->where('code', 'ASSET'))
+            ->orderBy('account_code')->get(['id', 'account_code', 'account_name'])
+            ->mapWithKeys(fn (ChartOfAccount $account): array => [$account->id => $account->account_code.' - '.$account->account_name])->all();
+    }
+
     public function chartOfAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'chart_of_account_id');

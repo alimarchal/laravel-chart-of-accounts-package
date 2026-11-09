@@ -3,6 +3,7 @@
 namespace Alimarchal\LaravelChartOfAccounts\Http\Controllers\Blade;
 
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
+use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -77,6 +78,8 @@ class BankAccountBladeController extends Controller
     private function rules(?BankAccount $record = null): array
     {
         return [
+            // GL account the bank account posts to (the bank book, statement import and reconciliation need it).
+            'chart_of_account_id' => ['nullable', 'integer', CompanyRule::exists('accounting_chart_of_accounts', 'id')->where(fn ($query) => $query->where('is_group', false))],
             'account_name' => ['required', 'string', 'max:255'],
             'account_number' => ['required', 'string', 'max:100'],
             'bank_name' => ['required', 'string', 'max:255'],
