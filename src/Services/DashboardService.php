@@ -167,7 +167,7 @@ class DashboardService
             $cents = Money::toCents((string) ($balances[$account->id] ?? 0));
             $total += $cents;
             $bank = $registered[$account->id] ?? null;
-            $rows[] = ['account_id' => $account->id, 'bank_account_id' => $bank?->id, 'name' => $bank?->account_name ?? $account->account_code.' - '.$account->account_name, 'balance' => Money::fromCents($cents)];
+            $rows[] = ['account_id' => $account->id, 'bank_account_id' => $bank?->id, 'name' => $bank->account_name ?? $account->account_code.' - '.$account->account_name, 'balance' => Money::fromCents($cents)];
         }
 
         return ['total' => Money::fromCents($total), 'accounts' => $rows];
