@@ -47,6 +47,17 @@ class TaxService
     }
 
     /**
+     * The dated rates of a tax code for the forms, which pick the one in force on the document's date: the same rows rateOn() chooses from.
+     *
+     * @return list<array{from: string, to: string|null, rate: string}>
+     */
+    public function datedRates(TaxCode $code): array
+    {
+        return TaxRate::query()->where('tax_code_id', $code->id)->where('is_active', true)->orderBy('effective_from')->get()
+            ->map(fn (TaxRate $rate): array => ['from' => substr((string) $rate->getRawOriginal('effective_from'), 0, 10), 'to' => $rate->getRawOriginal('effective_to') === null ? null : substr((string) $rate->getRawOriginal('effective_to'), 0, 10), 'rate' => number_format((float) $rate->getRawOriginal('rate'), 4, '.', '')])->all();
+    }
+
+    /**
      * @return array{code: string, kind: string, rate: string, inclusive: bool, base: string, tax: string, gross: string}
      */
     public function calculate(TaxCode $code, string $amount, bool $inclusive, string $date): array

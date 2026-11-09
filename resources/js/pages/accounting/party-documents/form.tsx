@@ -27,7 +27,7 @@ type Props = {
     parties: Array<{ id: number; code: string; name: string; payment_terms_days: number }>;
     accounts: Array<{ id: number; account_code: string; account_name: string }>;
     costCenters: Array<{ id: number; code: string; name: string }>;
-    taxCodes: Array<{ id: number; code: string; name: string; rate: string | null }>;
+    taxCodes: Array<{ id: number; code: string; name: string; rate: string | null; rates: Array<{ from: string; to: string | null; rate: string }> }>;
     today: string;
 };
 
@@ -62,12 +62,20 @@ export default function PartyDocumentForm({ document, kind, parties, accounts, c
         form.setData('lines', form.data.lines.map((line, position) => (position === index ? { ...line, ...patch } : line)));
     const errors = form.errors as Record<string, string | undefined>;
 
+    // The rate in force on the document's date, as the server picks it (a code's rate can change during the year).
+    const rateOn = (code: Props['taxCodes'][number] | undefined): number => {
+        const date = form.data.issue_date;
+        const dated = (code?.rates ?? []).filter((rate) => rate.from <= date && (!rate.to || rate.to >= date));
+
+        return dated.length ? Number(dated[dated.length - 1].rate) : 0;
+    };
+
     // A preview of the totals; the server computes the real ones.
     let subtotal = 0;
     let tax = 0;
     for (const line of form.data.lines) {
         const gross = Number(line.quantity || 0) * Number(line.unit_price || 0);
-        const rate = Number(taxCodes.find((code) => String(code.id) === line.tax_code_id)?.rate ?? 0);
+        const rate = rateOn(taxCodes.find((code) => String(code.id) === line.tax_code_id));
         const lineTax = form.data.prices_include_tax ? (gross * rate) / (100 + rate) : (gross * rate) / 100;
         tax += lineTax;
         subtotal += form.data.prices_include_tax ? gross - lineTax : gross;
@@ -164,7 +172,7 @@ export default function PartyDocumentForm({ document, kind, parties, accounts, c
                                         <option value="">No tax</option>
                                         {taxCodes.map((code) => (
                                             <option key={code.id} value={code.id}>
-                                                {code.code} {code.rate === null ? '' : `(${Number(code.rate)}%)`}
+                                                {code.code} {code.rates.length === 0 ? '' : `(${rateOn(code)}%)`}
                                             </option>
                                         ))}
                                     </Dropdown>
