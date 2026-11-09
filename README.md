@@ -96,7 +96,7 @@
 
 | | Supported |
 |---|---|
-| PHP | 8.3, 8.4 |
+| PHP | 8.3 or newer (tested on 8.3 and 8.4) |
 | Laravel | 12, 13 (Laravel 11 and PHP 8.2 are no longer supported: Laravel 11 no longer gets security fixes) — **Laravel 14** (expected Q1 2027, PHP ≥ 8.4) is tracked in CI against its dev branch and will be supported on release |
 | Database | MySQL 8 · MariaDB 10.6+ · PostgreSQL 13+ · SQLite 3.35+ |
 | React UI | Laravel React starter kit — Inertia 3 (current kit) or Inertia 2 (small `app.tsx` addition, see Installation) |

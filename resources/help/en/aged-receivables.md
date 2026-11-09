@@ -16,6 +16,7 @@ Pick the **as of date** (today by default). Click a customer to see the invoices
 
 ## Good to know
 
+- Once the company has customers, the report is built from the customer sub-ledger: one row per customer, ageing by due date and by the receipts you allocated to each invoice, with unapplied money in its own **Unapplied** column. It matches the customer ageing bucket by bucket. A company with no customers uses the ledger ageing (by entry date) instead.
 - The total is checked against the receivables control account; a difference means someone posted to that account by hand.
 - With branches, the report follows the branch you chose.
 

@@ -12,7 +12,7 @@ To plan the week's payments and to avoid paying late (or too early).
 
 ## Good to know
 
-Unapplied payments and debit notes reduce what is owed. Export to CSV, Excel or PDF.
+Once the company has suppliers, the report is built from the supplier sub-ledger (by due date and by the payments allocated to each bill) and matches the supplier ageing; unapplied payments and debit notes have their own **Unapplied** column and reduce what is owed. A company with no suppliers uses the ledger ageing. Export to CSV, Excel or PDF.
 
 ## Related
 

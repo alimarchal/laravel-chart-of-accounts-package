@@ -12,6 +12,7 @@ When you open a new bank account, or before you import a statement for it.
 
 ## Good to know
 
+- Choose the **ledger account** (an asset account) when you create or edit a bank account: statements cannot be imported until it is set.
 - Statements are imported and reconciled per bank account (see [[bank-statements]]).
 - With branches switched on, a bank account belongs to a branch.
 

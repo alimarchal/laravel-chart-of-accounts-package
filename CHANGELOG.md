@@ -7,12 +7,12 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 ## [3.0.0] - 2026-11-09
 
 ### Breaking
-- **Laravel 12 and 13 only, PHP 8.3 or 8.4.** Laravel 11 (security support ended March 2026; Composer blocks every 11.x version because of security advisories) and PHP 8.2 are no longer supported. The constraints are now `illuminate/*` `^12.0|^13.0`, `php` `^8.3` and `orchestra/testbench` `^10.0|^11.0`. The installation diagram and the README requirements follow.
+- **Laravel 12 and 13 only, PHP 8.3 or newer (CI runs 8.3 and 8.4).** Laravel 11 (security support ended March 2026; Composer blocks every 11.x version because of security advisories) and PHP 8.2 are no longer supported. The constraints are now `illuminate/*` `^12.0|^13.0`, `php` `^8.3` and `orchestra/testbench` `^10.0|^11.0`. The installation diagram and the README requirements follow.
 - **Aged receivables and Aged payables** (screens, API and exports) are built from the customer / supplier sub-ledger whenever the company has customers (suppliers): one row per party, buckets by due date and by the real allocations of receipts and payments, the unapplied credit in its own column, so they match the customer and supplier ageing bucket by bucket. Without customers or suppliers the ledger ageing is used as before. Entries posted straight to the control account no longer appear in these reports once a sub-ledger exists. The default `aging.payables` role of the ERPNext chart is now Creditors (`2110`) only (companies that saved their own mapping keep it).
 
 ### Added
 - `accounting:update` lists the lines of your published `config/accounting.php` that need a manual change (today: the typed `api_middleware` line).
-- A route sweep test opens every GET route of the React, Blade and API screens as an administrator on a seeded database and fails on any server error.
+- A route sweep test opens the GET routes of the React, Blade and API screens as an administrator on a seeded database (a record of most kinds, CSV exports read to the end, each request in a savepoint) and fails on any server error or exception; the few routes it cannot reach are named in the test data, so a new route cannot be skipped unnoticed.
 - The Laravel 12 and 13 test jobs run on MySQL, MariaDB and PostgreSQL.
 
 ### Fixed
@@ -26,6 +26,7 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 - The audit log detail screen (Blade) showed empty fields; the reconciliation form (Blade) read a column it had not loaded. Both were found by the route sweep.
 - The React Aged receivables / payables pages read bucket keys the report does not return.
 - Chart templates: the README and the screen say that industry templates cannot be added to a company on the ERPNext chart.
+- The trial balance accepts `date_from` without `as_of_date` (it answered 422).
 - The migration rollback test counted the tables of other databases on MySQL and MariaDB servers.
 
 ## [2.42.1] - 2026-10-24

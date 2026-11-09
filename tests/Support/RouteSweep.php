@@ -2,14 +2,20 @@
 
 namespace Alimarchal\LaravelChartOfAccounts\Tests\Support;
 
+use Alimarchal\LaravelChartOfAccounts\Reports\ReportCatalog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route as RouteFacade;
+use Orchestra\Testbench\TestCase;
 use ReflectionMethod;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 /**
- * Finds every GET route of the package and a URL to open it with: a route with parameters gets the first record of the model its
- * controller binds, and is left out when there is none yet.
+ * Opens the GET routes of the package and reports the ones that fail. A route with parameters gets the first record of the model its
+ * controller binds, a parameter limited to a few values ("csv|xlsx|pdf") gets each of them; a route that cannot be given a record is
+ * listed by skipped(), and the tests name those routes, so a new route that the sweep cannot reach fails them.
  */
 final class RouteSweep
 {
@@ -30,6 +36,62 @@ final class RouteSweep
     }
 
     /**
+     * The URIs of the GET routes under a prefix that have no URL to open, because no record exists for one of their parameters.
+     *
+     * @return list<string>
+     */
+    public static function skipped(string $prefix): array
+    {
+        $skipped = [];
+
+        foreach (RouteFacade::getRoutes()->getRoutes() as $route) {
+            if (in_array('GET', $route->methods(), true) && str_starts_with($route->uri(), $prefix) && self::resolve($route) === []) {
+                $skipped[] = $route->uri();
+            }
+        }
+
+        sort($skipped);
+
+        return $skipped;
+    }
+
+    /**
+     * Opens every URL, each in a savepoint of its own (a failed statement must not poison the rest on PostgreSQL, and a request with
+     * side effects must not leak into the next), runs the body of a streamed download (a CSV export is only built when it is read),
+     * and lists the URLs that answered 5xx or threw. A 4xx is a legitimate answer to a bare GET (a feature switched off, a document that is no
+     * longer a draft, a preview that needs its parameters, nothing to export yet) and is not a failure.
+     *
+     * @param  list<string>  $urls
+     * @return list<string>
+     */
+    public static function failures(TestCase $test, array $urls, bool $json = false): array
+    {
+        $failures = [];
+
+        foreach ($urls as $url) {
+            DB::beginTransaction();
+
+            try {
+                $response = $json ? $test->getJson($url) : $test->get($url);
+
+                if ($response->baseResponse instanceof StreamedResponse) {
+                    $response->streamedContent();
+                }
+
+                if ($response->getStatusCode() >= 500) {
+                    $failures[] = $response->getStatusCode().' '.$url.' '.($response->exception?->getMessage() ?? '');
+                }
+            } catch (Throwable $exception) {
+                $failures[] = 'threw '.$url.' '.$exception->getMessage();
+            } finally {
+                DB::rollBack();
+            }
+        }
+
+        return $failures;
+    }
+
+    /**
      * @return list<string>
      */
     private static function resolve(Route $route): array
@@ -44,12 +106,12 @@ final class RouteSweep
             }
 
             $uris = collect($uris)->flatMap(fn (string $uri): array => array_map(
-                fn (string|int $value): string => (string) preg_replace('/\{'.preg_quote($name, '/').'\??\}/', rawurlencode((string) $value), $uri),
+                fn (string|int $value): string => (string) preg_replace('/\{'.preg_quote($name, '/').'\}/', rawurlencode((string) $value), $uri),
                 $values,
             ))->all();
         }
 
-        return array_map(fn (string $uri): string => '/'.ltrim((string) preg_replace('/\{[^}]+\?\}/', '', $uri), '/'), $uris);
+        return array_map(fn (string $uri): string => '/'.ltrim($uri, '/'), $uris);
     }
 
     /**
@@ -64,15 +126,19 @@ final class RouteSweep
         }
 
         // Parameters that are a name rather than a record.
-        $named = ['topic' => ['overview', 'getting-started'], 'report' => ['trial-balance'], 'template' => ['trading']];
-
-        if (isset($named[$name]) && $route->getAction('controller') !== null && self::key($route, $name) === null) {
-            return $named[$name];
-        }
+        $named = [
+            'topic' => ['overview', 'getting-started'],
+            'template' => ['trading'],
+            'report' => str_contains($route->uri(), 'payroll/') ? ['comparison', 'cost-centers', 'headcount'] : app(ReportCatalog::class)->names(),
+        ];
 
         $key = self::key($route, $name);
 
-        return $key === null ? [] : [$key];
+        if ($key === null) {
+            return $named[$name] ?? [];
+        }
+
+        return [$key];
     }
 
     private static function key(Route $route, string $name): string|int|null
@@ -101,6 +167,11 @@ final class RouteSweep
 
                 return $model?->getKey();
             }
+        }
+
+        // The user screens take the key of a user untyped.
+        if ($name === 'user') {
+            return app(config('auth.providers.users.model'))::query()->first()?->getKey();
         }
 
         // The simple resources take an untyped {record}: the controller knows its model.

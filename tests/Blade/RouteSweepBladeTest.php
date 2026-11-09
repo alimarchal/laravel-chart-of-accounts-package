@@ -5,22 +5,20 @@ use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Alimarchal\LaravelChartOfAccounts\Tests\Support\RouteSweep;
 use Alimarchal\LaravelChartOfAccounts\Tests\Support\SweepData;
 
-it('opens every Blade screen route without a server error', function (): void {
+beforeEach(function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
     $admin = User::factory()->create();
     $admin->assignRole('super-admin');
     $this->actingAs($admin);
     SweepData::create();
-    $failures = [];
+});
+
+it('opens every Blade screen route without an error', function (): void {
     $urls = [...RouteSweep::urls('accounting'), ...RouteSweep::urls('settings')];
 
-    foreach ($urls as $url) {
-        $response = $this->get($url);
+    expect($urls)->not->toBeEmpty()->and(RouteSweep::failures($this, $urls))->toBe([]);
+});
 
-        if ($response->getStatusCode() >= 500) {
-            $failures[] = $response->getStatusCode().' '.$url.' '.($response->exception?->getMessage() ?? '');
-        }
-    }
-
-    expect($urls)->not->toBeEmpty()->and($failures)->toBe([]);
+it('knows which Blade routes it cannot reach, so a new route cannot be skipped unnoticed', function (): void {
+    expect([...RouteSweep::skipped('accounting'), ...RouteSweep::skipped('settings')])->toBe(SweepData::UNREACHED_BLADE);
 });

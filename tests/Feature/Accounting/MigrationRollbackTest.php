@@ -17,7 +17,7 @@ function packageTablesLeft(): Collection
     $connection = DB::connection();
     $schema = in_array($connection->getDriverName(), ['mysql', 'mariadb'], true) ? $connection->getDatabaseName() : null;
 
-    return collect(Schema::getTableListing($schema))->filter(fn ($table) => str_contains($table, 'accounting_'));
+    return collect(Schema::getTableListing($schema, false))->filter(fn ($table) => str_starts_with($table, 'accounting_'));
 }
 
 it('rolls every migration back and removes all package tables', function (): void {

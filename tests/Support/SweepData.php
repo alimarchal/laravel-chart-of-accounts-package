@@ -4,8 +4,12 @@ namespace Alimarchal\LaravelChartOfAccounts\Tests\Support;
 
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
+use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
+use Alimarchal\LaravelChartOfAccounts\Models\Branch;
 use Alimarchal\LaravelChartOfAccounts\Models\Employee;
 use Alimarchal\LaravelChartOfAccounts\Models\PayComponent;
+use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\SalaryGrade;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
@@ -20,11 +24,51 @@ use Alimarchal\LaravelChartOfAccounts\Services\PayrollService;
 use Illuminate\Support\Facades\Artisan;
 
 /**
- * One record of every kind that has screens of its own, so a sweep over the routes also opens the pages of a single record
- * (a party, an invoice, a payroll run, an asset, a stock item, …). Needs the seeded chart and a user to be signed in.
+ * A record of most kinds that have screens of their own, so a sweep over the routes also opens the pages of a single record (a party,
+ * an invoice, a payroll run, an asset, a stock item, a statement, …). Needs the seeded chart and a user to be signed in.
+ *
+ * The UNREACHED_* lists name the routes of records it does not create (they need a file, or a workflow of their own); the sweep tests
+ * compare them with the routes they cannot reach, so a new route that the sweep cannot open fails the test until it is added to the data
+ * or named here.
  */
 final class SweepData
 {
+    public const UNREACHED_REACT = [
+        'accounting/attachments/{attachment}/download',
+        'accounting/exports/{export}/download',
+        'accounting/fx-revaluation/{fxRevaluation}',
+        'accounting/payroll/arrears/{arrear}',
+        'accounting/payroll/loans/{loan}',
+        'accounting/payroll/schemes/{scheme}',
+        'accounting/payroll/settlements/{settlement}',
+        'accounting/recurring-entries/{recurringEntry}',
+        'accounting/recurring-entries/{recurringEntry}/edit',
+    ];
+
+    public const UNREACHED_API = [
+        'api/v1/accounting/attachments/{attachment}/download',
+        'api/v1/accounting/exports/{export}/download',
+        'api/v1/accounting/fx-revaluation/{fxRevaluation}',
+        'api/v1/accounting/payroll/arrears/{arrear}',
+        'api/v1/accounting/payroll/loans/{loan}',
+        'api/v1/accounting/payroll/schemes/{scheme}',
+        'api/v1/accounting/payroll/settlements/{settlement}',
+        'api/v1/accounting/recurring-entries/{recurringEntry}',
+        'api/v1/accounting/tax/returns/{taxReturn}',
+    ];
+
+    public const UNREACHED_BLADE = [
+        'accounting/attachments/{attachment}/download',
+        'accounting/exports/{export}/download',
+        'accounting/fx-revaluation/{fxRevaluation}',
+        'accounting/payroll/arrears/{arrear}',
+        'accounting/payroll/loans/{loan}',
+        'accounting/payroll/schemes/{scheme}',
+        'accounting/payroll/settlements/{settlement}',
+        'accounting/recurring-entries/{recurringEntry}',
+        'accounting/recurring-entries/{recurringEntry}/edit',
+    ];
+
     public static function create(): void
     {
         $start = AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy()->startOfMonth();
@@ -71,6 +115,12 @@ final class SweepData
             'name' => 'Annual', 'start_date' => $start->toDateString(), 'end_date' => $start->copy()->addMonths(11)->toDateString(),
             'lines' => [['chart_of_account_id' => account('5102')->id, 'annual' => '12000'], ['chart_of_account_id' => account('4101')->id, 'annual' => '36000']],
         ]));
+
+        $bank = BankAccount::query()->firstOrFail();
+        Reconciliation::factory()->create(['bank_account_id' => $bank->id]);
+        $statement = BankStatement::query()->create(['bank_account_id' => $bank->id, 'file_name' => 'statement.csv', 'from_date' => $day(1), 'to_date' => $day(28), 'closing_balance' => '100.00', 'lines_count' => 1]);
+        BankStatementLine::query()->create(['bank_statement_id' => $statement->id, 'bank_account_id' => $bank->id, 'line_no' => 1, 'txn_date' => $day(2), 'description' => 'Deposit', 'deposit' => '100.00', 'withdrawal' => '0', 'status' => 'unmatched', 'hash' => sha1('sweep')]);
+        Branch::factory()->create();
 
         Artisan::call('accounting:rebuild-snapshots');
     }
