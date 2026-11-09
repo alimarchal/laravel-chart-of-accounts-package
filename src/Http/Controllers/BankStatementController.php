@@ -11,6 +11,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Services\BankStatementService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyRule;
 use Alimarchal\LaravelChartOfAccounts\Support\ListFilters;
+use Alimarchal\LaravelChartOfAccounts\Support\Money;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +35,7 @@ class BankStatementController extends Controller
     public function index(Request $request): Response|View|JsonResponse
     {
         $request->validate(['bank_account_id' => ['nullable', 'integer'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date']]);
-        $statements = ListFilters::for(BankStatement::query()->with('bankAccount:id,account_name,bank_name')->withCount([
+        $statements = ListFilters::for(BankStatement::query()->with(['bankAccount:id,account_name,bank_name', 'reconciliation:id,status,statement_balance,book_balance'])->withCount([
             'lines as unmatched_count' => fn ($query) => $query->where('status', 'unmatched'),
         ]), $request, [
             ListFilters::exact('bank_account_id'),
@@ -126,7 +127,7 @@ class BankStatementController extends Controller
 
     public function show(Request $request, BankStatement $bankStatement): Response|View|JsonResponse
     {
-        $bankStatement->load('bankAccount:id,account_name,bank_name,chart_of_account_id');
+        $bankStatement->load(['bankAccount:id,account_name,bank_name,chart_of_account_id', 'reconciliation:id,status,statement_balance,book_balance']);
         $lines = $bankStatement->lines()->with(['journalEntry:id,voucher_number,status'])->get()->map(fn (BankStatementLine $line): array => $this->presentLine($line))->values();
         $data = [
             'statement' => $this->presentStatement($bankStatement),
@@ -176,10 +177,17 @@ class BankStatementController extends Controller
     {
         return $this->guard($request, function () use ($request, $bankStatement) {
             $reconciliation = $this->statements->reconcile($bankStatement);
+            $complete = $reconciliation->status === 'completed';
+            $difference = Money::fromCents(Money::toCents((string) $reconciliation->statement_balance) - Money::toCents((string) $reconciliation->book_balance));
+            $message = $complete
+                ? 'Statement reconciled.'
+                : "The matched transactions are saved, but the statement is not reconciled yet: its closing balance {$reconciliation->statement_balance} differs from the books ({$reconciliation->book_balance}) by {$difference}.";
 
-            return $request->expectsJson()
-                ? response()->json(['message' => 'Statement reconciled.', 'data' => ['reconciliation_id' => $reconciliation->id, 'status' => $reconciliation->status]])
-                : back()->with('success', 'Statement reconciled.');
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message, 'data' => ['reconciliation_id' => $reconciliation->id, 'status' => $reconciliation->status, 'difference' => $difference]]);
+            }
+
+            return back()->with($complete ? 'success' : 'error', $message);
         });
     }
 
@@ -285,6 +293,8 @@ class BankStatementController extends Controller
             'lines_count' => $statement->lines_count,
             'unmatched_count' => isset($statement->getAttributes()['unmatched_count']) ? (int) $statement->getAttributes()['unmatched_count'] : $statement->lines()->where('status', 'unmatched')->count(),
             'reconciliation_id' => $statement->reconciliation_id,
+            'reconciliation_status' => $statement->reconciliation?->status,
+            'reconciliation_difference' => $statement->reconciliation === null ? null : Money::fromCents(Money::toCents((string) $statement->reconciliation->statement_balance) - Money::toCents((string) $statement->reconciliation->book_balance)),
         ];
     }
 

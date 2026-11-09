@@ -42,6 +42,8 @@ type Props = {
         lines_count: number;
         unmatched_count: number;
         reconciliation_id: number | null;
+        reconciliation_status: string | null;
+        reconciliation_difference: string | null;
     };
     lines: Line[];
     accounts: Array<{ id: number; account_code: string; account_name: string }>;
@@ -159,7 +161,13 @@ export default function BankStatementShow({ statement, lines, accounts }: Props)
                     ) : (
                         <strong>{statement.closing_balance ?? '—'}</strong>
                     )}
-                    {statement.reconciliation_id ? <Badge className="bg-emerald-100 text-emerald-800">reconciled</Badge> : null}
+                    {statement.reconciliation_id ? (
+                        statement.reconciliation_status === 'completed' ? (
+                            <Badge className="bg-emerald-100 text-emerald-800">reconciled</Badge>
+                        ) : (
+                            <Badge className="bg-amber-100 text-amber-800">not reconciled: difference {statement.reconciliation_difference}</Badge>
+                        )
+                    ) : null}
                 </div>
 
                 <div className="overflow-x-auto rounded-md border">
