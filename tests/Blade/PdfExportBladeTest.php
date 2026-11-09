@@ -46,3 +46,14 @@ it('hides the voucher PDF link while no PDF engine is available, and keeps the p
         ->assertSee("/accounting/journal-entries/{$entry->id}/print", false)
         ->assertDontSee("/accounting/journal-entries/{$entry->id}/pdf", false);
 });
+
+it('prints the voucher footer after the signatures, in the flow of the page, so a browser does not add a page for it', function (): void {
+    $entry = journal(['5104' => 75, '1101' => -75]);
+
+    $html = $this->get("/accounting/journal-entries/{$entry->id}/print")->assertOk()->getContent();
+    $footer = strpos($html, '<div class="footer"');
+
+    // A fixed footer is printed below the page box by a browser and lands alone on a second page.
+    expect($footer)->not->toBeFalse()->and($footer)->toBeGreaterThan(strpos($html, 'Received by'))
+        ->and(substr($html, $footer, 120))->toContain('position: static');
+});

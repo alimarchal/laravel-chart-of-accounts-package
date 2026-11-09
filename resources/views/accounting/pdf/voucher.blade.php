@@ -19,8 +19,6 @@
 <body @if ($forScreen) style="max-width: 900px; margin: 20px auto; font-size: 11px;" @endif>
     @if ($watermark)<div class="watermark">{{ $watermark }}</div>@endif
     @if ($forScreen)<div class="screen-only"><button type="button" onclick="window.print()">Print</button></div>@endif
-    <div class="footer">Printed {{ $printedAt }}{{ $printedBy ? ' by '.$printedBy : '' }} · {{ $company['name'] }}{{ $attachmentsCount ? ' · '.$attachmentsCount.' supporting document(s) on file' : '' }}</div>
-
     @include('accounting::pdf.partials.letterhead', ['title' => $title, 'subtitle' => $subtitle])
 
     <table class="grid">
@@ -67,4 +65,7 @@
             <td><div class="who"></div><div class="line">Received by</div></td>
         </tr>
     </table>
+
+    {{-- The PDF repeats a fixed footer inside the page margin. A browser prints a fixed footer below the page box and adds a page just for it, so on screen it follows the voucher instead. --}}
+    <div class="footer" @if ($forScreen) style="position: static; margin-top: 18px;" @endif>Printed {{ $printedAt }}{{ $printedBy ? ' by '.$printedBy : '' }} · {{ $company['name'] }}{{ $attachmentsCount ? ' · '.$attachmentsCount.' supporting document(s) on file' : '' }}</div>
 </body></html>
