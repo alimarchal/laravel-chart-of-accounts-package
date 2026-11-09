@@ -15,6 +15,15 @@ use Illuminate\Support\Facades\Auth;
 final class ControlAccounts
 {
     /**
+     * Whether an entry of this origin may post to a control account of this type without being a manual posting: the module of the
+     * type, and for the tax accounts every module (invoices, bills, payroll, tax returns and taxed documents all post tax).
+     */
+    public static function acceptsOrigin(string $controlType, ?string $origin): bool
+    {
+        return $origin !== null && ($origin === $controlType || $controlType === 'tax');
+    }
+
+    /**
      * @return array<string, string> type => label
      */
     public static function types(): array
@@ -62,7 +71,7 @@ final class ControlAccounts
 
         $foreign = $entry->lines
             ->map(fn ($line) => $line->account)
-            ->filter(fn (?ChartOfAccount $account) => $account?->control_type !== null && $account->control_type !== $entry->origin_module)
+            ->filter(fn (?ChartOfAccount $account) => $account?->control_type !== null && ! self::acceptsOrigin($account->control_type, $entry->origin_module))
             ->unique('id');
 
         if ($foreign->isEmpty() || Auth::user()?->can('control-accounts.post-manual')) {

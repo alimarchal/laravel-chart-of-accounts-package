@@ -9,6 +9,7 @@ use Alimarchal\LaravelChartOfAccounts\Services\ChartOfAccountService;
 use Alimarchal\LaravelChartOfAccounts\Services\ControlAccountService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalApprovalService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
+use Alimarchal\LaravelChartOfAccounts\Support\ControlAccounts;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -152,4 +153,37 @@ it('renders the React control accounts screen and marks accounts from it', funct
     $this->actingAs($this->accountant)
         ->put('/accounting/chart-of-accounts/'.account('1101')->id.'/control-type', ['control_type' => ''])->assertForbidden();
     expect(JournalEntry::query()->where('origin_module', 'receivables')->count())->toBe(0);
+});
+
+it('does not count postings made by a module as manual on the tax control accounts', function (): void {
+    $post = fn (?string $origin) => app(JournalEntryService::class)->create([
+        'entry_date' => now()->toDateString(),
+        'origin_module' => $origin,
+        'auto_post' => true,
+        'lines' => [
+            ['chart_of_account_id' => account('1101')->id, 'debit' => 100, 'credit' => 0],
+            ['chart_of_account_id' => account('2104')->id, 'debit' => 0, 'credit' => 100],
+        ],
+    ]);
+
+    foreach (['receivables', 'payables', 'payroll', 'tax-return', 'tax-document'] as $origin) {
+        $post($origin);
+    }
+
+    $typed = $post(null);
+    $service = app(ControlAccountService::class);
+
+    expect(account('2104')->control_type)->toBe('tax')
+        ->and(collect($service->manualPostings(account('2104')))->pluck('id')->all())->toBe([$typed->id]);
+
+    // A module other than the owner still counts as manual on the other control types.
+    expect(ControlAccounts::acceptsOrigin('tax', 'payroll'))->toBeTrue()
+        ->and(ControlAccounts::acceptsOrigin('tax', null))->toBeFalse()
+        ->and(ControlAccounts::acceptsOrigin('receivables', 'payables'))->toBeFalse()
+        ->and(ControlAccounts::acceptsOrigin('receivables', 'receivables'))->toBeTrue();
+
+    // An accountant without the manual-post permission may post an invoice's tax line, but not type a tax entry in by hand.
+    $this->actingAs($this->accountant);
+    expect($post('receivables')->status)->toBe('posted');
+    expect(fn () => $post(null))->toThrow(AccountingException::class);
 });

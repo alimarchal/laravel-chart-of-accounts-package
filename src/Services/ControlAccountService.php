@@ -71,7 +71,9 @@ class ControlAccountService
             ->where('e.status', 'posted')
             ->where('e.is_closing_entry', false)
             ->whereNull('e.reverses_entry_id')
-            ->where(fn ($query) => $query->whereNull('e.origin_module')->orWhere('e.origin_module', '<>', $account->control_type))
+            ->where(fn ($query) => $account->control_type === 'tax'
+                ? $query->whereNull('e.origin_module')
+                : $query->whereNull('e.origin_module')->orWhere('e.origin_module', '<>', $account->control_type))
             ->whereExists(fn ($query) => $query->selectRaw('1')->from('accounting_journal_entry_lines as l')
                 ->whereColumn('l.journal_entry_id', 'e.id')->where('l.chart_of_account_id', $account->id));
     }
