@@ -13,6 +13,8 @@ class TrialBalanceBladeController extends Controller
 {
     public function __invoke(Request $request): View
     {
+        $request->validate(['as_of_date' => ['nullable', 'date'], 'accounting_period_id' => ['nullable', 'integer']]);
+
         $asOfDate = $request->input('as_of_date');
         $periodId = $request->input('accounting_period_id');
 
