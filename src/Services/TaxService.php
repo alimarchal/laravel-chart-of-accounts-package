@@ -54,7 +54,7 @@ class TaxService
     public function datedRates(TaxCode $code): array
     {
         return TaxRate::query()->where('tax_code_id', $code->id)->where('is_active', true)->orderBy('effective_from')->get()
-            ->map(fn (TaxRate $rate): array => ['from' => $rate->effective_from->toDateString(), 'to' => $rate->effective_to?->toDateString(), 'rate' => number_format((float) $rate->getRawOriginal('rate'), 4, '.', '')])->all();
+            ->map(fn (TaxRate $rate): array => ['from' => substr((string) $rate->getRawOriginal('effective_from'), 0, 10), 'to' => $rate->getRawOriginal('effective_to') === null ? null : substr((string) $rate->getRawOriginal('effective_to'), 0, 10), 'rate' => number_format((float) $rate->getRawOriginal('rate'), 4, '.', '')])->all();
     }
 
     /**
