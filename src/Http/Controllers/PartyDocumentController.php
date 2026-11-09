@@ -167,7 +167,7 @@ class PartyDocumentController extends Controller
             'parties' => Party::query()->where('is_active', true)->whereIn('type', [$sales ? 'customer' : 'supplier', 'both'])->orderBy('name')->get(['id', 'code', 'name', 'payment_terms_days']),
             'accounts' => ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->whereNull('control_type')->orderBy('account_code')->get(['id', 'account_code', 'account_name']),
             'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
-            'taxCodes' => $codes->map(fn (TaxCode $code): array => ['id' => $code->id, 'code' => $code->code, 'name' => $code->name, 'rate' => app(TaxService::class)->rateOn($code, now()->toDateString())])->values(),
+            'taxCodes' => $codes->map(fn (TaxCode $code): array => ['id' => $code->id, 'code' => $code->code, 'name' => $code->name, 'rate' => app(TaxService::class)->rateOn($code, now()->toDateString()), 'rates' => app(TaxService::class)->datedRates($code)])->values(),
             'today' => now()->toDateString(),
         ];
     }

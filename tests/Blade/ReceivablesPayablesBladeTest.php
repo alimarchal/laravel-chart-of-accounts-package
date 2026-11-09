@@ -7,6 +7,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\PartyDocument;
 use Alimarchal\LaravelChartOfAccounts\Models\PartyPayment;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
+use Alimarchal\LaravelChartOfAccounts\Services\TaxService;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 
 it('runs the receivables cycle in Blade: customer, invoice, receipt, statement and ageing', function (): void {
@@ -54,4 +55,22 @@ it('runs the receivables cycle in Blade: customer, invoice, receipt, statement a
     $this->post("/accounting/party-documents/{$invoice->id}/void")->assertSessionHas('success');
     $this->put('/accounting/parties/'.$party->id, ['type' => 'both', 'code' => 'C001', 'name' => 'Acme', 'is_active' => 1])->assertRedirect();
     $this->get('/accounting/parties')->assertSee('Acme');
+});
+
+it('sends the dated rates of a tax code to the document form so its preview follows the invoice date', function (): void {
+    $this->seed(AccountingDatabaseSeeder::class);
+    $user = User::factory()->create();
+    $user->assignRole('accountant');
+    $this->actingAs($user);
+    $tax = TaxCode::query()->create(['code' => 'GST', 'name' => 'GST', 'kind' => 'output', 'tax_account_id' => account('2104')->id]);
+    TaxRate::query()->create(['tax_code_id' => $tax->id, 'rate' => '17', 'effective_from' => '2026-01-01', 'effective_to' => '2026-11-01']);
+    TaxRate::query()->create(['tax_code_id' => $tax->id, 'rate' => '18', 'effective_from' => '2026-11-02']);
+
+    expect(app(TaxService::class)->datedRates($tax))->toBe([
+        ['from' => '2026-01-01', 'to' => '2026-11-01', 'rate' => '17.0000'],
+        ['from' => '2026-11-02', 'to' => null, 'rate' => '18.0000'],
+    ]);
+
+    $this->get('/accounting/party-documents/create?kind=invoice')->assertOk()
+        ->assertSee('x-model="date"', false)->assertSee('rateOf(', false)->assertSee('17.0000', false)->assertSee('18.0000', false);
 });
