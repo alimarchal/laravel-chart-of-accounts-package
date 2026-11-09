@@ -1,7 +1,10 @@
 <?php
 
+use Alimarchal\LaravelChartOfAccounts\Actions\CloseFiscalYearAction;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
+use Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Support\AccountRoles;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Support\Facades\Artisan;
@@ -114,6 +117,6 @@ it('does not close a year into a retained-earnings account that is not equity', 
     AccountRoles::set('retained_earnings', [account('5102')->id]);
     journal(['1101' => 1000, '4101' => -1000]);
 
-    expect(fn () => app(\Alimarchal\LaravelChartOfAccounts\Actions\CloseFiscalYearAction::class)->execute(\Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->where('status', 'open')->firstOrFail()))
-        ->toThrow(\Alimarchal\LaravelChartOfAccounts\Exceptions\AccountingException::class, 'not an equity account');
+    expect(fn () => app(CloseFiscalYearAction::class)->execute(AccountingPeriod::query()->where('status', 'open')->firstOrFail()))
+        ->toThrow(AccountingException::class, 'not an equity account');
 });

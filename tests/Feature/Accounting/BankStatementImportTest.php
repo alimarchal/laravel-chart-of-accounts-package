@@ -6,6 +6,7 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatement;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntryLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Services\BankStatementService;
@@ -243,7 +244,7 @@ it('renders the React pages', function (): void {
 });
 
 it('books a statement line of a foreign-currency bank account in its own currency at the dated rate', function (): void {
-    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $usd = Currency::query()->where('code', 'USD')->firstOrFail();
     account('1108')->forceFill(['currency_id' => $usd->id])->save();
     $statement = ($this->import)([($this->day)(10).',Customer payment,CHQ100,,100.00,100.00']);
 

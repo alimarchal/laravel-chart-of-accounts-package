@@ -4,6 +4,7 @@ use Alimarchal\LaravelChartOfAccounts\Actions\CloseFiscalYearAction;
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 
 beforeEach(function (): void {
@@ -86,7 +87,7 @@ it('closes the year even when an expense account with a balance was deactivated'
 
 it('closes the year when an income account is denominated in a foreign currency', function (): void {
     $period = AccountingPeriod::query()->where('status', 'open')->firstOrFail();
-    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $usd = Currency::query()->where('code', 'USD')->firstOrFail();
     ChartOfAccount::query()->where('account_code', '4101')->update(['currency_id' => $usd->id]);
 
     app(JournalEntryService::class)->create([
