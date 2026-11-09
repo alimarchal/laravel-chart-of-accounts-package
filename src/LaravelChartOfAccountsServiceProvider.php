@@ -37,7 +37,6 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
@@ -227,7 +226,7 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
         }
 
         // A refused accounting rule is a user mistake, not a fault: show the message, but keep it out of the error log.
-        if ($handler instanceof Handler) {
+        if (method_exists($handler, 'dontReport')) { // @phpstan-ignore function.impossibleType
             $handler->dontReport(AccountingRuleViolation::class);
         }
 
