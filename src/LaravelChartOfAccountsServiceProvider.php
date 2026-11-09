@@ -225,6 +225,11 @@ class LaravelChartOfAccountsServiceProvider extends ServiceProvider
             return;
         }
 
+        // A refused accounting rule is a user mistake, not a fault: show the message, but keep it out of the error log.
+        if (method_exists($handler, 'dontReport')) { // @phpstan-ignore function.impossibleType
+            $handler->dontReport(AccountingRuleViolation::class);
+        }
+
         $handler->renderable(function (\Throwable $exception, Request $request) {
             $message = match (true) {
                 $exception instanceof AccountingRuleViolation => $exception->getMessage(),
