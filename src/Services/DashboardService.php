@@ -5,8 +5,11 @@ namespace Alimarchal\LaravelChartOfAccounts\Services;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\BankStatementLine;
 use Alimarchal\LaravelChartOfAccounts\Models\Budget;
+use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxReturn;
+use Alimarchal\LaravelChartOfAccounts\Reports\BankBookReport;
+use Alimarchal\LaravelChartOfAccounts\Reports\CashBookReport;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentBranch;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
 use Alimarchal\LaravelChartOfAccounts\Support\Money;
@@ -143,13 +146,17 @@ class DashboardService
      */
     private function cash(Carbon $asOf): array
     {
-        $accounts = BankAccount::query()->whereNotNull('chart_of_account_id')->get(['id', 'chart_of_account_id', 'account_name']);
+        // The same accounts as the cash book and the bank book: the cash and bank roles with their sub-accounts, and every ledger
+        // account a bank account of the register is linked to.
+        $ids = array_values(array_unique([...app(CashBookReport::class)->accountIds(), ...app(BankBookReport::class)->accountIds()]));
+        $accounts = $ids === [] ? collect() : ChartOfAccount::query()->whereIn('id', $ids)->where('is_group', false)->orderBy('account_code')->get(['id', 'account_code', 'account_name']);
+        $registered = BankAccount::query()->whereNotNull('chart_of_account_id')->get(['id', 'chart_of_account_id', 'account_name'])->keyBy('chart_of_account_id');
         $balances = $accounts->isEmpty() ? collect() : DB::table('accounting_journal_entry_lines as line')
             ->join('accounting_journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
             ->where('entry.company_id', CurrentCompany::currentId())
             ->when(CurrentBranch::reportIds() !== null, fn ($query) => $query->whereIn('entry.branch_id', CurrentBranch::reportIds()))->where('entry.status', 'posted')
             ->whereDate('entry.entry_date', '<=', $asOf->toDateString())
-            ->whereIn('line.chart_of_account_id', $accounts->pluck('chart_of_account_id')->all())
+            ->whereIn('line.chart_of_account_id', $accounts->pluck('id')->all())
             ->groupBy('line.chart_of_account_id')
             ->selectRaw('line.chart_of_account_id as account_id, COALESCE(SUM(line.base_debit), 0) - COALESCE(SUM(line.base_credit), 0) as net')
             ->pluck('net', 'account_id');
@@ -157,9 +164,10 @@ class DashboardService
         $total = 0;
 
         foreach ($accounts as $account) {
-            $cents = Money::toCents((string) ($balances[$account->chart_of_account_id] ?? 0));
+            $cents = Money::toCents((string) ($balances[$account->id] ?? 0));
             $total += $cents;
-            $rows[] = ['bank_account_id' => $account->id, 'name' => $account->account_name, 'balance' => Money::fromCents($cents)];
+            $bank = $registered[$account->id] ?? null;
+            $rows[] = ['account_id' => $account->id, 'bank_account_id' => $bank?->id, 'name' => $bank->account_name ?? $account->account_code.' - '.$account->account_name, 'balance' => Money::fromCents($cents)];
         }
 
         return ['total' => Money::fromCents($total), 'accounts' => $rows];

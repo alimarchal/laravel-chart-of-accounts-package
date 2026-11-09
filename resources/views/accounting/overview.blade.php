@@ -51,7 +51,7 @@
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             @if ($overview['cash'])
-                <div class="bg-white shadow rounded-lg p-5"><p class="text-sm text-gray-500">Cash and bank</p><p class="mt-1 text-2xl font-semibold tabular-nums">{{ $fmt($overview['cash']['total']) }}</p><p class="mt-1 text-xs text-gray-500">{{ count($overview['cash']['accounts']) }} bank account(s)</p></div>
+                <div class="bg-white shadow rounded-lg p-5"><p class="text-sm text-gray-500">Cash and bank</p><p class="mt-1 text-2xl font-semibold tabular-nums">{{ $fmt($overview['cash']['total']) }}</p><p class="mt-1 text-xs text-gray-500">{{ count($overview['cash']['accounts']) }} cash and bank account(s)</p></div>
             @endif
             @foreach (['receivables' => 'Receivable', 'payables' => 'Payable'] as $key => $label)
                 @if ($overview[$key])
