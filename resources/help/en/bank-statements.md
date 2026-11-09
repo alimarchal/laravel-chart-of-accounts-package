@@ -20,6 +20,8 @@ Once a month per bank account, or whenever you want to check the bank against yo
 ## Good to know
 
 - Importing an overlapping statement again brings in only the new lines; nothing is duplicated.
+- What the account already held before its first statement (opening balances and earlier transactions) counts as cleared, so the first statement can complete.
+- If the books still differ from the closing balance, the statement shows **not reconciled** with the difference instead of "reconciled".
 - A reconciled statement is locked.
 
 ## Related

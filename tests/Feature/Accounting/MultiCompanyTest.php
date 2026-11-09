@@ -9,11 +9,14 @@ use Alimarchal\LaravelChartOfAccounts\Models\AccountingAuditLog;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
 use Alimarchal\LaravelChartOfAccounts\Models\ChartOfAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Company;
+use Alimarchal\LaravelChartOfAccounts\Models\Currency;
 use Alimarchal\LaravelChartOfAccounts\Models\JournalEntry;
 use Alimarchal\LaravelChartOfAccounts\Services\CompanyService;
+use Alimarchal\LaravelChartOfAccounts\Services\FxRevaluationService;
 use Alimarchal\LaravelChartOfAccounts\Services\JournalEntryService;
 use Alimarchal\LaravelChartOfAccounts\Support\CompanyScope;
 use Alimarchal\LaravelChartOfAccounts\Support\CurrentCompany;
+use Alimarchal\LaravelChartOfAccounts\Support\FeatureManager;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\QueryException;
@@ -334,9 +337,9 @@ it('does not add up accounts that share a code but mean different things in two 
 });
 
 it('keeps exchange rates per company', function (): void {
-    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $usd = Currency::query()->where('code', 'USD')->firstOrFail();
     $date = now()->toDateString();
-    $fx = app(\Alimarchal\LaravelChartOfAccounts\Services\FxRevaluationService::class);
+    $fx = app(FxRevaluationService::class);
 
     Sanctum::actingAs($this->subUser);
     $this->withHeader('X-Company', 'SUB')->postJson('/api/v1/accounting/fx-revaluation/rates', ['currency_id' => $usd->id, 'rate_date' => $date, 'rate' => 999])->assertCreated();
@@ -352,7 +355,7 @@ it('lets only a super-admin change the installation-wide feature switches when t
 
     Sanctum::actingAs($subAdmin);
     $this->withHeader('X-Company', 'SUB')->putJson('/api/v1/accounting/features', ['features' => ['payroll' => false]])->assertForbidden();
-    expect(app(\Alimarchal\LaravelChartOfAccounts\Support\FeatureManager::class)->enabled('payroll'))->toBeTrue();
+    expect(app(FeatureManager::class)->enabled('payroll'))->toBeTrue();
 
     $owner = User::factory()->create();
     $owner->assignRole('super-admin');
@@ -385,10 +388,10 @@ it('lists and shows only the users of the companies the administrator works in',
 it('refuses to switch the base currency from a company without entries while another company has posted entries', function (): void {
     app(CurrentCompany::class)->runAs($this->main, fn () => journal(['5104' => 10, '1101' => -10]));
 
-    $usd = \Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('code', 'USD')->firstOrFail();
+    $usd = Currency::query()->where('code', 'USD')->firstOrFail();
 
     expect(fn () => ($this->inSub)(fn () => $usd->update(['is_base' => true])))
         ->toThrow(AccountingException::class, 'base currency cannot be changed');
 
-    expect(\Alimarchal\LaravelChartOfAccounts\Models\Currency::query()->where('is_base', true)->value('code'))->toBe('PKR');
+    expect(Currency::query()->where('is_base', true)->value('code'))->toBe('PKR');
 });

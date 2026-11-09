@@ -12,6 +12,7 @@ use Alimarchal\LaravelChartOfAccounts\Reports\CashBookReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\CashFlowReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\GeneralLedgerReport;
 use Alimarchal\LaravelChartOfAccounts\Reports\IncomeStatementReport;
+use Alimarchal\LaravelChartOfAccounts\Reports\TrialBalanceReport;
 
 beforeEach(function (): void {
     $this->seed(AccountingDatabaseSeeder::class);
@@ -103,12 +104,12 @@ it('keeps the income statement of a closed year intact', function (): void {
 });
 
 it('filters the general ledger by plain date comparisons and still includes both boundary days', function (): void {
-    $start = \Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
+    $start = AccountingPeriod::query()->orderBy('start_date')->firstOrFail()->start_date->copy();
     journal(['5104' => 10, '1101' => -10], $start->copy()->addDays(1)->toDateString());
     journal(['5104' => 20, '1101' => -20], $start->copy()->addDays(5)->toDateString());
     journal(['5104' => 40, '1101' => -40], $start->copy()->addDays(9)->toDateString());
 
-    $rows = app(\Alimarchal\LaravelChartOfAccounts\Reports\GeneralLedgerReport::class)->query([
+    $rows = app(GeneralLedgerReport::class)->query([
         'account_id' => account('5104')->id, 'date_from' => $start->copy()->addDays(5)->toDateString(), 'date_to' => $start->copy()->addDays(9)->toDateString(),
     ])->get();
 
@@ -116,7 +117,7 @@ it('filters the general ledger by plain date comparisons and still includes both
 });
 
 it('ages the general ledger by open items: a partial payment shrinks the old invoice', function (): void {
-    $report = app(\Alimarchal\LaravelChartOfAccounts\Reports\AgedReceivablesReport::class);
+    $report = app(AgedReceivablesReport::class);
     account('1103')->forceFill(['control_type' => null])->save();
     journal(['1103' => 1000, '4101' => -1000], now()->subDays(130)->toDateString());
     journal(['1101' => 600, '1103' => -600], now()->toDateString());
@@ -136,7 +137,7 @@ it('lists the trial balance by closing balance on the debit or credit side', fun
     journal(['5104' => 20000, '1108' => -20000]);
     journal(['1108' => 50000, '4101' => -50000]);
 
-    $report = app(\Alimarchal\LaravelChartOfAccounts\Reports\TrialBalanceReport::class);
+    $report = app(TrialBalanceReport::class);
     $rows = $report->rows()->keyBy('account_code');
 
     expect($rows['1108']->debit_balance)->toBe('130000.00')->and($rows['1108']->credit_balance)->toBe('0.00')

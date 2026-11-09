@@ -118,7 +118,7 @@ class AccountingInstallCommand extends Command
     }
 
     /**
-     * The API defaults to auth:sanctum. Laravel 11+ apps only have Sanctum after "php artisan install:api".
+     * The API defaults to auth:sanctum. Laravel 12+ apps only have Sanctum after "php artisan install:api".
      */
     private function warnIfApiGuardMissing(): void
     {

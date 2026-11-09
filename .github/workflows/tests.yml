@@ -15,18 +15,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.2', '8.3', '8.4']
-        laravel: ['11.*', '12.*', '13.*']
+        php: ['8.3', '8.4']
+        laravel: ['12.*', '13.*']
         include:
-          - laravel: '11.*'
-            testbench: '9.*'
           - laravel: '12.*'
             testbench: '10.*'
           - laravel: '13.*'
             testbench: '11.*'
-        exclude:
-          - laravel: '13.*'
-            php: '8.2'
     steps:
       - uses: actions/checkout@v4
 
@@ -45,12 +40,13 @@ jobs:
         run: .github/run-tests.sh
 
   databases:
-    name: ${{ matrix.db }} (PHP 8.3 / Laravel 12)
+    name: ${{ matrix.db }} (PHP 8.3 / Laravel ${{ matrix.laravel }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         db: [mysql, mariadb, pgsql]
+        laravel: ['12.*', '13.*']
         include:
           - db: mysql
             port: 3306
@@ -61,6 +57,10 @@ jobs:
           - db: pgsql
             port: 5432
             username: postgres
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
     services:
       mysql:
         image: ${{ matrix.db == 'mysql' && 'mysql:8.0' || matrix.db == 'mariadb' && 'mariadb:11' || 'postgres:16' }}
@@ -94,7 +94,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:12.*" "orchestra/testbench:10.*" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
       # One process per core, each with a database of its own (tests/TestCase.php adds "_<worker>" to DB_DATABASE and creates it):
@@ -121,8 +121,8 @@ jobs:
         id: deps
         run: |
           composer config minimum-stability dev
-          # Allow 14.x for this job only (the published constraints stay ^11|^12|^13 until 14.0 ships).
-          sed -i 's/"\^11.0|\^12.0|\^13.0"/"^11.0|^12.0|^13.0|^14.0"/' composer.json
+          # Allow 14.x for this job only (the published constraints stay ^12|^13 until 14.0 ships).
+          sed -i 's/"\^12.0|\^13.0"/"^12.0|^13.0|^14.0"/' composer.json
           composer require "laravel/framework:dev-master as 14.0.0" "orchestra/testbench:12.x-dev" --no-interaction --no-update
           # Until Pest, Collision and Testbench support Laravel 14 the install cannot resolve: report it
           # as a notice instead of a red check. Once it resolves, test failures fail this job.

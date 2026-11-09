@@ -2,8 +2,10 @@
 
 use Alimarchal\LaravelChartOfAccounts\Database\Seeders\AccountingDatabaseSeeder;
 use Alimarchal\LaravelChartOfAccounts\Models\AccountingPeriod;
+use Alimarchal\LaravelChartOfAccounts\Models\AccountType;
 use Alimarchal\LaravelChartOfAccounts\Models\BankAccount;
 use Alimarchal\LaravelChartOfAccounts\Models\Currency;
+use Alimarchal\LaravelChartOfAccounts\Models\Reconciliation;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxCode;
 use Alimarchal\LaravelChartOfAccounts\Models\TaxRate;
 use Alimarchal\LaravelChartOfAccounts\Tests\Fixtures\User;
@@ -110,7 +112,7 @@ it('derives the status and book balance of a reconciliation instead of accepting
 });
 
 it('does not let a completed reconciliation be edited', function (): void {
-    $reconciliation = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['status' => 'completed']);
+    $reconciliation = Reconciliation::factory()->create(['status' => 'completed']);
 
     $this->putJson("/api/v1/accounting/reconciliations/{$reconciliation->id}", [
         'bank_account_id' => $reconciliation->bank_account_id, 'statement_date' => $reconciliation->statement_date->toDateString(), 'statement_balance' => 1,
@@ -121,13 +123,13 @@ it('refuses to delete a completed reconciliation and releases the lines of a dra
     $bank = BankAccount::factory()->create();
     $line = journal(['1108' => 100, '4101' => -100])->lines->firstWhere('chart_of_account_id', account('1108')->id);
 
-    $draft = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'draft']);
+    $draft = Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'draft']);
     $line->forceFill(['reconciliation_id' => $draft->id, 'reconciliation_status' => 'reconciled'])->save();
 
     $this->deleteJson("/api/v1/accounting/reconciliations/{$draft->id}")->assertNoContent();
     expect($line->fresh()->reconciliation_id)->toBeNull()->and($line->fresh()->reconciliation_status)->toBe('cleared');
 
-    $done = \Alimarchal\LaravelChartOfAccounts\Models\Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'completed']);
+    $done = Reconciliation::factory()->create(['bank_account_id' => $bank->id, 'status' => 'completed']);
     $line->forceFill(['reconciliation_id' => $done->id, 'reconciliation_status' => 'reconciled'])->save();
 
     $this->deleteJson("/api/v1/accounting/reconciliations/{$done->id}")->assertUnprocessable();
@@ -135,7 +137,7 @@ it('refuses to delete a completed reconciliation and releases the lines of a dra
 });
 
 it('does not let an account type in use change its code, normal balance or report group', function (): void {
-    $expense = \Alimarchal\LaravelChartOfAccounts\Models\AccountType::query()->where('code', 'EXPENSE')->firstOrFail();
+    $expense = AccountType::query()->where('code', 'EXPENSE')->firstOrFail();
     journal(['5102' => 1000, '1101' => -1000]);
 
     $this->putJson("/api/v1/accounting/account-types/{$expense->id}", ['code' => 'COSTS', 'name' => $expense->name, 'normal_balance' => 'credit', 'report_group' => 'BalanceSheet'])

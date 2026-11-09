@@ -4,6 +4,31 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-09
+
+### Breaking
+- **Laravel 12 and 13 only, PHP 8.3 or newer (CI runs 8.3 and 8.4).** Laravel 11 (security support ended March 2026; Composer blocks every 11.x version because of security advisories) and PHP 8.2 are no longer supported. The constraints are now `illuminate/*` `^12.0|^13.0`, `php` `^8.3` and `orchestra/testbench` `^10.0|^11.0`. The installation diagram and the README requirements follow.
+- **Aged receivables and Aged payables** (screens, API and exports) are built from the customer / supplier sub-ledger whenever the company has customers (suppliers): one row per party, buckets by due date and by the real allocations of receipts and payments, the unapplied credit in its own column, so they match the customer and supplier ageing bucket by bucket. Without customers or suppliers the ledger ageing is used as before. Entries posted straight to the control account no longer appear in these reports once a sub-ledger exists. The default `aging.payables` role of the ERPNext chart is now Creditors (`2110`) only (companies that saved their own mapping keep it).
+
+### Added
+- `accounting:update` lists the lines of your published `config/accounting.php` that need a manual change (today: the typed `api_middleware` line).
+- A route sweep test opens the GET routes of the React, Blade and API screens as an administrator on a seeded database (a record of most kinds, CSV exports read to the end, each request in a savepoint) and fails on any server error or exception; the few routes it cannot reach are named in the test data, so a new route cannot be skipped unnoticed.
+- The Laravel 12 and 13 test jobs run on MySQL, MariaDB and PostgreSQL.
+
+### Fixed
+- Voucher print: the footer printed alone on a second page; it now follows the signatures on the same page (the PDF is unchanged).
+- Bank statements: a first statement on an account that already holds a balance can be reconciled (the earlier ledger lines count as cleared), and a reconciliation that stays a draft is no longer called "reconciled" and shows its difference. Bank accounts created on the Blade and React screens can be linked to a ledger account, which statement import needs.
+- Dashboard **Cash and bank** now equals the cash book plus the bank book (cash in hand and bank ledger accounts outside the bank register are included).
+- Tax control accounts: postings made by invoices, bills, payroll runs, tax returns and taxed documents are no longer counted as manual postings (and no longer need the `control-accounts.post-manual` permission); taxed documents carry the origin `tax-document`.
+- The invoice and bill form previews the tax rate in force on the document date and follows the date.
+- Report screens (trial balance, cash flow, bank book, cash book) validate their dates instead of answering HTTP 500.
+- A refused accounting rule is no longer written to the log as an `ERROR` with a stack trace.
+- The audit log detail screen (Blade) showed empty fields; the reconciliation form (Blade) read a column it had not loaded. Both were found by the route sweep.
+- The React Aged receivables / payables pages read bucket keys the report does not return.
+- Chart templates: the README and the screen say that industry templates cannot be added to a company on the ERPNext chart.
+- The trial balance accepts `date_from` without `as_of_date` (it answered 422).
+- The migration rollback test counted the tables of other databases on MySQL and MariaDB servers.
+
 ## [2.42.1] - 2026-10-24
 
 ### Fixed

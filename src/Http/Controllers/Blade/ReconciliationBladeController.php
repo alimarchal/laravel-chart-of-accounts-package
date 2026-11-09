@@ -28,14 +28,14 @@ class ReconciliationBladeController extends Controller
 
         return view('accounting::reconciliations.index', [
             'reconciliations' => $reconciliations,
-            'bankAccounts' => BankAccount::query()->where('is_active', true)->orderBy('account_name')->get(['id', 'account_name']),
+            'bankAccounts' => BankAccount::query()->where('is_active', true)->orderBy('account_name')->get(['id', 'account_name', 'bank_name']),
         ]);
     }
 
     public function create(): View
     {
         return view('accounting::reconciliations.create', [
-            'bankAccounts' => BankAccount::query()->where('is_active', true)->orderBy('account_name')->get(['id', 'account_name']),
+            'bankAccounts' => BankAccount::query()->where('is_active', true)->orderBy('account_name')->get(['id', 'account_name', 'bank_name']),
         ]);
     }
 
@@ -59,7 +59,7 @@ class ReconciliationBladeController extends Controller
     {
         return view('accounting::reconciliations.edit', [
             'reconciliation' => $record,
-            'bankAccounts' => BankAccount::query()->where('is_active', true)->orderBy('account_name')->get(['id', 'account_name']),
+            'bankAccounts' => BankAccount::query()->where('is_active', true)->orderBy('account_name')->get(['id', 'account_name', 'bank_name']),
         ]);
     }
 

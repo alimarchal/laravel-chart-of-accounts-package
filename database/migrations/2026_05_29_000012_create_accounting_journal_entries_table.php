@@ -69,6 +69,8 @@ return new class extends Migration
             $table->index(['company_id', 'branch_id'], 'acct_journals_branch_idx');
         });
 
+        // The one cross-table foreign key of the migrations: accounting_periods (created earlier, with the closing_journal_entry_id column) and
+        // accounting_journal_entries point at each other, so the periods' foreign key can only be added once this table exists.
         Schema::table('accounting_periods', function (Blueprint $table): void {
             $table->foreign('closing_journal_entry_id', 'acct_periods_closing_journal_fk')
                 ->references('id')
