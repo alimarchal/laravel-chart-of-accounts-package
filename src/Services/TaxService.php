@@ -192,6 +192,7 @@ class TaxService
 
         $entry = [
             'entry_date' => $date,
+            'origin_module' => 'tax-document',
             'reference' => $data['reference'] ?? null,
             'description' => $data['description'] ?? null,
             'lines' => $lines,
