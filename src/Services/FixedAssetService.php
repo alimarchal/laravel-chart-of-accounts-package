@@ -405,7 +405,8 @@ class FixedAssetService
     public function register(?string $asOf = null, ?string $status = null, Builder|QueryBuilder|null $assets = null): array
     {
         $asOf = Carbon::parse($asOf ?? now())->toDateString();
-        $upTo = Carbon::parse($asOf)->startOfMonth()->toDateString();
+        // A month's depreciation is booked at its month end: only months that ended by the date count.
+        $upTo = Carbon::parse($asOf)->addDay()->startOfMonth()->subMonth()->toDateString();
         $depreciation = AssetDepreciation::query()->whereDate('period_month', '<=', $upTo)->selectRaw('fixed_asset_id, SUM(amount) as total')->groupBy('fixed_asset_id')->pluck('total', 'fixed_asset_id');
         $totals = ['cost' => 0, 'accumulated' => 0, 'book_value' => 0];
         $rows = [];
@@ -413,7 +414,7 @@ class FixedAssetService
         foreach (($assets ?? FixedAsset::query())->whereDate('acquisition_date', '<=', $asOf)->when($status, fn ($query) => $query->where('status', $status))->orderBy('code')->get() as $asset) {
             $gone = $asset->disposed_at !== null && Carbon::parse($asset->disposed_at)->toDateString() <= $asOf;
             $cost = Money::toCents($asset->cost);
-            $accumulated = $gone ? Money::toCents($asset->accumulated_depreciation) : Money::toCents((string) ($depreciation[$asset->id] ?? 0));
+            $accumulated = $gone ? Money::toCents($asset->accumulated_depreciation) : Money::toCents($asset->opening_accumulated_depreciation) + Money::toCents((string) ($depreciation[$asset->id] ?? 0));
             $book = $gone ? 0 : $cost - $accumulated;
 
             if (! $gone) {

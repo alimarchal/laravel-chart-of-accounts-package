@@ -171,3 +171,18 @@ it('refuses a receivables or payables control account as the purchase offset', f
     expect(fn () => ($this->make)(['offset_account_id' => account('2101')->id]))->toThrow(ValidationException::class)
         ->and(FixedAsset::query()->count())->toBe(0);
 });
+
+it('keeps the opening accumulated depreciation in the register and counts a month only from its month end', function (): void {
+    $old = ($this->make)([
+        'code' => 'EQ-OLD', 'acquisition_date' => $this->start->copy()->subYears(3)->toDateString(), 'cost' => '36000', 'useful_life_months' => 60,
+        'opening_accumulated_depreciation' => '21600', 'depreciate_from' => $this->start->toDateString(),
+    ]);
+    ($this->service)()->run(($this->monthEnd)(1));
+
+    $row = fn (string $asOf): array => collect(($this->service)()->register($asOf)['rows'])->firstWhere('id', $old->id);
+    $midMonth = $this->start->copy()->addMonth()->addDays(14)->toDateString();
+
+    expect($row(($this->monthEnd)(1)))->toMatchArray(['accumulated' => '22800.00', 'book_value' => '13200.00'])
+        // Mid-month the second month's depreciation, dated at its month end, is not booked yet.
+        ->and($row($midMonth))->toMatchArray(['accumulated' => '22200.00', 'book_value' => '13800.00']);
+});

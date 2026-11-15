@@ -150,3 +150,17 @@ it('lists the trial balance by closing balance on the debit or credit side', fun
             ->and($totals['balance_difference'])->toEqual(0.0)->and($totals['total_debit'])->toEqual(170000.0);
     }
 });
+
+it('carries the balance before the start date into the cash book closing balance', function (): void {
+    $start = $this->period->start_date->copy();
+    journal(['1101' => 10000, '4101' => -10000], $start->toDateString());
+    journal(['1101' => 2000, '4101' => -2000], $start->copy()->addDays(2)->toDateString());
+    journal(['5101' => 500, '1101' => -500], $start->copy()->addDays(2)->toDateString());
+
+    $totals = app(CashBookReport::class)->totals(['date_from' => $start->copy()->addDays(1)->toDateString()]);
+
+    expect($totals['opening_balance'])->toBe(10000.0)
+        ->and($totals['total_debit'])->toBe(2000.0)
+        ->and($totals['total_credit'])->toBe(500.0)
+        ->and($totals['closing_balance'])->toBe(11500.0);
+});

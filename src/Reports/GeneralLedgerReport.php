@@ -55,10 +55,25 @@ class GeneralLedgerReport
             ")
             ->first();
 
+        // From a start date the closing balance carries what the accounts held before it, as the account statement does.
+        $opening = 0.0;
+
+        if (! empty($filters['date_from'])) {
+            $before = $this->baseQuery(array_diff_key($filters, ['date_from' => true, 'date_to' => true]))
+                ->where('entry_date', '<', $filters['date_from'])
+                ->selectRaw("
+                    COALESCE(SUM(CASE WHEN status = 'posted' THEN base_debit ELSE ROUND(debit * fx_rate_to_base, 2) END), 0) as debit,
+                    COALESCE(SUM(CASE WHEN status = 'posted' THEN base_credit ELSE ROUND(credit * fx_rate_to_base, 2) END), 0) as credit
+                ")
+                ->first();
+            $opening = (float) $before->debit - (float) $before->credit;
+        }
+
         return [
+            'opening_balance' => $opening,
             'total_debit' => (float) $row->debit,
             'total_credit' => (float) $row->credit,
-            'closing_balance' => (float) $row->debit - (float) $row->credit,
+            'closing_balance' => round($opening + (float) $row->debit - (float) $row->credit, 2),
         ];
     }
 }
