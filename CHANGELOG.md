@@ -4,6 +4,13 @@ All notable changes to `laravel-chart-of-accounts` will be documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+- Payroll: a mid-month salary revision on the fixed or working day basis no longer overpays (the month's average salary is prorated by the days the basis counts); arrears are worked out on the days paid, so unpaid absence is not paid back; a loan cannot be settled while an instalment sits in a submitted or approved run; contributions on arrears respect the scheme's ceiling (#218).
+- Cash book, bank book and general ledger: from a start date the closing balance carries the balance before it, now also returned as `opening_balance` (#219).
+- A reversed or voided taxed entry is taken back out of the tax report and the tax return (#220).
+- Fixed-asset register: the opening accumulated depreciation of a migrated asset is included, and a month's depreciation counts from its month end (#221).
+- Companies: an administrator who is not a super-admin can give access only to users of their own companies, or to users who have no company yet.
+
 ## [3.0.0] - 2026-11-09
 
 ### Breaking
