@@ -130,6 +130,7 @@ class CompanyService
     public function grantAccess(Company $company, Authenticatable $user, bool $default = false, ?Authenticatable $actor = null): void
     {
         $this->assertActorCanManage($company, $actor);
+        $this->assertActorMayAdd($user, $actor);
 
         DB::transaction(function () use ($company, $user, $default): void {
             if ($default) {
@@ -177,6 +178,23 @@ class CompanyService
     {
         if ($actor !== null && ! $this->companies->canAccess($actor, $company) && ! $this->companies->isUnrestricted($actor)) {
             throw new AccountingException('You can only manage access to companies you can access yourself.');
+        }
+    }
+
+    /**
+     * Below super-admin, a user of another company is out of reach: adding them would let the actor manage their account
+     * (password, e-mail) and so work in their companies. A user of a company the actor works in, or one without any company yet, may be added.
+     */
+    private function assertActorMayAdd(Authenticatable $user, ?Authenticatable $actor): void
+    {
+        if ($actor === null || ! CurrentCompany::enabled() || $this->companies->isUnrestricted($actor)) {
+            return;
+        }
+
+        $theirs = DB::table('accounting_company_user')->where('user_id', $user->getAuthIdentifier())->pluck('company_id');
+
+        if ($theirs->isNotEmpty() && ! DB::table('accounting_company_user')->where('user_id', $actor->getAuthIdentifier())->whereIn('company_id', $theirs)->exists()) {
+            throw new AccountingException('You can only give access to users of your own companies, or to users who have no company yet.');
         }
     }
 

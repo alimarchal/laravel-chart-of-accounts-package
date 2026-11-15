@@ -395,3 +395,23 @@ it('refuses to switch the base currency from a company without entries while ano
 
     expect(Currency::query()->where('is_base', true)->value('code'))->toBe('PKR');
 });
+
+it('lets an administrator who is not a super-admin add only users of their own companies or users without any company', function (): void {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    app(CompanyService::class)->grantAccess($this->main, $admin, default: true);
+    $newcomer = User::factory()->create();
+
+    // The subsidiary's accountant works in no company of the administrator: adding them would put their account in the administrator's hands.
+    expect(fn () => app(CompanyService::class)->grantAccess($this->main, $this->subUser, actor: $admin))->toThrow(AccountingException::class)
+        ->and(DB::table('accounting_company_user')->where('user_id', $this->subUser->id)->where('company_id', $this->main->id)->exists())->toBeFalse();
+
+    app(CompanyService::class)->grantAccess($this->main, $newcomer, actor: $admin);
+    app(CompanyService::class)->grantAccess($this->main, $this->mainUser, actor: $admin);
+    expect(DB::table('accounting_company_user')->where('user_id', $newcomer->id)->where('company_id', $this->main->id)->exists())->toBeTrue();
+
+    $super = User::factory()->create();
+    $super->assignRole('super-admin');
+    app(CompanyService::class)->grantAccess($this->main, $this->subUser, actor: $super);
+    expect(DB::table('accounting_company_user')->where('user_id', $this->subUser->id)->where('company_id', $this->main->id)->exists())->toBeTrue();
+});
