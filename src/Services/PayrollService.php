@@ -377,7 +377,7 @@ class PayrollService
                     if ($scheme->ceiling !== null) {
                         $ceiling = Money::toCents($scheme->ceiling);
                         $contributory = $owed->sum(fn (PayrollArrear $row): int => collect($row->months())->sum(function (array $month) use ($scheme, $ceiling): int {
-                            $paid = (int) ($scheme->base === 'gross' ? ($month['taxable'] ?? $month['paid']) : $month['paid']);
+                            $paid = (int) ($scheme->base === 'gross' ? $month['taxable'] : $month['paid']);
 
                             return max(0, min($paid + (int) $month['difference'], $ceiling) - min($paid, $ceiling));
                         }));
