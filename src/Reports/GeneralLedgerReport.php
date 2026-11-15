@@ -66,7 +66,7 @@ class GeneralLedgerReport
                     COALESCE(SUM(CASE WHEN status = 'posted' THEN base_credit ELSE ROUND(credit * fx_rate_to_base, 2) END), 0) as credit
                 ")
                 ->first();
-            $opening = (float) $before->debit - (float) $before->credit;
+            $opening = round((float) $before->debit - (float) $before->credit, 2);
         }
 
         return [

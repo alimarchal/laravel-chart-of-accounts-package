@@ -204,9 +204,10 @@ it('manages companies and memberships through the API, with an audit trail', fun
     $id = $this->postJson('/api/v1/accounting/companies', ['code' => 'new-co', 'name' => 'New Co', 'fiscal_year_start_month' => 7])
         ->assertCreated()->assertJsonPath('data.code', 'NEW-CO')->json('data.id');
 
-    // The creator gets access; they can grant it on to others.
-    $this->postJson("/api/v1/accounting/companies/{$id}/users", ['user_id' => $this->subUser->id])->assertOk()->assertJsonCount(2, 'data');
-    $this->deleteJson("/api/v1/accounting/companies/{$id}/users/{$this->subUser->id}")->assertOk()->assertJsonCount(1, 'data');
+    // The creator gets access; they can grant it on to users of their companies, not to users of other companies.
+    $this->postJson("/api/v1/accounting/companies/{$id}/users", ['user_id' => $this->mainUser->id])->assertOk()->assertJsonCount(2, 'data');
+    $this->deleteJson("/api/v1/accounting/companies/{$id}/users/{$this->mainUser->id}")->assertOk()->assertJsonCount(1, 'data');
+    $this->postJson("/api/v1/accounting/companies/{$id}/users", ['user_id' => $this->subUser->id])->assertStatus(422);
 
     // Not for companies they cannot access.
     $this->postJson("/api/v1/accounting/companies/{$this->sub->id}/users", ['user_id' => $admin->id])->assertForbidden();

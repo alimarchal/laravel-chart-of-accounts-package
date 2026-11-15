@@ -198,7 +198,7 @@ class PayrollLoanService
     private function assertNoDraftRunInstalment(Loan $loan): void
     {
         if (LoanInstallment::query()->where('loan_id', $loan->id)->where('status', 'included')->whereIn('payroll_run_id', PayrollRun::query()->whereIn('status', ['draft', 'submitted', 'approved'])->select('id'))->exists()) {
-            throw new AccountingException('An instalment is part of a draft payroll run, or one submitted or approved: post or delete the run first.');
+            throw new AccountingException('An instalment is part of a draft payroll run, or one submitted or approved: post the run, or take it back to draft and delete it, first.');
         }
     }
 
