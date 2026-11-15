@@ -353,3 +353,65 @@ it('re-opens a loan when the run that recovered its last instalment is voided', 
     $next = ($this->run)(1);
     expect((float) ($this->slip)($employee, $next)->deductions)->toBe(10000.0);
 });
+
+it('prorates a mid-month raise by the share of the month on the fixed and working bases, never above the new salary', function (string $basis): void {
+    $offset = 0;
+    while ($this->month->copy()->addMonths($offset)->daysInMonth !== 31) {
+        $offset++;
+    }
+    $month = $this->month->copy()->addMonths($offset);
+    config(['accounting.payroll.day_basis' => $basis, 'accounting.payroll.gratuity.days_per_month' => 30]);
+    $employee = ($this->employee)(['base_salary' => '60000']);
+    app(PayrollStructureService::class)->revise($employee, '60310', $month->copy()->addDays(15)->toDateString());
+
+    // 15 of the 31 days at 60,000 and 16 at 60,310: the same share of the month on every basis.
+    expect((float) ($this->slip)($employee->refresh(), ($this->run)($offset))->basic)->toBe(round((15 * 60000 + 16 * 60310) / 31, 2));
+})->with(['fixed', 'working']);
+
+it('pays no arrears for unpaid absence when the salary did not change', function (): void {
+    $employee = ($this->employee)();
+    ($this->sheet)(0, [['employee_id' => $employee->id, 'absent_days' => 3]]);
+    ($this->payroll)()->post(($this->run)(0));
+
+    $arrears = app(PayrollArrearsService::class);
+    expect($arrears->calculate($arrears->validate(['from_month' => $this->month->toDateString(), 'payment_month' => $this->month->copy()->addMonth()->toDateString()])))->toBe([]);
+});
+
+it('pays arrears of a raise only on the days that were paid', function (): void {
+    $employee = ($this->employee)();
+    ($this->sheet)(0, [['employee_id' => $employee->id, 'absent_days' => 3]]);
+    ($this->payroll)()->post(($this->run)(0));
+    app(PayrollStructureService::class)->revise($employee, '110000', $this->month->toDateString());
+
+    $arrears = app(PayrollArrearsService::class);
+    $rows = $arrears->calculate($arrears->validate(['from_month' => $this->month->toDateString(), 'payment_month' => $this->month->copy()->addMonth()->toDateString()]));
+    $days = $this->month->daysInMonth;
+    // The 110,000 due and the 100,000 paid, each for the days paid, rounded to the cent as the payslip does.
+    $cents = (int) round(11000000 * ($days - 3) / $days) - (int) round(10000000 * ($days - 3) / $days);
+    expect($rows[0]['amount'])->toBe(number_format($cents / 100, 2, '.', ''));
+});
+
+it('refuses to settle a loan while an instalment sits in a submitted or approved payroll run', function (): void {
+    $employee = ($this->employee)();
+    $service = ($this->loans)();
+    $loan = $service->disburse($service->create($service->validate(['employee_id' => $employee->id, 'kind' => 'advance', 'principal' => '9000', 'installments' => 3, 'start_month' => $this->month->toDateString()])), account('1101')->id, $this->month->toDateString());
+
+    ($this->payroll)()->submit(($this->run)(0));
+
+    expect(fn () => $service->settle($loan, account('1101')->id, $this->month->toDateString()))->toThrow(AccountingException::class, 'draft payroll run')
+        ->and($loan->refresh()->status)->toBe('active');
+});
+
+it('keeps the contribution on arrears within the ceiling', function (): void {
+    $service = ($this->schemes)();
+    $service->save($service->validate(['code' => 'EOBI', 'name' => 'EOBI', 'base' => 'basic', 'employee_rate' => 10, 'employer_rate' => 10, 'ceiling' => 105000, 'on_arrears' => true, 'applies_to_all' => true, 'employee_account_id' => account('2102')->id, 'employer_expense_account_id' => account('5102')->id, 'employer_liability_account_id' => account('2102')->id]));
+    $employee = ($this->employee)();
+    ($this->payroll)()->post(($this->run)(0));
+    app(PayrollStructureService::class)->revise($employee, '110000', $this->month->toDateString());
+    $arrears = app(PayrollArrearsService::class);
+    $arrears->approve($arrears->create($arrears->validate(['from_month' => $this->month->toDateString(), 'payment_month' => $this->month->copy()->addMonth()->toDateString()]))[0]);
+
+    $lines = PayslipLine::query()->where('payslip_id', ($this->slip)($employee, ($this->run)(1))->id)->pluck('amount', 'description')->all();
+    // 100,000 was paid on a 105,000 ceiling: only the 5,000 up to the ceiling of the 10,000 arrears is contributory.
+    expect($lines['EOBI'])->toBe('10500.00')->and($lines['EOBI on arrears'])->toBe('500.00')->and($lines['EOBI on arrears (employer)'])->toBe('500.00');
+});

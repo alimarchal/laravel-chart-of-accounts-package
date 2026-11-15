@@ -54,11 +54,15 @@ class SalaryHistory
         }
 
         $total = 0;
+        $calendarDays = 0;
 
         for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
             $total += self::salaryOn($employee, $day, $revisions);
+            $calendarDays++;
         }
 
-        return ['cents' => (int) round($total / $days), 'worked' => $worked, 'days' => $days];
+        // The average monthly salary over the calendar days, for the share of the month the basis counts as worked: on the
+        // fixed or working basis the calendar days are not the days the month counts.
+        return ['cents' => (int) round($total * $worked / ($calendarDays * $days)), 'worked' => $worked, 'days' => $days];
     }
 }

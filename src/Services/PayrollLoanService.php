@@ -192,12 +192,13 @@ class PayrollLoanService
     }
 
     /**
-     * An instalment that sits in a draft payroll run is deducted when the run is posted: recovering the whole loan now would charge it twice.
+     * An instalment that sits in a run not posted yet (draft, submitted or approved) is deducted when the run is posted:
+     * recovering the whole loan now would charge it twice.
      */
     private function assertNoDraftRunInstalment(Loan $loan): void
     {
-        if (LoanInstallment::query()->where('loan_id', $loan->id)->where('status', 'included')->whereIn('payroll_run_id', PayrollRun::query()->where('status', 'draft')->select('id'))->exists()) {
-            throw new AccountingException('An instalment is part of a draft payroll run: post or delete the run first.');
+        if (LoanInstallment::query()->where('loan_id', $loan->id)->where('status', 'included')->whereIn('payroll_run_id', PayrollRun::query()->whereIn('status', ['draft', 'submitted', 'approved'])->select('id'))->exists()) {
+            throw new AccountingException('An instalment is part of a draft payroll run, or one submitted or approved: post or delete the run first.');
         }
     }
 
