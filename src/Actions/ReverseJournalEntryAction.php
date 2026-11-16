@@ -68,6 +68,10 @@ class ReverseJournalEntryAction
                     'cost_center_id' => $line->cost_center_id,
                     'debit' => $line->credit,
                     'credit' => $line->debit,
+                    // The tax of the original comes back out of the tax ledger and the return with it.
+                    'tax_code_id' => $line->tax_code_id,
+                    'tax_role' => $line->tax_role,
+                    'tax_rate' => $line->tax_rate,
                     'description' => $line->description ? 'Reversal: '.$line->description : 'Reversal',
                 ]);
             }

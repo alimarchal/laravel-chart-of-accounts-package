@@ -370,7 +370,20 @@ class PayrollService
                 $parts = [[$contributions->amounts($scheme, $basic, $earned), $scheme->name]];
 
                 if ($scheme->on_arrears && $arrearsCents > 0 && $scheme->base !== 'fixed') {
-                    $parts[] = [['employee' => (int) round($arrearsCents * (float) $scheme->employee_rate / 100), 'employer' => (int) round($arrearsCents * (float) $scheme->employer_rate / 100)], $scheme->name.' on arrears'];
+                    $contributory = $arrearsCents;
+
+                    // Up to the ceiling, month by month: only what the arrears add below the ceiling on top of what was paid
+                    // (the basic paid, or for a scheme on the gross the taxable pay of the month, which the breakdown keeps).
+                    if ($scheme->ceiling !== null) {
+                        $ceiling = Money::toCents($scheme->ceiling);
+                        $contributory = $owed->sum(fn (PayrollArrear $row): int => collect($row->months())->sum(function (array $month) use ($scheme, $ceiling): int {
+                            $paid = (int) ($scheme->base === 'gross' ? $month['taxable'] : $month['paid']);
+
+                            return max(0, min($paid + (int) $month['difference'], $ceiling) - min($paid, $ceiling));
+                        }));
+                    }
+
+                    $parts[] = [['employee' => (int) round($contributory * (float) $scheme->employee_rate / 100), 'employer' => (int) round($contributory * (float) $scheme->employer_rate / 100)], $scheme->name.' on arrears'];
                 }
 
                 foreach ($parts as [$amount, $label]) {

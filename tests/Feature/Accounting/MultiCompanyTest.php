@@ -204,9 +204,10 @@ it('manages companies and memberships through the API, with an audit trail', fun
     $id = $this->postJson('/api/v1/accounting/companies', ['code' => 'new-co', 'name' => 'New Co', 'fiscal_year_start_month' => 7])
         ->assertCreated()->assertJsonPath('data.code', 'NEW-CO')->json('data.id');
 
-    // The creator gets access; they can grant it on to others.
-    $this->postJson("/api/v1/accounting/companies/{$id}/users", ['user_id' => $this->subUser->id])->assertOk()->assertJsonCount(2, 'data');
-    $this->deleteJson("/api/v1/accounting/companies/{$id}/users/{$this->subUser->id}")->assertOk()->assertJsonCount(1, 'data');
+    // The creator gets access; they can grant it on to users of their companies, not to users of other companies.
+    $this->postJson("/api/v1/accounting/companies/{$id}/users", ['user_id' => $this->mainUser->id])->assertOk()->assertJsonCount(2, 'data');
+    $this->deleteJson("/api/v1/accounting/companies/{$id}/users/{$this->mainUser->id}")->assertOk()->assertJsonCount(1, 'data');
+    $this->postJson("/api/v1/accounting/companies/{$id}/users", ['user_id' => $this->subUser->id])->assertStatus(422);
 
     // Not for companies they cannot access.
     $this->postJson("/api/v1/accounting/companies/{$this->sub->id}/users", ['user_id' => $admin->id])->assertForbidden();
@@ -394,4 +395,24 @@ it('refuses to switch the base currency from a company without entries while ano
         ->toThrow(AccountingException::class, 'base currency cannot be changed');
 
     expect(Currency::query()->where('is_base', true)->value('code'))->toBe('PKR');
+});
+
+it('lets an administrator who is not a super-admin add only users of their own companies or users without any company', function (): void {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    app(CompanyService::class)->grantAccess($this->main, $admin, default: true);
+    $newcomer = User::factory()->create();
+
+    // The subsidiary's accountant works in no company of the administrator: adding them would put their account in the administrator's hands.
+    expect(fn () => app(CompanyService::class)->grantAccess($this->main, $this->subUser, actor: $admin))->toThrow(AccountingException::class)
+        ->and(DB::table('accounting_company_user')->where('user_id', $this->subUser->id)->where('company_id', $this->main->id)->exists())->toBeFalse();
+
+    app(CompanyService::class)->grantAccess($this->main, $newcomer, actor: $admin);
+    app(CompanyService::class)->grantAccess($this->main, $this->mainUser, actor: $admin);
+    expect(DB::table('accounting_company_user')->where('user_id', $newcomer->id)->where('company_id', $this->main->id)->exists())->toBeTrue();
+
+    $super = User::factory()->create();
+    $super->assignRole('super-admin');
+    app(CompanyService::class)->grantAccess($this->main, $this->subUser, actor: $super);
+    expect(DB::table('accounting_company_user')->where('user_id', $this->subUser->id)->where('company_id', $this->main->id)->exists())->toBeTrue();
 });

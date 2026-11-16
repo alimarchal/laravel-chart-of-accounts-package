@@ -79,7 +79,7 @@ class PayrollArrearsService
         $employeeIds = $employees->pluck('id');
         $revisions = SalaryRevision::query()->whereIn('employee_id', $employeeIds)->orderBy('effective_from')->orderBy('id')->get()->groupBy('employee_id');
         $runs = PayrollRun::query()->whereIn('status', ['posted', 'paid'])->whereDate('period_month', '>=', $from->toDateString())->whereDate('period_month', '<=', $last->toDateString())->pluck('period_month', 'id');
-        $slips = Payslip::query()->whereIn('payroll_run_id', $runs->keys())->whereIn('employee_id', $employeeIds)->get(['id', 'payroll_run_id', 'employee_id', 'basic']);
+        $slips = Payslip::query()->whereIn('payroll_run_id', $runs->keys())->whereIn('employee_id', $employeeIds)->get(['id', 'payroll_run_id', 'employee_id', 'basic', 'days_paid']);
         $taxableComponents = PayComponent::query()->where('taxable', true)->pluck('id')->all();
         $taxable = [];
 
@@ -112,7 +112,13 @@ class PayrollArrearsService
                     continue;
                 }
 
-                $due = SalaryHistory::basicForMonth($employee, $month, $revisions[$employee->id] ?? collect())['cents'];
+                ['cents' => $due, 'worked' => $worked] = SalaryHistory::basicForMonth($employee, $month, $revisions[$employee->id] ?? collect());
+
+                // Unpaid absence came off the basic paid: what is due is the new salary for the same paid days, as the payslip works it.
+                if ($worked > 0 && (float) $slip->days_paid < $worked) {
+                    $due = (int) round($due * (float) $slip->days_paid / $worked);
+                }
+
                 $paid = Money::toCents($slip->basic);
                 $difference = (int) round(($due - $paid) * (1 + ($percent[$employee->id] ?? 0) / 100));
 

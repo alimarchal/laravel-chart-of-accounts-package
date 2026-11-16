@@ -300,3 +300,13 @@ it('keeps the kind and tax account of a tax code that is used on journal lines',
 
     expect($this->out->refresh()->kind)->toBe('output');
 });
+
+it('takes a reversed sale back out of the tax ledger', function (): void {
+    $sale = ($this->sale)('1000.00', 5);
+    ($this->purchase)('400.00', 6);
+    app(JournalEntryService::class)->reverse($sale, 'Cancelled', ($this->on)(8));
+
+    $report = ($this->tax)()->report(($this->on)(1), ($this->on)(30));
+    expect(collect($report['rows'])->keyBy('code')['GST17'])->toMatchArray(['base' => '0.00', 'tax' => '0.00'])
+        ->and($report['totals'])->toMatchArray(['output_tax' => '0.00', 'input_tax' => '68.00']);
+});
